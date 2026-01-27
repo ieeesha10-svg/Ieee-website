@@ -1,0 +1,20 @@
+node_modules/
+dist/
+dist-ssr/
+/.parcel-cache
+# env
+.env
+server/.env
+client/.env
+.env.local
+
+# logs
+logs
+*.log
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
