@@ -1,1 +1,263 @@
+🗺️ The Roadmap (Order of Execution)
+We will build this in 4 distinct layers. You are currently at Phase 1.
+
+Phase 1: The API Core (Backend Logic) ⬅️ [YOU ARE HERE]
+
+Auth: Create the Login endpoint so your Admin can actually get a token.
+
+Forms: Create endpoints to Save a new form (JSON) and Get a form.
+
+Submissions: Create the endpoint to receive answers.
+
+Phase 2: The Admin Dashboard (Frontend)
+
+Login Page (connects to Auth API).
+
+Form Builder Page (uses react-form-builder2).
+
+Results Page (Table view + Excel Export).
+
+Phase 3: The Public View (Frontend)
+
+Form Viewer (The page students see).
+
+Phase 4: The Event System (Backend + Frontend)
+
+Add "Trigger" logic: If form type is 'event', generate QR & Email.
+
+Build the Scanner Page.
+
+
+
+
+///////////////////////////////////////////////////////
+
+🗺️ The Revised Roadmap
+✅ Phase 1: The API Core (Backend Logic) - [COMPLETED]
+Auth: Login, Register, User Roles (XCom/Board).
+
+Forms: Create, Get, Delete Forms.
+
+Submissions: Receive answers, Generate QR Code, Send Auto-Email. (We did this early!)
+
+Communication: Bulk Emailing via Excel + Email Logs. (We added this bonus feature).
+
+🚧 Phase 2: The Admin Dashboard (Frontend) - [NEXT STEP]
+Setup: Create the React App & Install UI Library (Tailwind/Mantine).
+
+Login Page: Connect to your /api/users/login.
+
+Dashboard Layout: Sidebar (Forms, Users, Emails, Settings).
+
+Form Builder: The Drag-and-Drop Interface.
+
+Data Tables: View Users & Submissions (with that "Export to Excel" button we built).
+
+🔮 Phase 3: The Public View (Frontend)
+Form Viewer: The page students see to register.
+
+Ticket View: A page where they can see their QR code if they lose the email.
+
+📲 Phase 4: The Tools (Frontend)
+Scanner Web App: A mobile-friendly page for admins to scan QRs.
+
+Settings Page: UI to update the "System Email" and "App Password".
+
+
+successfully built:
+
+Auth System (JWT, Roles).
+
+User System (Advanced Filtering, Excel Export).
+
+Form & Submission System (QR Codes, Auto-Emails).
+
+Bulk Mailer (Excel, Dynamic Variables, Logging, Quota Protection).
+
+
+
 wanted 
+
+Add a loud "BEEP" sound and a Green/Red flash on the screen upon scan. The organizer doesn't need to read the screen; they hear the beep and wave the next student in
+
+
+
+
+-concerns
+
+The Bottleneck is Focus, not Tech: The slowest part is usually the camera focusing on a cracked phone screen or the internet connection.
+
+
+
+
+
+
+
+
+
+
+
+Yes, forcing users to login before filling a form is the **perfect solution**. It ensures 100% data consistency.
+
+By doing this, every single submission is guaranteed to be linked to a real User ID in your database. You will never have "orphan" emails.
+
+### 1. How to Enforce Login
+
+You don't need new code. You just need to check the `requiresLogin` flag in your **Form Model** (which we added earlier).
+
+* **Logic:** When you create a form, set `requiresLogin: true`.
+* **Frontend Behavior:** When a student opens the link `ieee.org/forms/123`:
+1. Frontend checks `form.requiresLogin`.
+2. If `true` AND user is not logged in → Redirect to `/login`.
+3. User logs in → Redirect back to `/forms/123`.
+
+
+
+---
+
+### 2. Full API Documentation (So Far)
+
+Here is the reference manual for the functions we have built. You can give this to your Frontend Team.
+
+#### **Base URL:** `http://localhost:5000/api`
+
+---
+
+### **A. Authentication Module**
+
+| Endpoint | Method | Access | Description |
+| --- | --- | --- | --- |
+| **/users/login** | `POST` | Public | Authenticates user & sets HttpOnly Cookie. |
+| **/users/logout** | `POST` | Public | Clears the auth cookie. |
+| **/users** | `POST` | Public | Registers a new user (Default role: `user`). |
+| **/users/profile** | `GET` | Private | Returns current user info (checks cookie). |
+
+**1. Login Request**
+
+* **URL:** `/api/users/login`
+* **Body:**
+```json
+{
+  "email": "admin@ieee.org",
+  "password": "password123"
+}
+
+```
+
+
+* **Response (200 OK):**
+```json
+{
+  "_id": "65b...",
+  "name": "IEEE Tech Head",
+  "email": "admin@ieee.org",
+  "role": "admin"
+  // Note: Token is NOT here. It is in the browser cookies.
+}
+
+```
+
+
+
+**2. Register Request**
+
+* **URL:** `/api/users`
+* **Body:**
+```json
+{
+  "name": "New Student",
+  "email": "student@uni.edu",
+  "password": "securePass123"
+}
+
+```
+
+
+
+---
+
+### **B. User Management & Filtering (The Email List Source)**
+
+| Endpoint | Method | Access | Description |
+| --- | --- | --- | --- |
+| **/users** | `GET` | Admin | Fetches users with advanced filtering/sorting. |
+
+**Advanced Filter Examples (Query Strings)**
+
+* **Search by Name/Email:**
+`GET /api/users?search=Ahmed`
+* **Filter by Role:**
+`GET /api/users?role=member,board`
+* **Filter by Join Date (This Year):**
+`GET /api/users?startDate=2026-01-01&endDate=2026-12-31`
+* **Get Event Attendees (Who actually scanned QR):**
+`GET /api/users?formId=65a9f...&attendedOnly=true`
+* **Get Event Registrants (Everyone who signed up):**
+`GET /api/users?formId=65a9f...`
+* **Pagination & Sorting:**
+`GET /api/users?page=1&limit=50&sort=-createdAt`
+
+**Response Structure:**
+
+```json
+{
+  "users": [ ... array of user objects ... ],
+  "total": 150,
+  "page": 1,
+  "pages": 3
+}
+
+```
+
+---
+
+### **C. Form Module**
+
+| Endpoint | Method | Access | Description |
+| --- | --- | --- | --- |
+| **/forms** | `POST` | Admin | Saves a new form structure. |
+| **/forms/:id** | `GET` | Public | Fetches form structure (questions) to render. |
+
+**1. Create Form Request**
+
+* **URL:** `/api/forms`
+* **Headers:** `Authorization: Bearer <token>` (Handled by Cookie usually)
+* **Body:**
+```json
+{
+  "title": "Cybersecurity Workshop",
+  "description": "Learn how to hack.",
+  "type": "event",  // Options: 'general' or 'event'
+  "structure": [
+    // This JSON comes directly from the React Form Builder library
+    { "id": "field_1", "label": "Phone Number", "type": "text" }
+  ],
+  "settings": {
+    "requiresLogin": true, // <--- The logic you asked for
+    "maxSubmissions": 100,
+    "expiryDate": "2026-02-20T00:00:00.000Z"
+  }
+}
+
+```
+
+
+
+**2. Get Form Request**
+
+* **URL:** `/api/forms/65b92...`
+* **Response:** Returns the JSON object above.
+
+---
+
+### **D. Submissions Module (Coming Next)**
+
+*We haven't written the Controller code for this yet, but here is the plan:*
+
+| Endpoint | Method | Access | Description |
+| --- | --- | --- | --- |
+| **/submissions** | `POST` | Private | Saves student answers + Generates QR (if event). |
+| **/submissions/scan** | `POST` | Admin | Scans QR code & marks attendance. |
+| **/submissions/export** | `GET` | Admin | Downloads Excel sheet of answers. |
+
+**Would you like to write the `Submission Controller` (Endpoint D) now to handle the QR Code generation?**
