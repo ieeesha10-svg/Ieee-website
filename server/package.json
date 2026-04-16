@@ -22,7 +22,7 @@
     "mongoose": "^9.0.1",
     "multer": "^2.0.2",
     "nanoid": "^5.1.6",
-    "nodemailer": "^7.0.12",
+    "nodemailer": "^8.0.5",
     "qrcode": "^1.5.4",
     "xlsx": "^0.18.5"
   },

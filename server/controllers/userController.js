@@ -3,6 +3,7 @@ const Submission = require('../models/SubmissionModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const ExcelJS = require('exceljs');
+const sendOTPEmail = require('../utils/sendEmail.js')
 // --- HELPER: Generate JWT Token ---
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -18,14 +19,22 @@ const generateToken = (id) => {
 // @route   POST /api/users/login
 // @access  Public
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
 
-  if (user && (await bcrypt.compare(password, user.password))) {
+    if (!user.isVerified) {
+      return res.status(403).json({ 
+        message: 'Account not verified. Please check your email for the OTP.' 
+      });
+    }
+
     const token = generateToken(user._id);
-
-    // Send HTTP-Only Cookie
     res.cookie('jwt', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV !== 'development', // HTTPS in production
@@ -40,8 +49,8 @@ const loginUser = async (req, res) => {
       role: user.role,
       committee: user.committee
     });
-  } else {
-    res.status(401).json({ message: 'Invalid email or password' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -80,54 +89,113 @@ const getUserProfile = async (req, res) => {
 // @route   POST /api/users
 // @access  Public
 const registerUser = async (req, res) => {
-  const { 
-    name, email, password, 
-    phone, age, university, college, yearOfStudy, interests, committee, optionalData,
-    role // User can request a role
-  } = req.body;
+  try {
+    const { 
+      name, email, password, 
+      phone, age, university, college, yearOfStudy, interests, committee, optionalData,
+      role // User can request a role
+    } = req.body;
 
-  const userExists = await User.findOne({ email });
-  if (userExists) {
-    res.status(400);
-    throw new Error('User already exists');
-  }
+    const userExists = await User.findOne({email : email.toLowerCase()});
+    if (userExists) {
+      res.status(400);
+      throw new Error('User already exists');
+    }
 
-  // --- SECURITY: Role Sanitization ---
-  // Allow 'member' selection, but force everyone else to 'user'
-  // This prevents hackers from creating an 'xcom' account via public API
-  let finalRole = 'user';
-  if (role === 'member') {
-    finalRole = 'member';
-  }
+    // --- SECURITY: Role Sanitization ---
+    // Allow 'member' selection, but force everyone else to 'user'
+    // This prevents hackers from creating an 'xcom' account via public API
+    let finalRole = 'user';
+    if (role === 'member') {
+      finalRole = 'member';
+    }
 
-  // Hash Password
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
+    // Hash Password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    role: finalRole,
-    phone, age, university, college, yearOfStudy, interests, committee, optionalData
-  });
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
 
-  if (user) {
-    // Optional: Auto-login
-    // const token = generateToken(user._id);
-    // res.cookie('jwt', token, ...);
-
-    res.status(201).json({
-      _id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: finalRole,
+      otp,
+      otpExpires,
+      phone, age, university, college, yearOfStudy, interests, committee, optionalData
     });
-  } else {
-    res.status(400);
-    throw new Error('Invalid user data');
+
+    const emailSent = await sendOTPEmail(user.email, otp);
+
+    if (!emailSent) {
+      return res.status(500).json({ error: "User registered, but failed to send OTP email." });
+    }
+
+    res.status(201).json({ 
+        message: "Registration successful. Please check your email for the OTP.",
+        email: user.email
+      });
+    // if (user) {
+    //   // Optional: Auto-login
+    //   // const token = generateToken(user._id);
+    //   // res.cookie('jwt', token, ...);
+
+    //   res.status(201).json({
+    //     _id: user.id,
+    //     name: user.name,
+    //     email: user.email,
+    //     role: user.role,
+    //   });
+    // } else {
+    //   res.status(400);
+    //   throw new Error('Invalid user data');
+    // }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
+
+
+const verifyEmailOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ error: "Please provide email and OTP" });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpires');
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Account is already verified" });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+
+    if (user.otpExpires < Date.now()) {
+      return res.status(400).json({ error: "OTP has expired. Please request a new one." });
+    }
+
+    user.isVerified = true;
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+    res.status(200).json({ message: "Email verified successfully! You can now login." });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 // @desc    Create a privileged user (Board, XCom, Scanner)
 // @route   POST /api/users/create-internal
@@ -359,5 +427,6 @@ module.exports = {
   registerUser,
   createUser,
   getUsers,
-  exportUsersToExcel
+  exportUsersToExcel,
+  verifyEmailOTP
 };

@@ -7,13 +7,15 @@ const {
   getUserProfile, 
   getUsers,
   createUser, // <--- Import the new function
-  exportUsersToExcel
+  exportUsersToExcel,
+  verifyEmailOTP
 } = require('../controllers/userController');
 
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // Public Routes
 router.post('/', registerUser); // Anyone can sign up as User/Member
+router.post('/verify-email', verifyEmailOTP);
 router.post('/login', loginUser);
 router.post('/logout', logoutUser);
 

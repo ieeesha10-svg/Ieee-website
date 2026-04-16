@@ -31,6 +31,11 @@ const LoginPage = () => {
     } catch (error) {
       const msg = error.response?.data?.message || 'Login failed';
       toast.error(msg);
+      if (error.response?.status === 403 && msg.includes('not verified')) {
+        setTimeout(() => {
+          navigate('/verify', { state: { email } });
+        }, 1500);
+      }
     } finally {
       setLoading(false);
     }

@@ -8,6 +8,7 @@ import SignupPage from './pages/SignupPage';
 import ProfilePage from './pages/ProfilePage';
 import BulkMailer from './pages/BulkMailer';
 import Dashboard from './pages/Dashboard';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 import PublicNavbar from './components/PublicNavbar';
 import AdminSidebar from './components/AdminSidebar';
 import { UserIcon } from 'lucide-react';
@@ -88,6 +89,7 @@ function App() {
           <Route path="/events" element={<Events />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/verify" element={<VerifyEmailPage />} />
 
           {/* === PROTECTED ROUTES (All Users) === */}
           {/* Any route inside this block requires the user to be logged in */}

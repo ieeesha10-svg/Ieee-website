@@ -52,18 +52,17 @@ const SignupPage = () => {
         yearOfStudy: Number(formData.yearOfStudy),
       };
 
-      const { data } = await api.post('/users', payload);
+      await api.post('/users', payload);
 
-      toast.success('Account created successfully!');
-      setUser(data); 
+      toast.success('Account created! Please check your email for the OTP.');
 
       setTimeout(() => {
-        navigate('/profile'); 
-      }, 1000);
+        navigate('/verify', { state: { email: formData.email } }); 
+      }, 1500);
 
     } catch (error) {
       console.log(error)
-      const msg = error.response?.data?.message || 'Registration failed. Email might already be in use.';
+      const msg = error.response?.data?.error || error.response?.data?.message || 'Registration failed. Email might already be in use.';
       toast.error(msg);
     } finally {
       setLoading(false);
