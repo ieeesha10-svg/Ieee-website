@@ -6,7 +6,7 @@ import api from '../utils/api';
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
-
+const test = 0;
     const logout = async (e) => {
         e.preventDefault();
 
