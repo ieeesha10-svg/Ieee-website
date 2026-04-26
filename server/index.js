@@ -4,15 +4,14 @@ const helmet = require("helmet");
 const connectDB = require("./config/db");
 const cookieParser = require('cookie-parser');
 require("dotenv").config();
-
-const test = "fg";
 const app = express();
 connectDB();
+const Ali = "test"
 
 app.use(helmet());
 app.use(cors({
-  origin: 'http://localhost:5173', // Must be EXACT match (no trailing slash)
-  credentials: true // <--- Required for cookies
+  origin: 'http://localhost:5173', 
+  credentials: true 
 }));
 app.use(express.json());
 app.use(cookieParser());
