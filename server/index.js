@@ -5,7 +5,6 @@ const connectDB = require("./config/db");
 const cookieParser = require('cookie-parser');
 require("dotenv").config();
 
-const test = 33;
 const app = express();
 connectDB();
 
