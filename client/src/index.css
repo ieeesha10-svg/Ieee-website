@@ -1,20 +1,118 @@
 @import "tailwindcss";
-
-@theme {
-  --color-ieee-blue: #00629B;
-  --color-ieee-dark: #002855;
-  --color-ieee-light: #E5F6FF;
-}
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Add this block */
-:root {
-  color-scheme: light;
-}
-:root.dark {
-  color-scheme: dark;
+/* -----------------------------------------------
+	The main font of the website
+	 Font Name: TT Lakes Neue Trial
+   Weights: 100 (Thin), 300 (Light), 400 (Regular),
+            500 (Medium), 700 (Bold), 900 (Black)
+   Usage: font-lakes in Tailwind @theme
+----------------------------------------------- */
+@font-face {
+  font-family: "TT Lakes Neue";
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Thin.ttf") format("truetype");
+  font-weight: 100;
 }
 
-body {
-  @apply bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-200;
+@font-face {
+  font-family: "TT Lakes Neue";
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Light.ttf") format("truetype");
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: "TT Lakes Neue";
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Regular.ttf") format("truetype");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "TT Lakes Neue";
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Medium.ttf") format("truetype");
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: "TT Lakes Neue";
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Bold.ttf") format("truetype");
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: "TT Lakes Neue";
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Black.ttf") format("truetype");
+  font-weight: 900;
+}
+
+/* -----------------------------------------------
+   The Gotham Font Family
+   Weights: 700 (Bold), 900 (Black)
+   Usage: font-gotham
+----------------------------------------------- */
+
+@font-face {
+  font-family: "Gotham";
+  src: url("./assets/fonts/gotham/Gotham-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap; /* Improves perceived performance */
+}
+
+@font-face {
+  font-family: "Gotham Black";
+  src: url("./assets/fonts/gotham/Gotham-Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+	/* Static brand colors */
+  --color-primary: #0096FF;
+  --color-primary-dark: #0077CC;
+  --color-primary-light: #33B5FF;
+
+  --color-pes-green: #6AA73E;
+  --color-pes-green-dark: #4C862B;
+  --color-pes-green-light: #8CC75CCC;
+  --color-pes-yellow: #F2C94C;
+
+  /* Semantic theme tokens */
+  --color-navbar-background: var(--navbar-background);
+  --color-main: var(--bg-main);
+  --color-foreground: var(--text-foreground);
+  --color-muted: var(--text-muted);
+  --font-lakes: "TT Lakes Neue", sans-serif;
+  --font-gotham: "Gotham", ui-sans-serif, system-ui, sans-serif;
+  --font-black: "Gotham Black", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Light mode colors */
+:root {
+  color-scheme: light;
+  
+  --navbar-background: var(--color-primary-dark);
+  --bg-main: #F2F2F2;
+  --text-foreground: #1e293b;
+  --text-muted: #4b5563;
+}
+
+/* Dark mode colors */
+:root.dark {
+  color-scheme: dark;
+  
+  --navbar-background: #1A1F2E;
+  --bg-main: #0A0E1A;
+  --text-foreground: #f1f5f9;
+  --text-muted: #9ca3af;
+}
+
+@layer base {
+	button {
+		@apply cursor-pointer;
+	}
+	
+	body {
+	  @apply font-lakes bg-main text-foreground transition-colors duration-200;
+	}
 }

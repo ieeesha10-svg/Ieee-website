@@ -45,7 +45,7 @@ const Layout = ({ children }) => {
   const isAdminRoute = location.pathname.startsWith('/dashboard');
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 flex ${isAdminRoute ? 'flex-row' : 'flex-col'}`}>
+    <div className={`min-h-screen transition-colors duration-300 flex ${isAdminRoute ? 'flex-row' : 'flex-col'}`}>
 
       {/* Sidebar (Admin Only) */}
       {isAdminRoute && <AdminSidebar />}
@@ -60,7 +60,7 @@ const Layout = ({ children }) => {
         {isAdminRoute && (
           <header className="bg-white dark:bg-gray-800 h-16 shadow-sm flex-shrink-0 flex items-center justify-between px-8 border-b border-gray-100 dark:border-gray-700">
             <h2 className="font-semibold text-gray-700 dark:text-gray-200">Dashboard</h2>
-            <Link to="/profile" className="text-gray-600 dark:text-gray-300 hover:text-ieee-blue dark:hover:text-white font-medium transition flex items-center gap-1">
+            <Link to="/profile" className="text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-white font-medium transition flex items-center gap-1">
               {/* Added optional chaining (?.) so it doesn't crash if user is somehow null here */}
               <UserIcon size={18} /> Hi, {user?.name?.split(' ')[0] || 'Admin'}
             </Link>
@@ -69,7 +69,7 @@ const Layout = ({ children }) => {
         )}
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto *:px-8">
           {children}
         </div>
       </main>
