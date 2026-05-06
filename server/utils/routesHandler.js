@@ -1,0 +1,24 @@
+const { globalErrorHandler } = require("../middleware/errorsMiddleware");
+const userRouter = require("../routes/userRoutes") ;
+
+const routersHandler = (app) => {
+  
+  app.get("/", (req, res) => res.send("Express on Vercel"));
+
+  // app.use('/api/users', require('./routes/userRoutes'));
+  app.use('/api/users', userRouter);
+
+  app.use('/api/forms', require('../routes/formRoutes'));
+
+  app.use('/api/submissions', require('../routes/submissionRoutes'));
+
+  app.use('/api/emails', require('../routes/emailRouts'));
+
+  app.all(/.*/, (req, res) => {
+    res.status(404).json({ message: "This router is not exist" });
+  });
+
+  app.use(globalErrorHandler);
+};
+
+module.exports = {routersHandler}

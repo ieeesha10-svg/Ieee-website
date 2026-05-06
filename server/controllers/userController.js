@@ -3,7 +3,8 @@ const Submission = require('../models/SubmissionModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const ExcelJS = require('exceljs');
-const sendOTPEmail = require('../utils/sendEmail.js')
+const sendOTPEmail = require('../utils/sendEmail.js');
+const { catchAsync, AppError } = require('../middleware/errorsMiddleware.js');
 // --- HELPER: Generate JWT Token ---
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -18,41 +19,35 @@ const generateToken = (id) => {
 // @desc    Auth user & get token (Login)
 // @route   POST /api/users/login
 // @access  Public
-const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+const loginUser = catchAsync(async (req, res) => {
+  const { email, password } = req.body;
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
-    
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    if (!user.isVerified) {
-      return res.status(403).json({ 
-        message: 'Account not verified. Please check your email for the OTP.' 
-      });
-    }
-
-    const token = generateToken(user._id);
-    res.cookie('jwt', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development', // HTTPS in production
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-    });
-
-    res.json({
-      _id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      committee: user.committee
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+  
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    throw new AppError('Invalid email or password', 401);
   }
-};
+
+  if (!user.isVerified) {
+    throw new AppError('Account not verified. Please check your email for the OTP.', 403);
+  }
+
+  const token = generateToken(user._id);
+  res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV !== 'development', // HTTPS in production
+    sameSite: 'strict',
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+  });
+
+  res.json({
+    _id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    committee: user.committee
+  });
+});
 
 // @desc    Logout user / clear cookie
 // @route   POST /api/users/logout
