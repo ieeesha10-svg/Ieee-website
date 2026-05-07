@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 // Added Menu and X to the imports
-import { User as UserIcon, LogOut as LogOutIcon, Home as HomeIcon, Calendar, UserPlus, Menu, X } from 'lucide-react';
+import { User as UserIcon, LogOut as LogOutIcon, Menu, X } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../context/AuthContext';
@@ -58,7 +58,7 @@ const PublicNavbar = () => {
 
     return (
         <nav className="bg-navbar-background shadow-md sticky top-0 z-50 transition-colors duration-300">
-            <div className="max-w-7xl mx-auto px-4 py-1 h-full flex items-center justify-between">
+            <div className="max-w-7xl mx-auto px-4 py-2 h-full flex items-center justify-between">
             <Toaster position="top-center" />
 
                 {/* Logo */}
@@ -69,7 +69,10 @@ const PublicNavbar = () => {
                 {/* --- DESKTOP MENU (Hidden on small screens) --- */}
                 <div className="hidden md:flex items-center gap-6">
                 	{NAV_LINKS.map((nav_link, index) => {
-                		return <a key={index} href={nav_link.href.startsWith('#') && !isHome ? '/' + nav_link.href : nav_link.href} className="text-white hover:text-primary-light transition flex items-center">
+										return <a key={index}
+											href={nav_link.href.startsWith('#') && !isHome ? '/' + nav_link.href : nav_link.href}
+											className="text-lg text-white hover:text-primary-light transition flex items-center"
+										>
                         {nav_link.label}
                     </a>
                  	})}
@@ -92,7 +95,7 @@ const PublicNavbar = () => {
                         </>
                     ) : (
                         <>
-                            <Link to="/signup" className="px-6 py-3 bg-linear-to-r from-primary-dark to-primary-light text-white rounded-lg hover:bg-primary-dark/90 transition shadow-lg font-light">
+                            <Link to="/signup" className="px-6 py-3 bg-linear-to-r from-primary-dark to-primary-light hover:from-primary-light hover:to-primary-dark text-white rounded-lg transition duration-600 shadow-lg font-light">
                                 Join Now
                             </Link>
                         </>
@@ -114,10 +117,10 @@ const PublicNavbar = () => {
 
             {/* --- MOBILE DROPDOWN MENU --- */}
             {isMobileMenuOpen && (
-                <div className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-800 shadow-xl border-b border-gray-100 dark:border-gray-700 flex flex-col px-4 py-4 gap-4 z-40">
+                <div className="md:hidden absolute top-16 left-0 w-full bg-navbar-background shadow-xl border-b border-gray-100 dark:border-gray-700 flex flex-col px-4 py-4 mt-4 gap-4 z-40">
 
 	               	{NAV_LINKS.map((nav_link, index) => {
-	               		return <a key={index} href={isHome ? nav_link.href : '/' + nav_link.href} className="text-white hover:text-primary-light transition flex items-center">
+	               		return <a key={index} href={nav_link.href.startsWith('#') && !isHome ? '/' + nav_link.href : nav_link.href} onClick={closeMenu} className="text-foreground hover:text-primary-light transition flex items-center">
 	                       {nav_link.label}
 	                   </a>
                 	})}
@@ -140,12 +143,9 @@ const PublicNavbar = () => {
                         </>
                     ) : (
                         <>
-                            <Link to="/login" onClick={closeMenu} className="text-gray-600 dark:text-gray-300 font-medium">
-                                Login
-                            </Link>
-                            <Link to="/signup" onClick={closeMenu} className="flex items-center gap-2 text-primary dark:text-sky-400 font-bold">
-                                <UserPlus size={18} /> Sign Up
-                            </Link>
+	                        <Link to="/signup" className="text-lg px-6 py-3 w-fit bg-primary-linear text-white rounded-lg shadow-lg font-light">
+	                            Join Now
+	                        </Link>
                         </>
                     )}
 
