@@ -1,5 +1,7 @@
 const dashboardRouter = require("../controllers/statsController");
+const { authorize, protect } = require("../middleware/authMiddleware");
 const { globalErrorHandler } = require("../middleware/errorsMiddleware");
+const crewRouter = require("../routes/crewRoutes");
 const userRouter = require("../routes/userRoutes") ;
 
 const routersHandler = (app) => {
@@ -9,7 +11,9 @@ const routersHandler = (app) => {
   // app.use('/api/users', require('./routes/userRoutes'));
   app.use('/api/users', userRouter);
 
-  app.use('/api/states', dashboardRouter);
+  app.use('/api/states', protect, authorize('xcom','board'), dashboardRouter);
+
+  app.use('/api/crew', protect, authorize('xcom','board'), crewRouter);
 
   app.use('/api/forms', require('../routes/formRoutes'));
 

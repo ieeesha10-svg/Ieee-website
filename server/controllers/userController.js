@@ -129,30 +129,17 @@ const registerUser = async (req, res) => {
     }
 
     res.status(201).json({ 
-        message: "Registration successful. Please check your email for the OTP.",
-        email: user.email
-      });
-    // if (user) {
-    //   // Optional: Auto-login
-    //   // const token = generateToken(user._id);
-    //   // res.cookie('jwt', token, ...);
-
-    //   res.status(201).json({
-    //     _id: user.id,
-    //     name: user.name,
-    //     email: user.email,
-    //     role: user.role,
-    //   });
-    // } else {
-    //   res.status(400);
-    //   throw new Error('Invalid user data');
-    // }
+      message: "Registration successful. Please check your email for the OTP.",
+      email: user.email
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-
+// @desc    Verify Email OTP
+// @route   POST /api/users/verify-email
+// @access  Public
 const verifyEmailOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
