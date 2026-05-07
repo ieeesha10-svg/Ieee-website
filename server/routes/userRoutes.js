@@ -14,7 +14,7 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // Public Routes
-userRouter.post('/', registerUser); // Anyone can sign up as User/Member
+userRouter.post('/register', registerUser); // Anyone can sign up as User/Member
 userRouter.post('/verify-email', verifyEmailOTP);
 userRouter.post('/login', loginUser);
 userRouter.post('/logout', logoutUser);
@@ -23,7 +23,7 @@ userRouter.post('/logout', logoutUser);
 userRouter.get('/profile', protect, getUserProfile);
 
 // Admin / XCom Routes
-userRouter.get('/', protect, authorize('xcom', 'board'), getUsers); 
+userRouter.get('/all', protect, authorize('xcom', 'board'), getUsers); 
 
 // --- THE NEW SECURE ROUTE ---
 // Only 'xcom' can create other admins/board members
