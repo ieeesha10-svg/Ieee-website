@@ -82,6 +82,9 @@
   --color-main: var(--bg-main);
   --color-foreground: var(--text-foreground);
   --color-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-card: var(--bg-card);
+  
   --font-lakes: "TT Lakes Neue", sans-serif;
   --font-gotham: "Gotham", ui-sans-serif, system-ui, sans-serif;
   --font-black: "Gotham Black", ui-sans-serif, system-ui, sans-serif;
@@ -95,6 +98,8 @@
   --bg-main: #F2F2F2;
   --text-foreground: #1e293b;
   --text-muted: #4b5563;
+  --border: #ffffff33;
+  --bg-card: var(--color-main);
 }
 
 /* Dark mode colors */
@@ -105,6 +110,8 @@
   --bg-main: #0A0E1A;
   --text-foreground: #f1f5f9;
   --text-muted: #9ca3af;
+  --border: #222936;
+  --bg-card: #1A1F2E;
 }
 
 @layer base {
@@ -115,4 +122,59 @@
 	body {
 	  @apply font-lakes bg-main text-foreground transition-colors duration-200;
 	}
+	
+	body::-webkit-scrollbar {
+	  width: 14px;
+	}
+	
+	body::-webkit-scrollbar-track {
+	  background: calc(var(--color-main)/10);
+	  border-radius: 3px;
+	}
+	
+	body::-webkit-scrollbar-thumb {
+	  background: var(--color-primary);
+	  border-radius: 3px;
+	}
+	
+	html {
+  	scroll-behavior: smooth;
+	}
+
+}
+
+/* Utility classes that we use across the app */
+@layer utilities {
+	/* Primary Linear Gradient */
+  .bg-primary-linear {
+    background: linear-gradient(
+      90deg, 
+      #0096FF 0%, #0699FF 8.33%, #0D9BFF 16.67%, #129EFF 25%, 
+      #17A1FF 33.33%, #1BA3FF 41.67%, #1FA6FF 50%, #23A8FF 58.33%, 
+      #26ABFF 66.67%, #2AADFF 75%, #2DB0FF 83.33%, #30B2FF 91.67%, 
+      #33B5FF 100%
+    );
+  }
+
+  /* Linear Gradient (Secondary/Brand) */
+  .bg-brand-linear {
+    background: linear-gradient(
+      135deg, 
+      #0077CC 0%, #0079D0 7.69%, #007CD4 15.38%, #007ED8 23.08%, 
+      #0080DB 30.77%, #0083DF 38.46%, #0085E3 46.15%, #0088E7 53.85%, 
+      #008AEB 61.54%, #008CEF 69.23%, #008FF3 76.92%, #0091F7 84.62%, 
+      #0094FB 92.31%, #0096FF 100%
+    );
+  }
+}
+
+/* 
+   ACCESSIBILITY: 
+   If a user has "Reduce Motion" enabled in their system settings, 
+   we disable smooth scrolling to prevent motion sickness or discomfort.
+*/
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
