@@ -3,7 +3,7 @@ const Submission = require('../models/SubmissionModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const ExcelJS = require('exceljs');
-const sendOTPEmail = require('../utils/sendEmail.js');
+const {sendOTPEmail} = require('../utils/sendEmail.js');
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware.js');
 // --- HELPER: Generate JWT Token ---
 const generateToken = (id) => {
