@@ -42,7 +42,7 @@ dashboardRouter.get(
     // Emails Sent
     const emailsSent = await EmailLog.countDocuments();
 
-    // Top Active Members (based on scans)
+    // Top Active Members
     const topActiveMembers = await Submission.aggregate([
       // Only get submissions where:
       // - user attended the activity
