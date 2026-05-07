@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+  <p>Dear <strong>{{userName}}</strong>,</p>
+
+  <p>This email confirms your registration for <strong>{{eventTitle}}</strong>.</p>
+
+  <p>Please bring your QR code with you as it is required for entry.</p>
+
+  <div style="margin: 20px 0; text-align: center;">
+    <img
+      src="cid:qr-code-image"
+      alt="QR Code"
+      style="width:200px; height:200px; border:1px solid #ddd; padding:5px;"
+    />
+    <p style="font-size:14px; color:#555; font-family:monospace;">
+      Ticket ID: {{ticketCode}}
+    </p>
+  </div>
+
+  <p>Should you have any questions, please do not hesitate to contact us.</p>
+  <p>Best regards,<br>IEEE Team</p>
+</div>
+</html>
