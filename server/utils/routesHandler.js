@@ -1,12 +1,15 @@
+const dashboardRouter = require("../controllers/statsController");
 const { globalErrorHandler } = require("../middleware/errorsMiddleware");
 const userRouter = require("../routes/userRoutes") ;
 
 const routersHandler = (app) => {
   
-  app.get("/", (req, res) => res.send("Express on Vercel"));
+  app.get("/", (req, res) => res.json({ message: "Welcome to the API" }));
 
   // app.use('/api/users', require('./routes/userRoutes'));
   app.use('/api/users', userRouter);
+
+  app.use('/api/states', dashboardRouter);
 
   app.use('/api/forms', require('../routes/formRoutes'));
 
