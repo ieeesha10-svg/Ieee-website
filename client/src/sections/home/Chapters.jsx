@@ -24,7 +24,7 @@ const CHAPTERS_DATA = [
     title: "Power & Energy",
     icon: FlashIcon,
     branch: "IEEE PES",
-    body: "Building intelligent robots and exploring automation technologies.",
+    body: "Exploring the future of electrical power, sustainable energy systems, and renewable technologies for a greener planet.",
     activeMembers: 120,
 		bgColor: {from: '#F0B100', to: '#FF6900'},
   },
@@ -32,7 +32,7 @@ const CHAPTERS_DATA = [
     title: "Robotics & Automation",
     icon: BotIcon,
     branch: "IEEE RAS",
-    body: "Focusing on renewable energy systems and power grid innovation.",
+    body: "Merging technical creativity with engineering to design, build, and innovate the next generation of intelligent machines.",
     activeMembers: 100,
     bgColor: {from: '#901BED', to: '#4814C2'},
   },
@@ -40,7 +40,7 @@ const CHAPTERS_DATA = [
     title: "Communications",
     icon: GlobeIcon,
     branch: "IEEE ComSoc",
-    body: "Merging technology with healthcare through medical device projects.",
+    body: "Connecting the world through advanced wireless networking, telecommunications, and AI-driven communication systems.",
     activeMembers: 90,
     bgColor: {from: '#00C950', to: '#00BC7D'},
   },
@@ -48,7 +48,7 @@ const CHAPTERS_DATA = [
     title: "Women in Engineering",
     icon: HospitalIcon,
     branch: "IEEE EMBS",
-    body: "Empowering women in STEM through mentorship and community events.",
+    body: "Bridging the gap between engineering and healthcare to innovate life-saving medical technologies and biological sciences.",
     activeMembers: 80,
     bgColor: {from: '#FB2C36', to: '#FF2056'},
   },
@@ -59,7 +59,7 @@ export default function Chapters() {
 	return <section id="chapters" className="relative min-h-screen overflow-hidden py-20 bg-contain" style={{ backgroundImage: `url(${SectionBackground})`}}>
 		{/* Overlay */}
 		<div className='absolute inset-0 bg-primary/97 dark:bg-main/98' />
-		
+
 		{/* Section Header & Text */}
 		<div className="relative z-10">
 			<div className="text-center">
@@ -72,9 +72,9 @@ export default function Chapters() {
 				/>
 				<p className="text-white text-2xl mt-4">Explore our diverse technical chapters, each focus on advancing specialized fields of technology.</p>
 			</div>
-	
+
 			{/* Cards */}
-			<div className="max-w-7xl mx-auto mt-20 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+			<div className="max-w-7xl mx-auto mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 				{CHAPTERS_DATA.map((chapter, index) => {
 					return <ChapterCard key={index}
 						title={chapter.title}
