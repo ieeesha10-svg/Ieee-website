@@ -24,25 +24,18 @@ export default function FlagshipEvents() {
   return (
     <section
       id="flagship-events"
-      // قللنا البادينج على الموبايل py-12 وكبرناه على الديسكتوب lg:py-20
-      className="w-full py-12 lg:py-20 px-4 lg:px-6 bg-[#F2F2F2] dark:bg-[#0A0E1A] transition-colors duration-300"
+      className="w-full py-12 lg:py-20 px-4 lg:px-6 bg-main transition-colors duration-300"
     >
       <div className="max-w-[1280px] mx-auto">
         <div className="flex flex-col items-center mb-12 lg:mb-20">
-          {/* صغرنا الخط على الموبايل لـ text-3xl */}
           <h2 className="text-3xl md:text-4xl lg:text-[72px] font-black uppercase text-center leading-tight">
-            <span className="text-[#1A1A1A] dark:text-[#F2F2F2] transition-colors duration-300">
+            <span className="text-foreground transition-colors duration-300">
               FLAGSHIP{" "}
             </span>
-            <span className="text-[#0077CC]">EVENTS</span>
+            <span className="text-primary-dark">EVENTS</span>
           </h2>
 
-          <div
-            className="mt-3 lg:mt-4 rounded-full w-[100px] lg:w-[128px] h-[4px] lg:h-[6px]"
-            style={{
-              background: "linear-gradient(to right, #0077CC, #33B5FF)",
-            }}
-          />
+          <div className="mt-3 lg:mt-4 rounded-full w-[100px] lg:w-[128px] h-[4px] lg:h-[6px] bg-linear-to-r from-primary-dark to-primary-light" />
         </div>
 
         <div className="flex flex-col lg:flex-row items-start justify-center gap-10 lg:gap-8">
