@@ -10,37 +10,43 @@
 ----------------------------------------------- */
 @font-face {
   font-family: "TT Lakes Neue";
-  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Thin.ttf") format("truetype");
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Thin.ttf")
+    format("truetype");
   font-weight: 100;
 }
 
 @font-face {
   font-family: "TT Lakes Neue";
-  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Light.ttf") format("truetype");
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Light.ttf")
+    format("truetype");
   font-weight: 300;
 }
 
 @font-face {
   font-family: "TT Lakes Neue";
-  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Regular.ttf") format("truetype");
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Regular.ttf")
+    format("truetype");
   font-weight: 400;
 }
 
 @font-face {
   font-family: "TT Lakes Neue";
-  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Medium.ttf") format("truetype");
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Medium.ttf")
+    format("truetype");
   font-weight: 500;
 }
 
 @font-face {
   font-family: "TT Lakes Neue";
-  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Bold.ttf") format("truetype");
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Bold.ttf")
+    format("truetype");
   font-weight: 700;
 }
 
 @font-face {
   font-family: "TT Lakes Neue";
-  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Black.ttf") format("truetype");
+  src: url("./assets/fonts/tt_lakes/TT Lakes Neue Trial Black.ttf")
+    format("truetype");
   font-weight: 900;
 }
 
@@ -67,15 +73,15 @@
 }
 
 @theme {
-	/* Static brand colors */
-  --color-primary: #0096FF;
-  --color-primary-dark: #0077CC;
-  --color-primary-light: #33B5FF;
+  /* Static brand colors */
+  --color-primary: #0096ff;
+  --color-primary-dark: #0077cc;
+  --color-primary-light: #33b5ff;
 
-  --color-pes-green: #6AA73E;
-  --color-pes-green-dark: #4C862B;
-  --color-pes-green-light: #8CC75CCC;
-  --color-pes-yellow: #F2C94C;
+  --color-pes-green: #6aa73e;
+  --color-pes-green-dark: #4c862b;
+  --color-pes-green-light: #8cc75ccc;
+  --color-pes-yellow: #f2c94c;
 
   /* Semantic theme tokens */
   --color-navbar-background: var(--navbar-background);
@@ -84,7 +90,7 @@
   --color-muted: var(--text-muted);
   --color-border: var(--border);
   --color-card: var(--bg-card);
-  
+
   --font-lakes: "TT Lakes Neue", sans-serif;
   --font-gotham: "Gotham", ui-sans-serif, system-ui, sans-serif;
   --font-black: "Gotham Black", ui-sans-serif, system-ui, sans-serif;
@@ -93,9 +99,9 @@
 /* Light mode colors */
 :root {
   color-scheme: light;
-  
+
   --navbar-background: var(--color-primary-dark);
-  --bg-main: #F2F2F2;
+  --bg-main: #f2f2f2;
   --text-foreground: #1e293b;
   --text-muted: #4b5563;
   --border: #ffffff33;
@@ -105,65 +111,83 @@
 /* Dark mode colors */
 :root.dark {
   color-scheme: dark;
-  
-  --navbar-background: #1A1F2E;
-  --bg-main: #0A0E1A;
+
+  --navbar-background: #1a1f2e;
+  --bg-main: #0a0e1a;
   --text-foreground: #f1f5f9;
   --text-muted: #9ca3af;
   --border: #222936;
-  --bg-card: #1A1F2E;
+  --bg-card: #1a1f2e;
 }
 
 @layer base {
-	button {
-		@apply cursor-pointer;
-	}
-	
-	body {
-	  @apply font-lakes bg-main text-foreground transition-colors duration-200;
-	}
-	
-	body::-webkit-scrollbar {
-	  width: 14px;
-	}
-	
-	body::-webkit-scrollbar-track {
-	  background: calc(var(--color-main)/10);
-	  border-radius: 3px;
-	}
-	
-	body::-webkit-scrollbar-thumb {
-	  background: var(--color-primary);
-	  border-radius: 3px;
-	}
-	
-	html {
-  	scroll-behavior: smooth;
-	}
+  button {
+    @apply cursor-pointer;
+  }
 
+  body {
+    @apply font-lakes bg-main text-foreground transition-colors duration-200;
+  }
+
+  body::-webkit-scrollbar {
+    width: 14px;
+  }
+
+  body::-webkit-scrollbar-track {
+    background: calc(var(--color-main) / 10);
+    border-radius: 3px;
+  }
+
+  body::-webkit-scrollbar-thumb {
+    background: var(--color-primary);
+    border-radius: 3px;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 /* Utility classes that we use across the app */
 @layer utilities {
-	/* Primary Linear Gradient */
+  /* Primary Linear Gradient */
   .bg-primary-linear {
     background: linear-gradient(
-      90deg, 
-      #0096FF 0%, #0699FF 8.33%, #0D9BFF 16.67%, #129EFF 25%, 
-      #17A1FF 33.33%, #1BA3FF 41.67%, #1FA6FF 50%, #23A8FF 58.33%, 
-      #26ABFF 66.67%, #2AADFF 75%, #2DB0FF 83.33%, #30B2FF 91.67%, 
-      #33B5FF 100%
+      90deg,
+      #0096ff 0%,
+      #0699ff 8.33%,
+      #0d9bff 16.67%,
+      #129eff 25%,
+      #17a1ff 33.33%,
+      #1ba3ff 41.67%,
+      #1fa6ff 50%,
+      #23a8ff 58.33%,
+      #26abff 66.67%,
+      #2aadff 75%,
+      #2db0ff 83.33%,
+      #30b2ff 91.67%,
+      #33b5ff 100%
     );
   }
 
   /* Linear Gradient (Secondary/Brand) */
   .bg-brand-linear {
     background: linear-gradient(
-      135deg, 
-      #0077CC 0%, #0079D0 7.69%, #007CD4 15.38%, #007ED8 23.08%, 
-      #0080DB 30.77%, #0083DF 38.46%, #0085E3 46.15%, #0088E7 53.85%, 
-      #008AEB 61.54%, #008CEF 69.23%, #008FF3 76.92%, #0091F7 84.62%, 
-      #0094FB 92.31%, #0096FF 100%
+      135deg,
+      #0077cc 0%,
+      #0079d0 7.69%,
+      #007cd4 15.38%,
+      #007ed8 23.08%,
+      #0080db 30.77%,
+      #0083df 38.46%,
+      #0085e3 46.15%,
+      #0088e7 53.85%,
+      #008aeb 61.54%,
+      #008cef 69.23%,
+      #008ff3 76.92%,
+      #0091f7 84.62%,
+      #0094fb 92.31%,
+      #0096ff 100%
     );
   }
 }
