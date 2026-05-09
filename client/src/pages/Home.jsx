@@ -6,6 +6,7 @@ import FlagshipEvents from "../sections/home/FlagshipEvents";
 import Chairpersons from "../sections/home/Chairpersons";
 import Achievements from "../sections/home/Achievements";
 import JoinUs from "../components/JoinUs";
+import Footer from "../components/Footer";
 
 function Home() {
   return (
@@ -17,6 +18,7 @@ function Home() {
       <Achievements />
       <Chairpersons />
       <JoinUs />
+      <Footer />
     </>
   );
 }

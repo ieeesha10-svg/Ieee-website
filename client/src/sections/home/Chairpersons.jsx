@@ -230,7 +230,12 @@ export default function Team() {
             <img
               src="/icons/Slack.png"
               alt="Slack"
-              className="h-[35px] lg:h-12.5 dark:invert object-contain"
+              className="h-[35px] lg:h-12.5 block dark:hidden"
+            />
+            <img
+              src="/icons/SlackDark.png"
+              alt="Slack"
+              className="h-[35px] lg:h-12.5 hidden dark:block"
             />
             {/* Google */}
             <img
