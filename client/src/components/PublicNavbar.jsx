@@ -22,7 +22,7 @@ const NAV_LINKS = [
   },
   {
     label: "Events",
-    href: "#flagship-events",
+    href: "#events",
   },
   {
     label: "Contact",

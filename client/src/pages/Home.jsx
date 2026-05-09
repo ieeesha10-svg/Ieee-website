@@ -3,6 +3,7 @@ import Hero from "../sections/home/Hero";
 import Chapters from "../sections/home/Chapters";
 import About from "../sections/home/About";
 import FlagshipEvents from "../sections/home/FlagshipEvents";
+import Chairpersons from "../sections/home/Chairpersons";
 import Achievements from "../sections/home/Achievements";
 
 function Home() {
@@ -13,6 +14,7 @@ function Home() {
       <Chapters />
       <FlagshipEvents />
       <Achievements />
+      <Chairpersons />
     </>
   );
 }
