@@ -69,7 +69,7 @@ const Layout = ({ children }) => {
         )}
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-auto *:px-8">
+        <div className="flex-1 overflow-auto">
           {children}
         </div>
       </main>

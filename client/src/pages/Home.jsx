@@ -7,19 +7,21 @@ import Chairpersons from "../sections/home/Chairpersons";
 import Achievements from "../sections/home/Achievements";
 import JoinUs from "../components/JoinUs";
 import Footer from "../components/Footer";
+import MembershipBenefits from "../components/MembershipBenefits";
 
 function Home() {
   return (
-    <>
+    <div className="*:px-4 md:*:px-8">
       <Hero />
       <About />
       <Chapters />
       <FlagshipEvents />
       <Achievements />
       <Chairpersons />
+      <MembershipBenefits />
       <JoinUs />
       <Footer />
-    </>
+    </div>
   );
 }
 

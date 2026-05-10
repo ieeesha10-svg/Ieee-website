@@ -99,7 +99,7 @@ export default function Team() {
         {/* Title */}
         <h2 className="text-[36px] lg:text-[72px] font-gotham font-medium text-[#1A1A1A] dark:text-[#F2F2F2] mb-1 lg:mb-4 text-center leading-[36px] lg:leading-tight transition-colors duration-300">
           Meet Our <br className="lg:hidden" />
-          <span className="text-primary-light">Chairpersons</span>
+          <span className="text-primary-dark">Chairpersons</span>
         </h2>
 
         {/* Decorative Line */}
