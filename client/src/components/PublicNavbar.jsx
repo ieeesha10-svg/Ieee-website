@@ -56,7 +56,7 @@ const PublicNavbar = () => {
   const closeMenu = () => setIsMobileMenuOpen(false);
 
   return (
-    <nav className="bg-navbar-background shadow-md sticky top-0 z-50 transition-colors duration-300">
+    <nav className="bg-navbar-background lg:bg-navbar-background/88 dark:lg:bg-navbar-background/60 lg:backdrop-blur-xl shadow-md sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 py-2 h-full flex items-center justify-between">
         <Toaster position="top-center" />
 
