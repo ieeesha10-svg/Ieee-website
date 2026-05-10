@@ -5,6 +5,7 @@ const {
   logoutUser, 
   registerUser, 
   getUserProfile, 
+  updateUserProfile,
   getUsers,
   createUser, // <--- Import the new function
   exportUsersToExcel,
@@ -21,6 +22,9 @@ userRouter.post('/logout', logoutUser);
 
 // Protected Routes
 userRouter.get('/profile', protect, getUserProfile);
+
+// Edit Profile
+userRouter.put('/profile/:id', protect, updateUserProfile);
 
 // Admin / XCom Routes
 userRouter.get('/all', protect, authorize('xcom', 'board'), getUsers); 
