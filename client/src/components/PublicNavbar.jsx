@@ -2,7 +2,15 @@ import React, { useState } from "react";
 import {
   User as UserIcon,
   LogOut as LogOutIcon,
-  Menu, X, Home, Info, MapPin, Calendar, Mail, ChevronRight, Sparkles
+  Menu,
+  X,
+  Home,
+  Info,
+  MapPin,
+  Calendar,
+  Mail,
+  ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
@@ -157,7 +165,7 @@ const PublicNavbar = () => {
         {/* Nav Links */}
         <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-2">
           {NAV_LINKS.map((link, index) => {
-            const Icon = link.icon
+            const Icon = link.icon;
             return (
               <a
                 key={index}
@@ -178,9 +186,12 @@ const PublicNavbar = () => {
                     {link.badge}
                   </span>
                 )}
-                <ChevronRight size={16} className="text-primary-light transition" />
+                <ChevronRight
+                  size={16}
+                  className="text-primary-light transition"
+                />
               </a>
-            )
+            );
           })}
         </div>
 
@@ -201,20 +212,23 @@ const PublicNavbar = () => {
               </div>
             </Link>
           ) : (
-	          <div className="relative backdrop-blur-2xl overflow-hidden rounded-xl p-4 border border-border 
+            <div
+              className="relative backdrop-blur-2xl overflow-hidden rounded-xl p-4 border border-border 
 	            bg-linear-to-r from-primary to-primary-light 
 	            dark:bg-none dark:bg-[#222936]/20 
 	            text-center"
-						>														
+            >
               <div className="flex gap-4 mb-2">
                 <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary-linear">
                   <Sparkles size={18} />
                 </span>
-								<div>
-									<h3 className="text-base font-bold">Ready to Join?</h3>
-									<p className="text-xs text-white/50 mt-0.5 mb-4">Start your journey today</p>
-								</div>
-							</div>
+                <div>
+                  <h3 className="text-base font-bold">Ready to Join?</h3>
+                  <p className="text-xs text-white/50 mt-0.5 mb-4">
+                    Start your journey today
+                  </p>
+                </div>
+              </div>
               <Link
                 to="/signup"
                 onClick={closeMenu}
