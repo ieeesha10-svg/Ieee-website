@@ -65,15 +65,28 @@ const logoutUser = (req, res) => {
 // @access  Private
 const getUserProfile = async (req, res) => {
   // req.user is set by the 'protect' middleware
-  const user = {
-    _id: req.user._id,
-    name: req.user.name,
-    email: req.user.email,
-    role: req.user.role,
-    university: req.user.university,
-    committee: req.user.committee
-  };
-  res.json(user);
+  const user = await User.findById(req.user.id).select('-password');
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  res.json({
+    success: true,
+    user: {
+      _id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      committee: user.committee,
+      phone: user.phone,
+      age: user.age,
+      university: user.university,
+      college: user.college,
+      yearOfStudy: user.yearOfStudy,
+      interests: user.interests,
+      optionalData: user.optionalData
+    }
+  });
 };
 
 // ==========================================
@@ -400,6 +413,86 @@ const exportUsersToExcel = async (req, res) => {
   }
 };
 
+// @desc    Update User Profile (Self-Service)
+// @route   PUT /api/users/:id
+// @access  Private (User can only update their own profile)
+const updateUserProfile = catchAsync(async (req, res) => {
+  if(req.user.id != req.params.id){
+    throw new AppError('HACKER : You can only update your own profile', 403);
+  }
+  const user = await User.findById(req.user.id);
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+  // Check if any restricted fields are being updated
+  // We use a flag instead of throwing immediately to check all fields and provide a comprehensive error message if needed
+  const hasRestrictedField = false;
+  restrictedFields.forEach((field) => {
+    if (req.body[field] !== undefined) {
+      hasRestrictedField = true;
+    } 
+  });
+
+  if (hasRestrictedField) {
+    throw new AppError("You are not allowed to update restricted fields", 403);
+  }
+  // Only allow updates to specific fields
+  const allowedUpdates = [
+    "name",
+    "phone",
+    "age",
+    "university",
+    "college",
+    "yearOfStudy",
+    "interests",
+    "committee",
+    "optionalData",
+  ];
+  
+  const updates = {};
+  allowedUpdates.forEach((field) => {
+    if (req.body[field] !== undefined) {
+      updates[field] = req.body[field];
+    }
+  });
+
+  const restrictedFields = [
+    "email",
+    "password",
+    "role",
+    "isVerified",
+    "otp",
+    "otpExpires",
+  ];
+
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user.id,
+    updates,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  res.status(200).json({
+    success: true,
+    user: {
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      phone: updatedUser.phone,
+      age: updatedUser.age,
+      university: updatedUser.university,
+      college: updatedUser.college,
+      yearOfStudy: updatedUser.yearOfStudy,
+      interests: updatedUser.interests,
+      committee: updatedUser.committee,
+      optionalData: updatedUser.optionalData,
+    },
+  });
+})
 
 
 module.exports = {
@@ -410,5 +503,6 @@ module.exports = {
   createUser,
   getUsers,
   exportUsersToExcel,
-  verifyEmailOTP
+  verifyEmailOTP,
+  updateUserProfile
 };
