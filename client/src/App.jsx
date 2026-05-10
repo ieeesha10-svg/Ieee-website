@@ -1,18 +1,24 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, Outlet } from 'react-router-dom';
-import ThemeToggle from './components/ThemeToggle';
+import { useAuth } from './context/AuthContext';
+
+// Icons
+import { UserIcon } from 'lucide-react';
+// Pages
 import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import ProfilePage from './pages/ProfilePage';
+import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import Events from './pages/Events';
-import SignupPage from './pages/SignupPage';
-import ProfilePage from './pages/ProfilePage';
+import EventRegistration from './pages/EventRegistration';
 import BulkMailer from './pages/BulkMailer';
-import Dashboard from './pages/Dashboard';
-import VerifyEmailPage from './pages/VerifyEmailPage';
+// Components
 import PublicNavbar from './components/PublicNavbar';
 import AdminSidebar from './components/AdminSidebar';
-import { UserIcon } from 'lucide-react';
-import { useAuth } from './context/AuthContext';
+import Footer from './components/Footer';
+import ThemeToggle from './components/ThemeToggle';
 
 // --- 1. ROUTE GUARD COMPONENT ---
 const ProtectedRoute = ({ requireAdmin = false }) => {
@@ -74,6 +80,8 @@ const Layout = ({ children }) => {
         </div>
       </main>
 
+      {/* Footer (Public Only, except auth pages) */}
+      {!isAdminRoute && !['/login', '/signup', '/verify'].includes(location.pathname) && <Footer />}
     </div>
   );
 };
@@ -86,7 +94,8 @@ function App() {
         <Routes>
           {/* === PUBLIC ROUTES === */}
           <Route path="/" element={<Home />} />
-          <Route path="/events" element={<Events />} />
+					<Route path="/events" element={<Events />} />
+					<Route path="/events/:id" element={<EventRegistration />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify" element={<VerifyEmailPage />} />
