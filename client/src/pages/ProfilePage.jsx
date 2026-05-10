@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
+import api from "../utils/api";
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -18,25 +19,23 @@ export default function ProfilePage() {
   const [originalData, setOriginalData] = useState({});
 
   useEffect(() => {
-    // محاكاة جلب البيانات من الـ API
     const fetchUserData = async () => {
       try {
-        setTimeout(() => {
-          const fetchedData = {
-            fullName: "Ahmed Ali",
-            email: "ahmed@email.com",
-            phone: "+20 100 000 0000",
-            role: "Student",
-            age: "19",
-            university: "Shorouk Academy",
-            college: "Computer Science",
-            aboutMe:
-              "I am passionate about software engineering and web development.",
-          };
+        const { data } = await api.get("/users/profile");
 
-          setUserData(fetchedData);
-          setOriginalData(fetchedData);
-        }, 500);
+        const fetchedData = {
+          fullName: data.name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          role: data.role || "Student",
+          age: data.age || "",
+          university: data.university || "Shorouk Academy",
+          college: data.college || "",
+          aboutMe: data.aboutMe || "",
+        };
+
+        setUserData(fetchedData);
+        setOriginalData(fetchedData);
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
@@ -58,12 +57,20 @@ export default function ProfilePage() {
     setIsEditing(false);
   };
 
-  // 4. دالة الحفظ: تبعت للباك إند وتخلي الداتا الجديدة هي النسخة الأصلية
+  // 2. دالة الحفظ وإرسال التعديلات للباك إند
   const handleSave = async () => {
     try {
-      console.log("Data saved successfully:", userData);
+      const { data } = await api.put("/users/profile", {
+        name: userData.fullName,
+        phone: userData.phone,
+        age: userData.age,
+        university: userData.university,
+        college: userData.college,
+        aboutMe: userData.aboutMe,
+      });
 
-      // بعد ما الحفظ ينجح، نخلي التعديلات الجديدة هي الـ Backup الجديد
+      console.log("Data saved successfully to backend:", data);
+
       setOriginalData(userData);
       setIsEditing(false);
     } catch (error) {
@@ -73,7 +80,6 @@ export default function ProfilePage() {
 
   return (
     <div className="relative w-full min-h-screen py-12 px-4 lg:px-20 bg-[#F2F2F2] dark:bg-[#0A0E1A] flex justify-center items-center transition-colors duration-300 overflow-hidden">
-      {/* Background Image Layer */}
       <div
         className="absolute inset-0 w-full h-full opacity-5 pointer-events-none transition-opacity duration-300"
         style={{
@@ -84,9 +90,7 @@ export default function ProfilePage() {
         }}
       />
 
-      {/* Main Container */}
       <div className="relative z-10 w-full max-w-[1760px] bg-[#F2F2F2]/95 dark:bg-[#111827] shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-none border border-transparent dark:border-[#1F2937] rounded-[24px] p-6 lg:p-12 transition-colors duration-300">
-        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="font-gotham text-[28px] lg:text-[35px] text-[#0077CC] dark:text-[#F8FAFC] transition-colors duration-300">
             My Profile
@@ -98,7 +102,6 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Profile Info (Top Section) */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-12">
           <img
             src="/images/avatar.jpg"
@@ -124,12 +127,10 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Form Section */}
         <div className="relative pl-6 lg:pl-10">
           <div className="absolute left-0 top-0 bottom-0 w-[6px] rounded-full bg-gradient-to-b from-[#1FA6FF] to-[#0088FF] dark:from-[#6366F1] dark:to-[#22C55E] transition-all duration-300" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-            {/* Full Name */}
             <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
               <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
                 Full Name
@@ -144,7 +145,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Email */}
             <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
               <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
                 Email
@@ -154,12 +154,11 @@ export default function ProfilePage() {
                 name="email"
                 value={userData.email}
                 onChange={handleChange}
-                readOnly={!isEditing}
-                className={`w-full bg-[#F1F5F9] dark:bg-[#111827]/70 border-[0.8px] ${isEditing ? "border-[#0096FF] dark:border-[#6366F1] focus:ring-1 focus:ring-[#0096FF]" : "border-[#CBD5E1] dark:border-[#1F2937]"} rounded-[12px] p-3 text-[14px] font-lakes font-medium text-[#64748B] dark:text-[#F8FAFC] outline-none transition-all duration-300`}
+                readOnly={true}
+                className="w-full bg-[#F1F5F9] dark:bg-[#111827]/70 border-[0.8px] border-[#CBD5E1] dark:border-[#1F2937] rounded-[12px] p-3 text-[14px] font-lakes font-medium text-[#64748B] dark:text-[#F8FAFC] outline-none transition-all duration-300"
               />
             </div>
 
-            {/* Phone */}
             <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
               <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
                 Phone
@@ -174,7 +173,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Role (Dropdown) */}
             <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
               <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
                 Role
@@ -197,7 +195,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Age */}
             <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
               <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
                 Age
@@ -212,7 +209,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* University */}
             <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
               <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
                 University
@@ -227,7 +223,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* College */}
             <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
               <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
                 College
@@ -242,7 +237,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* About Me */}
             <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300 h-full">
               <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
                 About Me (Optional)
@@ -258,7 +252,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Bottom Section */}
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end mt-12 gap-8 md:gap-0">
           <div className="bg-[#DBEAFE] dark:bg-[#60A5FA]/15 border-[0.2px] border-[#008DF0] dark:border-transparent rounded-full px-8 py-3">
             <span className="font-inter font-semibold text-[24px] lg:text-[28px] text-[#2563EB] dark:text-[#60A5FA] transition-colors duration-300">
@@ -267,13 +260,12 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex flex-row gap-4 w-full md:w-auto">
-            {/* زر التعديل / الإلغاء */}
             <button
               onClick={() => {
                 if (isEditing) {
-                  handleCancel(); // لو كنا بنعدل وداسنا عليه، يرجع الداتا القديمة ويقفل
+                  handleCancel();
                 } else {
-                  setIsEditing(true); // لو مكناش بنعدل، يفتح وضع التعديل
+                  setIsEditing(true);
                 }
               }}
               className="flex-1 md:flex-none flex justify-center items-center px-8 py-3 border border-[#0077CC] dark:border-[#F8FAFC] rounded-[8px] bg-transparent hover:bg-[#0077CC]/5 dark:hover:bg-white/10 transition-colors duration-300"
@@ -283,7 +275,6 @@ export default function ProfilePage() {
               </span>
             </button>
 
-            {/* زر الحفظ */}
             <button
               onClick={handleSave}
               disabled={!isEditing}

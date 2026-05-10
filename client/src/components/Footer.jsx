@@ -23,7 +23,7 @@ export default function Footer() {
             Quick Links
           </h4>
           <ul className="flex flex-col items-center lg:items-start gap-3">
-            {["About Us", "Chapters", "Events", "Membership"].map((link) => (
+            {["About", "Chapters", "Events", "Membership"].map((link) => (
               <li key={link}>
                 <a
                   href={`#${link.toLowerCase().replace(" ", "-")}`}
