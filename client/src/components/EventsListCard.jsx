@@ -1,7 +1,10 @@
-import React from 'react'
+import React, {useState} from 'react'
+import { Link } from 'react-router-dom';
 import Button from './Button'
+import ImageSkeleton from './ImageSkeleton.jsx';
 
-export default function EventsListCard({ type = "upcoming", image, badge, title, dateTime, attendees, description }) {
+export default function EventsListCard({ type = "upcoming", id, image, badge, title, dateTime, attendees, description }) {
+	const [imgLoaded, setImgLoaded] = useState(false);
   const isUpcoming = type === "upcoming"
 
   const formattedDate = dateTime && typeof dateTime === "object"
@@ -11,8 +14,10 @@ export default function EventsListCard({ type = "upcoming", image, badge, title,
   return (
     <div className="flex flex-col bg-card dark:bg-[#0F172A] border border-border rounded-3xl overflow-hidden h-full">
       <div className="relative h-50 md:h-60 overflow-hidden">
-        <img
+      	{!imgLoaded && <ImageSkeleton />}
+				<img
           src={image}
+					onLoad={() => setImgLoaded(true)}
           alt={title}
           className="w-full h-full object-cover"
         />
@@ -40,9 +45,11 @@ export default function EventsListCard({ type = "upcoming", image, badge, title,
         <p className={`text-sm text-muted flex-1 ${isUpcoming && "mb-4"}`}>{description}</p>
 
         {isUpcoming && (
-          <Button variant="default" className="bg-primary-dark text-white mt-auto">
-            Join Now
-          </Button>
+          <Link to={`/events/${id}`} state={{ image, title, description }} className='mt-auto'>
+	          <Button variant="default" className="bg-primary-dark text-white w-full">
+	          	Join Now
+	          </Button>
+          </Link>
         )}
       </div>
     </div>
