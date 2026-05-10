@@ -57,6 +57,22 @@
 ----------------------------------------------- */
 
 @font-face {
+  font-family: "Gotham Thin";
+  src: url("./assets/fonts/gotham/Gotham-Thin.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap; /* Improves perceived performance */
+}
+
+@font-face {
+  font-family: "Gotham Light";
+  src: url("./assets/fonts/gotham/Gotham-Light.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "Gotham";
   src: url("./assets/fonts/gotham/Gotham-Bold.otf") format("opentype");
   font-weight: 700;
@@ -90,10 +106,15 @@
   --color-muted: var(--text-muted);
   --color-border: var(--border);
   --color-card: var(--bg-card);
+  --color-input: var(--bg-input);
 
   --font-lakes: "TT Lakes Neue", sans-serif;
   --font-gotham: "Gotham", ui-sans-serif, system-ui, sans-serif;
+  --font-gotham-thin: "Gotham Thin", ui-sans-serif, system-ui, sans-serif;
+  --font-gotham-light: "Gotham Light", ui-sans-serif, system-ui, sans-serif;
   --font-black: "Gotham Black", ui-sans-serif, system-ui, sans-serif;
+
+  --navbar-height: 88px;
 }
 
 /* Light mode colors */
@@ -106,6 +127,7 @@
   --text-muted: #4b5563;
   --border: #ffffff33;
   --bg-card: var(--color-main);
+  --bg-input: #F8FAFC;
 }
 
 /* Dark mode colors */
@@ -118,6 +140,7 @@
   --text-muted: #9ca3af;
   --border: #222936;
   --bg-card: #1a1f2e;
+  --bg-input: #111827;
 }
 
 @layer base {
@@ -169,7 +192,7 @@
       #33b5ff 100%
     );
   }
-
+  
   /* Linear Gradient (Secondary/Brand) */
   .bg-brand-linear {
     background: linear-gradient(
