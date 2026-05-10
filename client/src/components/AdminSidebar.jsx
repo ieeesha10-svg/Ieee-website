@@ -26,7 +26,7 @@ const AdminSidebar = () => {
     };
 
     return (
-        <aside className="w-64 bg-ieee-dark text-white hidden md:flex flex-col h-screen sticky top-0 shadow-xl z-50">
+        <aside className="w-64 bg-primary-dark text-white hidden md:flex flex-col h-screen sticky top-0 shadow-xl z-50">
             <div className="p-6 text-2xl font-bold border-b border-gray-700/50 flex items-center gap-2">
                 <div className="w-8 h-8 bg-blue-700 rounded flex items-center justify-center text-sm ">⚙️</div>
                 <span>Admin</span>
@@ -56,7 +56,7 @@ const AdminSidebar = () => {
             </nav>
 
             <div className="p-4 border-t border-gray-700/50">
-                <button onClick={logout} className="flex cursor-pointer items-center gap-2 text-red-300 hover:text-red-100 transition px-2 py-2 rounded hover:bg-red-500/10">
+                <button onClick={logout} className="flex items-center gap-2 text-red-300 hover:text-red-100 transition px-2 py-2 rounded hover:bg-red-500/10">
                     <LogOut size={20} /> Logout
                 </button>
             </div>

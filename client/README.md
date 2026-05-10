@@ -1,16 +1,45 @@
-# React + Vite
+# IEEE El-Shorouk Academy — Client (10th Season)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend for the IEEE El-Shorouk University Student Branch website.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+React 19 + Vite 7 + Tailwind CSS v4 + React Router v7 + Axios
 
-## React Compiler
+## Quick Start
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+cp .env.example .env         # configure API URL
+npm install
+npm run dev                  # http://localhost:5173
+npm run build                # production → client/dist
+npm run lint
+```
 
-## Expanding the ESLint configuration
+## Folder Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```
+src/
+├── assets/          fonts, icons, images
+├── components/      shared UI (Button, Navbar, Sidebar, etc.)
+├── context/         React Context providers (AuthContext)
+├── hooks/           custom hooks (useDarkMode)
+├── layouts/         page wrappers (AuthLayout)
+├── pages/           route-level components
+├── sections/        page sections (home/About, home/Hero, etc.)
+├── utils/           api.js (Axios instance)
+├── App.jsx          routing & layout logic
+├── index.css        Tailwind + fonts + design tokens
+└── main.jsx         entry point
+```
+
+## Key Config
+
+| File | Purpose |
+|------|---------|
+| `vite.config.js` | Vite + Tailwind plugin |
+| `.env.example` | env template |
+| `src/utils/api.js` | Axios instance (reads `VITE_API_URL`) |
+| `vercel.json` | root-level deploy config |
+
+See `docs/FRONTEND_CONFIG.md` for detailed setup.

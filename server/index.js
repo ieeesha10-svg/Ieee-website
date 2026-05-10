@@ -3,10 +3,10 @@ const cors = require("cors");
 const helmet = require("helmet");
 const connectDB = require("./config/db");
 const cookieParser = require('cookie-parser');
-require("dotenv").config();
+const { routersHandler } = require("./utils/routesHandler");
+require("dotenv").config({quiet: true});
 const app = express();
 connectDB();
-const Ali = "test"
 
 app.use(helmet());
 app.use(cors({
@@ -16,18 +16,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-//Routes
-app.get("/", (req, res) => res.send("Express on Vercel"));
-
-app.use('/api/users', require('./routes/userRoutes'));
-
-app.use('/api/forms', require('./routes/formRoutes'));
-
-app.use('/api/submissions', require('./routes/submissionRoutes'));
-
-app.use('/api/emails', require('./routes/emailRouts'));
-
-
+routersHandler(app);
 
 const PORT = process.env.PORT || 5000;
 

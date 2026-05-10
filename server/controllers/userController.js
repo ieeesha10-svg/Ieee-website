@@ -3,7 +3,8 @@ const Submission = require('../models/SubmissionModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const ExcelJS = require('exceljs');
-const sendOTPEmail = require('../utils/sendEmail.js')
+const {sendOTPEmail} = require('../utils/sendEmail.js');
+const { catchAsync, AppError } = require('../middleware/errorsMiddleware.js');
 // --- HELPER: Generate JWT Token ---
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -18,41 +19,35 @@ const generateToken = (id) => {
 // @desc    Auth user & get token (Login)
 // @route   POST /api/users/login
 // @access  Public
-const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+const loginUser = catchAsync(async (req, res) => {
+  const { email, password } = req.body;
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
-    
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    if (!user.isVerified) {
-      return res.status(403).json({ 
-        message: 'Account not verified. Please check your email for the OTP.' 
-      });
-    }
-
-    const token = generateToken(user._id);
-    res.cookie('jwt', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV !== 'development', // HTTPS in production
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-    });
-
-    res.json({
-      _id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      committee: user.committee
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+  
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    throw new AppError('Invalid email or password', 401);
   }
-};
+
+  if (!user.isVerified) {
+    throw new AppError('Account not verified. Please check your email for the OTP.', 403);
+  }
+
+  const token = generateToken(user._id);
+  res.cookie('jwt', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV !== 'development', // HTTPS in production
+    sameSite: 'strict',
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+  });
+
+  res.json({
+    _id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    committee: user.committee
+  });
+});
 
 // @desc    Logout user / clear cookie
 // @route   POST /api/users/logout
@@ -70,15 +65,28 @@ const logoutUser = (req, res) => {
 // @access  Private
 const getUserProfile = async (req, res) => {
   // req.user is set by the 'protect' middleware
-  const user = {
-    _id: req.user._id,
-    name: req.user.name,
-    email: req.user.email,
-    role: req.user.role,
-    university: req.user.university,
-    committee: req.user.committee
-  };
-  res.json(user);
+  const user = await User.findById(req.user.id).select('-password');
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  res.json({
+    success: true,
+    user: {
+      _id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      committee: user.committee,
+      phone: user.phone,
+      age: user.age,
+      university: user.university,
+      college: user.college,
+      yearOfStudy: user.yearOfStudy,
+      interests: user.interests,
+      optionalData: user.optionalData
+    }
+  });
 };
 
 // ==========================================
@@ -134,30 +142,17 @@ const registerUser = async (req, res) => {
     }
 
     res.status(201).json({ 
-        message: "Registration successful. Please check your email for the OTP.",
-        email: user.email
-      });
-    // if (user) {
-    //   // Optional: Auto-login
-    //   // const token = generateToken(user._id);
-    //   // res.cookie('jwt', token, ...);
-
-    //   res.status(201).json({
-    //     _id: user.id,
-    //     name: user.name,
-    //     email: user.email,
-    //     role: user.role,
-    //   });
-    // } else {
-    //   res.status(400);
-    //   throw new Error('Invalid user data');
-    // }
+      message: "Registration successful. Please check your email for the OTP.",
+      email: user.email
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-
+// @desc    Verify Email OTP
+// @route   POST /api/users/verify-email
+// @access  Public
 const verifyEmailOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -418,6 +413,86 @@ const exportUsersToExcel = async (req, res) => {
   }
 };
 
+// @desc    Update User Profile (Self-Service)
+// @route   PUT /api/users/:id
+// @access  Private (User can only update their own profile)
+const updateUserProfile = catchAsync(async (req, res) => {
+  if(req.user.id != req.params.id){
+    throw new AppError('HACKER : You can only update your own profile', 403);
+  }
+  const user = await User.findById(req.user.id);
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+  // Check if any restricted fields are being updated
+  // We use a flag instead of throwing immediately to check all fields and provide a comprehensive error message if needed
+  const hasRestrictedField = false;
+  restrictedFields.forEach((field) => {
+    if (req.body[field] !== undefined) {
+      hasRestrictedField = true;
+    } 
+  });
+
+  if (hasRestrictedField) {
+    throw new AppError("You are not allowed to update restricted fields", 403);
+  }
+  // Only allow updates to specific fields
+  const allowedUpdates = [
+    "name",
+    "phone",
+    "age",
+    "university",
+    "college",
+    "yearOfStudy",
+    "interests",
+    "committee",
+    "optionalData",
+  ];
+  
+  const updates = {};
+  allowedUpdates.forEach((field) => {
+    if (req.body[field] !== undefined) {
+      updates[field] = req.body[field];
+    }
+  });
+
+  const restrictedFields = [
+    "email",
+    "password",
+    "role",
+    "isVerified",
+    "otp",
+    "otpExpires",
+  ];
+
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user.id,
+    updates,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  res.status(200).json({
+    success: true,
+    user: {
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      phone: updatedUser.phone,
+      age: updatedUser.age,
+      university: updatedUser.university,
+      college: updatedUser.college,
+      yearOfStudy: updatedUser.yearOfStudy,
+      interests: updatedUser.interests,
+      committee: updatedUser.committee,
+      optionalData: updatedUser.optionalData,
+    },
+  });
+})
 
 
 module.exports = {
@@ -428,5 +503,6 @@ module.exports = {
   createUser,
   getUsers,
   exportUsersToExcel,
-  verifyEmailOTP
+  verifyEmailOTP,
+  updateUserProfile
 };

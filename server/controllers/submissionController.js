@@ -3,11 +3,15 @@ const Form = require('../models/FormModel');
 const User = require('../models/UserModel');
 const QRCode = require('qrcode');
 const ExcelJS = require('exceljs');
-const nodemailer = require('nodemailer');
+const {sendTicketEmail}=require('../utils/sendEmail');
+//const nodemailer = require('nodemailer');
 const { nanoid } = require('nanoid');
 
 // --- HELPER: Send Static Ticket Email (Fixed Image) ---
-const sendTicketEmail = async (email, userName, ticketCode, eventTitle, qrImage) => {
+
+/** //added send ticket email handeler in utils/sendEmail.js//
+ * 
+  const sendTicketEmail = async (email, userName, ticketCode, eventTitle, qrImage) => {
   if (!process.env.EMAIL_USER) return;
 
   const transporter = nodemailer.createTransport({
@@ -25,6 +29,9 @@ const sendTicketEmail = async (email, userName, ticketCode, eventTitle, qrImage)
     from: `"IEEE Student Branch" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: `Confirmation of Registration – ${eventTitle}`,
+
+    //added html in veiw/emails_Template//
+
     html: `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
         <p>Dear <strong>${userName}</strong>,</p>
@@ -52,7 +59,7 @@ const sendTicketEmail = async (email, userName, ticketCode, eventTitle, qrImage)
   };
 
   await transporter.sendMail(mailOptions);
-};
+};*/
 
 // ==========================================
 // 1. STUDENT ACTIONS
@@ -102,6 +109,7 @@ const submitForm = async (req, res) => {
 
     // 6. Send Email (Async)
     if (ticketCode && qrImage) {
+      //email sending handle in utils/sendEmail//
       sendTicketEmail(
         req.user.email,
         req.user.name,

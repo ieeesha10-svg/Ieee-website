@@ -1,10 +1,11 @@
 const express = require('express');
-const router = express.Router();
+const userRouter = express.Router();
 const { 
   loginUser, 
   logoutUser, 
   registerUser, 
   getUserProfile, 
+  updateUserProfile,
   getUsers,
   createUser, // <--- Import the new function
   exportUsersToExcel,
@@ -14,23 +15,26 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // Public Routes
-router.post('/', registerUser); // Anyone can sign up as User/Member
-router.post('/verify-email', verifyEmailOTP);
-router.post('/login', loginUser);
-router.post('/logout', logoutUser);
+userRouter.post('/register', registerUser); // Anyone can sign up as User/Member
+userRouter.post('/verify-email', verifyEmailOTP);
+userRouter.post('/login', loginUser);
+userRouter.post('/logout', logoutUser);
 
 // Protected Routes
-router.get('/profile', protect, getUserProfile);
+userRouter.get('/profile', protect, getUserProfile);
+
+// Edit Profile
+userRouter.put('/profile/:id', protect, updateUserProfile);
 
 // Admin / XCom Routes
-router.get('/', protect, authorize('xcom', 'board'), getUsers); 
+userRouter.get('/all', protect, authorize('xcom', 'board'), getUsers); 
 
 // --- THE NEW SECURE ROUTE ---
 // Only 'xcom' can create other admins/board members
-router.post('/create-internal', protect, authorize('xcom'), createUser);
+userRouter.post('/create-internal', protect, authorize('xcom'), createUser);
 
 // EXPORT ROUTE
 // Usage: /api/users/export?role=member (Downloads file directly)
-router.get('/export', protect, authorize('xcom', 'board'), exportUsersToExcel);   
+userRouter.get('/export', protect, authorize('xcom', 'board'), exportUsersToExcel);   
 
-module.exports = router;
+module.exports = userRouter;
