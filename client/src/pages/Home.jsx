@@ -7,6 +7,7 @@ import Chairpersons from "../sections/home/Chairpersons";
 import Achievements from "../sections/home/Achievements";
 import JoinUs from "../components/JoinUs";
 import Footer from "../components/Footer";
+import MyProfile from "./MyProfile";
 
 function Home() {
   return (
