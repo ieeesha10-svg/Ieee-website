@@ -7,13 +7,13 @@ import Achievements from "../sections/home/Achievements";
 
 function Home() {
   return (
-    <>
+    <div className="*:px-4 md:*:px-8">
       <Hero />
       <About />
       <Chapters />
       <FlagshipEvents />
       <Achievements />
-    </>
+    </div>
   );
 }
 
