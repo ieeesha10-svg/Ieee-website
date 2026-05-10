@@ -1,31 +1,37 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { 
-  User, Mail, Lock, Phone, UserPlus, 
-  GraduationCap, BookOpen, CalendarDays 
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-import api from '../utils/api'; // Check this path!
-import { useAuth } from '../context/AuthContext'; // Check this path!
-import AuthLayout from '../layouts/AuthLayout';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  User,
+  Mail,
+  Lock,
+  Phone,
+  UserPlus,
+  GraduationCap,
+  BookOpen,
+  CalendarDays,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import api from "../utils/api"; // Check this path!
+import { useAuth } from "../context/AuthContext"; // Check this path!
+import AuthLayout from "../layouts/AuthLayout";
 
 const SignupPage = () => {
   // 1. Updated State to match Backend Schema
   const [formData, setFormData] = useState({
-    name: '', 
-    email: '', 
-    phone: '', 
-    age: '',
-    university: '', 
-    college: '', 
-    yearOfStudy: '1', // Default to 1st year
-    password: '', 
-    confirmPassword: '',
+    name: "",
+    email: "",
+    phone: "",
+    age: "",
+    university: "",
+    college: "",
+    yearOfStudy: "1", // Default to 1st year
+    password: "",
+    confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
-  
+
   const navigate = useNavigate();
-  const { setUser } = useAuth(); 
+  const { setUser } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -33,9 +39,9 @@ const SignupPage = () => {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
-      return toast.error('Passwords do not match!');
+      return toast.error("Passwords do not match!");
     }
 
     setLoading(true);
@@ -53,112 +59,217 @@ const SignupPage = () => {
         yearOfStudy: Number(formData.yearOfStudy),
       };
 
-      await api.post('/users', payload);
+      await api.post("/users", payload);
 
-      toast.success('Account created! Please check your email for the OTP.');
+      toast.success("Account created! Please check your email for the OTP.");
 
       setTimeout(() => {
-        navigate('/verify', { state: { email: formData.email } }); 
+        navigate("/verify", { state: { email: formData.email } });
       }, 1500);
-
     } catch (error) {
-      console.log(error)
-      const msg = error.response?.data?.error || error.response?.data?.message || 'Registration failed. Email might already be in use.';
+      console.log(error);
+      const msg =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Registration failed. Email might already be in use.";
       toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-	return (
-			<AuthLayout title="Join IEEE SHA" subtitle="Create your student account to register for events." maxWidth='max-w-2xl'>
-				
-        <form onSubmit={handleSignup} className="space-y-6">
-          
-          {/* --- SECTION 1: Personal Info --- */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Full Name */}
-            <div className="relative md:col-span-2">
-              <User className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white" required />
-            </div>
-
-            {/* Email */}
-            <div className="relative md:col-span-2">
-              <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white" required />
-            </div>
-
-            {/* Phone */}
-            <div className="relative">
-              <Phone className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input type="tel" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white" required />
-            </div>
-
-            {/* Age */}
-            <div className="relative">
-              <CalendarDays className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input type="number" name="age" placeholder="Age" min="15" max="30" value={formData.age} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white" required />
-            </div>
+  return (
+    <AuthLayout
+      title="Join IEEE SHA"
+      subtitle="Create your student account to register for events."
+      maxWidth="max-w-2xl"
+    >
+      <form onSubmit={handleSignup} className="space-y-6">
+        {/* --- SECTION 1: Personal Info --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Full Name */}
+          <div className="relative md:col-span-2">
+            <User className="absolute left-3 top-3 text-gray-400" size={20} />
+            <input
+              type="text"
+              name="name"
+              placeholder="Full Name"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+              required
+            />
           </div>
 
-          <hr className="border-gray-200 dark:border-gray-700" />
-
-          {/* --- SECTION 2: Academic Info --- */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* University */}
-            <div className="relative md:col-span-2">
-              <GraduationCap className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input type="text" name="university" placeholder="University (e.g., El Shorouk Academy)" value={formData.university} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white" required />
-            </div>
-
-            {/* College */}
-            <div className="relative">
-              <BookOpen className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input type="text" name="college" placeholder="College / Faculty" value={formData.college} onChange={handleChange} className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white" required />
-            </div>
-
-            {/* Year of Study (Converted to a clean Select dropdown) */}
-            <div className="relative flex items-center bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-sky-500 transition-all">
-               <span className="pl-3 pr-2 text-gray-500 dark:text-gray-400 text-sm font-medium border-r border-gray-200 dark:border-gray-600">Year</span>
-               <select name="yearOfStudy" value={formData.yearOfStudy} onChange={handleChange} className="w-full bg-transparent py-3 px-3 focus:outline-none dark:text-white *:dark:text-black appearance-none cursor-pointer" required>
-                 <option value="1">1st Year</option>
-                 <option value="2">2nd Year</option>
-                 <option value="3">3rd Year</option>
-                 <option value="4">4th Year</option>
-                 <option value="5">5th Year</option>
-                 <option value="0">Alumni / Graduate</option>
-               </select>
-            </div>
+          {/* Email */}
+          <div className="relative md:col-span-2">
+            <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
+            <input
+              type="email"
+              name="email"
+              placeholder="Email Address"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+              required
+            />
           </div>
 
-          <hr className="border-gray-200 dark:border-gray-700" />
-
-          {/* --- SECTION 3: Security --- */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} minLength="6" className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white" required />
-            </div>
-
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input type="password" name="confirmPassword" placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} minLength="6" className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white" required />
-            </div>
+          {/* Phone */}
+          <div className="relative">
+            <Phone className="absolute left-3 top-3 text-gray-400" size={20} />
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Phone Number"
+              value={formData.phone}
+              onChange={handleChange}
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+              required
+            />
           </div>
 
-          {/* Submit Button */}
-          <button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 mt-2 disabled:opacity-50 transition-colors">
-            {loading ? 'Creating Account...' : <><UserPlus size={20} /> Create Account</>}
-          </button>
-        </form>
-
-        <div className="text-center mt-6">
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
-            Already have an account? <Link to="/login" className="text-primary dark:text-sky-400 font-bold hover:underline">Sign in here</Link>
-          </p>
+          {/* Age */}
+          <div className="relative">
+            <CalendarDays
+              className="absolute left-3 top-3 text-gray-400"
+              size={20}
+            />
+            <input
+              type="number"
+              name="age"
+              placeholder="Age"
+              min="15"
+              max="30"
+              value={formData.age}
+              onChange={handleChange}
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+              required
+            />
+          </div>
         </div>
-			</AuthLayout>
+
+        <hr className="border-gray-200 dark:border-gray-700" />
+
+        {/* --- SECTION 2: Academic Info --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* University */}
+          <div className="relative md:col-span-2">
+            <GraduationCap
+              className="absolute left-3 top-3 text-gray-400"
+              size={20}
+            />
+            <input
+              type="text"
+              name="university"
+              placeholder="University (e.g., El Shorouk Academy)"
+              value={formData.university}
+              onChange={handleChange}
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+              required
+            />
+          </div>
+
+          {/* College */}
+          <div className="relative">
+            <BookOpen
+              className="absolute left-3 top-3 text-gray-400"
+              size={20}
+            />
+            <input
+              type="text"
+              name="college"
+              placeholder="College / Faculty"
+              value={formData.college}
+              onChange={handleChange}
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+              required
+            />
+          </div>
+
+          {/* Year of Study (Converted to a clean Select dropdown) */}
+          <div className="relative flex items-center bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-sky-500 transition-all">
+            <span className="pl-3 pr-2 text-gray-500 dark:text-gray-400 text-sm font-medium border-r border-gray-200 dark:border-gray-600">
+              Year
+            </span>
+            <select
+              name="yearOfStudy"
+              value={formData.yearOfStudy}
+              onChange={handleChange}
+              className="w-full bg-transparent py-3 px-3 focus:outline-none dark:text-white *:dark:text-black appearance-none cursor-pointer"
+              required
+            >
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+              <option value="5">5th Year</option>
+              <option value="0">Alumni / Graduate</option>
+            </select>
+          </div>
+        </div>
+
+        <hr className="border-gray-200 dark:border-gray-700" />
+
+        {/* --- SECTION 3: Security --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="relative">
+            <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              minLength="6"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+              required
+            />
+          </div>
+
+          <div className="relative">
+            <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="Confirm Password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              minLength="6"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 mt-2 disabled:opacity-50 transition-colors"
+        >
+          {loading ? (
+            "Creating Account..."
+          ) : (
+            <>
+              <UserPlus size={20} /> Create Account
+            </>
+          )}
+        </button>
+      </form>
+
+      <div className="text-center mt-6">
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-primary dark:text-sky-400 font-bold hover:underline"
+          >
+            Sign in here
+          </Link>
+        </p>
+      </div>
+    </AuthLayout>
   );
 };
 
