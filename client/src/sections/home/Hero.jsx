@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 // Components
 import Button from '../../components/Button.jsx'
+import ImageSkeleton from '../../components/ImageSkeleton.jsx';
 // Images
 import HeroBackground from '../../assets/backgrounds/hero-bg.jpg';
 import VRSectorHero from '../../assets/images/home/vr-engineer-robotics-hero.jpg';
@@ -23,6 +24,8 @@ export default function Hero() {
 		{ bottom: '10%', left: '45%', size: 'w-1.5 h-1.5', opacity: 'bg-white/20' },
 		{ bottom: '18%', left: '55%', size: 'w-1 h-1', opacity: 'bg-white/30' },
 	];
+
+	const [imgLoaded, setImgLoaded] = useState(false);
 
 	return <section className='relative overflow-hidden bg-cover' style={{ backgroundImage: `url(${HeroBackground})` }}>
 		{/* Overlay */}
@@ -90,12 +93,14 @@ export default function Hero() {
 
 				{/* Right Section - images & visuals */}
 				<div className='relative p-0.5 rounded-3xl backdrop-blur-md shadow-2xl border-transparent bg-linear-to-br from-white/40 to-transparent bg-origin-border'>
+					{!imgLoaded && <ImageSkeleton />}
 					<img
 					  src={VRSectorHero}
-					  className="w-full h-full object-cover rounded-3xl"
+						className="w-full h-full object-cover rounded-3xl"
+						onLoad={() => setImgLoaded(true)}
 					  style={{
 					    backgroundImage: `url(${VRSectorHero})`,
-						}} />
+					}} />
 					<div className='absolute -bottom-2.5 -right-4 lg:-right-6 w-20 h-18 md:w-42 md:h-34 flex items-center flex-col justify-center bg-main rounded-2xl'>
 						<img src={RocketIcon} alt="Rocket Icon" className='w-6 h-6 md:w-12 md:h-12'/>
 						<span className='mt-3 text-center text-primary text-[8px] md:text-sm'>Innovation Hub</span>

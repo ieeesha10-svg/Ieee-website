@@ -10,21 +10,24 @@ import TeamImage from '../../assets/images/events/team.jpg';
 import WorkplaceImage from '../../assets/images/events/workplace.jpg';
 
 const upcomingEvents = [
-  {
+	{
+		id: 0,
     image: TableImage,
     badge: "Technical",
     title: "Cybersecurity Workshop",
     dateTime: { day: "May 18", time: "6 PM" },
     description: "Learn penetration testing, ethical hacking, and cybersecurity fundamentals.",
   },
-  {
+	{
+		id: 1,
     image: TeamImage,
     badge: "Non-Technical",
     title: "Personal Branding Session",
     dateTime: { day: "May 22", time: "4 PM" },
     description: "Build your LinkedIn profile, improve communication, and develop your career identity.",
   },
-  {
+	{
+		id: 2,
     image: WorkplaceImage,
     badge: "Technical",
     title: "PCB Design Session",
@@ -59,8 +62,8 @@ export default function UpcomingEvents({ events = upcomingEvents }) {
 				
 				{/* Cards*/}
 				<div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6">
-					{events.map((event, index) => (
-						<EventsListCard key={index} type="upcoming" {...event} />
+					{events.map((event) => (
+						<EventsListCard key={event.id} type="upcoming" {...event} />
 					))}
 				</div>
 

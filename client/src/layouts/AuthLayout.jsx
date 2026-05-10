@@ -4,7 +4,7 @@ import BgImage from '../assets/backgrounds/black-line-circuit-pattern.png';
 
 export default function AuthLayout({ children, title, subtitle, icon, maxWidth = 'max-w-md' }) {
   return (
-    <div className="min-h-screen flex items-center justify-center relative bg-main transition-colors duration-300 py-12 px-4 sm:px-6 lg:px-8"
+    <div className="min-h-[calc(100vh-var(--navbar-height))] flex items-center justify-center relative bg-main transition-colors duration-300 py-12 px-4 sm:px-6 lg:px-8"
       style={{ backgroundImage: `url(${BgImage})` }}
     >
       {/* Background Overlay */}
