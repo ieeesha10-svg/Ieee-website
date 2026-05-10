@@ -109,8 +109,9 @@ export default function MembershipBenefits() {
 
         {/* الجزء الثاني: المزايا والتفاصيل */}
         <div className="text-center mb-16 space-y-6">
-          <h2 className="font-gotham font-bold text-4xl lg:text-5xl text-[#33B5FF]">
-            Membership Benefits
+          <h2 className="font-gotham font-bold text-4xl lg:text-5xl text-white">
+            <span className="text-primary-light">M</span>embership{" "}
+            <span className="text-primary-light">B</span>enefits
           </h2>
           <p className="max-w-2xl mx-auto font-lakes text-lg lg:text-xl text-[#F2F2F2] dark:text-[#9CA3AF]">
             Unlock exclusive resources, connect with global professionals, and
@@ -118,18 +119,12 @@ export default function MembershipBenefits() {
           </p>
         </div>
 
-        {/* التعديل هنا: 
-          1. خلينا الـ max-w يوازي 1240px عشان يكفي 4 كروت
-          2. الـ gap-6 بتعادل 24px زي الفيجما بالظبط
-        */}
         <div className="flex flex-wrap justify-center gap-6 max-w-[1240px] mx-auto">
           {benefits.map((benefit, index) => (
             <div
               key={index}
-              // التعديل هنا: خلينا العرض 290px بالظبط عشان يرص 4 فوق و 3 تحت
               className="w-full sm:w-[290px] bg-white dark:bg-[#1A1F2E] rounded-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] overflow-hidden flex flex-col transition-all duration-300 hover:shadow-2xl border border-transparent dark:border-gray-800 group"
             >
-              {/* مكان الصورة */}
               <div className="h-36 flex items-center justify-center p-6 bg-white transition-transform duration-500 group-hover:scale-105">
                 <img
                   src={benefit.img}
