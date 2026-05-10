@@ -3,7 +3,7 @@ import React from 'react'
 import Button from '../../components/Button.jsx'
 // Images
 import HeroBackground from '../../assets/backgrounds/hero-bg.jpg';
-import VRSectorHero from '../../assets/vr-engineer-robotics-hero.jpg';
+import VRSectorHero from '../../assets/images/home/vr-engineer-robotics-hero.jpg';
 import RocketIcon from '../../assets/icons/rocket.png'
 
 export default function Hero() {

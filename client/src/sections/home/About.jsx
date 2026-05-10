@@ -2,7 +2,7 @@ import React from "react";
 // Components
 import SectionHeader from "../../components/SectionHeader";
 // Images
-import AboutImage from '../../assets/about-image.png'
+import AboutImage from '../../assets/images/home/about-image.png'
 // Icons
 import TrophyIcon from '../../assets/icons/trophy.png'
 import MedalIcon from '../../assets/icons/medal.png'
