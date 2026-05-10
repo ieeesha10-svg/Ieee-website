@@ -6,7 +6,6 @@ import FlagshipEvents from "../sections/home/FlagshipEvents";
 import Chairpersons from "../sections/home/Chairpersons";
 import Achievements from "../sections/home/Achievements";
 import JoinUs from "../components/JoinUs";
-import Footer from "../components/Footer";
 import MembershipBenefits from "../components/MembershipBenefits";
 
 function Home() {
@@ -20,7 +19,6 @@ function Home() {
       <Chairpersons />
       <MembershipBenefits />
       <JoinUs />
-      <Footer />
     </div>
   );
 }
