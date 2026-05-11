@@ -4,6 +4,7 @@ const { globalErrorHandler } = require("../middleware/errorsMiddleware");
 const activityRouter = require("../routes/activityRoutes");
 const crewRouter = require("../routes/crewRoutes");
 const userRouter = require("../routes/userRoutes") ;
+const formRouter = require("../routes/formRoutes");
 
 const routersHandler = (app) => {
   
@@ -18,7 +19,7 @@ const routersHandler = (app) => {
 
   app.use('/api/activities', protect, authorize('xcom','board'), activityRouter);
 
-  app.use('/api/forms', require('../routes/formRoutes'));
+  app.use('/api/form', formRouter);
 
   app.use('/api/submissions', require('../routes/submissionRoutes'));
 

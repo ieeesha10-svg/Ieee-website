@@ -41,6 +41,7 @@ const formSchema = new mongoose.Schema({
     }
   ]
   */
+  type : String,
   startDate: {
     type: Date,
     required: true
