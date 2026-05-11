@@ -1,16 +1,17 @@
 const mongoose = require('mongoose');
 
 const submissionSchema = new mongoose.Schema({
-  // Link to the specific activity
-  activity: {
+  // Link to the specific form
+  formID: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Activity",
+    ref: "Form",
     required: true,
   },
   // Link to the User (Enforced now, so we can track history)
-  user: {
+  userID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    required: true
   },
 
   // Backup email (Useful for searching without joining tables)
@@ -42,7 +43,7 @@ const submissionSchema = new mongoose.Schema({
 
 // PREVENT DUPLICATES:
 // This ensures a user can only submit the same form ONCE.
-submissionSchema.index({ formId: 1, registrantEmail: 1, user: 1 }, { unique: true });
+submissionSchema.index({ FormId: 1, registrantEmail: 1, user: 1 }, { unique: true });
 
 const Submission = mongoose.model('Submission', submissionSchema);
 module.exports = Submission;

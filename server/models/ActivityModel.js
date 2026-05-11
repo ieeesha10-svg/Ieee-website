@@ -7,16 +7,14 @@ const activitySchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    status: { type: String, enum: ["Active", "Closed", "Draft"], default: "Draft" },
     type: { 
       type: String, 
       enum: ["general", "event", "workshop", "webinar"],
       default: 'general' 
     },
-    startDate: Date,
-    endDate: Date,
     content: {
       type: String,
+      required: true,
     },
     speakers: [
       {
@@ -28,15 +26,11 @@ const activitySchema = new mongoose.Schema(
     ],
     location: {
       type: String,
+      required: true
     },
-    capacity: Number,
     registrationEnabled: {
       type: Boolean,
       default: true,
-    },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
     },
   },
   { timestamps: true }
