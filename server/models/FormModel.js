@@ -1,21 +1,34 @@
 const mongoose = require('mongoose');
 
+const fieldSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  label: { type: String, required: true },
+  type: { type: String, required: true },
+  required: { type: Boolean, default: false }
+});
+
 const formSchema = new mongoose.Schema({
-  activity: {
+  activityID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Activity",
-    required: true,
+    // required: true,
     unique: true,
   },
-  title: { type: String, required: true },
+  status: { 
+    type: String,
+    enum: ["Active", "Closed", "Draft"],
+    default: "Draft"
+  },
+  title: String,
   description: String,
-  
-  // This stores the Drag-and-Drop JSON from React
-  // structure: { type: Array, required: true }, 
 
   // Who made this? (Good for multiple admins)
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-
+  createdBy: { 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  fields: [fieldSchema], // <-- Using the defined fieldSchema for better structure and validation
   /*
   Stores dynamic form fields generated from frontend builder
   Example:
@@ -28,21 +41,20 @@ const formSchema = new mongoose.Schema({
     }
   ]
   */
-  fields: {
-    type: Array,
-    required: true,
+  startDate: {
+    type: Date,
+    required: true
   },
-  // Logic Settings
-  settings: {
-    maxSubmissions: { type: Number, default: 0 }, // 0 = Infinite
-    expiryDate: Date,
-    requiresLogin: { type: Boolean, default: false }, // <--- The feature you asked for
-    isActive: { type: Boolean, default: true }
+  endDate: {
+    type: Date,
+    required: true
   },
+  maxSubmissions: {
+    type: Number,
+    default: Number.MAX_SAFE_INTEGER // <-- No limit by default (infinite)
+  },
+  requiresLogin: { type: Boolean, default: false }, // <--- The feature you asked for
 }, { timestamps: true });
 
 const Form = mongoose.model('Form', formSchema);
 module.exports = Form;
-
-
-
