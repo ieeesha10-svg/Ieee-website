@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
 const fieldSchema = new mongoose.Schema({
-  id: { type: String, required: true },
-  label: { type: String, required: true },
-  type: { type: String, required: true },
-  required: { type: Boolean, default: false }
+  id: { type: String, required: true, validate: { validator: (v) => typeof v === 'string' && v.trim() !== '', message: 'ID is required and must be a non-empty string' } },
+  label: { type: String, required: true, validate: { validator: (v) => typeof v === 'string' && v.trim() !== '', message: 'Label is required and must be a non-empty string' } },
+  type: { type: String, required: true, enum: ['TextInput', 'TextArea', 'Dropdown', 'Checkbox'] },
+  required: { type: Boolean, default: false, validate: { validator: (v) => typeof v === 'boolean', message: 'Required must be a boolean' } },
 });
 
 const formSchema = new mongoose.Schema({
