@@ -1,5 +1,5 @@
 const express = require('express');
-const router = express.Router();
+const submissionRouter = express.Router();
 const { 
   submitForm, 
   scanTicket, 
@@ -8,15 +8,15 @@ const {
 } = require('../controllers/submissionController');
 
 const { protect, authorize } = require('../middleware/authMiddleware');
-
+submissionRouter.use(protect); // All routes require authentication
 // 1. Submit (Any logged-in Student/Member)
-router.post('/', protect, submitForm);
+submissionRouter.post('/', submitForm);
 
 // 2. Scan (Gatekeeper/Scanner/XCom)
-router.post('/scan', protect, authorize('xcom', 'scanner', 'board'), scanTicket);
+submissionRouter.post('/scan', authorize('xcom', 'scanner', 'board'), scanTicket);
 
 // 3. View & Export (Admins Only)
-router.get('/', protect, authorize('xcom', 'board'), getSubmissions);
-router.get('/export', protect, authorize('xcom', 'board'), exportSubmissionsToExcel);
+submissionRouter.get('/', authorize('xcom', 'board'), getSubmissions);
+submissionRouter.get('/export', authorize('xcom', 'board'), exportSubmissionsToExcel);
 
-module.exports = router; 
+module.exports = submissionRouter; 

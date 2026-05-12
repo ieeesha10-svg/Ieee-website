@@ -6,6 +6,7 @@ const ExcelJS = require('exceljs');
 const {sendTicketEmail}=require('../utils/sendEmail');
 //const nodemailer = require('nodemailer');
 const { nanoid } = require('nanoid');
+const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 
 // --- HELPER: Send Static Ticket Email (Fixed Image) ---
 
@@ -68,64 +69,64 @@ const { nanoid } = require('nanoid');
 // @desc    Submit a form & Get Ticket
 // @route   POST /api/submissions
 // @access  Private
-const submitForm = async (req, res) => {
-  try {
-    const { formId, answers } = req.body;
-    
-    // 1. Validate Form
-    const form = await Form.findById(formId);
-    if (!form) return res.status(404).json({ message: 'Form not found' });
-    if (!form.settings.isActive) return res.status(400).json({ message: 'Form is closed' });
-
-    // 2. Check Expiry
-    if (form.settings.expiryDate && new Date() > new Date(form.settings.expiryDate)) {
-      return res.status(400).json({ message: 'Form expired' });
-    }
-    
-    // 3. Check Duplicate Submission
-    const existingSubmission = await Submission.findOne({ formId, userId: req.user._id });
-    if (existingSubmission) {
-      return res.status(400).json({ message: 'You have already submitted this form.' });
-    }
-
-    // 4. Generate Ticket (If it's an Event)
-    let ticketCode = null;
-    let qrImage = null;
-
-    if (form.type === 'event' || form.type === 'workshop') {
-      ticketCode = nanoid(10); 
-      qrImage = await QRCode.toDataURL(ticketCode);
-    }
-
-    // 5. Save Submission
-    const submission = await Submission.create({
-      formId,
-      userId: req.user._id,
-      registrantEmail: req.user.email,
-      data: answers,
-      ticketCode,
-      attended: false
-    });
-
-    // 6. Send Email (Async)
-    if (ticketCode && qrImage) {
-      //email sending handle in utils/sendEmail//
-      sendTicketEmail(
-        req.user.email,
-        req.user.name,
-        ticketCode,
-        form.title,
-        qrImage
-      ).catch(err => console.error("Email Error:", err));
-    }
-
-    res.status(201).json({ message: 'Submitted successfully', ticketCode });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server Error' });
+const submitForm = catchAsync(async (req, res) => {
+  const { formId, answers } = req.body;
+  if (!formId || !answers) {
+    throw new AppError('Form ID and answers are required', 400);
   }
-};
+  // 1. Validate Form
+  const form = await Form.findById(formId);
+  if (!form) throw new AppError('Form not found', 404);
+  
+  // 2. Check Expiry
+  if (form.status !== "Active" || form.endDate < new Date()) {
+    throw new AppError('This form is currently closed', 400);
+  }
+  // 3. Check max submissions
+  const submissionsCount = await Submission.countDocuments({ formId });
+  
+  if (submissionsCount >= form.maxSubmissions) {
+    throw new AppError('Maximum submissions reached', 400);
+  }
+  
+  // 4. Prevent duplicate submissions
+  const existingSubmission = await Submission.findOne({
+    formId,
+    userId: req.user._id
+  });
+  
+  if (existingSubmission) {
+    throw new AppError('You already submitted this form', 400);
+  }
+  
+  // 5. Generate Ticket (If it's an Event)
+  ticketCode = `${formId}-${form.type}-${req.user._id}-${nanoid(6)}`;
+  qrImage = await QRCode.toDataURL(ticketCode);
+
+  // 6. Save Submission
+  const submission = await Submission.create({
+    formId,
+    userId: req.user._id,
+    registrantEmail: req.user.email,
+    answers,
+    ticketCode,
+    qrImage
+  });
+
+  // 7. Send Email (Async)
+  if (ticketCode && qrImage) {
+    //email sending handle in utils/sendEmail//
+    sendTicketEmail(
+      req.user.email,
+      req.user.name,
+      ticketCode,
+      form.title,
+      qrImage
+    ).catch(err => console.error("Email Error:", err));
+  }
+
+  res.status(201).json({ message: 'Submitted successfully', ticketCode });
+});
 
 // ==========================================
 // 2. ADMIN / XCOM ACTIONS
@@ -134,18 +135,15 @@ const submitForm = async (req, res) => {
 // @desc    Scan QR Code (Gatekeeper)
 // @route   POST /api/submissions/scan
 // @access  Private (Scanner/XCom)
-const scanTicket = async (req, res) => {
+const scanTicket = catchAsync(async (req, res) => {
   const { code } = req.body;
 
   try {
     const submission = await Submission.findOne({ ticketCode: code });
-    if (!submission) return res.status(404).json({ message: 'Invalid Ticket!' });
+    if (!submission) throw new AppError('Invalid Ticket!', 404);
 
     if (submission.attended) {
-      return res.status(400).json({ 
-        message: 'Already Scanned!', 
-        lastScanned: submission.attendedAt 
-      });
+      throw new AppError('Already Scanned!', 400);
     }
 
     // Mark as Attended
@@ -163,30 +161,27 @@ const scanTicket = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
+});
 
 // @desc    Get All Submissions (Table View)
 // @route   GET /api/submissions?formId=...
 // @access  Private (XCom/Board)
-const getSubmissions = async (req, res) => {
-  try {
-    const { formId } = req.query;
-    if (!formId) return res.status(400).json({ message: 'Form ID is required' });
 
-    const submissions = await Submission.find({ formId })
-      .populate('userId', 'name email phone university yearOfStudy')
-      .sort('-createdAt');
+// const getSubmissions = catchAsync(async (req, res) => {
+//   const { formId } = req.query;
+//   if (!formId) return res.status(400).json({ message: 'Form ID is required' });
 
-    res.json(submissions);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+//   const submissions = await Submission.find({ formId })
+//     .populate('userId', 'name email phone university yearOfStudy')
+//     .sort('-createdAt');
+
+//   res.json(submissions);
+// });
 
 // @desc    Export Responses to Excel (Print Feature)
 // @route   GET /api/submissions/export?formId=...
 // @access  Private (XCom/Board)
-const exportSubmissionsToExcel = async (req, res) => {
+const exportSubmissionsToExcel = catchAsync(async (req, res) => {
   try {
     const { formId } = req.query;
     if (!formId) return res.status(400).json({ message: 'Form ID is required' });
@@ -230,7 +225,7 @@ const exportSubmissionsToExcel = async (req, res) => {
         userPhone: sub.userId?.phone || '-'
       };
       // Merge Dynamic Answers
-      if (sub.data) Object.assign(rowData, sub.data);
+      if (sub.answers) Object.assign(rowData, sub.answers);
       
       worksheet.addRow(rowData);
     });
@@ -244,6 +239,123 @@ const exportSubmissionsToExcel = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
+});
 
-module.exports = { submitForm, scanTicket, getSubmissions, exportSubmissionsToExcel };
+// @desc    Get single submission
+// @route   GET /api/submission/:formid/:userid
+// @access  Private
+const getSubmission = catchAsync(async (req, res) => {
+  const { formid, userid } = req.params;
+  const submission = await Submission.findOne({ formId: formid, userId: userid });
+  if (!submission) {
+    throw new AppError('Submission not found', 404);
+  }
+  res.json(submission);
+});
+
+
+// // @desc    Get all submissions
+// // @route   GET /api/submission
+// // @access  Private (Admin)
+const getSubmissions = catchAsync(async (req, res) => {
+
+  const [result] = await Submission.aggregate([
+    {
+      $facet: {
+
+        submissions: [
+          { $sort: { createdAt: -1 } }
+        ],
+
+        totalCount: [
+          { $count: "count" }
+        ],
+
+        pendingCount: [
+          { $match: { status: "pending" } },
+          { $count: "count" }
+        ],
+
+        approvedCount: [
+          { $match: { status: "approved" } },
+          { $count: "count" }
+        ],
+
+        rejectedCount: [
+          { $match: { status: "rejected" } },
+          { $count: "count" }
+        ],
+
+        attendedCount: [
+          { $match: { status: "attended" } },
+          { $count: "count" }
+        ]
+      }
+    }
+  ]);
+
+  const submissions = await Submission.populate(
+    result.submissions,
+    [
+      {
+        path: 'formID',
+        select: 'title type'
+      },
+      {
+        path: 'userID',
+        select: 'name email'
+      }
+    ]
+  );
+
+  const totalCount = result.totalCount[0]?.count || 0;
+
+  const pendingCount = result.pendingCount[0]?.count || 0;
+
+  const approvedCount = result.approvedCount[0]?.count || 0;
+
+  const rejectedCount = result.rejectedCount[0]?.count || 0;
+
+  const attendedCount = result.attendedCount[0]?.count || 0;
+
+  res.json({
+    totalCount,
+    pendingCount,
+    approvedCount,
+    rejectedCount,
+    attendedCount,
+    submissions
+  });
+});
+
+
+// // @desc    Edit submission
+// // @route   PUT /api/submission/:id
+// // @access  Private (Admin)
+const editSubmission = catchAsync(async (req, res) => {
+
+  const submission = await Submission.findById(req.params.id);
+
+  if (!submission) {
+    throw new AppError('Submission not found', 404);
+  }
+
+  const {
+    status,
+    answers
+  } = req.body;
+
+  if (status) {
+    submission.status = status;
+  }
+
+  if (answers) {
+    submission.answers = answers;
+  }
+
+  await submission.save();
+
+  res.json(submission);
+});
+
+module.exports = { submitForm, scanTicket, getSubmissions, getSubmission, editSubmission, exportSubmissionsToExcel };
