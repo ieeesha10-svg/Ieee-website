@@ -8,7 +8,12 @@ const {
   getUsers,
   createUser, // <--- Import the new function
   exportUsersToExcel,
-  verifyEmailOTP
+  verifyEmailOTP,
+  getAllMembers,
+  createMember,
+  getMember,
+  upgradeMemberRole,
+  deleteMember
 } = require('../controllers/userController');
 
 const { protect, authorize } = require('../middleware/authMiddleware');
@@ -33,4 +38,10 @@ userRouter.post('/create-internal', protect, authorize('xcom'), createUser);
 // Usage: /api/users/export?role=member (Downloads file directly)
 userRouter.get('/export', protect, authorize('xcom', 'board'), exportUsersToExcel);   
 
+// admins - members CRUD opertaions for member, board, xcom, scanner
+userRouter.get('/members',protect,authorize('xcom', 'board','member','scanner'),getAllMembers);
+userRouter.post('/members',protect,authorize('xcom', 'board','member','scanner'),createMember);
+userRouter.get('/members/:id',protect,authorize('xcom', 'board','member','scanner'),getMember);
+userRouter.patch('/members/:id',protect,authorize('xcom', 'board','member','scanner'),upgradeMemberRole);
+userRouter.delete('/members/:id',protect,authorize('xcom', 'board','member','scanner'),deleteMember);
 module.exports = userRouter;

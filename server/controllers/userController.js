@@ -413,8 +413,96 @@ const exportUsersToExcel = async (req, res) => {
   }
 };
 
+//admins-members CRUD operations
 
+// get all members for member, board, xcom, scanner
+const getAllMembers=catchAsync(async(req,res,next)=>{
+  const allUsers=await User.find();
+  if(!allUsers||allUsers.length===0){
+    return next(new AppError("No users to show",400));
+  }
+  res.status(200).json({
+    dataLength:allUsers.length,
+    data:allUsers
+  });
+});
 
+//create member
+const createMember=catchAsync(async(req,res,next)=>{
+  const allowedRoles=User.schema.path("role").enumValues;
+ const {name,email,password,role,phone,age,university,college,yearOfStudy,interests,committee,optionalData}=req.body;
+ if(!name || !email || !password || !password || !role){
+  return next(new AppError("Please Provide name, email, role and password",400));
+ }
+ if(!allowedRoles.includes(role)){
+    return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`,400 ));}
+ const exists=await User.findOne({email:email});
+ if(exists){
+  return next(new AppError('Member already exists',400));
+ }
+ const newMember=await User.create({
+  name:name,
+  email:email,
+  password:password,
+  role:role,
+  phone:phone,
+  age:age,
+  university:university,
+  college:college,
+  yearOfStudy:yearOfStudy,
+  interests,
+  committee:committee,
+  optionalData:optionalData
+ });
+ res.status(201).json({
+  status:'success',
+    message:'Member created successfly',
+    data:newMember
+ });
+});
+
+//get member
+const getMember=catchAsync(async(req,res,next)=>{
+  const member=await User.findById(req.params.id);
+  if(!member){
+    return next(new AppError("Member not found",400));
+  }
+  res.status(200).json({
+    status:'success',
+    data:member
+  });
+});
+// upgrade member role 
+const upgradeMemberRole=catchAsync(async(req,res,next)=>{
+  const {role}=req.body;
+  const allowedRoles=User.schema.path("role").enumValues;
+  if(!role){
+     return next(new AppError("Role is required",400));
+  }
+  if(!allowedRoles.includes(role)){
+    return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`,400 ));}
+  const updatedMember=await User.findByIdAndUpdate(req.params.id,{role},{new:true});
+  if(!updatedMember){
+    return next(new AppError("Member not found",400));
+  }
+  res.status(200).json({
+    status:'success',
+    message:'Member role updated successfly',
+    data:updatedMember
+  });
+});
+
+//delete member 
+const deleteMember=catchAsync(async(req,res,next)=>{
+  const member=await User.findByIdAndDelete(req.params.id);
+  if(!member){
+    return next(new AppError("Member not found",400));
+  }
+  res.status(204).json({
+    status:'success',
+    message:'Member deleted successfly'
+  });
+});
 module.exports = {
   loginUser,
   logoutUser,
@@ -423,5 +511,10 @@ module.exports = {
   createUser,
   getUsers,
   exportUsersToExcel,
-  verifyEmailOTP
+  verifyEmailOTP,
+  getAllMembers,
+  createMember,
+  getMember,
+  upgradeMemberRole,
+  deleteMember
 };
