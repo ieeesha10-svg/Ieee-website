@@ -1,31 +1,61 @@
 const mongoose = require('mongoose');
 
+const fieldSchema = new mongoose.Schema({
+  id: { type: String, required: true, validate: { validator: (v) => typeof v === 'string' && v.trim() !== '', message: 'ID is required and must be a non-empty string' } },
+  label: { type: String, required: true, validate: { validator: (v) => typeof v === 'string' && v.trim() !== '', message: 'Label is required and must be a non-empty string' } },
+  type: { type: String, required: true, enum: ['TextInput', 'TextArea', 'Dropdown', 'Checkbox'] },
+  required: { type: Boolean, default: false, validate: { validator: (v) => typeof v === 'boolean', message: 'Required must be a boolean' } },
+});
+
 const formSchema = new mongoose.Schema({
-  title: { type: String, required: true },
+  activityID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Activity",
+    // required: true,
+    unique: true,
+  },
+  status: { 
+    type: String,
+    enum: ["Active", "Closed", "Draft"],
+    default: "Draft"
+  },
+  title: String,
   description: String,
-  
-  // This stores the Drag-and-Drop JSON from React
-  structure: { type: Array, required: true }, 
 
   // Who made this? (Good for multiple admins)
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-
-  // Logic Settings
-  type: { 
-    type: String, 
-    enum: ['general', 'event', 'workshop'], 
-    default: 'general' 
+  createdBy: { 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  settings: {
-    maxSubmissions: { type: Number, default: 0 }, // 0 = Infinite
-    expiryDate: Date,
-    requiresLogin: { type: Boolean, default: false }, // <--- The feature you asked for
-    isActive: { type: Boolean, default: true }
-  }
+  fields: [fieldSchema], // <-- Using the defined fieldSchema for better structure and validation
+  /*
+  Stores dynamic form fields generated from frontend builder
+  Example:
+  [
+    {
+      id: "full_name",
+      type: "text",
+      label: "Full Name",
+      required: true
+    }
+  ]
+  */
+  type : String,
+  startDate: {
+    type: Date,
+    required: true
+  },
+  endDate: {
+    type: Date,
+    required: true
+  },
+  maxSubmissions: {
+    type: Number,
+    default: Number.MAX_SAFE_INTEGER // <-- No limit by default (infinite)
+  },
+  requiresLogin: { type: Boolean, default: false }, // <--- The feature you asked for
 }, { timestamps: true });
 
 const Form = mongoose.model('Form', formSchema);
 module.exports = Form;
-
-
-

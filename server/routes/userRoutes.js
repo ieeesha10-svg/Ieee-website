@@ -5,6 +5,7 @@ const {
   logoutUser, 
   registerUser, 
   getUserProfile, 
+  updateUserProfile,
   getUsers,
   createUser, // <--- Import the new function
   exportUsersToExcel,
@@ -19,7 +20,7 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // Public Routes
-userRouter.post('/', registerUser); // Anyone can sign up as User/Member
+userRouter.post('/register', registerUser); // Anyone can sign up as User/Member
 userRouter.post('/verify-email', verifyEmailOTP);
 userRouter.post('/login', loginUser);
 userRouter.post('/logout', logoutUser);
@@ -27,8 +28,11 @@ userRouter.post('/logout', logoutUser);
 // Protected Routes
 userRouter.get('/profile', protect, getUserProfile);
 
+// Edit Profile
+userRouter.put('/profile/:id', protect, updateUserProfile);
+
 // Admin / XCom Routes
-userRouter.get('/', protect, authorize('xcom', 'board'), getUsers); 
+userRouter.get('/all', protect, authorize('xcom', 'board'), getUsers); 
 
 // --- THE NEW SECURE ROUTE ---
 // Only 'xcom' can create other admins/board members

@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Mail, KeyRound } from 'lucide-react';
-import toast from 'react-hot-toast';
-import api from '../utils/api';
-import AuthLayout from '../layouts/AuthLayout';
-import MailIcon from '../assets/icons/mail.png'
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Mail, KeyRound } from "lucide-react";
+import toast from "react-hot-toast";
+import api from "../utils/api";
+import AuthLayout from "../layouts/AuthLayout";
+import MailIcon from "../assets/icons/mail.png";
 
 const VerifyEmailPage = () => {
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,16 +25,18 @@ const VerifyEmailPage = () => {
     setLoading(true);
 
     try {
-      const { data } = await api.post('/users/verify-email', { email, otp });
-      
-      toast.success(data.message || 'Email verified successfully!');
-      
-      setTimeout(() => {
-        navigate('/login');
-      }, 1500);
+      const { data } = await api.post("/users/verify-email", { email, otp });
 
+      toast.success(data.message || "Email verified successfully!");
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
     } catch (error) {
-      const msg = error.response?.data?.error || error.response?.data?.message || 'Verification failed';
+      const msg =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Verification failed";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -42,7 +44,11 @@ const VerifyEmailPage = () => {
   };
 
   return (
-		<AuthLayout title="Verify Email" subtitle="Enter the 6-digit code sent to your email" icon={MailIcon}>
+    <AuthLayout
+      title="Verify Email"
+      subtitle="Enter the 6-digit code sent to your email"
+      icon={MailIcon}
+    >
       <form onSubmit={handleVerify} className="space-y-6">
         <div className="relative">
           <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
@@ -74,19 +80,22 @@ const VerifyEmailPage = () => {
           disabled={loading || otp.length < 6}
           className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          {loading ? 'Verifying...' : 'Verify Account'}
+          {loading ? "Verifying..." : "Verify Account"}
         </button>
       </form>
 
       <div className="text-center mt-6">
         <p className="text-gray-600 dark:text-gray-400 text-sm">
-          Back to{' '}
-          <Link to="/login" className="text-primary dark:text-sky-400 font-bold hover:underline">
+          Back to{" "}
+          <Link
+            to="/login"
+            className="text-primary dark:text-sky-400 font-bold hover:underline"
+          >
             Sign In
           </Link>
         </p>
       </div>
-		</AuthLayout>
+    </AuthLayout>
   );
 };
 

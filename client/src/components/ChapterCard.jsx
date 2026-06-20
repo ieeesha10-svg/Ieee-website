@@ -3,7 +3,7 @@ import React from "react";
 import Button from "./Button";
 
 export default function ChapterCard({ title, icon, branch, body, activeMembers, bgColor = { from: '#ffffff', to: "#000000" }}) {
-	return <div className="flex flex-col rounded-3xl h-full">
+	return <div className="flex flex-col overflow-hidden border border-border rounded-3xl h-full">
 
 		{/* Top section of the card*/}
 		<div
@@ -14,13 +14,13 @@ export default function ChapterCard({ title, icon, branch, body, activeMembers, 
 			<div className=" bg-white/20 rounded-2xl p-3 w-fit">
 				<img src={icon} className="w-12 h-12" alt={`Chapter's Icon`} />
 			</div>
-			<h3 className="text-white fton-semibold text-3xl mt-6 mb-10">{title}</h3>
+			<h3 className="text-white fton-semibold text-xl md:text-3xl mt-6 mb-10">{title}</h3>
 			<span className="text-white text-sm font-light">{branch}</span>
 		</div>
 		
 		{/* Bottom section of the card*/}
-		<div className="flex-1 bg-main p-6 flex flex-col">
-			<p className="text-muted mb-3">{body}</p>
+		<div className="flex-1 bg-main p-6 flex flex-col gap-6">
+			<p className="text-muted">{body}</p>
 			
 			<div className="flex justify-between mt-auto">
 				<div className="flex flex-col gap-1">

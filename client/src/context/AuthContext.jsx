@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
       try {
         // Asking your specific backend route
         const { data } = await api.get('/users/profile'); 
-        setUser(data); 
+        setUser(data?.user); 
       } catch (error) {
         setUser(null);
       } finally {
