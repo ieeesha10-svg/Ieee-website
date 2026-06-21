@@ -20,6 +20,7 @@ import PublicNavbar from './components/PublicNavbar';
 import AdminSidebar from './components/AdminSidebar';
 import Footer from './components/Footer';
 import ThemeToggle from './components/ThemeToggle';
+import AboutPage from './pages/AboutPage';
 
 // --- 1. ROUTE GUARD COMPONENT ---
 const ProtectedRoute = ({ requireAdmin = false }) => {
@@ -76,7 +77,7 @@ const Layout = ({ children }) => {
         )}
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
           {children}
         </div>
       </main>
@@ -98,6 +99,7 @@ function App() {
 					<Route path="/events" element={<Events />} />
 					<Route path="/events/:id" element={<EventRegistration />} />
 					<Route path="/contact" element={<ContactPage />} />
+					<Route path="/about" element={<AboutPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify" element={<VerifyEmailPage />} />
