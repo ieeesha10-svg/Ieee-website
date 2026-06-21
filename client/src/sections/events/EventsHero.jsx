@@ -27,12 +27,12 @@ export default function EventsHero() {
 					<span>trough</span>
 					<span>events</span>
 				</h2>
-				<p style={{ maxWidth: '400px' }} className='font-medium text-sm text-muted dark:text-foreground md:text-xl'>
+				<p className='max-w-[350px] lg:max-w-[550px] mx-auto lg:mx-0 font-medium text-sm text-muted dark:text-foreground md:text-xl'>
 					Discover technical workshops, hackathons, competitions, and networking experiences designed to inspire future engineers and innovators.
 				</p>
 
 				{/* Call-To-Action Buttons*/}
-				<div className='*:text-lg *:lg:text-xl flex gap-3 justify-center md:justify-start mt-5'>
+				<div className='*:text-lg *:lg:text-xl flex flex-col lg:flex-row gap-4 lg:mx-0 justify-center md:justify-start mt-5'>
 					<a href='#upcoming-events'>
 						<button
 							className='px-6 py-3 lg:px-12 lg:py-6 w-full rounded-xl font-light text-primary hover:bg-white/40 hover:text-primary-dark dark:text-white hover:dark:text-white dark:bg-[#2563EB] hover:dark:bg-[#2563EB]/60 transition duration-300'
@@ -43,7 +43,7 @@ export default function EventsHero() {
 					</a>
 					{
 						!user && (
-							<Link to='/login'>
+							<Link to='/signup'>
 								<Button className='w-full rounded-xl px-6 py-3 lg:px-12 lg:py-6 bg-linear-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary transition text-white dark:hover:bg-white/10 hover:text-white dark:bg-main dark:from-transparent dark:to-transparent hover:dark:from-transparent hover:dark:to-transparent dark:border dark:border-border'>
 											Become a Member
 								</Button>
