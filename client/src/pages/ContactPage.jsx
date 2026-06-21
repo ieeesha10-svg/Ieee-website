@@ -49,7 +49,7 @@ const SOCIAL_MEDIA = [
 
 function SocialCard({ Icon, href, title, subtitle, linkLabel }) {
   return (
-    <div className="flex flex-col gap-3 bg-main border lg:border-2 border-[#E4EAF1] dark:border-border rounded-xl p-5">
+    <div className="flex flex-col gap-3 bg-main border lg:border-2 hover:-translate-y-2 transition-all duration-300 shadow border-[#E4EAF1] dark:border-border rounded-xl p-5">
       <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10">
         <Icon className="text-primary" size={18} aria-hidden="true" />
       </div>
