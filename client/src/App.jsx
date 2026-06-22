@@ -22,6 +22,7 @@ import Home from "./pages/Home";
 import Events from "./pages/Events";
 import EventRegistration from "./pages/EventRegistration";
 import BulkMailer from "./pages/BulkMailer";
+import CrewPage from "./pages/CrewPage";
 // Components
 import PublicNavbar from "./components/PublicNavbar";
 import AdminSidebar from "./components/AdminSidebar";
@@ -115,6 +116,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify" element={<VerifyEmailPage />} />
+          <Route path="/crew" element={<CrewPage />} />
 
           {/* === PROTECTED ROUTES (All Users) === */}
           {/* Any route inside this block requires the user to be logged in */}
