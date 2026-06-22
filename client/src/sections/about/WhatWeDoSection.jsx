@@ -31,7 +31,7 @@ export default function WhatWeDoSection() {
           {items.map((item, i) => {
             const Icon = item.icon
             return (
-              <div key={i} className="flex flex-col bg-white dark:bg-card border border-border rounded-xl p-6">
+              <div key={i} className="flex flex-col bg-white dark:bg-card border border-border rounded-xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                 <span className="text-xs font-bold text-primary">{item.tag}</span>
                 <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary shadow-lg shadow-primary/40 mt-3 mb-3">
                   <Icon size={20} className="text-white" />

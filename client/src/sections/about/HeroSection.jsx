@@ -27,17 +27,17 @@ export default function HeroSection() {
           {/* Left Column */}
           <div className="flex flex-col items-center justify-center lg:items-start lg:justify-start text-center lg:text-left gap-6">
             <Badge text={"IEEE Student Branch · Shorouk"} />
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-gotham font-bold text-foreground leading-tight">
               Engineering the Future, Together
             </h1>
             <p className="text-muted text-sm sm:text-base">
               We&apos;re a community of curious engineers, designers, and builders at the heart of campus — driving innovation through workshops, real-world projects, and a shared passion for technology.
             </p>
-            <div className="flex justify-center lg:justify-start gap-3 flex-wrap">
-              <a href='/signup' className="bg-primary-linear text-white font-semibold rounded-full px-6 py-3 flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3 w-[80%] sm:w-auto">
+              <a href='/signup' className="bg-primary-linear text-white font-semibold rounded-full px-6 py-3 flex items-center justify-center gap-2 w-full sm:w-auto transition-all duration-300 hover:opacity-85 hover:scale-[1.02]">
                 Become a Member <ArrowRight size={18} />
               </a>
-              <a href='/events' className="border border-border text-foreground rounded-full px-6 py-3 font-semibold">
+              <a href='/events' className="border border-border text-foreground rounded-full px-6 py-3 font-semibold text-center w-full sm:w-auto transition-all duration-300 hover:bg-card hover:border-primary/50">
                 Explore Events
               </a>
             </div>

@@ -62,7 +62,7 @@ export default function TimelineSection() {
 
                 {evt.side === 'left' ? (
                   <div className="flex justify-end pr-8">
-                    <div className="w-full max-w-sm bg-white border border-border dark:bg-card rounded-xl p-5 text-right">
+                    <div className="w-full max-w-sm bg-white border border-border dark:bg-card rounded-xl p-5 text-right transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                       <span className="text-xs font-semibold text-primary uppercase">{evt.date}</span>
                       <h3 className="font-bold text-foreground mt-1">{evt.title}</h3>
                       <p className="text-sm text-muted mt-1">{evt.desc}</p>
@@ -70,7 +70,7 @@ export default function TimelineSection() {
                   </div>
                 ) : (
                   <div className="col-start-2 flex justify-start pl-8">
-                    <div className="w-full max-w-sm bg-white border border-border dark:bg-card rounded-xl p-5 text-left">
+                    <div className="w-full max-w-sm bg-white border border-border dark:bg-card rounded-xl p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                       <span className="text-xs font-semibold text-primary uppercase">{evt.date}</span>
                       <h3 className="font-bold text-foreground mt-1">{evt.title}</h3>
                       <p className="text-sm text-muted mt-1">{evt.desc}</p>
