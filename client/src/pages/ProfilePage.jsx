@@ -57,7 +57,6 @@ export default function ProfilePage() {
     setIsEditing(false);
   };
 
-  // 2. دالة الحفظ وإرسال التعديلات للباك إند
   const handleSave = async () => {
     try {
       const { data } = await api.put("/users/profile", {
@@ -79,9 +78,10 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="relative w-full min-h-screen py-12 px-4 lg:px-20 bg-[#F2F2F2] dark:bg-[#0A0E1A] flex justify-center items-center transition-colors duration-300 overflow-hidden">
+    <div className="relative w-full min-h-screen py-12 px-4 lg:px-20 bg-[#F2F2F2] dark:bg-[#0F1420] flex justify-center items-center transition-colors duration-300 overflow-hidden">
+      {/* Background Pattern */}
       <div
-        className="absolute inset-0 w-full h-full opacity-5 pointer-events-none transition-opacity duration-300"
+        className="absolute inset-0 w-full h-full opacity-5 dark:opacity-[0.02] pointer-events-none transition-opacity duration-300"
         style={{
           backgroundImage: 'url("/images/profileBackground.jpg")',
           backgroundSize: "cover",
@@ -90,91 +90,101 @@ export default function ProfilePage() {
         }}
       />
 
-      <div className="relative z-10 w-full max-w-[1760px] bg-[#F2F2F2]/95 dark:bg-[#111827] shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-none border border-transparent dark:border-[#1F2937] rounded-[24px] p-6 lg:p-12 transition-colors duration-300">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="font-gotham text-[28px] lg:text-[35px] text-[#0077CC] dark:text-[#F8FAFC] transition-colors duration-300">
+      {/* Main Card */}
+      <div className="relative z-10 w-full max-w-[1760px] bg-white dark:bg-[#1A1F2E] shadow-xl dark:shadow-none border border-transparent dark:border-gray-800 rounded-3xl p-6 lg:p-12 transition-colors duration-300">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8 lg:mb-12">
+          <h1 className="font-gotham font-bold text-3xl lg:text-4xl text-[#0077CC] dark:text-[#33B5FF] transition-colors duration-300">
             My Profile
           </h1>
           {isEditing && (
-            <span className="bg-amber-100 text-amber-600 px-3 py-1 rounded-full text-sm font-medium animate-pulse">
-              Edit Mode Active
+            <span className="bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 px-4 py-1.5 rounded-full text-sm font-bold animate-pulse">
+              Edit Mode
             </span>
           )}
         </div>
 
+        {/* User Info Section */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-12">
           <img
             src="/images/avatar.jpg"
             alt="User Avatar"
-            className="w-[110px] h-[110px] rounded-full border-[2.4px] border-[#E0E7FF] dark:border-[#1F2937] object-cover"
+            className="w-28 h-28 lg:w-32 lg:h-32 rounded-full border-4 border-[#E0E7FF] dark:border-[#0077CC]/30 object-cover shadow-md"
             onError={(e) => {
-              e.target.src = "/images/Checker.png";
+              e.target.src = "/images/Checker.jpg";
             }}
           />
 
           <div className="flex flex-col items-center sm:items-start mt-2">
-            <h2 className="font-inter font-bold text-[24px] lg:text-[30px] text-black dark:text-[#F8FAFC] mb-2 transition-colors duration-300">
-              {userData.fullName || "Loading..."}
+            <h2 className="font-inter font-bold text-2xl lg:text-3xl text-gray-900 dark:text-white mb-2 transition-colors duration-300">
+              {userData.fullName || "user"}
             </h2>
-            <div className="bg-[#DBEAFE] dark:bg-[#60A5FA]/15 border-[0.2px] border-[#008DF0] dark:border-transparent rounded-full px-4 py-1 mb-2">
-              <span className="font-lakes font-bold text-[13px] text-[#2563EB] dark:text-[#60A5FA]">
+            <div className="bg-[#DBEAFE] dark:bg-[#0077CC]/20 border border-[#008DF0]/20 dark:border-[#33B5FF]/20 rounded-full px-4 py-1 mb-2">
+              <span className="font-lakes font-bold text-sm text-[#0077CC] dark:text-[#33B5FF]">
                 IEEE Member
               </span>
             </div>
-            <p className="font-lakes font-medium text-[16px] text-[#64748B] dark:text-[#94A3B8] transition-colors duration-300">
+            <p className="font-lakes font-medium text-base text-gray-500 dark:text-gray-400 transition-colors duration-300">
               {userData.college || "Student"}
             </p>
           </div>
         </div>
 
+        {/* Form Section */}
         <div className="relative pl-6 lg:pl-10">
-          <div className="absolute left-0 top-0 bottom-0 w-[6px] rounded-full bg-gradient-to-b from-[#1FA6FF] to-[#0088FF] dark:from-[#6366F1] dark:to-[#22C55E] transition-all duration-300" />
+          {/* Vertical Decorative Line */}
+          <div className="absolute left-0 top-0 bottom-0 w-1.5 rounded-full bg-gradient-to-b from-[#1FA6FF] to-[#0088FF] dark:from-[#33B5FF] dark:to-[#0077CC] transition-all duration-300" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-            <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
-              <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
-                Full Name
-              </label>
-              <input
-                type="text"
-                name="fullName"
-                value={userData.fullName}
-                onChange={handleChange}
-                readOnly={!isEditing}
-                className={`w-full bg-[#F1F5F9] dark:bg-[#111827]/70 border-[0.8px] ${isEditing ? "border-[#0096FF] dark:border-[#6366F1] focus:ring-1 focus:ring-[#0096FF]" : "border-[#CBD5E1] dark:border-[#1F2937]"} rounded-[12px] p-3 text-[14px] font-lakes font-medium text-[#64748B] dark:text-[#F8FAFC] outline-none transition-all duration-300`}
-              />
-            </div>
+            {/* Input Component */}
+            {[
+              {
+                label: "Full Name",
+                name: "fullName",
+                type: "text",
+                editable: true,
+              },
+              { label: "Email", name: "email", type: "email", editable: false },
+              { label: "Phone", name: "phone", type: "text", editable: true },
+              { label: "Age", name: "age", type: "number", editable: true },
+              {
+                label: "University",
+                name: "university",
+                type: "text",
+                editable: true,
+              },
+              {
+                label: "College",
+                name: "college",
+                type: "text",
+                editable: true,
+              },
+            ].map((field) => (
+              <div
+                key={field.name}
+                className="flex flex-col p-4 lg:p-5 bg-gray-50 dark:bg-[#0F1420] border border-gray-200 dark:border-gray-800 rounded-2xl gap-2 transition-colors duration-300"
+              >
+                <label className="font-lakes font-bold text-sm lg:text-base text-gray-600 dark:text-gray-400">
+                  {field.label}
+                </label>
+                <input
+                  type={field.type}
+                  name={field.name}
+                  value={userData[field.name]}
+                  onChange={handleChange}
+                  readOnly={!isEditing || !field.editable}
+                  className={`w-full bg-white dark:bg-[#1A1F2E] border ${
+                    isEditing && field.editable
+                      ? "border-[#0077CC] dark:border-[#33B5FF] focus:ring-1 focus:ring-[#0077CC] dark:focus:ring-[#33B5FF]"
+                      : "border-gray-200 dark:border-gray-700 opacity-80 cursor-default"
+                  } rounded-xl p-3 text-sm font-lakes font-medium text-gray-700 dark:text-gray-200 outline-none transition-all duration-300`}
+                />
+              </div>
+            ))}
 
-            <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
-              <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={userData.email}
-                onChange={handleChange}
-                readOnly={true}
-                className="w-full bg-[#F1F5F9] dark:bg-[#111827]/70 border-[0.8px] border-[#CBD5E1] dark:border-[#1F2937] rounded-[12px] p-3 text-[14px] font-lakes font-medium text-[#64748B] dark:text-[#F8FAFC] outline-none transition-all duration-300"
-              />
-            </div>
-
-            <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
-              <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
-                Phone
-              </label>
-              <input
-                type="text"
-                name="phone"
-                value={userData.phone}
-                onChange={handleChange}
-                readOnly={!isEditing}
-                className={`w-full bg-[#F1F5F9] dark:bg-[#111827]/70 border-[0.8px] ${isEditing ? "border-[#0096FF] dark:border-[#6366F1] focus:ring-1 focus:ring-[#0096FF]" : "border-[#CBD5E1] dark:border-[#1F2937]"} rounded-[12px] p-3 text-[14px] font-inter text-[#64748B] dark:text-[#F8FAFC] outline-none transition-all duration-300`}
-              />
-            </div>
-
-            <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
-              <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
+            {/* Role Select */}
+            <div className="flex flex-col p-4 lg:p-5 bg-gray-50 dark:bg-[#0F1420] border border-gray-200 dark:border-gray-800 rounded-2xl gap-2 transition-colors duration-300">
+              <label className="font-lakes font-bold text-sm lg:text-base text-gray-600 dark:text-gray-400">
                 Role
               </label>
               <div className="relative w-full">
@@ -183,62 +193,25 @@ export default function ProfilePage() {
                   value={userData.role}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  className={`w-full bg-[#F1F5F9] dark:bg-[#111827]/70 border-[0.8px] ${isEditing ? "border-[#0096FF] dark:border-[#6366F1] cursor-pointer focus:ring-1 focus:ring-[#0096FF]" : "border-[#CBD5E1] dark:border-[#1F2937] cursor-not-allowed"} rounded-[12px] p-3 text-[14px] font-lakes font-medium text-[#64748B] dark:text-[#F8FAFC] outline-none appearance-none transition-all duration-300`}
+                  className={`w-full bg-white dark:bg-[#1A1F2E] border ${
+                    isEditing
+                      ? "border-[#0077CC] dark:border-[#33B5FF] cursor-pointer focus:ring-1 focus:ring-[#0077CC]"
+                      : "border-gray-200 dark:border-gray-700 opacity-80 cursor-not-allowed"
+                  } rounded-xl p-3 text-sm font-lakes font-medium text-gray-700 dark:text-gray-200 outline-none appearance-none transition-all duration-300`}
                 >
                   <option value="Student">Student</option>
                   <option value="Graduated">Graduated</option>
                   <option value="Instructor">Instructor</option>
                 </select>
-                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-[#64748B] dark:text-[#94A3B8]">
+                <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
                   <ChevronDown size={18} />
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
-              <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
-                Age
-              </label>
-              <input
-                type="number"
-                name="age"
-                value={userData.age}
-                onChange={handleChange}
-                readOnly={!isEditing}
-                className={`w-full bg-[#F1F5F9] dark:bg-[#111827]/70 border-[0.8px] ${isEditing ? "border-[#0096FF] dark:border-[#6366F1] focus:ring-1 focus:ring-[#0096FF]" : "border-[#CBD5E1] dark:border-[#1F2937]"} rounded-[12px] p-3 text-[14px] font-inter text-[#64748B] dark:text-[#F8FAFC] outline-none transition-all duration-300`}
-              />
-            </div>
-
-            <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
-              <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
-                University
-              </label>
-              <input
-                type="text"
-                name="university"
-                value={userData.university}
-                onChange={handleChange}
-                readOnly={!isEditing}
-                className={`w-full bg-[#F1F5F9] dark:bg-[#111827]/70 border-[0.8px] ${isEditing ? "border-[#0096FF] dark:border-[#6366F1] focus:ring-1 focus:ring-[#0096FF]" : "border-[#CBD5E1] dark:border-[#1F2937]"} rounded-[12px] p-3 text-[14px] font-lakes font-medium text-[#64748B] dark:text-[#F8FAFC] outline-none transition-all duration-300`}
-              />
-            </div>
-
-            <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300">
-              <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
-                College
-              </label>
-              <input
-                type="text"
-                name="college"
-                value={userData.college}
-                onChange={handleChange}
-                readOnly={!isEditing}
-                className={`w-full bg-[#F1F5F9] dark:bg-[#111827]/70 border-[0.8px] ${isEditing ? "border-[#0096FF] dark:border-[#6366F1] focus:ring-1 focus:ring-[#0096FF]" : "border-[#CBD5E1] dark:border-[#1F2937]"} rounded-[12px] p-3 text-[14px] font-inter text-[#64748B] dark:text-[#F8FAFC] outline-none transition-all duration-300`}
-              />
-            </div>
-
-            <div className="flex flex-col p-4 lg:p-5 bg-[#F8FAFC] dark:bg-[#0B1220] border-[0.8px] border-[#E2E8F0] dark:border-[#1F2937] rounded-[18px] lg:rounded-[24px] gap-2 transition-colors duration-300 h-full">
-              <label className="font-lakes font-bold text-[14px] lg:text-[16px] text-[#475569] dark:text-[#94A3B8]">
+            {/* About Me */}
+            <div className="flex flex-col p-4 lg:p-5 bg-gray-50 dark:bg-[#0F1420] border border-gray-200 dark:border-gray-800 rounded-2xl gap-2 transition-colors duration-300 h-full">
+              <label className="font-lakes font-bold text-sm lg:text-base text-gray-600 dark:text-gray-400">
                 About Me (Optional)
               </label>
               <textarea
@@ -246,16 +219,21 @@ export default function ProfilePage() {
                 value={userData.aboutMe}
                 onChange={handleChange}
                 readOnly={!isEditing}
-                className={`w-full h-full min-h-[50px] bg-[#F1F5F9] dark:bg-[#111827]/70 border-[0.8px] ${isEditing ? "border-[#0096FF] dark:border-[#6366F1] focus:ring-1 focus:ring-[#0096FF]" : "border-[#CBD5E1] dark:border-[#1F2937]"} rounded-[12px] p-3 text-[14px] font-lakes font-medium text-[#64748B] dark:text-[#F8FAFC] outline-none resize-none transition-all duration-300`}
+                className={`w-full h-full min-h-[100px] bg-white dark:bg-[#1A1F2E] border ${
+                  isEditing
+                    ? "border-[#0077CC] dark:border-[#33B5FF] focus:ring-1 focus:ring-[#0077CC]"
+                    : "border-gray-200 dark:border-gray-700 opacity-80 cursor-default"
+                } rounded-xl p-3 text-sm font-lakes font-medium text-gray-700 dark:text-gray-200 outline-none resize-none transition-all duration-300`}
               />
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-center md:items-end mt-12 gap-8 md:gap-0">
-          <div className="bg-[#DBEAFE] dark:bg-[#60A5FA]/15 border-[0.2px] border-[#008DF0] dark:border-transparent rounded-full px-8 py-3">
-            <span className="font-inter font-semibold text-[24px] lg:text-[28px] text-[#2563EB] dark:text-[#60A5FA] transition-colors duration-300">
-              IEEE committee
+        {/* Footer Actions */}
+        <div className="flex flex-col md:flex-row justify-between items-center mt-12 gap-6 md:gap-0">
+          <div className="bg-[#DBEAFE] dark:bg-[#0077CC]/20 border border-[#008DF0]/30 dark:border-[#33B5FF]/30 rounded-full px-8 py-3 w-full md:w-auto text-center">
+            <span className="font-inter font-bold text-xl lg:text-2xl text-[#0077CC] dark:text-[#33B5FF] transition-colors duration-300 tracking-wide uppercase">
+              IEEE Committee
             </span>
           </div>
 
@@ -268,23 +246,23 @@ export default function ProfilePage() {
                   setIsEditing(true);
                 }
               }}
-              className="flex-1 md:flex-none flex justify-center items-center px-8 py-3 border border-[#0077CC] dark:border-[#F8FAFC] rounded-[8px] bg-transparent hover:bg-[#0077CC]/5 dark:hover:bg-white/10 transition-colors duration-300"
+              className="flex-1 md:flex-none flex justify-center items-center px-8 py-3 border border-[#0077CC] dark:border-[#33B5FF] rounded-xl bg-transparent hover:bg-[#0077CC]/5 dark:hover:bg-[#33B5FF]/10 transition-colors duration-300"
             >
-              <span className="font-lakes font-medium text-[16px] text-[#0077CC] dark:text-[#F8FAFC]">
-                {isEditing ? "Cancel" : "Edit"}
+              <span className="font-lakes font-bold text-base text-[#0077CC] dark:text-[#33B5FF]">
+                {isEditing ? "Cancel" : "Edit Profile"}
               </span>
             </button>
 
             <button
               onClick={handleSave}
               disabled={!isEditing}
-              className={`flex-1 md:flex-none flex justify-center items-center px-8 py-3 rounded-[8px] transition-all duration-300 ${isEditing ? "bg-gradient-to-r from-[#0096FF] to-[#33B5FF] shadow-[0_10px_15px_-3px_rgba(0,0,0,0.1)] hover:shadow-[0_0_20px_rgba(0,150,255,0.6)] hover:-translate-y-1" : "bg-gray-400 dark:bg-gray-700 cursor-not-allowed"}`}
+              className={`flex-1 md:flex-none flex justify-center items-center px-8 py-3 rounded-xl transition-all duration-300 ${
+                isEditing
+                  ? "bg-[#0077CC] dark:bg-[#33B5FF] text-white dark:text-[#0F1420] shadow-lg hover:shadow-xl hover:-translate-y-1 font-bold"
+                  : "bg-gray-300 dark:bg-gray-800 text-gray-500 dark:text-gray-500 cursor-not-allowed font-medium"
+              }`}
             >
-              <span
-                className={`font-lakes font-medium text-[16px] ${isEditing ? "text-[#F2F2F2]" : "text-gray-200 dark:text-gray-400"}`}
-              >
-                Save
-              </span>
+              Save Changes
             </button>
           </div>
         </div>
