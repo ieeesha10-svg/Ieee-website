@@ -8,14 +8,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { FaFacebook, FaInstagram, FaLinkedin, FaDiscord } from "react-icons/fa";
-
-function PillBadge({ children }) {
-  return (
-    <span className="inline-block text-xs tracking-wide uppercase text-primary dark:text-primary-light bg-primary/10 border border-border rounded-full px-5 py-1">
-      {children}
-    </span>
-  );
-}
+import Badge from '../components/Badge'
 
 function InfoCard({ Icon, label, value, subtext }) {
   return (
@@ -59,7 +52,7 @@ function SocialCard({ Icon, href, title, subtitle, linkLabel }) {
       </div>
       <a
         href={href}
-        className="flex items-center gap-1.5 text-sm font-gotham font-medium text-primary transition-all duration-300 hover:gap-2.5 hover:text-primary-light"
+        className="flex items-center gap-1.5 text-sm font-gotham font-medium text-primary transition-all duration-300 hover:gap-2.5 hover:text-primary-light mt-auto"
         aria-label={`${linkLabel} – ${title}`}
       >
         {linkLabel}
@@ -78,8 +71,8 @@ export default function ContactPage() {
           {/* Left column: badge + heading + paragraph + info cards */}
           <div className="flex flex-col items-center text-center gap-8">
 						<div className="flex flex-col gap-3 items-center">
-       				<PillBadge>GET IN TOUCH</PillBadge>
-	            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-black text-foreground leading-tight max-w-lg">
+           		<Badge text="Get In Touch" />
+	            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-gotham text-foreground leading-tight max-w-lg">
 	              Let's Start a Conversation
 							</h1>
 	            <p className="text-muted max-w-md">
@@ -180,7 +173,7 @@ export default function ContactPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="flex flex-col items-center text-center gap-4 mb-12">
-            <PillBadge>STAY CONNECTED</PillBadge>
+        		<Badge text="Stay Connected" />
             <h2 className="text-3xl sm:text-4xl font-bold">
               <span className="text-foreground">Find Us </span>
               <span className="text-primary">Online</span>
