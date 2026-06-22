@@ -213,6 +213,9 @@
       #0096ff 100%
     );
   }
+  .about-page-bg {
+  	@apply bg-white dark:bg-main;
+  }
 }
 
 /* 
