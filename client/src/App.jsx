@@ -12,6 +12,7 @@ import ProfilePage from './pages/ProfilePage';
 import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import Events from './pages/Events';
+import ContactPage from './pages/ContactPage';
 import EventRegistration from './pages/EventRegistration';
 import BulkMailer from './pages/BulkMailer';
 // Components
@@ -96,6 +97,7 @@ function App() {
           <Route path="/" element={<Home />} />
 					<Route path="/events" element={<Events />} />
 					<Route path="/events/:id" element={<EventRegistration />} />
+					<Route path="/contact" element={<ContactPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify" element={<VerifyEmailPage />} />
