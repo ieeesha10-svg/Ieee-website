@@ -214,7 +214,12 @@
     );
   }
   .about-page-bg {
-  	@apply bg-white dark:bg-main;
+  	@apply bg-white dark:bg-card;
+  }
+
+  .dark nav .bg-primary-linear {
+    background: none;
+    background-color: var(--bg-main);
   }
 }
 
