@@ -27,10 +27,8 @@ const NAV_LINKS = [
 ];
 
 const PublicNavbar = () => {
-  // 1. Add state to control the mobile menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  // Check if someone is logged in by looking at LocalStorage
   const { user } = useAuth();
 
   const location = useLocation();
@@ -39,9 +37,7 @@ const PublicNavbar = () => {
   const handleLogout = async () => {
     try {
       const { message } = await api.post("/users/logout");
-
       toast.success("Logged out successfully!");
-
       setTimeout(() => {
         window.location.reload();
         navigate("/");
@@ -52,8 +48,30 @@ const PublicNavbar = () => {
     }
   };
 
-  // Helper to close menu when a link is clicked
   const closeMenu = () => setIsMobileMenuOpen(false);
+
+  const handleNavClick = (e, href) => {
+    if (href === "/" && isHome) {
+      e.preventDefault();
+
+      const scrollContainer =
+        document.querySelector(".flex-1.overflow-auto") ||
+        document.querySelector("main > div");
+
+      if (scrollContainer) {
+        scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (href.startsWith("#") && isHome) {
+      e.preventDefault();
+      const targetId = href.replace("#", "");
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+    closeMenu();
+  };
 
   return (
     <nav className="bg-navbar-background lg:bg-navbar-background/88 dark:lg:bg-navbar-background/60 lg:backdrop-blur-xl shadow-md sticky top-0 z-50 transition-colors duration-300">
@@ -61,25 +79,26 @@ const PublicNavbar = () => {
         <Toaster position="top-center" />
 
         {/* Logo */}
-        <Link to="/">
+        <Link to="/" onClick={(e) => handleNavClick(e, "/")}>
           <img src="/logo.png" alt="IEEE Logo" />
         </Link>
 
-        {/* --- DESKTOP MENU (Hidden on small screens) --- */}
+        {/* --- DESKTOP MENU --- */}
         <div className="hidden md:flex items-center gap-6">
           {NAV_LINKS.map((nav_link, index) => {
             return (
-              <a
+              <Link
                 key={index}
-                href={
+                to={
                   nav_link.href.startsWith("#") && !isHome
                     ? "/" + nav_link.href
                     : nav_link.href
                 }
+                onClick={(e) => handleNavClick(e, nav_link.href)}
                 className="text-lg text-white hover:text-primary-light transition flex items-center"
               >
                 {nav_link.label}
-              </a>
+              </Link>
             );
           })}
 
@@ -114,7 +133,7 @@ const PublicNavbar = () => {
             <>
               <Link
                 to="/signup"
-                className="px-6 py-3 bg-linear-to-r from-primary-dark to-primary-light hover:from-primary-light hover:to-primary-dark text-white rounded-lg transition duration-600 shadow-lg font-light"
+                className="px-6 py-3 bg-gradient-to-r from-primary-dark to-primary-light hover:from-primary-light hover:to-primary-dark text-white rounded-lg transition duration-600 shadow-lg font-light"
               >
                 Join Now
               </Link>
@@ -122,7 +141,7 @@ const PublicNavbar = () => {
           )}
         </div>
 
-        {/* --- MOBILE MENU BUTTON (Visible only on small screens) --- */}
+        {/* --- MOBILE MENU BUTTON --- */}
         <div className="md:hidden flex items-center gap-4">
           <ThemeToggle />
           <button
@@ -148,7 +167,6 @@ const PublicNavbar = () => {
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {/* Sheet Header */}
         <div className="flex items-start justify-between px-6 pt-8 pb-4 border-b border-border">
           <div>
             <h2 className="text-2xl font-bold">Menu</h2>
@@ -162,19 +180,18 @@ const PublicNavbar = () => {
           </button>
         </div>
 
-        {/* Nav Links */}
         <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-2">
           {NAV_LINKS.map((link, index) => {
             const Icon = link.icon;
             return (
-              <a
+              <Link
                 key={index}
-                href={
+                to={
                   link.href.startsWith("#") && !isHome
                     ? "/" + link.href
                     : link.href
                 }
-                onClick={closeMenu}
+                onClick={(e) => handleNavClick(e, link.href)}
                 className="flex items-center gap-3 rounded-xl p-4 transition bg-white/10 dark:bg-[#222936]/20"
               >
                 <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-border shrink-0">
@@ -190,12 +207,11 @@ const PublicNavbar = () => {
                   size={16}
                   className="text-primary-light transition"
                 />
-              </a>
+              </Link>
             );
           })}
         </div>
 
-        {/* Sheet Footer */}
         <div className="px-4 pb-8 pt-4 border-t border-border">
           {user ? (
             <Link
@@ -212,12 +228,7 @@ const PublicNavbar = () => {
               </div>
             </Link>
           ) : (
-            <div
-              className="relative backdrop-blur-2xl overflow-hidden rounded-xl p-4 border border-border 
-	            bg-linear-to-r from-primary to-primary-light 
-	            dark:bg-none dark:bg-[#222936]/20 
-	            text-center"
-            >
+            <div className="relative backdrop-blur-2xl overflow-hidden rounded-xl p-4 border border-border bg-gradient-to-r from-primary to-primary-light dark:bg-none dark:bg-[#222936]/20 text-center">
               <div className="flex gap-4 mb-2">
                 <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary-linear">
                   <Sparkles size={18} />
