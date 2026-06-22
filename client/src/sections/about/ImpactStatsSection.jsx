@@ -26,7 +26,7 @@ export default function ImpactStatsSection() {
           {stats.map((stat, i) => {
             const Icon = stat.icon
             return (
-              <div key={i} className="bg-white dark:bg-card border border-border rounded-xl p-6 text-center" style={{ boxShadow: '0 2px 6px -1px rgba(0,150,255,0.04), 0 4px 14px -4px rgba(0,150,255,0.03), 0 8px 28px -6px rgba(0,0,0,0.12)' }}>
+              <div key={i} className="bg-white dark:bg-card border border-border rounded-xl p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-xl" style={{ boxShadow: '0 2px 6px -1px rgba(0,150,255,0.04), 0 4px 14px -4px rgba(0,150,255,0.03), 0 8px 28px -6px rgba(0,0,0,0.12)' }}>
                 <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 mb-4">
                   <Icon size={20} className="text-primary" />
                 </span>

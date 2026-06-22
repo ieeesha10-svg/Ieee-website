@@ -21,7 +21,7 @@ export default function MissionVisionSection() {
         {/* Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 *:border *:border-border">
           {/* Mission */}
-          <div className="bg-white dark:bg-card rounded-xl p-6 md:p-8">
+          <div className="bg-white dark:bg-card rounded-xl p-6 md:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
             <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary mb-4 shadow-lg shadow-primary/40">
               <Target size={20} className="text-white" />
             </span>
@@ -32,7 +32,7 @@ export default function MissionVisionSection() {
           </div>
 
           {/* Vision */}
-          <div className="bg-white dark:bg-card rounded-xl p-6 md:p-8">
+          <div className="bg-white dark:bg-card rounded-xl p-6 md:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
             <span className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary mb-4 shadow-lg shadow-primary/40">
               <Eye size={20} className="text-white" />
             </span>

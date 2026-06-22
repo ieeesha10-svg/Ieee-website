@@ -30,7 +30,7 @@ export default function CommitteesSection() {
         {/* Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {COMMITTES.map((c, i) => (
-            <div key={i} className="bg-white dark:bg-card rounded-xl p-6 text-center">
+            <div key={i} className="bg-white dark:bg-card rounded-xl p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
               <div className="text-4xl mb-3">{c.emoji}</div>
               <h3 className="font-bold text-foreground">{c.title}</h3>
               <p className="text-xs text-muted mt-1">{c.subtitle}</p>

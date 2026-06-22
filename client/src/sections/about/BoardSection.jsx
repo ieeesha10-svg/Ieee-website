@@ -59,7 +59,7 @@ export default function BoardSection() {
         {/* Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {members.map((m, i) => (
-            <div key={i} style={{ boxShadow: '0 2px 6px -1px rgba(0,150,255,0.04), 0 4px 14px -4px rgba(0,150,255,0.03), 0 8px 28px -6px rgba(0,0,0,0.12)' }} className="bg-card rounded-xl overflow-hidden">
+            <div key={i} style={{ boxShadow: '0 2px 6px -1px rgba(0,150,255,0.04), 0 4px 14px -4px rgba(0,150,255,0.03), 0 8px 28px -6px rgba(0,0,0,0.12)' }} className="bg-card rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
               {/* Avatar gradient */}
               <div className="flex items-center justify-center h-32 sm:h-70 bg-primary-light/30">
                 <span className="text-3xl sm:text-4xl font-bold text-primary text-primary-light">{m.initials}</span>
