@@ -64,7 +64,7 @@ export default function Footer() {
           {/* Social Icons */}
           <div className="flex flex-row items-center gap-4">
             <a
-              href="#"
+              href="https://www.facebook.com/IEEE.ElShoroukAcademy.SB"
               className="hover:scale-110 transition-transform duration-300"
             >
               <img
@@ -74,7 +74,7 @@ export default function Footer() {
               />
             </a>
             <a
-              href="#"
+              href="https://www.instagram.com/ieee.sha.sb"
               className="hover:scale-110 transition-transform duration-300"
             >
               <img
