@@ -20,10 +20,10 @@ import toast, { Toaster } from "react-hot-toast";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
-  { label: "About", href: "#about", icon: Info },
+  { label: "About", href: "/about", icon: Info },
   { label: "Chapters", href: "#chapters", icon: MapPin },
   { label: "Events", href: "/events", icon: Calendar, badge: "100+" },
-  { label: "Contact", href: "#contact", icon: Mail },
+  { label: "Contact", href: "/contact", icon: Mail },
 ];
 
 const PublicNavbar = () => {

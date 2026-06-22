@@ -28,6 +28,22 @@ import PublicNavbar from "./components/PublicNavbar";
 import AdminSidebar from "./components/AdminSidebar";
 import Footer from "./components/Footer";
 import ThemeToggle from "./components/ThemeToggle";
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import ProfilePage from './pages/ProfilePage';
+import Dashboard from './pages/Dashboard';
+import Home from './pages/Home';
+import Events from './pages/Events';
+import ContactPage from './pages/ContactPage';
+import EventRegistration from './pages/EventRegistration';
+import BulkMailer from './pages/BulkMailer';
+// Components
+import PublicNavbar from './components/PublicNavbar';
+import AdminSidebar from './components/AdminSidebar';
+import Footer from './components/Footer';
+import ThemeToggle from './components/ThemeToggle';
+import AboutPage from './pages/AboutPage';
 
 // --- 1. ROUTE GUARD COMPONENT ---
 const ProtectedRoute = ({ requireAdmin = false }) => {
@@ -91,7 +107,9 @@ const Layout = ({ children }) => {
         )}
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-auto">{children}</div>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          {children}
+        </div>
       </main>
 
       {/* Footer (Public Only, except auth pages) */}
@@ -113,6 +131,10 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/:id" element={<EventRegistration />} />
+					<Route path="/events" element={<Events />} />
+					<Route path="/events/:id" element={<EventRegistration />} />
+					<Route path="/contact" element={<ContactPage />} />
+					<Route path="/about" element={<AboutPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify" element={<VerifyEmailPage />} />
