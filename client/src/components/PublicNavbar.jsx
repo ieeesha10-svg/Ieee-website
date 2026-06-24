@@ -69,9 +69,9 @@ const PublicNavbar = () => {
         <div className="hidden md:flex items-center gap-6">
           {NAV_LINKS.map((nav_link, index) => {
             return (
-              <a
+              <Link
                 key={index}
-                href={
+                to={
                   nav_link.href.startsWith("#") && !isHome
                     ? "/" + nav_link.href
                     : nav_link.href
@@ -79,7 +79,7 @@ const PublicNavbar = () => {
                 className="text-lg text-white hover:text-primary-light transition flex items-center"
               >
                 {nav_link.label}
-              </a>
+              </Link>
             );
           })}
 
@@ -144,19 +144,19 @@ const PublicNavbar = () => {
 
       {/* --- MOBILE SLIDE-IN SHEET --- */}
       <div
-        className={`text-white fixed top-0 right-0 h-full w-[300px] max-w-[80vw] bg-primary-dark dark:bg-main z-50 shadow-2xl transition-transform duration-300 ease-in-out md:hidden flex flex-col ${
+        className={`text-white fixed top-0 right-0 h-full w-[300px] max-w-[80vw] bg-primary-linear dark:bg-main z-50 shadow-2xl transition-transform duration-300 ease-in-out md:hidden flex flex-col ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         {/* Sheet Header */}
-        <div className="flex items-start justify-between px-6 pt-8 pb-4 border-b border-border">
+        <div className="flex items-start justify-between px-6 pt-8 pb-4 border-b border-[#FFFFFF33] dark:border-border">
           <div>
             <h2 className="text-2xl font-bold">Menu</h2>
             <p className="text-sm text-white/50 mt-0.5">Explore our platform</p>
           </div>
           <button
             onClick={closeMenu}
-            className="shrink-0 rounded-full border border-border p-2 hover:bg-border transition"
+            className="shrink-0 rounded-full p-2 bg-primary-light/80 dark:bg-border transition"
           >
             <X size={20} />
           </button>
@@ -167,9 +167,9 @@ const PublicNavbar = () => {
           {NAV_LINKS.map((link, index) => {
             const Icon = link.icon;
             return (
-              <a
+              <Link
                 key={index}
-                href={
+                to={
                   link.href.startsWith("#") && !isHome
                     ? "/" + link.href
                     : link.href
@@ -177,7 +177,7 @@ const PublicNavbar = () => {
                 onClick={closeMenu}
                 className="flex items-center gap-3 rounded-xl p-4 transition bg-white/10 dark:bg-[#222936]/20"
               >
-                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-border shrink-0">
+                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-light/50 dark:bg-border shrink-0">
                   <Icon size={22} />
                 </span>
                 <span className="flex-1 font-medium">{link.label}</span>
@@ -190,13 +190,13 @@ const PublicNavbar = () => {
                   size={16}
                   className="text-primary-light transition"
                 />
-              </a>
+              </Link>
             );
           })}
         </div>
 
         {/* Sheet Footer */}
-        <div className="px-4 pb-8 pt-4 border-t border-border">
+        <div className="px-4 pb-8 pt-4 border-t border-[#FFFFFF33] dark:border-border">
           {user ? (
             <Link
               to="/profile"
@@ -213,10 +213,10 @@ const PublicNavbar = () => {
             </Link>
           ) : (
             <div
-              className="relative backdrop-blur-2xl overflow-hidden rounded-xl p-4 border border-border 
-	            bg-linear-to-r from-primary to-primary-light 
-	            dark:bg-none dark:bg-[#222936]/20 
-	            text-center"
+              className="relative backdrop-blur-2xl text-center overflow-hidden rounded-xl p-4
+              border border-[#FFFFFF33] dark:border-border
+	            bg-linear-to-r from-white/15 to-primary-light
+	            dark:from-white/5 dark:to-[#222936]/20"
             >
               <div className="flex gap-4 mb-2">
                 <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary-linear">
@@ -224,7 +224,7 @@ const PublicNavbar = () => {
                 </span>
                 <div>
                   <h3 className="text-base font-bold">Ready to Join?</h3>
-                  <p className="text-xs text-white/50 mt-0.5 mb-4">
+                  <p className="text-xs text-white/70 mt-0.5 mb-4">
                     Start your journey today
                   </p>
                 </div>
