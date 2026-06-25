@@ -1,16 +1,37 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { sendBulkEmails, updateEmailSettings, getEmailLogs } = require('../controllers/emailController');
+const fs = require("fs");
+const path = require("path");
+const { sendBulkEmails, updateEmailSettings, getEmailLogs, testBulkEmailsSender} = require('../controllers/emailController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // Configure Multer (Temp Storage)
-const upload = multer({ 
-  dest: 'uploads/', 
-  limits: { fileSize: 10 * 1024 * 1024 } // Increased limit to 10MB per file
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDir = path.join(__dirname, "../uploads");
+
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        cb(null, uploadDir);
+    },
+
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + "-" + file.originalname);
+    }
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024
+  }
 });
 
 // Update this part:
+/*
 router.post('/bulk-send', 
   protect, 
   authorize('xcom', 'board'), 
@@ -20,9 +41,11 @@ router.post('/bulk-send',
   ]), 
   sendBulkEmails
 );
+*/
 
 // // 1. Send Bulk
 // router.post('/bulk-send', protect, authorize('xcom', 'board'), upload.single('excelFile'), sendBulkEmails);
+router.post('/bulk-send', /*protect, authorize('xcom', 'board'),*/ upload.single('excelFile'), sendBulkEmails);
 
 // 2. Settings
 router.put('/settings', protect, authorize('xcom','board'), updateEmailSettings);
