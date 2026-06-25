@@ -4,7 +4,7 @@ import Button from '../../components/Button.jsx'
 import ImageSkeleton from '../../components/ImageSkeleton.jsx';
 // Images
 import HeroBackground from '../../assets/backgrounds/hero-bg.jpg';
-import VRSectorHero from '../../assets/images/home/vr-engineer-robotics-hero.jpg';
+import IEEEFamilyPic from '../../assets/images/home/ieee-family.jpg';
 import RocketIcon from '../../assets/icons/rocket.png'
 
 export default function Hero() {
@@ -49,14 +49,14 @@ export default function Hero() {
 				{/* Left Section */}
 				<div className='flex flex-col text-white gap-3 md:gap-5'>
 					<span className='text-xs md:text-base rounded-4xl bg-white/20 border border-white/20 mx-auto md:mx-0 w-fit p-3'>:✨ Empowering Innovation Since 2010</span>
-					<h2 className='text-4xl md:text-7xl font-gotham text-ceter md:text-left uppercase *:block'>
-						<span>EMPOWERING</span>
+					<h2 className='text-4xl md:text-7xl font-gotham text-ceter md:text-left uppercase'>
+						<p>Lead</p>
 						<div>
-							<span className='text-primary-light'>INNOVATION</span>
-							,
+							the <span className='text-primary-light'>vision</span>,
 						</div>
-						<span>GROWTH</span>
-						<span>INSPIRING</span>
+						<div>
+							be the <span className='text-primary-light'>future</span>
+						</div>
 					</h2>
 					<p className='font-bold text-xs md:text-xl'>Join a vibrant community of innovators, engineers, and tech enthusiasts. Together, we're shaping the future through cutting-edge projects, workshops, and collaboration.</p>
 
@@ -92,16 +92,14 @@ export default function Hero() {
 				</div>
 
 				{/* Right Section - images & visuals */}
-				<div className='relative p-0.5 rounded-3xl backdrop-blur-md shadow-2xl border-transparent bg-linear-to-br from-white/40 to-transparent bg-origin-border'>
+				<div className='relative p-0.5 rounded-3xl'>
 					{!imgLoaded && <ImageSkeleton />}
 					<img
-					  src={VRSectorHero}
-						className="w-full h-full object-cover rounded-3xl"
+					  src={IEEEFamilyPic}
+						className="w-full rounded-3xl shadow-2xl border-2 border-white/50"
 						onLoad={() => setImgLoaded(true)}
-					  style={{
-					    backgroundImage: `url(${VRSectorHero})`,
-					}} />
-					<div className='absolute -bottom-2.5 -right-4 lg:-right-6 w-20 h-18 md:w-42 md:h-34 flex items-center flex-col justify-center bg-main rounded-2xl'>
+					 />
+					<div className='absolute -bottom-6 -right-2 lg:bottom-2 lg:-right-6 w-20 h-18 md:w-42 md:h-34 flex items-center flex-col justify-center bg-main rounded-2xl'>
 						<img src={RocketIcon} alt="Rocket Icon" className='w-6 h-6 md:w-12 md:h-12'/>
 						<span className='mt-3 text-center text-primary text-[8px] md:text-sm'>Innovation Hub</span>
 					</div>

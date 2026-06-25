@@ -1,67 +1,156 @@
-import React from 'react'
-import { Link, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, FileText, Mail, Camera, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Users, Calendar, FileText, Mail, Settings, ScanQrCode, ChevronRight, LogOut, Menu, X } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import api from '../utils/api';
 
+const navItems = [
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/dashboard/users', label: 'Members', icon: Users },
+  { to: '/dashboard/events', label: 'Events', icon: Calendar },
+  { to: '/dashboard/forms', label: 'Forms', icon: FileText },
+  { to: '/dashboard/email', label: 'Emails', icon: Mail },
+  { to: '/dashboard/settings', label: 'Settings', icon: Settings },
+];
+
 const AdminSidebar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-    const logout = async (e) => {
-        e.preventDefault();
+  const logout = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/users/logout');
+      toast.success('Logged out successfully!');
+      setTimeout(() => navigate('/'), 1000);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Logout failed');
+    }
+  };
 
-        try {
-            const { message } = await api.post('/users/logout');
+  const nav = (onNavClick) => (
+    <>
+      <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-4">
+        <div>
+          <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">MAIN</p>
+          <nav className="flex flex-col gap-0.5">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                onClick={onNavClick}
+                className={({ isActive }) => {
+                  const active = item.end ? (isActive || location.pathname === item.to + '/') : isActive;
+                  return `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-primary text-white hover:bg-primary-dark' : 'text-[#7A9BB5] hover:bg-input hover:text-foreground'}`;
+                }}
+              >
+                {({ isActive }) => {
+                  const active = item.end ? (isActive || location.pathname === item.to + '/') : isActive;
+                  return (
+                    <>
+                      <item.icon size={16} />
+                      {item.label}
+                      {active && <ChevronRight size={14} className="ml-auto shrink-0" />}
+                    </>
+                  );
+                }}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
 
-            toast.success('Logged out successfully!');
+        <div className="border-t border-white/7 pt-2">
+          <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">TOOLS</p>
+          <nav className="flex flex-col gap-0.5">
+            <NavLink
+              to="/dashboard/scan"
+              onClick={onNavClick}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isActive ? 'bg-primary text-white hover:bg-primary-dark' : 'text-[#7A9BB5] hover:bg-input hover:text-foreground'}`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <ScanQrCode size={16} />
+                  QR Attendance
+                  {isActive && <ChevronRight size={14} className="ml-auto shrink-0" />}
+                  <span className="ml-auto text-[10px] font-bold bg-primary/20 text-primary border border-primary/30 rounded-md px-1.5 py-0.5 leading-none">LIVE</span>
+                </>
+              )}
+            </NavLink>
+          </nav>
+        </div>
+      </div>
 
-            setTimeout(() => {
-                navigate('/');
-            }, 1000);
+      <div className="mt-auto p-4 border-t border-white/8">
+        <div className="flex items-center gap-2 bg-[#1A2E42] border-white/8 px-4 py-3 rounded-xl">
+          <div className="flex-1 min-w-0">
+            <p className="text-[#5A7186] text-[10px] leading-tight">Logged in as</p>
+            <p className="text-white text-xs font-semibold leading-tight truncate">Admin — Dr. Rania Ibrahim</p>
+          </div>
+          <button onClick={logout} aria-label="Log out" className="shrink-0 text-muted hover:text-red-400 transition-colors cursor-pointer p-1">
+            <LogOut size={15} />
+          </button>
+        </div>
+      </div>
+    </>
+  );
 
-        } catch (error) {
-            const msg = error.response?.data?.message || 'Logout failed';
-            toast.error(msg);
-        }
-    };
+  return (
+    <>
+      <Toaster position="top-center" />
 
-    return (
-        <aside className="w-64 bg-primary-dark text-white hidden md:flex flex-col h-screen sticky top-0 shadow-xl z-50">
-            <div className="p-6 text-2xl font-bold border-b border-gray-700/50 flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-700 rounded flex items-center justify-center text-sm ">⚙️</div>
-                <span>Admin</span>
-            </div>
-            <Toaster position="top-center" />
-            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">Core</div>
+      {/* Mobile toggle button */}
+      <button
+        onClick={() => setMobileOpen((prev) => !prev)}
+        aria-label="Toggle sidebar"
+        className="md:hidden fixed top-4 left-4 z-50 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 rounded-lg p-2 shadow-md"
+      >
+        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
 
-                <Link to="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition text-gray-100">
-                    <LayoutDashboard size={20} /> Overview
-                </Link>
-                <Link to="/dashboard/users" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition text-gray-100">
-                    <Users size={20} /> Users & Members
-                </Link>
+      {/* Mobile backdrop */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden transition-opacity duration-300 ${
+          mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setMobileOpen(false)}
+      />
 
-                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-2 px-2">Tools</div>
+      {/* Mobile drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-[#0a0e1a] border-r border-border transition-transform duration-300 ease-in-out md:hidden ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="px-4 py-4 border-b border-border flex items-center gap-3">
+          <div className="bg-primary text-white text-[10px] font-bold rounded-md px-1.5 py-1 shrink-0 w-8 h-8 flex items-center justify-center">IEEE</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-foreground text-sm font-semibold leading-tight">IEEE Student Branch</p>
+            <p className="text-muted text-xs leading-tight">Admin Panel</p>
+          </div>
+          <button onClick={() => setMobileOpen(false)} aria-label="Close sidebar" className="shrink-0 text-muted hover:text-foreground transition-colors p-1">
+            <X size={18} />
+          </button>
+        </div>
+        {nav(() => setMobileOpen(false))}
+      </aside>
 
-                <Link to="/dashboard/forms" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition text-gray-100">
-                    <FileText size={20} /> Forms & Events
-                </Link>
-                <Link to="/dashboard/email" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition text-gray-100">
-                    <Mail size={20} /> Bulk Mailer
-                </Link>
-                <Link to="/dashboard/scan" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition text-gray-100">
-                    <Camera size={20} /> QR Scanner
-                </Link>
-            </nav>
-
-            <div className="p-4 border-t border-gray-700/50">
-                <button onClick={logout} className="flex items-center gap-2 text-red-300 hover:text-red-100 transition px-2 py-2 rounded hover:bg-red-500/10">
-                    <LogOut size={20} /> Logout
-                </button>
-            </div>
-        </aside>
-    )
+      {/* Desktop sidebar */}
+      <aside className="shrink-0 h-screen sticky top-0 z-50 hidden md:flex flex-col bg-[#0a0e1a]">
+        <div className="px-4 py-4 border-b border-white/7 flex items-center gap-3">
+          <div className="bg-primary text-white text-[10px] font-bold rounded-md px-1.5 py-1 shrink-0 w-8 h-8 flex items-center justify-center">IEEE</div>
+          <div>
+            <p className="text-white text-sm font-semibold leading-tight">IEEE Student Branch</p>
+            <p className="text-[#5A7186] text-xs leading-tight">Admin Panel</p>
+          </div>
+        </div>
+        {nav()}
+      </aside>
+    </>
+  );
 };
 
-export default AdminSidebar
+export default AdminSidebar;
