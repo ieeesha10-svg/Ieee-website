@@ -21,8 +21,12 @@ import EventRegistration from "./pages/EventRegistration";
 import CrewPage from "./pages/CrewPage";
 import NotFoundPage from "./pages/NotFoundPage";
 // Dashboard Pages
-import Dashboard from "./pages/dashboard/Dashboard";
+import DashboardHome from "./pages/dashboard/DashboardHome";
+import DashboardMembers from "./pages/dashboard/DashboardMembers";
+import DashboardForms from "./pages/dashboard/DashboardForms";
+import QRScanner from "./pages/dashboard/QRScanner";
 import BulkMailer from "./pages/dashboard/BulkMailer";
+import DashboardEvents from "./pages/dashboard/DashboardEvents";
 import DashboardSettings from "./pages/dashboard/DashboardSettings";
 // Components
 import PublicNavbar from "./components/PublicNavbar";
@@ -79,12 +83,13 @@ function App() {
 
         <Route element={<ProtectedRoute requireAdmin />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<DashboardHome />} />
+            <Route path="/dashboard/users" element={<DashboardMembers />} />
+            <Route path="/dashboard/events" element={<DashboardEvents />} />
+            <Route path="/dashboard/forms" element={<DashboardForms />} />
             <Route path="/dashboard/email" element={<BulkMailer />} />
-            <Route path="/dashboard/users" element={<div className="p-10 dark:text-white">User Management</div>} />
-            <Route path="/dashboard/forms" element={<div className="p-10 dark:text-white">Forms Manager</div>} />
-            <Route path="/dashboard/scan" element={<div className="p-10 dark:text-white">QR Scanner</div>} />
             <Route path="/dashboard/settings" element={<DashboardSettings />} />
+            <Route path="/dashboard/scan" element={<QRScanner />} />
           </Route>
         </Route>
 
