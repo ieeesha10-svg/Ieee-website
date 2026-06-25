@@ -106,6 +106,7 @@
   --color-muted: var(--text-muted);
   --color-border: var(--border);
   --color-card: var(--bg-card);
+  --color-card-alt: var(--bg-card-alt);
   --color-input: var(--bg-input);
 
   --font-lakes: "TT Lakes Neue", sans-serif;
@@ -127,6 +128,7 @@
   --text-muted: #4b5563;
   --border: #E4EAF1;
   --bg-card: var(--color-main);
+  --bg-card-alt: #fff;
   --bg-input: #F8FAFC;
 }
 
@@ -140,6 +142,7 @@
   --text-muted: #9ca3af;
   --border: #222936;
   --bg-card: #1a1f2e;
+  --bg-card-alt: var(--color-card);
   --bg-input: #111827;
 }
 

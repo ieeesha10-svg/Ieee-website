@@ -3,17 +3,13 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, Calendar, FileText, Mail, Settings, ScanQrCode, ChevronRight, LogOut, Menu, X } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import api from '../utils/api';
+import { useAuth } from '../context/AuthContext';
+import { navItems, toolsItems } from '../data/DashboardNav';
 
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/dashboard/users', label: 'Members', icon: Users },
-  { to: '/dashboard/events', label: 'Events', icon: Calendar },
-  { to: '/dashboard/forms', label: 'Forms', icon: FileText },
-  { to: '/dashboard/email', label: 'Emails', icon: Mail },
-  { to: '/dashboard/settings', label: 'Settings', icon: Settings },
-];
+const ICON_MAP = { LayoutDashboard, Users, Calendar, FileText, Mail, Settings, ScanQrCode };
 
 const AdminSidebar = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -35,51 +31,62 @@ const AdminSidebar = () => {
         <div>
           <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">MAIN</p>
           <nav className="flex flex-col gap-0.5">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                onClick={onNavClick}
-                className={({ isActive }) => {
-                  const active = item.end ? (isActive || location.pathname === item.to + '/') : isActive;
-                  return `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-primary text-white hover:bg-primary-dark' : 'text-[#7A9BB5] hover:bg-input hover:text-foreground'}`;
-                }}
-              >
-                {({ isActive }) => {
-                  const active = item.end ? (isActive || location.pathname === item.to + '/') : isActive;
-                  return (
-                    <>
-                      <item.icon size={16} />
-                      {item.label}
-                      {active && <ChevronRight size={14} className="ml-auto shrink-0" />}
-                    </>
-                  );
-                }}
-              </NavLink>
-            ))}
+            {navItems.map((item) => {
+              const Icon = ICON_MAP[item.icon];
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  onClick={onNavClick}
+                  className={({ isActive }) => {
+                    const active = item.end ? (isActive || location.pathname === item.to + '/') : isActive;
+                    return `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-primary text-white hover:bg-primary-dark' : 'text-[#7A9BB5] hover:bg-input hover:text-foreground'}`;
+                  }}
+                >
+                  {({ isActive }) => {
+                    const active = item.end ? (isActive || location.pathname === item.to + '/') : isActive;
+                    return (
+                      <>
+                        {Icon && <Icon size={16} />}
+                        {item.label}
+                        {active && <ChevronRight size={14} className="ml-auto shrink-0" />}
+                      </>
+                    );
+                  }}
+                </NavLink>
+              );
+            })}
           </nav>
         </div>
 
         <div className="border-t border-white/7 pt-2">
           <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">TOOLS</p>
           <nav className="flex flex-col gap-0.5">
-            <NavLink
-              to="/dashboard/scan"
-              onClick={onNavClick}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isActive ? 'bg-primary text-white hover:bg-primary-dark' : 'text-[#7A9BB5] hover:bg-input hover:text-foreground'}`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <ScanQrCode size={16} />
-                  QR Attendance
-                  {isActive && <ChevronRight size={14} className="ml-auto shrink-0" />}
-                  <span className="ml-auto text-[10px] font-bold bg-primary/20 text-primary border border-primary/30 rounded-md px-1.5 py-0.5 leading-none">LIVE</span>
-                </>
-              )}
-            </NavLink>
+            {toolsItems.map((item) => {
+              const Icon = ICON_MAP[item.icon];
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={onNavClick}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isActive ? 'bg-primary text-white hover:bg-primary-dark' : 'text-[#7A9BB5] hover:bg-input hover:text-foreground'}`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {Icon && <Icon size={16} />}
+                      {item.label}
+                      {isActive && <ChevronRight size={14} className="ml-auto shrink-0" />}
+                      {item.badge && (
+                        <span className="ml-auto text-[10px] font-bold bg-primary/20 text-primary border border-primary/30 rounded-md px-1.5 py-0.5 leading-none">{item.badge}</span>
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              );
+            })}
           </nav>
         </div>
       </div>
@@ -88,7 +95,7 @@ const AdminSidebar = () => {
         <div className="flex items-center gap-2 bg-[#1A2E42] border-white/8 px-4 py-3 rounded-xl">
           <div className="flex-1 min-w-0">
             <p className="text-[#5A7186] text-[10px] leading-tight">Logged in as</p>
-            <p className="text-white text-xs font-semibold leading-tight truncate">Admin — Dr. Rania Ibrahim</p>
+            <p className="text-white text-xs font-semibold leading-tight truncate">{user?.name || 'Admin'}</p>
           </div>
           <button onClick={logout} aria-label="Log out" className="shrink-0 text-muted hover:text-red-400 transition-colors cursor-pointer p-1">
             <LogOut size={15} />
