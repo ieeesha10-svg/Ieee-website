@@ -1,9 +1,11 @@
 const fs = require('fs').promises;
+const multer = require('multer');
 const xlsx = require('xlsx');
 const nodemailer = require('nodemailer');
 const EmailLog = require('../models/EmailLog');
 const SystemSettings = require('../models/SystemSettings');
 const { getEmailFooter } = require('../utils/emailTemplates');
+const validator = require('validator');
 
 // Helper: Sleep to avoid spam blocks
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -11,139 +13,97 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // @desc    Upload Excel & Send Bulk Emails
 // @route   POST /api/emails/bulk-send
 // @access  Private (XCom/Board)
-
 const sendBulkEmails = async (req, res) => {
-  // 1. CHECK FILES
-  const excelFile = req.files['excelFile'] ? req.files['excelFile'][0] : null;
-  const attachmentFiles = req.files['emailAttachments'] || []; // Array of files
-
-  if (!excelFile) return res.status(400).json({ error: "No Excel file uploaded" });
-
   try {
-    const { email: templateBody, subject } = req.body;
-    
-    // ... (Settings & Transporter logic - SAME AS BEFORE) ...
-    // [Copy lines 20-30 from previous code]
-    const settings = await SystemSettings.findById('global_settings');
-    const emailUser = settings?.emailUser || process.env.EMAIL_USER;
-    const emailPass = settings?.emailPass || process.env.EMAIL_PASS;
-    if (!emailUser || !emailPass) throw new Error("Email credentials missing.");
+    const file = req.file;
+    const { bodyMessage } = req.body;
+
+    if (!file || !bodyMessage) {
+        return res.status(400).json({ error: 'File and message body are required' });
+    }
+
+    // Set headers for chunked response
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    // Read the Excel file from memory
+    // const workbook = xlsx.read(file.buffer, { type: 'buffer' });
+    const workbook = xlsx.readFile(file.path);
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
+
+    // console.log(`Processing ${data.length} rows from the uploaded Excel file.`);
+
+    // Delete the temporary file after reading
+    if (file.path) {
+        await fs.unlink(file.path);
+    }
+
+    const validEmails = [];
+
+    for (let i = 0; i < data.length; i++) {
+        const email = data[i][0];
+
+        // if (i === 0 && email && String(email).toLowerCase().includes('email')) {
+        //     continue; // Skip header row if it contains 'email'
+        // }
+
+        if (email) {
+            const emailStr = String(email).trim();
+            
+            if (validator.isEmail(emailStr)) {
+                validEmails.push(emailStr);
+            } else {
+                // for invalid email
+                const responseChunk = { email: emailStr, status: 'Not email' };
+                res.write(JSON.stringify(responseChunk) + '\n');
+            }
+        }
+    }
+
+    // send emails to validEmails
     const transporter = nodemailer.createTransport({
       service: 'gmail',
-      auth: { user: emailUser, pass: emailPass },
-      pool: true, maxConnections: 5, maxMessages: 100
-    });
-    // ...
-
-    // 2. PREPARE ATTACHMENTS
-    // We map the uploaded files to Nodemailer's format
-    const attachments = attachmentFiles.map(file => ({
-      filename: file.originalname,
-      path: file.path
-    }));
-
-    // 3. READ EXCEL
-    const workbook = xlsx.readFile(excelFile.path);
-    const sheetName = workbook.SheetNames[0];
-    const rawData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-    
-    // Delete Excel immediately, but KEEP attachments until done
-    await fs.unlink(excelFile.path); 
-
-    const footerHtml = getEmailFooter();
-    const sentList = [];
-    const failedList = [];
-    const logEntries = [];
-    let quotaHit = false;
-
-    // 4. SENDING LOOP
-    for (const row of rawData) {
-      if (quotaHit) break;
-
-      const emailKey = Object.keys(row).find(k => k.toLowerCase() === 'email');
-      const recipientEmail = row[emailKey];
-      if (!recipientEmail) continue;
-
-      let retries = 3;
-      let isSent = false;
-      let errorMsg = '';
-
-      while (retries > 0) {
-        try {
-          // Dynamic Replacement
-          let personalizedHtml = templateBody;
-          Object.keys(row).forEach(key => {
-            const regex = new RegExp(`{${key}}`, 'gi');
-            personalizedHtml = personalizedHtml.replace(regex, row[key] || '');
-          });
-          
-          const finalHtml = personalizedHtml + footerHtml;
-
-          await transporter.sendMail({
-            from: `"IEEE SHA Student Branch" <${emailUser}>`,
-            to: recipientEmail,
-            subject: subject,
-            html: finalHtml,
-            attachments: attachments // <--- Standard Attachments
-          });
-
-          isSent = true;
-          console.log(`✅ Sent to: ${recipientEmail}`);
-          break;
-
-        } catch (error) {
-           errorMsg = error.message;
-           if (errorMsg.includes('quota') || errorMsg.includes('limit')) {
-             quotaHit = true;
-             errorMsg = "Quota Exceeded";
-             retries = 0;
-             break;
-           }
-           retries--;
-           await sleep(1000);
-        }
+      auth: {
+        user: process.env.EMAIL_USER, 
+        pass: process.env.EMAIL_PASS
       }
-
-      logEntries.push({ email: recipientEmail, state: isSent, err: isSent ? undefined : errorMsg });
-      if (isSent) sentList.push(recipientEmail);
-      else failedList.push({ email: recipientEmail, reason: errorMsg });
-
-      if (quotaHit) break;
-      await sleep(500);
-    }
-
-    // 5. CLEANUP ATTACHMENTS (Crucial Step)
-    // Now that the loop is done, delete the attachment files from the server
-    for (const file of attachmentFiles) {
-      try { await fs.unlink(file.path); } catch(e) {}
-    }
-
-    // ... (Save DB Log & Return Response - SAME AS BEFORE) ...
-    // [Copy Log creation and res.json from previous code]
-    const log = await EmailLog.create({
-      sentBy: req.user._id,
-      sentFrom: 'Excel Upload',
-      subject: subject,
-      emails: logEntries,
-      totalSent: sentList.length,
-      totalFailed: failedList.length
     });
 
-    res.status(quotaHit ? 429 : 200).json({
-      message: quotaHit ? "Stopped early: Quota Exceeded" : "Batch complete",
-      logId: log._id,
-      stats: { success: sentList.length, failed: failedList.length },
-      successful: sentList,
-      failed: failedList
-    });
 
+    for (const email of validEmails) {
+        try {
+            await transporter.sendMail({
+                from: `"IEEE" <${process.env.EMAIL_USER}>`,
+                to: email,
+                subject: 'Notification',
+                text: bodyMessage
+            });
+            
+            // for successful email
+            const successChunk = { email: email, status: 'Done' };
+            res.write(JSON.stringify(successChunk) + '\n');
+        } catch (err) {
+            // for failed email
+            const failChunk = { email: email, status: 'Rejected' };
+            res.write(JSON.stringify(failChunk) + '\n');
+        }
+
+        // Wait for 1 second before sending the next email to avoid spam filters
+        await sleep(1000);
+    }
+
+    res.write(JSON.stringify({ message: "Process Completed" }) + '\n');
+    res.end();
   } catch (error) {
-    // Error Cleanup
-    if (excelFile) try { await fs.unlink(excelFile.path); } catch(e) {}
-    if (attachmentFiles) {
-        for (const file of attachmentFiles) try { await fs.unlink(file.path); } catch(e) {}
+    console.error(error);
+    if (!res.headersSent) {
+        res.status(500).json({ error: 'Internal server error' });
+    } else {
+        res.write(JSON.stringify({ error: 'Process interrupted due to server error' }) + '\n');
+        res.end();
     }
-    res.status(500).json({ error: error.message });
   }
 };
 

@@ -54,7 +54,7 @@ const formSchema = new mongoose.Schema({
     type: Number,
     default: Number.MAX_SAFE_INTEGER // <-- No limit by default (infinite)
   },
-  requiresLogin: { type: Boolean, default: false }, // <--- The feature you asked for
+  requiresLogin: { type: Boolean, default: false }, // <--- The feature you asked for: If true, users must be logged in to submit the form. If false, anyone can submit.
 }, { timestamps: true });
 
 const Form = mongoose.model('Form', formSchema);
