@@ -1,4 +1,4 @@
-import * as mock from '../data/dashboardData';
+import * as mock from '../../data/dashboardData';
 
 export function useDashboard() {
   // TODO: replace `data` with API responses from:

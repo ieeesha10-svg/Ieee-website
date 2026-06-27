@@ -132,11 +132,11 @@ const AdminSidebar = () => {
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="px-4 py-4 border-b border-border flex items-center gap-3">
+        <div className="px-4 py-4 border-b border-white/8 flex items-center gap-3">
           <div className="bg-primary text-white text-[10px] font-bold rounded-md px-1.5 py-1 shrink-0 w-8 h-8 flex items-center justify-center">IEEE</div>
           <div className="flex-1 min-w-0">
-            <p className="text-foreground text-sm font-semibold leading-tight">IEEE Student Branch</p>
-            <p className="text-muted text-xs leading-tight">Admin Panel</p>
+            <p className="text-white text-sm font-semibold leading-tight">IEEE Student Branch</p>
+            <p className="text-muted text-xs leading-tight mt-2">Admin Panel</p>
           </div>
           <button onClick={() => setMobileOpen(false)} aria-label="Close sidebar" className="shrink-0 text-muted hover:text-foreground transition-colors p-1">
             <X size={18} />

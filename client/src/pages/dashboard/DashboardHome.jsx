@@ -6,7 +6,7 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
-import { useDashboard } from '../../hooks/useDashboard';
+import { useDashboard } from '../../hooks/dashboard/useDashboard';
 
 const ICON_MAP = { Users, Calendar, TrendingUp, Mail, Trophy };
 
