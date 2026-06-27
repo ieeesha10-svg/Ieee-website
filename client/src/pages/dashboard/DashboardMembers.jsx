@@ -13,7 +13,7 @@ export default function DashboardMembers() {
   } = useMembers();
 
   return (
-    <div className="min-h-screen bg-main p-6">
+    <div className="min-h-screen bg-main p-4 md:p-6">
 
       <div className="bg-card-alt rounded-xl shadow-sm p-4 mb-4">
         <div className="flex flex-col md:flex-row gap-5">
