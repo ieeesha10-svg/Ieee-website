@@ -34,6 +34,9 @@ import Footer from "./components/Footer";
 import DashboardLayout from "./layouts/DashboardLayout";
 import CommitteesPage from "./pages/CommitteesPage";
 import DevTeam from "./pages/DevTeam";
+import UserLayout from "./layouts/UserLayout";
+import UserProfile from "./pages/user-dashboard/UserProfile";
+import ChangePassword from "./pages/user-dashboard/ChangePassword";
 
 const ProtectedRoute = ({ requireAdmin = false }) => {
   const { user } = useAuth();
@@ -84,8 +87,12 @@ function App() {
           <Route path="/crew" element={<CrewPage />} />
           <Route path="/committees" element={<CommitteesPage />} />
           <Route path="/dev-team" element={<DevTeam />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route element={<ProtectedRoute />}></Route>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/profile" element={<UserLayout />}>
+              <Route index element={<UserProfile />} />
+              <Route path="password" element={<ChangePassword />} />
+            </Route>
+          </Route>
         </Route>
 
         <Route element={<ProtectedRoute requireAdmin />}>
