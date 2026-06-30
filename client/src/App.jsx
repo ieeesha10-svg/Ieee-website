@@ -12,7 +12,7 @@ import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
-import ProfilePage from "./pages/ProfilePage";
+import ProfilePage from "./pages/user-dashboard/UserProfile";
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import AboutPage from "./pages/AboutPage";
@@ -34,6 +34,10 @@ import Footer from "./components/Footer";
 import DashboardLayout from "./layouts/DashboardLayout";
 import CommitteesPage from "./pages/CommitteesPage";
 import DevTeam from "./pages/DevTeam";
+import UserLayout from "./layouts/UserLayout";
+import UserProfile from "./pages/user-dashboard/UserProfile";
+import ChangePassword from "./pages/user-dashboard/ChangePassword";
+import MyCommittees from "./pages/user-dashboard/MyCommittees";
 
 const ProtectedRoute = ({ requireAdmin = false }) => {
   const { user } = useAuth();
@@ -41,7 +45,9 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
   if (!user) return <Navigate to="/" replace />;
 
   if (requireAdmin) {
-    const isAdmin = ["admin", "board", "xcom"].includes(user.role?.toLowerCase());
+    const isAdmin = ["admin", "board", "xcom"].includes(
+      user.role?.toLowerCase(),
+    );
     if (!isAdmin) return <Navigate to="/" replace />;
   }
 
@@ -59,7 +65,9 @@ const PublicLayout = () => {
           <Outlet />
         </div>
       </main>
-      {!["/login", "/signup", "/verify", "/dev-team"].includes(location.pathname) && <Footer />}
+      {!["/login", "/signup", "/verify", "/dev-team"].includes(
+        location.pathname,
+      ) && <Footer />}
     </div>
   );
 };
@@ -81,7 +89,11 @@ function App() {
           <Route path="/committees" element={<CommitteesPage />} />
           <Route path="/dev-team" element={<DevTeam />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile" element={<UserLayout />}>
+              <Route index element={<UserProfile />} />
+              <Route path="password" element={<ChangePassword />} />
+              <Route path="committees" element={<MyCommittees />} />
+            </Route>
           </Route>
         </Route>
 
