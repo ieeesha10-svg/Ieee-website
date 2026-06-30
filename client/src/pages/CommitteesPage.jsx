@@ -47,7 +47,7 @@ export default function CommitteesPage() {
             <button
               key={committee.id}
               onClick={() => setActiveId(committee.id)}
-              className={`flex flex-col items-center justify-center gap-2 w-20 sm:w-24 aspect-square rounded-xl border transition-all duration-200 px-3 py-5 hover:-translate-y-0.5 ${
+              className={`flex flex-col items-center justify-center gap-2 w-[45%] sm:w-20 md:w-24 aspect-square rounded-xl border transition-all duration-200 px-0 md:px-3 py-0 md:py-5 hover:-translate-y-0.5 ${
                 isActive
                   ? 'bg-primary/5 dark:bg-primary-dark border border-primary/80 text-primary dark:text-white'
                   : 'bg-white border-gray-200 hover:border-primary dark:bg-[#0A1628] dark:border-white/5 dark:text-gray-400 dark:hover:border-primary-light/40'
@@ -62,10 +62,10 @@ export default function CommitteesPage() {
                 <img
                   src={committee.icon}
                   alt={committee.label}
-                  className={`-rotate-45 w-7 h-7 object-contain`}
+                  className={`-rotate-45 w-10 h-10 md:w-7 md:h-7 object-contain`}
                 />
               </div>
-              <span className={`text-[11px] ${isActive ? "font-bold" : "font-medium"} mt-2 text-center leading-tight`}>
+              <span className={`md:text-[11px] font-medium mt-2 text-center leading-tight`}>
                 {committee.label}
               </span>
             </button>
@@ -75,7 +75,7 @@ export default function CommitteesPage() {
 
       <div className="max-w-5xl mx-auto mt-6 rounded-2xl border p-6 sm:p-8 bg-white dark:bg-[#0A1628] border-border/50 dark:border-white/5 shadow-sm transition-all duration-300 hover:shadow-md">
         <div key={activeCommittee.id}>
-          <h3 className="text-xl font-bold text-primary dark:text-primary-light mb-4">
+          <h3 className="text-center md:text-left text-xl font-bold text-primary dark:text-primary-light mb-4">
             {activeCommittee.title}
           </h3>
           <ul className="space-y-2.5">
