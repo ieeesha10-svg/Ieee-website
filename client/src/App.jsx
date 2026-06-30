@@ -12,7 +12,7 @@ import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
-import ProfilePage from "./pages/ProfilePage";
+import ProfilePage from "./pages/user-dashboard/UserProfile";
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import AboutPage from "./pages/AboutPage";
@@ -41,7 +41,9 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
   if (!user) return <Navigate to="/" replace />;
 
   if (requireAdmin) {
-    const isAdmin = ["admin", "board", "xcom"].includes(user.role?.toLowerCase());
+    const isAdmin = ["admin", "board", "xcom"].includes(
+      user.role?.toLowerCase(),
+    );
     if (!isAdmin) return <Navigate to="/" replace />;
   }
 
@@ -59,7 +61,9 @@ const PublicLayout = () => {
           <Outlet />
         </div>
       </main>
-      {!["/login", "/signup", "/verify", "/dev-team"].includes(location.pathname) && <Footer />}
+      {!["/login", "/signup", "/verify", "/dev-team"].includes(
+        location.pathname,
+      ) && <Footer />}
     </div>
   );
 };
@@ -80,9 +84,8 @@ function App() {
           <Route path="/crew" element={<CrewPage />} />
           <Route path="/committees" element={<CommitteesPage />} />
           <Route path="/dev-team" element={<DevTeam />} />
-          <Route element={<ProtectedRoute />}>
-            <Route path="/profile" element={<ProfilePage />} />
-          </Route>
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route element={<ProtectedRoute />}></Route>
         </Route>
 
         <Route element={<ProtectedRoute requireAdmin />}>
