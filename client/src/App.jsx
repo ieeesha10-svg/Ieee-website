@@ -33,6 +33,7 @@ import PublicNavbar from "./components/PublicNavbar";
 import Footer from "./components/Footer";
 import DashboardLayout from "./layouts/DashboardLayout";
 import CommitteesPage from "./pages/CommitteesPage";
+import DevTeam from "./pages/DevTeam";
 
 const ProtectedRoute = ({ requireAdmin = false }) => {
   const { user } = useAuth();
@@ -58,7 +59,7 @@ const PublicLayout = () => {
           <Outlet />
         </div>
       </main>
-      {!["/login", "/signup", "/verify"].includes(location.pathname) && <Footer />}
+      {!["/login", "/signup", "/verify", "/dev-team"].includes(location.pathname) && <Footer />}
     </div>
   );
 };
@@ -78,6 +79,7 @@ function App() {
           <Route path="/verify" element={<VerifyEmailPage />} />
           <Route path="/crew" element={<CrewPage />} />
           <Route path="/committees" element={<CommitteesPage />} />
+          <Route path="/dev-team" element={<DevTeam />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/profile" element={<ProfilePage />} />
           </Route>

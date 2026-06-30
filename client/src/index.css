@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@100;200;300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -114,6 +115,7 @@
   --font-gotham-thin: "Gotham Thin", ui-sans-serif, system-ui, sans-serif;
   --font-gotham-light: "Gotham Light", ui-sans-serif, system-ui, sans-serif;
   --font-black: "Gotham Black", ui-sans-serif, system-ui, sans-serif;
+  --font-barlow: "Barlow", sans-serif;
 
   --navbar-height: 88px;
 }
