@@ -37,6 +37,7 @@ import DevTeam from "./pages/DevTeam";
 import UserLayout from "./layouts/UserLayout";
 import UserProfile from "./pages/user-dashboard/UserProfile";
 import ChangePassword from "./pages/user-dashboard/ChangePassword";
+import MyCommittees from "./pages/user-dashboard/MyCommittees";
 
 const ProtectedRoute = ({ requireAdmin = false }) => {
   const { user } = useAuth();
@@ -91,6 +92,7 @@ function App() {
             <Route path="/profile" element={<UserLayout />}>
               <Route index element={<UserProfile />} />
               <Route path="password" element={<ChangePassword />} />
+              <Route path="committees" element={<MyCommittees />} />
             </Route>
           </Route>
         </Route>

@@ -53,22 +53,7 @@ export default function UserLayout() {
     setIsLoading(true);
     setFetchError(null);
     try {
-      // const response = await api.get("/users/profile");
-      const response = {
-        data: {
-          user: {
-            name: "Ahmed Waheed Elmallah",
-            email: "ahmed.elmallah@ieee.org",
-            phone: "+20 100 000 0000",
-            role: "Technical Committee",
-            age: 21,
-            university: "Shorouk Academy",
-            college: "Engineering",
-            optionalData: { aboutMe: "Software Developer student." },
-          },
-        },
-      };
-
+      const response = await api.get("/users/profile");
       const user = response.data?.user || response.data;
       setUserData({
         _id: user._id || "",
@@ -218,30 +203,42 @@ export default function UserLayout() {
             </SidebarSection>
 
             <SidebarSection title="IEEE Activity">
-              <NavItem
-                icon={<Users size={18} />}
-                title="My Committees"
-                subtitle="Groups & teams"
-              />
-              <NavItem
-                icon={<Bookmark size={18} />}
-                title="Saved Events"
-                subtitle="Bookmarked events"
-              />
-              <NavItem
-                icon={<Activity size={18} />}
-                title="Activity History"
-                subtitle="Timeline of actions"
-                hasNotification
-              />
+              <Link to="/profile/committees">
+                <NavItem
+                  icon={<Users size={18} />}
+                  title="My Committees"
+                  subtitle="Groups & teams"
+                  isActive={location.pathname === "/profile/committees"}
+                />
+              </Link>
+              <Link to="/profile/events">
+                <NavItem
+                  icon={<Bookmark size={18} />}
+                  title="Attended Events"
+                  subtitle="Previous events"
+                  isActive={location.pathname === "/profile/events"}
+                />
+              </Link>
+              <Link to="/profile/activity">
+                <NavItem
+                  icon={<Activity size={18} />}
+                  title="Activity History"
+                  subtitle="Timeline of actions"
+                  isActive={location.pathname === "/profile/activity"}
+                  hasNotification
+                />
+              </Link>
             </SidebarSection>
 
             <SidebarSection title="Preferences">
-              <NavItem
-                icon={<Settings size={18} />}
-                title="Settings"
-                subtitle="App preferences"
-              />
+              <Link to="/profile/settings">
+                <NavItem
+                  icon={<Settings size={18} />}
+                  title="Settings"
+                  subtitle="App preferences"
+                  isActive={location.pathname === "/profile/settings"}
+                />
+              </Link>
             </SidebarSection>
           </div>
 

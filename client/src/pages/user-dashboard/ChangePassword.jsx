@@ -83,6 +83,9 @@ export default function ChangePassword() {
     setIsSaving(true);
     setMessage({ type: "", text: "" });
     try {
+      // NOTE: As per API documentation, there is no official route documented for password changes.
+      // The current implementation attempts to call PUT /api/users/update-password.
+      // Please verify with the backend developer if this endpoint is supported or needs to be added.
       await api.put("/users/update-password", {
         currentPassword: passwords.current,
         newPassword: passwords.new,
