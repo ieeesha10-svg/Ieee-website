@@ -131,6 +131,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
 
+
           {/* === ADMIN ROUTES (Admins Only) === */}
           {/* Any route inside this block requires the user to be logged in AND have an admin role */}
           <Route element={<ProtectedRoute requireAdmin={true} />}>
