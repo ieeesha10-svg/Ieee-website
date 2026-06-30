@@ -38,6 +38,7 @@ import UserLayout from "./layouts/UserLayout";
 import UserProfile from "./pages/user-dashboard/UserProfile";
 import ChangePassword from "./pages/user-dashboard/ChangePassword";
 import MyCommittees from "./pages/user-dashboard/MyCommittees";
+import AttendedEvents from "./pages/user-dashboard/AttendedEvents";
 
 const ProtectedRoute = ({ requireAdmin = false }) => {
   const { user } = useAuth();
@@ -93,6 +94,7 @@ function App() {
               <Route index element={<UserProfile />} />
               <Route path="password" element={<ChangePassword />} />
               <Route path="committees" element={<MyCommittees />} />
+              <Route path="events" element={<AttendedEvents />} />
             </Route>
           </Route>
         </Route>
