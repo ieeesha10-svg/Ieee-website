@@ -32,6 +32,7 @@ import DashboardSettings from "./pages/dashboard/DashboardSettings";
 import PublicNavbar from "./components/PublicNavbar";
 import Footer from "./components/Footer";
 import DashboardLayout from "./layouts/DashboardLayout";
+import CommitteesPage from "./pages/CommitteesPage";
 
 const ProtectedRoute = ({ requireAdmin = false }) => {
   const { user } = useAuth();
@@ -76,6 +77,7 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify" element={<VerifyEmailPage />} />
           <Route path="/crew" element={<CrewPage />} />
+          <Route path="/committees" element={<CommitteesPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/profile" element={<ProfilePage />} />
           </Route>
