@@ -3,7 +3,7 @@ const Submission = require('../models/SubmissionModel');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const ExcelJS = require('exceljs');
-const {sendOTPEmail} = require('../utils/sendEmail.js');
+const {sendOTPEmail, resetPasswordEmailToken} = require('../utils/sendEmail.js');
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware.js');
 // --- HELPER: Generate JWT Token ---
 const generateToken = (id) => {
@@ -65,7 +65,7 @@ const logoutUser = (req, res) => {
 // @access  Private
 const getUserProfile = async (req, res) => {
   // req.user is set by the 'protect' middleware
-  const user = await User.findById(req.user.id).select('-password');
+  const user = await User.findById(req.user.id);
   if (!user) {
     throw new AppError('User not found', 404);
   }
@@ -99,15 +99,17 @@ const getUserProfile = async (req, res) => {
 const registerUser = async (req, res) => {
   try {
     const { 
-      name, email, password, 
-      phone, age, university, college, yearOfStudy, interests, committee, optionalData,
-      role // User can request a role
+      name, email, password, confirmPassword,
+      phone, age, university, college, yearOfStudy, interests, role
     } = req.body;
+
+    if(password !== confirmPassword){
+      throw new AppError('Passwords do not match', 400);
+    }
 
     const userExists = await User.findOne({email : email.toLowerCase()});
     if (userExists) {
-      res.status(400);
-      throw new Error('User already exists');
+      throw new AppError('User already exists', 400);
     }
 
     // --- SECURITY: Role Sanitization ---
@@ -132,13 +134,13 @@ const registerUser = async (req, res) => {
       role: finalRole,
       otp,
       otpExpires,
-      phone, age, university, college, yearOfStudy, interests, committee, optionalData
+      phone, age, university, college, yearOfStudy, interests
     });
 
     const emailSent = await sendOTPEmail(user.email, otp);
 
     if (!emailSent) {
-      return res.status(500).json({ error: "User registered, but failed to send OTP email." });
+      throw new AppError("User registered, but failed to send OTP email.", 500);
     }
 
     res.status(201).json({ 
@@ -465,6 +467,8 @@ const updateUserProfile = catchAsync(async (req, res) => {
     "isVerified",
     "otp",
     "otpExpires",
+    "resetPasswordToken",
+    "resetPasswordExpires",
   ];
 
   const updatedUser = await User.findByIdAndUpdate(
@@ -495,6 +499,96 @@ const updateUserProfile = catchAsync(async (req, res) => {
   });
 })
 
+const updatePassword = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  const user = await User.findById(userId);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+  
+  const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+  if (!currentPassword || !newPassword || !confirmNewPassword) {
+    throw new AppError('Please provide current password, new password, and confirm new password', 400);
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    throw new AppError('New password and confirm new password do not match', 400);
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    throw new AppError('Current password is incorrect', 400);
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+  user.password = hashedPassword;
+  await user.save();
+  res.status(200).json({
+    success: true,
+    message: 'Password updated successfully',
+  });
+})
+
+const forgetPassword = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  const resetOTP = Math.floor(100000 + Math.random() * 900000).toString();
+  const token = jwt.sign({ id: user._id, secret: resetOTP }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  user.resetPasswordToken = token;
+  user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+
+  const emailsent = await resetPasswordEmailToken(email, token);
+  if (!emailsent) {
+    throw new AppError('Failed to send reset password email', 500);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Reset password email sent successfully',
+  });
+})
+
+const resetPassword = catchAsync(async (req, res) => {
+  const { email, newPassword, confirmNewPassword } = req.body;
+  const { token } = req.query;
+  
+  if (!token || !email || !newPassword || !confirmNewPassword) {
+    throw new AppError('Please provide all required fields', 400);
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    throw new AppError('New password and confirm new password do not match', 400);
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  if (token !== user.resetPasswordToken || user.resetPasswordExpires < Date.now()) {
+    throw new AppError('Invalid or expired reset token', 400);
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+  user.password = hashedPassword;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Password reset successfully',
+  });
+});
+
 // get all members for member, board, xcom, scanner
 const getAllMembers=catchAsync(async(req,res,next)=>{
   const allUsers=await User.find();
@@ -509,36 +603,36 @@ const getAllMembers=catchAsync(async(req,res,next)=>{
 
 //create member
 const createMember=catchAsync(async(req,res,next)=>{
-  const allowedRoles=User.schema.path("role").enumValues;
- const {name,email,password,role,phone,age,university,college,yearOfStudy,interests,committee,optionalData}=req.body;
- if(!name || !email || !password || !password || !role){
-  return next(new AppError("Please Provide name, email, role and password",400));
- }
- if(!allowedRoles.includes(role)){
-    return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`,400 ));}
- const exists=await User.findOne({email:email});
- if(exists){
-  return next(new AppError('Member already exists',400));
- }
- const newMember=await User.create({
-  name:name,
-  email:email,
-  password:password,
-  role:role,
-  phone:phone,
-  age:age,
-  university:university,
-  college:college,
-  yearOfStudy:yearOfStudy,
-  interests,
-  committee:committee,
-  optionalData:optionalData
- });
- res.status(201).json({
-  status:'success',
-    message:'Member created successfly',
-    data:newMember
- });
+    const allowedRoles=User.schema.path("role").enumValues;
+  const {name,email,password,role,phone,age,university,college,yearOfStudy,interests,committee,optionalData}=req.body;
+  if(!name || !email || !password || !password || !role){
+    return next(new AppError("Please Provide name, email, role and password",400));
+  }
+  if(!allowedRoles.includes(role)){
+      return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`,400 ));}
+  const exists=await User.findOne({email:email});
+  if(exists){
+    return next(new AppError('Member already exists',400));
+  }
+  const newMember=await User.create({
+    name:name,
+    email:email,
+    password:password,
+    role:role,
+    phone:phone,
+    age:age,
+    university:university,
+    college:college,
+    yearOfStudy:yearOfStudy,
+    interests,
+    committee:committee,
+    optionalData:optionalData
+  });
+  res.status(201).json({
+    status:'success',
+      message:'Member created successfly',
+      data:newMember
+  });
 });
 
 //get member
@@ -596,6 +690,6 @@ module.exports = {
   createMember,
   getMember,
   upgradeMemberRole,
-  deleteMember
+  deleteMember,
   updateUserProfile
 };

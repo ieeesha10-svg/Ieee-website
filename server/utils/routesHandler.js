@@ -16,7 +16,7 @@ const routersHandler = (app) => {
 
   app.use('/api/states', protect, authorize('xcom','board'), dashboardRouter);
 
-  app.use('/api/crew', protect, authorize('xcom','board'), crewRouter);
+  app.use('/api/crew', crewRouter);
 
   app.use('/api/activities', protect, authorize('xcom','board'), activityRouter);
 
