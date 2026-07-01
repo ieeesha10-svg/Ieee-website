@@ -65,7 +65,7 @@ const DashboardLayout = () => {
       <AdminSidebar />
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="flex flex-col bg-white dark:bg-card border-b border-border shadow-sm py-4 pl-8 pr-4 md:pr-8">
+        <header className="flex flex-col bg-white dark:bg-card border-b border-border shadow-sm py-4 pl-14 md:pl-8 pr-4 md:pr-8">
           <div className={"shrink-0 flex items-center justify-between"}>
             <>
               <div className={" min-w-0 flex-1 mr-2"}>
