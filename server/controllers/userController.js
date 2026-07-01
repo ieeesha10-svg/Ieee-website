@@ -691,5 +691,8 @@ module.exports = {
   getMember,
   upgradeMemberRole,
   deleteMember,
-  updateUserProfile
+  updateUserProfile,
+  updatePassword,
+  forgetPassword,
+  resetPassword
 };
