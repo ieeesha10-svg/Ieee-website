@@ -12,7 +12,7 @@ import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
-import ProfilePage from "./pages/ProfilePage";
+import ProfilePage from "./pages/user-dashboard/UserProfile";
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import AboutPage from "./pages/AboutPage";
@@ -21,13 +21,24 @@ import EventRegistration from "./pages/EventRegistration";
 import CrewPage from "./pages/CrewPage";
 import NotFoundPage from "./pages/NotFoundPage";
 // Dashboard Pages
-import Dashboard from "./pages/dashboard/Dashboard";
+import DashboardHome from "./pages/dashboard/DashboardHome";
+import DashboardMembers from "./pages/dashboard/DashboardMembers";
+import DashboardForms from "./pages/dashboard/DashboardForms";
+import QRScanner from "./pages/dashboard/QRScanner";
 import BulkMailer from "./pages/dashboard/BulkMailer";
+import DashboardEvents from "./pages/dashboard/DashboardEvents";
 import DashboardSettings from "./pages/dashboard/DashboardSettings";
 // Components
 import PublicNavbar from "./components/PublicNavbar";
 import Footer from "./components/Footer";
 import DashboardLayout from "./layouts/DashboardLayout";
+import CommitteesPage from "./pages/CommitteesPage";
+import DevTeam from "./pages/DevTeam";
+import UserLayout from "./layouts/UserLayout";
+import UserProfile from "./pages/user-dashboard/UserProfile";
+import ChangePassword from "./pages/user-dashboard/ChangePassword";
+import MyCommittees from "./pages/user-dashboard/MyCommittees";
+import AttendedEvents from "./pages/user-dashboard/AttendedEvents";
 
 const ProtectedRoute = ({ requireAdmin = false }) => {
   const { user } = useAuth();
@@ -35,7 +46,9 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
   if (!user) return <Navigate to="/" replace />;
 
   if (requireAdmin) {
-    const isAdmin = ["admin", "board", "xcom"].includes(user.role?.toLowerCase());
+    const isAdmin = ["admin", "board", "xcom"].includes(
+      user.role?.toLowerCase(),
+    );
     if (!isAdmin) return <Navigate to="/" replace />;
   }
 
@@ -53,7 +66,9 @@ const PublicLayout = () => {
           <Outlet />
         </div>
       </main>
-      {!["/login", "/signup", "/verify"].includes(location.pathname) && <Footer />}
+      {!["/login", "/signup", "/verify", "/dev-team"].includes(
+        location.pathname,
+      ) && <Footer />}
     </div>
   );
 };
@@ -72,19 +87,27 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify" element={<VerifyEmailPage />} />
           <Route path="/crew" element={<CrewPage />} />
+          <Route path="/committees" element={<CommitteesPage />} />
+          <Route path="/dev-team" element={<DevTeam />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile" element={<UserLayout />}>
+              <Route index element={<UserProfile />} />
+              <Route path="password" element={<ChangePassword />} />
+              <Route path="committees" element={<MyCommittees />} />
+              <Route path="events" element={<AttendedEvents />} />
+            </Route>
           </Route>
         </Route>
 
         <Route element={<ProtectedRoute requireAdmin />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<DashboardHome />} />
+            <Route path="/dashboard/users" element={<DashboardMembers />} />
+            <Route path="/dashboard/events" element={<DashboardEvents />} />
+            <Route path="/dashboard/forms" element={<DashboardForms />} />
             <Route path="/dashboard/email" element={<BulkMailer />} />
-            <Route path="/dashboard/users" element={<div className="p-10 dark:text-white">User Management</div>} />
-            <Route path="/dashboard/forms" element={<div className="p-10 dark:text-white">Forms Manager</div>} />
-            <Route path="/dashboard/scan" element={<div className="p-10 dark:text-white">QR Scanner</div>} />
             <Route path="/dashboard/settings" element={<DashboardSettings />} />
+            <Route path="/dashboard/scan" element={<QRScanner />} />
           </Route>
         </Route>
 
