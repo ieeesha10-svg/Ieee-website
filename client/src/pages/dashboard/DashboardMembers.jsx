@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Search, Filter, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useMembers } from '../../hooks/dashboard/useMembers';
 
 export default function DashboardMembers() {
   const {
     members, totalCount,
-    collegeFilters, yearFilters,
+    collegeFilters, yearFilters, roleFilters,
     search, setSearch,
     activeColleges, toggleCollege,
     activeYears, toggleYear,
+    activeRoles, toggleRole,
     page, setPage, totalPages,
   } = useMembers();
+
+  const [memberRoles, setMemberRoles] = useState({});
 
   return (
     <div className="min-h-screen bg-main p-4 md:p-6">
@@ -35,7 +38,7 @@ export default function DashboardMembers() {
                   <Filter className="w-4 h-4 text-muted" />
                   <span className="text-xs text-muted font-bold">College</span>
                 </div>
-                
+
                 {collegeFilters.map((college) => (
                   <button
                     key={college}
@@ -56,7 +59,7 @@ export default function DashboardMembers() {
                   <Filter className="w-4 h-4 text-muted" />
                   <span className="text-xs text-muted font-bold">Year</span>
                 </div>
-                
+
                 {yearFilters.map((year) => (
                   <button
                     key={year}
@@ -71,9 +74,30 @@ export default function DashboardMembers() {
                   </button>
                 ))}
               </div>
+
+              <div className='flex flex-wrap items-center gap-2'>
+                <div className='flex items-center gap-1'>
+                  <Filter className="w-4 h-4 text-muted" />
+                  <span className="text-xs text-muted font-bold">Role</span>
+                </div>
+
+                {roleFilters.map((role) => (
+                  <button
+                    key={role}
+                    onClick={() => toggleRole(role)}
+                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                      activeRoles.includes(role)
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-card-alt text-muted border border-border hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-          
+
           <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 w-full lg:w-auto">
             <Download size={16} />
             Export CSV
@@ -86,8 +110,9 @@ export default function DashboardMembers() {
           <table className="w-full">
             <thead className='bg-[#F8FAFC] dark:bg-[#202636]'>
               <tr className="*:text-left *:text-xs *:font-semibold *:text-muted *:uppercase *:tracking-wide *:py-3">
-                <th className="px-6 w-[35%]">MEMBER</th>
-                <th className="px-4 w-[20%]">COLLEGE</th>
+                <th className="px-6 w-[30%]">MEMBER</th>
+                <th className="px-4 w-[15%]">COLLEGE</th>
+                <th className="px-4 w-[10%]">ROLE</th>
                 <th className="px-4 w-[15%]">ACADEMIC YEAR</th>
                 <th className="px-4 w-[20%]">ATTENDANCE</th>
                 <th className="px-4 w-[10%]">STATUS</th>
@@ -96,7 +121,7 @@ export default function DashboardMembers() {
             <tbody>
               {members.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-sm text-muted py-16 text-center">
+                  <td colSpan={6} className="text-sm text-muted py-16 text-center">
                     No members match your filters.
                   </td>
                 </tr>
@@ -112,6 +137,17 @@ export default function DashboardMembers() {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-sm text-muted">{member.college}</td>
+                    <td className="py-3 px-4">
+                      <select
+                        value={memberRoles[member.id] ?? member.role}
+                        onChange={(e) => setMemberRoles((prev) => ({ ...prev, [member.id]: e.target.value }))}
+                        className="text-xs font-medium bg-card-alt border border-border rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                      >
+                        {roleFilters.map((r) => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    </td>
                     <td className="py-3 px-4 text-sm text-muted">{member.year}</td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">

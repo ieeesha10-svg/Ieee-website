@@ -8,6 +8,7 @@ export function useMembers() {
   const [search, setSearch] = useState('');
   const [activeColleges, setActiveColleges] = useState([]);
   const [activeYears, setActiveYears] = useState([]);
+  const [activeRoles, setActiveRoles] = useState([]);
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
@@ -21,9 +22,11 @@ export function useMembers() {
         activeColleges.length === 0 || activeColleges.includes(m.college);
       const matchesYear =
         activeYears.length === 0 || activeYears.includes(m.year);
-      return matchesSearch && matchesCollege && matchesYear;
+      const matchesRole =
+        activeRoles.length === 0 || activeRoles.includes(m.role);
+      return matchesSearch && matchesCollege && matchesYear && matchesRole;
     });
-  }, [allMembers, search, activeColleges, activeYears]);
+  }, [allMembers, search, activeColleges, activeYears, activeRoles]);
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -42,17 +45,27 @@ export function useMembers() {
     );
   };
 
+  const toggleRole = (role) => {
+    setPage(1);
+    setActiveRoles((prev) =>
+      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
+    );
+  };
+
   return {
     members: paginated,
     totalCount: filtered.length,
     collegeFilters: mock.collegeFilters,
     yearFilters: mock.yearFilters,
+    roleFilters: mock.roleFilters,
     search,
     setSearch,
     activeColleges,
     toggleCollege,
     activeYears,
     toggleYear,
+    activeRoles,
+    toggleRole,
     page,
     setPage,
     totalPages,

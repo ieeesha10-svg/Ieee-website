@@ -89,7 +89,7 @@ const PublicNavbar = () => {
             <>
               <Link
                 to="/profile"
-                className="text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-white font-medium transition flex items-center gap-1"
+                className="text-white dark:text-gray-300 hover:text-primary-light dark:hover:text-white font-medium transition flex items-center gap-1"
               >
                 <UserIcon size={18} /> Hi, {user.name.split(" ")[0]}
               </Link>

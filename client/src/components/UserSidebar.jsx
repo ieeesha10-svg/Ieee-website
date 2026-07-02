@@ -8,7 +8,7 @@ export function SidebarSection({ title, children }) {
       <h3 className="text-[#7A96B2] dark:text-[#4A6080] text-[12px] font-lakes font-bold tracking-[1.088px] uppercase pl-1">
         {title}
       </h3>
-      <div className="space-y-[10px]">{children}</div>
+      <div className="flex flex-col gap-2 md:gap-4">{children}</div>
     </div>
   );
 }

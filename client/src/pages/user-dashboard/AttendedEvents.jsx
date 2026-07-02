@@ -46,7 +46,7 @@ function EventCard({ title, dateObj, location, time, type, colorTheme }) {
   };
 
   return (
-    <div className="bg-white rounded-[20px] border border-gray-100 shadow-sm p-4 flex items-center gap-5 transition-all hover:shadow-md">
+    <div className="bg-[#F7FAFF] dark:bg-[#181C25] rounded-[20px] border border-[#D8E8F8] dark:border-border shadow-sm p-4 flex items-center gap-5 transition-all hover:shadow-md">
       {/* Date Box */}
       <div
         className={`${dateBoxColors[colorTheme] || dateBoxColors.blue} text-white rounded-[16px] w-[70px] h-[75px] flex flex-col items-center justify-center shrink-0 shadow-md`}
@@ -126,14 +126,14 @@ export default function AttendedEvents() {
   }, []);
 
   return (
-    <div className="bg-white rounded-[24px] shadow-sm p-6 md:p-8">
+    <div className="bg-white dark:bg-[#13161D] rounded-[24px] shadow-sm p-6 md:p-8">
       {/* ─── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-[50px] h-[50px] rounded-[16px] bg-[#FF9800] flex items-center justify-center text-white shrink-0 shadow-md border-[3px] border-orange-100">
+        <div className="w-[50px] h-[50px] rounded-[16px] bg-[#FF9800] flex items-center justify-center text-white shrink-0 shadow-md border-[3px] border-orange-100 dark:border-border">
           <Calendar size={24} strokeWidth={2.5} />
         </div>
         <div>
-          <h2 className="font-bold text-[22px] text-[#111827]">
+          <h2 className="font-bold text-[22px] text-[#111827] dark:text-white">
             Attended Events
           </h2>
           <p className="text-[14px] text-gray-500 font-medium">
@@ -143,7 +143,7 @@ export default function AttendedEvents() {
       </div>
 
       {/* ─── States & Content ────────────────────────────────────────────── */}
-      <div className="space-y-4 bg-gray-50/50 rounded-[20px] p-4 border border-gray-100">
+      <div className="space-y-4 bg-white dark:bg-[#13161D] rounded-[20px] p-4 border border-border">
         {isLoading ? (
           <div className="p-12 text-center flex flex-col items-center justify-center gap-4">
             <Loader2 className="animate-spin text-[#007BFF] w-8 h-8" />
@@ -152,7 +152,7 @@ export default function AttendedEvents() {
         ) : error ? (
           <div className="p-12 text-center flex flex-col items-center justify-center gap-4">
             <AlertTriangle className="text-[#FF4757] w-12 h-12" />
-            <h3 className="font-bold text-[16px] text-gray-900">
+            <h3 className="font-bold text-[16px] text-gray-900 dark:text-white">
               Failed to load events
             </h3>
             <p className="text-[14px] text-gray-500">{error}</p>

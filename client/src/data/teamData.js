@@ -1,9 +1,10 @@
 
+// import aliImg from "../assets/images/dev-team/mohamed-alaa.jpeg";
 import mohamedImg from "../assets/images/dev-team/mohamed-alaa.jpeg";
-// import farahImg from "../assets/images/dev-team/farah.jpeg";
-// import ahmedImg from "../assets/images/dev-team/ahmed-el-mallah.jpeg";
+import farahImg from "../assets/images/dev-team/farah-orabi.jpeg";
+import ahmedImg from "../assets/images/dev-team/ahmed-elmalah.jpeg";
 import abdallahImg from "../assets/images/dev-team/abdallah-aziz.jpeg";
-// import hossamImg from "../assets/images/dev-team/hossam.jpeg";
+import hossamImg from "../assets/images/dev-team/hossam-ghallab.jpeg";
 // import madihaImg from "../assets/images/dev-team/madiha.jpeg";
 
 export const stats = [
@@ -16,7 +17,26 @@ export const tracks = [
   {
     id: "track-01",
     number: "01",
-    title: "UI/UX Design Track",
+    title: "Head Of Website Team / Vice Head Of Technical Team",
+    members: [
+      {
+        id: 0,
+        number: "01",
+        name: "Ali Ahmed",
+        role: "Full Stack Developer",
+        dept: "IEEE SHA",
+        image: null,
+        links: {
+          // linkedin: "https://www.linkedin.com/in/mohamed-alaa-a498602b7",
+          // portfolio: "https://www.behance.net/mohamedalaa8950",
+        },
+      },
+    ],
+  },
+  {
+    id: "track-02",
+    number: "02",
+    title: "UI/UX Designres Team",
     members: [
       {
         id: 1,
@@ -33,21 +53,20 @@ export const tracks = [
       {
         id: 2,
         number: "02",
-        name: "Farah",
+        name: "Farah Orabi",
         role: "UI/UX Design",
         dept: "IEEE SHA",
-        image: null,
+        image: farahImg,
         links: {
-          linkedin: "#",
-          portfolio: "#",
+          linkedin: "https://www.linkedin.com/in/farah-orabi-6b972a40a?utm_source=share_via&utm_content=profile&utm_medium=member_ios",
         },
       },
     ],
   },
   {
-    id: "track-02",
-    number: "02",
-    title: "Frontend Development Track",
+    id: "track-03",
+    number: "03",
+    title: "Frontend Developers Team",
     members: [
       {
         id: 3,
@@ -55,11 +74,11 @@ export const tracks = [
         name: "Ahmed El-Mallah",
         role: "Frontend Engineer",
         dept: "IEEE SHA",
-        image: null,
+        image: ahmedImg,
         links: {
-          linkedin: "#",
+          linkedin: "https://www.linkedin.com/in/ahmed-waheed-elmallah-19966a300/",
           github: "https://github.com/AhmedWaheedElmallah29",
-          portfolio: "#",
+          portfolio: "https://elmallah-portfolio.vercel.app",
         },
       },
       {
@@ -78,21 +97,20 @@ export const tracks = [
     ],
   },
   {
-    id: "track-03",
-    number: "03",
-    title: "Backend Development Track",
+    id: "track-04",
+    number: "04",
+    title: "Backend Developers Team",
     members: [
       {
         id: 5,
         number: "05",
-        name: "Hossam",
+        name: "Hossam Ghallab",
         role: "Backend Engineer",
         dept: "IEEE SHA",
-        image: null,
+        image: hossamImg,
         links: {
-          linkedin: "#",
+          linkedin: "https://www.linkedin.com/in/hossam-ghallab/",
           github: "https://github.com/0xcapt4in",
-          portfolio: "#",
         },
       },
       {
@@ -103,9 +121,9 @@ export const tracks = [
         dept: "IEEE SHA",
         image: null,
         links: {
-          linkedin: "#",
+          linkedin: "https://www.linkedin.com/in/madiha-elyazal-/",
           github: "https://github.com/madiha179",
-          portfolio: "#",
+          // portfolio: "",
         },
       },
     ],
