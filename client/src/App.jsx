@@ -12,7 +12,7 @@ import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
-import ProfilePage from "./pages/ProfilePage";
+import ProfilePage from "./pages/user-dashboard/UserProfile";
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import AboutPage from "./pages/AboutPage";
@@ -32,15 +32,24 @@ import DashboardSettings from "./pages/dashboard/DashboardSettings";
 import PublicNavbar from "./components/PublicNavbar";
 import Footer from "./components/Footer";
 import DashboardLayout from "./layouts/DashboardLayout";
+import CommitteesPage from "./pages/CommitteesPage";
+import DevTeam from "./pages/DevTeam";
+import UserLayout from "./layouts/UserLayout";
+import UserProfile from "./pages/user-dashboard/UserProfile";
+import ChangePassword from "./pages/user-dashboard/ChangePassword";
+import MyCommittees from "./pages/user-dashboard/MyCommittees";
+import AttendedEvents from "./pages/user-dashboard/AttendedEvents";
 
 const ProtectedRoute = ({ requireAdmin = false }) => {
   const { user } = useAuth();
 
-  if (!user) return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/login" replace />;
 
   if (requireAdmin) {
-    const isAdmin = ["admin", "board", "xcom"].includes(user.role?.toLowerCase());
-    if (!isAdmin) return <Navigate to="/" replace />;
+    const isAdmin = ["admin", "board", "xcom"].includes(
+      user.role?.toLowerCase(),
+    );
+    if (!isAdmin) return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;
@@ -57,7 +66,9 @@ const PublicLayout = () => {
           <Outlet />
         </div>
       </main>
-      {!["/login", "/signup", "/verify"].includes(location.pathname) && <Footer />}
+      {!["/login", "/signup", "/verify", "/dev-team"].includes(
+        location.pathname,
+      ) && <Footer />}
     </div>
   );
 };
@@ -76,8 +87,15 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify" element={<VerifyEmailPage />} />
           <Route path="/crew" element={<CrewPage />} />
+          <Route path="/committees" element={<CommitteesPage />} />
+          <Route path="/dev-team" element={<DevTeam />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile" element={<UserLayout />}>
+              <Route index element={<UserProfile />} />
+              <Route path="password" element={<ChangePassword />} />
+              <Route path="committees" element={<MyCommittees />} />
+              <Route path="events" element={<AttendedEvents />} />
+            </Route>
           </Route>
         </Route>
 
