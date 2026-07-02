@@ -1,6 +1,8 @@
-import React from "react";
-import { FileText, Eye, Plus } from "lucide-react";
-import { useForms } from "../../hooks/dashboard/useForms";
+import React, { useState } from "react";
+import { FileText, Eye, Plus, Trash2 } from "lucide-react";
+import { useForms } from "../../hooks/dashboard/useGetForms";
+import ConfirmModal from "../../components/ConfirmModal";
+import { Link } from "react-router-dom";
 
 /* ─── Toggle Switch ────────────────────────────────────────────── */
 function Toggle({ checked, onChange }) {
@@ -23,7 +25,7 @@ function Toggle({ checked, onChange }) {
 }
 
 /* ─── Single Form Row ──────────────────────────────────────────── */
-function FormRow({ form, onToggle }) {
+function FormRow({ form, onToggle, onDelete }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-5 py-4 border-b border-gray-100 dark:border-[#222936] last:border-b-0 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
       {/* Icon + Info */}
@@ -61,6 +63,14 @@ function FormRow({ form, onToggle }) {
           <Eye size={13} className="text-primary" />
           View Results
         </button>
+        <button
+          type="button"
+          onClick={() => onDelete(form.id)}
+          aria-label={`Delete ${form.title}`}
+          className="p-1.5 text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+        >
+          <Trash2 size={15} />
+        </button>
       </div>
     </div>
   );
@@ -68,8 +78,11 @@ function FormRow({ form, onToggle }) {
 
 /* ─── Main Component ───────────────────────────────────────────── */
 export default function DashboardForms() {
-  const { forms, toggleFormStatus, openCount, closedCount, totalResponses } =
+  const { forms, toggleFormStatus, deleteForm, openCount, closedCount, totalResponses } =
     useForms();
+  const [deletingId, setDeletingId] = useState(null);
+
+  const formToDelete = forms.find((f) => f.id === deletingId);
 
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-5">
@@ -93,11 +106,13 @@ export default function DashboardForms() {
           </span>
         </div>
 
-        {/* Action Button */}
-        <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
-          <Plus size={16} />
-          New Form
-        </button>
+				{/* Action Button */}
+        <Link to={'/dashboard/forms/create-form'}>
+	        <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
+	          <Plus size={16} />
+	          New Form
+					</button>
+        </Link>
       </div>
 
       {/* Forms List */}
@@ -108,6 +123,7 @@ export default function DashboardForms() {
               key={form.id}
               form={form}
               onToggle={toggleFormStatus}
+              onDelete={setDeletingId}
             />
           ))
         ) : (
@@ -124,6 +140,24 @@ export default function DashboardForms() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!deletingId}
+        title="Delete form"
+        message={
+          formToDelete
+            ? `Are you sure you want to delete "${formToDelete.title}"? This action cannot be undone.`
+            : "Are you sure you want to delete this form? This action cannot be undone."
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => {
+          if (deletingId) deleteForm(deletingId);
+          setDeletingId(null);
+        }}
+        onCancel={() => setDeletingId(null)}
+      />
     </div>
   );
 }

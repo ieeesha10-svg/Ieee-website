@@ -14,6 +14,13 @@ export default function DashboardMembers() {
   } = useMembers();
 
   const [memberRoles, setMemberRoles] = useState({});
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
 
   return (
     <div className="min-h-screen bg-main p-4 md:p-6">
@@ -32,8 +39,8 @@ export default function DashboardMembers() {
               />
             </div>
 
-            <div className="flex flex-col gap-3 md:gap-1.5 flex-1">
-              <div className='flex flex-wrap items-center gap-2'>
+            <div className="flex gap-3 flex-1">
+              <div className='flex flex-wrap items-center gap-1'>
                 <div className='flex items-center gap-1'>
                   <Filter className="w-4 h-4 text-muted" />
                   <span className="text-xs text-muted font-bold">College</span>
@@ -54,7 +61,7 @@ export default function DashboardMembers() {
                 ))}
               </div>
 
-              <div className='flex flex-wrap items-center gap-2'>
+              <div className='flex flex-wrap items-center gap-1'>
                 <div className='flex items-center gap-1'>
                   <Filter className="w-4 h-4 text-muted" />
                   <span className="text-xs text-muted font-bold">Year</span>
@@ -75,7 +82,7 @@ export default function DashboardMembers() {
                 ))}
               </div>
 
-              <div className='flex flex-wrap items-center gap-2'>
+              <div className='flex flex-wrap items-center gap-1'>
                 <div className='flex items-center gap-1'>
                   <Filter className="w-4 h-4 text-muted" />
                   <span className="text-xs text-muted font-bold">Role</span>
@@ -110,6 +117,18 @@ export default function DashboardMembers() {
           <table className="w-full">
             <thead className='bg-[#F8FAFC] dark:bg-[#202636]'>
               <tr className="*:text-left *:text-xs *:font-semibold *:text-muted *:uppercase *:tracking-wide *:py-3">
+                <th className="px-2 w-10">
+                  <input
+                    type="checkbox"
+                    checked={members.length > 0 && members.every((m) => selectedIds.includes(m.id))}
+                    onChange={() =>
+                      members.every((m) => selectedIds.includes(m.id))
+                        ? setSelectedIds((prev) => prev.filter((id) => !members.some((m) => m.id === id)))
+                        : setSelectedIds((prev) => [...new Set([...prev, ...members.map((m) => m.id)])])
+                    }
+                    className="w-4 h-4 accent-primary cursor-pointer"
+                  />
+                </th>
                 <th className="px-6 w-[30%]">MEMBER</th>
                 <th className="px-4 w-[15%]">COLLEGE</th>
                 <th className="px-4 w-[10%]">ROLE</th>
@@ -121,13 +140,21 @@ export default function DashboardMembers() {
             <tbody>
               {members.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-sm text-muted py-16 text-center">
+                  <td colSpan={7} className="text-sm text-muted py-16 text-center">
                     No members match your filters.
                   </td>
                 </tr>
               ) : (
                 members.map((member) => (
                   <tr key={member.id} className="last:border-0 hover:bg-muted/5 transition-colors">
+                    <td className="py-3 px-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(member.id)}
+                        onChange={() => toggleSelect(member.id)}
+                        className="w-4 h-4 accent-primary cursor-pointer"
+                      />
+                    </td>
                     <td className="py-3 px-6">
                       <div className="flex items-center gap-3">
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0 ${member.avatarColor}`}>
