@@ -59,7 +59,7 @@ const SignupPage = () => {
         yearOfStudy: Number(formData.yearOfStudy),
       };
 
-      await api.post("/users", payload);
+      await api.post("/users/register", payload);
 
       toast.success("Account created! Please check your email for the OTP.");
 
