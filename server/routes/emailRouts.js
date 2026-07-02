@@ -43,8 +43,7 @@ router.post('/bulk-send',
 );
 */
 
-// // 1. Send Bulk
-// router.post('/bulk-send', protect, authorize('xcom', 'board'), upload.single('excelFile'), sendBulkEmails);
+// 1. Send Bulk
 emailRouter.post('/bulk-send', /*protect, authorize('xcom', 'board'),*/ upload.single('excelFile'), sendBulkEmails);
 
 // 2. Settings

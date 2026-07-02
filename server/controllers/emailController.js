@@ -16,7 +16,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const sendBulkEmails = async (req, res) => {
   try {
     const file = req.file;
-    const { bodyMessage } = req.body;
+    const { email: bodyMessage, subject } = req.body;
 
     if (!file || !bodyMessage) {
         return res.status(400).json({ error: 'File and message body are required' });
@@ -26,14 +26,11 @@ const sendBulkEmails = async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Transfer-Encoding', 'chunked');
 
-    // Read the Excel file from memory
-    // const workbook = xlsx.read(file.buffer, { type: 'buffer' });
+    // Read the Excel file
     const workbook = xlsx.readFile(file.path);
     const firstSheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheetName];
     const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
-
-    // console.log(`Processing ${data.length} rows from the uploaded Excel file.`);
 
     // Delete the temporary file after reading
     if (file.path) {
@@ -43,14 +40,10 @@ const sendBulkEmails = async (req, res) => {
     const validEmails = [];
 
     for (let i = 0; i < data.length; i++) {
-        const email = data[i][0];
+        const emailCell = data[i][0];
 
-        // if (i === 0 && email && String(email).toLowerCase().includes('email')) {
-        //     continue; // Skip header row if it contains 'email'
-        // }
-
-        if (email) {
-            const emailStr = String(email).trim();
+        if (emailCell) {
+            const emailStr = String(emailCell).trim();
             
             if (validator.isEmail(emailStr)) {
                 validEmails.push(emailStr);
@@ -82,8 +75,8 @@ const sendBulkEmails = async (req, res) => {
             await transporter.sendMail({
                 from: `"IEEE" <${process.env.EMAIL_USER}>`,
                 to: email,
-                subject: 'Notification',
-                text: bodyMessage
+                subject: subject || 'Notification',
+                html: bodyMessage
             });
             // Log the successful email send to the database
             await EmailLog.create({
