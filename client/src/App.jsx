@@ -8,33 +8,35 @@ import {
   Outlet,
 } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import VerifyEmailPage from "./pages/VerifyEmailPage";
-import ProfilePage from "./pages/user-dashboard/UserProfile";
+// Layouts
+import DashboardLayout from "./layouts/DashboardLayout";
+import UserLayout from "./layouts/UserLayout";
+// Components
+import PublicNavbar from "./components/PublicNavbar";
+import Footer from "./components/Footer";
+// Pages
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import EventRegistration from "./pages/EventRegistration";
 import CrewPage from "./pages/CrewPage";
+import CommitteesPage from "./pages/CommitteesPage";
+import DevTeam from "./pages/DevTeam";
 import NotFoundPage from "./pages/NotFoundPage";
+// Auth Pages
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 // Dashboard Pages
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import DashboardMembers from "./pages/dashboard/DashboardMembers";
-import DashboardForms from "./pages/dashboard/DashboardForms";
-import QRScanner from "./pages/dashboard/QRScanner";
-import BulkMailer from "./pages/dashboard/BulkMailer";
 import DashboardEvents from "./pages/dashboard/DashboardEvents";
+import DashboardForms from "./pages/dashboard/DashboardForms";
+import BulkMailer from "./pages/dashboard/BulkMailer";
 import DashboardSettings from "./pages/dashboard/DashboardSettings";
-// Components
-import PublicNavbar from "./components/PublicNavbar";
-import Footer from "./components/Footer";
-import DashboardLayout from "./layouts/DashboardLayout";
-import CommitteesPage from "./pages/CommitteesPage";
-import DevTeam from "./pages/DevTeam";
-import UserLayout from "./layouts/UserLayout";
+import QRScanner from "./pages/dashboard/QRScanner";
+// Profile Pages
 import UserProfile from "./pages/user-dashboard/UserProfile";
 import ChangePassword from "./pages/user-dashboard/ChangePassword";
 import MyCommittees from "./pages/user-dashboard/MyCommittees";
