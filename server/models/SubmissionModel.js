@@ -38,8 +38,8 @@ const submissionSchema = new mongoose.Schema({
     sparse: true 
   }, 
   qrImage: String,
-  attended: { type: Boolean, default: false }
-  // attendedAt: Date
+  attended: { type: Boolean, default: false },
+  attendedAt: Date
 }, { timestamps: true });
 
 // PREVENT DUPLICATES:

@@ -25,6 +25,11 @@ userRouter.post('/verify-email', verifyEmailOTP);
 userRouter.post('/login', loginUser);
 userRouter.post('/logout', logoutUser);
 
+userRouter.put('/update-password/:id', protect, updatePassword);
+userRouter.post('/forgot-password', forgetPassword);
+userRouter.post('/reset-password/:token', resetPassword);
+
+
 // Protected Routes
 userRouter.get('/profile', protect, getUserProfile);
 

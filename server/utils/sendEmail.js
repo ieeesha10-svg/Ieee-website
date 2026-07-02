@@ -66,4 +66,25 @@ const sendTicketEmail=async(email,userName,ticketCode,eventTitle,qrImage)=>{
     return false;
   }
 };
-module.exports = {sendOTPEmail,sendTicketEmail};
+
+const resetPasswordEmailToken = async (recipientEmail, resetToken) => {
+  try {
+    let html=loadTemplate('resetPassword.html');
+    html=html.replace('{{resetToken}}',resetToken);
+    html+=getEmailFooter();
+    await getTransport().sendMail({
+      from: `"IEEE SHA Student Branch" <${process.env.EMAIL_USER}>`,
+      to: recipientEmail,
+      subject: 'Reset Your Password',
+      html
+    })
+    return true;
+  }
+  catch(err){
+    console.log('Error sending Reset Password Email:',err);
+    return false;
+  }
+};
+
+
+module.exports = {sendOTPEmail,sendTicketEmail,resetPasswordEmailToken};

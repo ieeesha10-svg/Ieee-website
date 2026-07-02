@@ -14,8 +14,16 @@ const userSchema = new mongoose.Schema(
         "Please provide a valid email",
       ],
     },
-    password: { type: String, required: true, select: false },
-    phone: { type: String, trim: true },
+    password: {
+      type: String,
+      required: true,
+      select: false,
+      match: [
+        /^.{8,}$/,
+        "Password must be at least 8 characters",
+      ],
+    },
+    phone: { type: String, trim: true},
     // UPDATED ROLES:
     role: {
       type: String,
@@ -39,6 +47,15 @@ const userSchema = new mongoose.Schema(
     },
     otpExpires: {
       type: Date,
+    },
+
+    resetPasswordToken: {
+      type: String,
+      select: false
+    },
+    resetPasswordExpires: {
+      type: Date,
+      select: false
     },
 
     // Optional: Track which committee they belong to (good for filtering later)

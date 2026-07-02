@@ -359,3 +359,12 @@ const editSubmission = catchAsync(async (req, res) => {
 });
 
 module.exports = { submitForm, scanTicket, getSubmissions, getSubmission, editSubmission, exportSubmissionsToExcel };
+
+
+/*
+* Naming error during `populate` (in the `getSubmissions` function): You are attempting to call `populate` using uppercase formID and userID: `path: ‘formID’` and `path: ‘userID’`, whereas in the `SubmissionModel` schema, you named them in lowercase: `formId` and `userId`. This will cause the data retrieval to fail, and neither the form name nor the user name will be displayed.
+* Excel export error (exportSubmissionsToExcel function): You are using form.structure.forEach(...) to retrieve the questions and checking field.element. However, in the FormModel we created earlier, the field is named fields, not structure, and the type is registered under type, not element. Required fix: Change it to form.fields.forEach and use field.type.
+* The `attendedAt` field is disabled: In the `scanTicket` function, you are logging the attendance time: `submission.attendedAt = Date.now();`. However, in `submissionSchema`, the field `// attendedAt: Date` is commented out. You must enable it in the schema so that it is saved to the database.
+* Missing routes in submissionRouter.js: You’ve written two functions in the Controller—`getSubmission` (to retrieve a single submission) and `editSubmission` (to update a submission’s status)—but you completely forgot to add them to the Router file.
+* Generating tickets for everything (logically): The current code generates a ticketCode and a qrImage and sends a QR email for any form that is filled out (whether it’s an Event, a volunteer request, or a survey). You may need to add a condition to generate tickets only if `form.type` is related to an event (Event/Workshop).
+*/
