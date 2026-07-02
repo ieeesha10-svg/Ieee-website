@@ -17,7 +17,7 @@ const globalErrorHandler = (err, req, res, next) => {
   const status = err.status || 'error';
   const message = err.message || 'Something went wrong!';
 
-  console.error(`Error : [${statusCode}] :`, message);
+  // console.error(`Error : [${statusCode}] :`, message);
 
   res.status(statusCode).json({
     status,

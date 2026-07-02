@@ -55,7 +55,12 @@ const sendBulkEmails = async (req, res) => {
             if (validator.isEmail(emailStr)) {
                 validEmails.push(emailStr);
             } else {
-                // for invalid email
+                // for invalid 
+                await EmailLog.create({
+                    email: emailStr,
+                    status: 'Not email',
+                    messageBody: bodyMessage
+                });
                 const responseChunk = { email: emailStr, status: 'Not email' };
                 res.write(JSON.stringify(responseChunk) + '\n');
             }
@@ -80,12 +85,22 @@ const sendBulkEmails = async (req, res) => {
                 subject: 'Notification',
                 text: bodyMessage
             });
-            
+            // Log the successful email send to the database
+            await EmailLog.create({
+                email: email,
+                status: 'Done',
+                messageBody: bodyMessage
+            });
             // for successful email
             const successChunk = { email: email, status: 'Done' };
             res.write(JSON.stringify(successChunk) + '\n');
         } catch (err) {
             // for failed email
+            await EmailLog.create({
+                email: email,
+                status: 'Rejected',
+                messageBody: bodyMessage
+            });
             const failChunk = { email: email, status: 'Rejected' };
             res.write(JSON.stringify(failChunk) + '\n');
         }
@@ -104,6 +119,39 @@ const sendBulkEmails = async (req, res) => {
         res.write(JSON.stringify({ error: 'Process interrupted due to server error' }) + '\n');
         res.end();
     }
+  }
+};
+
+const getPaginatedEmails = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const skip = (page - 1) * limit;
+
+    const emails = await EmailLog.find()
+      .sort({ sentAt: -1 }) // sort by most recent first
+      .skip(skip)
+      .limit(limit);
+
+    // Get total count for pagination
+    const totalEmails = await EmailLog.countDocuments();
+    const totalPages = Math.ceil(totalEmails / limit);
+
+    res.status(200).json({
+      success: true,
+      data: emails,
+      pagination: {
+        totalItems: totalEmails,
+        totalPages: totalPages,
+        currentPage: page,
+        itemsPerPage: limit
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch emails' });
   }
 };
 
@@ -134,4 +182,4 @@ const getEmailLogs = async (req, res) => {
   }
 };
 
-module.exports = { sendBulkEmails, updateEmailSettings, getEmailLogs };
+module.exports = { sendBulkEmails, updateEmailSettings, getEmailLogs, getPaginatedEmails };

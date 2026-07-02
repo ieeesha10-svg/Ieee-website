@@ -1,9 +1,9 @@
 const express = require('express');
-const router = express.Router();
+const emailRouter = express.Router();
 const multer = require('multer');
 const fs = require("fs");
 const path = require("path");
-const { sendBulkEmails, updateEmailSettings, getEmailLogs, testBulkEmailsSender} = require('../controllers/emailController');
+const { sendBulkEmails, updateEmailSettings, getEmailLogs, getPaginatedEmails} = require('../controllers/emailController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // Configure Multer (Temp Storage)
@@ -45,12 +45,14 @@ router.post('/bulk-send',
 
 // // 1. Send Bulk
 // router.post('/bulk-send', protect, authorize('xcom', 'board'), upload.single('excelFile'), sendBulkEmails);
-router.post('/bulk-send', /*protect, authorize('xcom', 'board'),*/ upload.single('excelFile'), sendBulkEmails);
+emailRouter.post('/bulk-send', /*protect, authorize('xcom', 'board'),*/ upload.single('excelFile'), sendBulkEmails);
 
 // 2. Settings
-router.put('/settings', protect, authorize('xcom','board'), updateEmailSettings);
+emailRouter.put('/settings', protect, authorize('xcom','board'), updateEmailSettings);
 
 // 3. Logs
-router.get('/logs', protect, authorize('xcom', 'board'), getEmailLogs);
+// emailRouter.get('/logs', protect, authorize('xcom', 'board'), getEmailLogs);
+emailRouter.get('/logs', protect, authorize('xcom', 'board'), getPaginatedEmails);
 
-module.exports = router;
+
+module.exports = emailRouter;

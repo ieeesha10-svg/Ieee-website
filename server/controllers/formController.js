@@ -120,7 +120,7 @@ const toggleFormStatus = catchAsync(async (req, res) => {
   const form = await Form.findById(req.params.id);
     if (!form) throw new AppError('Form not found', 404);
 
-    form.settings.isActive = !form.settings.isActive;
+    form.status = form.status === 'Active' ? 'Closed' : 'Active';
     await form.save();
 
     res.json({ message: `Form is now ${form.settings.isActive ? 'Active' : 'Closed'}` });
@@ -133,3 +133,13 @@ module.exports = {
   deleteForm,
   toggleFormStatus 
 };
+
+/*
+== points to consider for improvement ==
+
+There's a problem with the `toggleFormStatus` function: You're changing `form.settings.isActive`, but in the `formSchema` you sent, there is no object named `settings`. The field responsible for the status in the schema is `status`, and its values are strings (“Active”, ‘Closed’, “Draft”).
+
+The `requiresLogin` field: You added this field to the `formSchema`, but in the `createForm` function (the controller), you are not retrieving it from `req.body` or saving it.
+
+The `activityID` field in the schema: You defined it as `unique: true`. If you create multiple forms without linking them to an `activityID` (i.e., its value is `null`), the database (MongoDB) may refuse to create the second form due to a `Duplicate Key` error on the `null` value.
+*/
