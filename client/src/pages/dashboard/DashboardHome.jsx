@@ -166,8 +166,8 @@ export default function Dashboard() {
               );
             })}
           </div>
-        </div>
-
+				</div>
+        
         {/* Panel: Academic Year Split */}
         <div className="flex flex-col bg-card-alt rounded-2xl shadow-sm p-5 md:p-6 overflow-hidden lg:col-span-1">
           <h3 className="text-foreground font-semibold text-sm">Academic Year Split</h3>
@@ -191,7 +191,7 @@ export default function Dashboard() {
 					<div>
 						<div>
 	      			<h3 className="text-foreground font-semibold text-sm">Form Status Summary</h3>
-								<p className="text-muted text-xs mb-4">7 total forms tracked</p>
+								<p className="text-muted text-xs mb-4">{data.formStatusData[0]?.total ?? "—"} total forms tracked</p>
 						</div>
 	
 	          <div className="space-y-3">
@@ -271,7 +271,7 @@ export default function Dashboard() {
         </div>
 
         {/* Panel: Latest Signups */}
-        <div className="bg-card-alt rounded-2xl shadow-sm p-5 md:p-6">
+        <div className="flex flex-col bg-card-alt rounded-2xl shadow-sm p-5 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-foreground font-semibold text-sm">Latest Signups</h3>
@@ -280,33 +280,35 @@ export default function Dashboard() {
             <span className="text-xs px-3 py-1 font-medium rounded-full bg-primary/10 text-primary dark:text-primary-dark">Live</span>
           </div>
 
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="text-xs font-semibold text-muted uppercase tracking-wide">
-                <th className="text-left font-semibold pb-2">NAME</th>
-                <th className="text-left font-semibold pb-2">COLLEGE</th>
-                <th className="text-right font-semibold pb-2">REGISTERED</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.latestSignups.map((signup, idx) => (
-                <tr key={idx} className='*:py-2.5'>
-									<td className="flex items-center gap-3 font-medium text-sm text-foreground whitespace-nowrap">
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white ${signup.avatarColor}`}>
-                      {signup.initials}
-                    </div>
-										{signup.name}
-									</td>
-                  <td className="text-sm text-muted whitespace-nowrap">{signup.college}</td>
-                  <td className="text-xs text-muted text-right whitespace-nowrap">{signup.time}</td>
+          <div className="flex-1">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="text-xs font-semibold text-muted uppercase tracking-wide">
+                  <th className="text-left font-semibold pb-2">NAME</th>
+                  <th className="text-left font-semibold pb-2">COLLEGE</th>
+                  <th className="text-right font-semibold pb-2">REGISTERED</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.latestSignups.map((signup, idx) => (
+                  <tr key={idx} className='*:py-2.5'>
+                    <td className="flex items-center gap-3 font-medium text-sm text-foreground whitespace-nowrap">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white ${signup.avatarColor}`}>
+                        {signup.initials}
+                      </div>
+                      {signup.name}
+                    </td>
+                    <td className="text-sm text-muted whitespace-nowrap">{signup.college}</td>
+                    <td className="text-xs text-muted text-right whitespace-nowrap">{signup.time}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <Link
             to="/dashboard/users"
-            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline mt-3"
+            className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline mt-auto pt-3"
           >
             View all members <ChevronRight />
           </Link>

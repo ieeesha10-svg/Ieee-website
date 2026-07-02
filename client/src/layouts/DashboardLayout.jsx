@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Search, Download, Plus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -6,6 +6,7 @@ import AdminSidebar from "../components/AdminSidebar";
 import Notifications from "../components/Notifications";
 import ThemeToggle from "../components/ThemeToggle";
 import { navItems, toolsItems } from "../data/DashboardNav";
+import api from "../utils/api";
 
 const ICON_MAP = { Download, Plus };
 
@@ -23,9 +24,21 @@ const DashboardLayout = () => {
   const { user } = useAuth();
   const { pathname } = useLocation();
 
+  const [formStats, setFormStats] = useState(null);
+
+  useEffect(() => {
+    if (pathname === "/dashboard/forms") {
+      api.get("/form").then((res) => setFormStats(res.data)).catch(() => {});
+    }
+  }, [pathname]);
+
   const meta = Object.entries(pageMeta).find(
     ([path]) => pathname === path,
   )?.[1] || { title: "Dashboard", sub: "", buttonText: "" };
+
+  if (pathname === "/dashboard/forms" && formStats) {
+    meta.sub = `${formStats.count} ${formStats.count === 1 ? "form" : "forms"} — ${formStats.activeCount} currently open`;
+  }
 
   const rightSide = (
     <div className="flex items-center gap-4">

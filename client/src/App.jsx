@@ -41,6 +41,7 @@ import UserProfile from "./pages/user-dashboard/UserProfile";
 import ChangePassword from "./pages/user-dashboard/ChangePassword";
 import MyCommittees from "./pages/user-dashboard/MyCommittees";
 import AttendedEvents from "./pages/user-dashboard/AttendedEvents";
+import CreateForm from "./pages/dashboard/CreateForm";
 
 const ProtectedRoute = ({ requireAdmin = false }) => {
   const { user } = useAuth();
@@ -101,17 +102,18 @@ function App() {
           </Route>
         </Route>
 
-        {/* <Route element={<ProtectedRoute requireAdmin />}> */}
+        <Route element={<ProtectedRoute requireAdmin />}> 
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/dashboard/users" element={<DashboardMembers />} />
           <Route path="/dashboard/events" element={<DashboardEvents />} />
           <Route path="/dashboard/forms" element={<DashboardForms />} />
+          <Route path="/dashboard/forms/create-form" element={<CreateForm />} />
           <Route path="/dashboard/email" element={<BulkMailer />} />
           <Route path="/dashboard/settings" element={<DashboardSettings />} />
           <Route path="/dashboard/scan" element={<QRScanner />} />
         </Route>
-        {/* </Route> */}
+        </Route> 
 
         <Route
           path="*"
