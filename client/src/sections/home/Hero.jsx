@@ -44,7 +44,7 @@ export default function Hero() {
 			  <div key={i} className={`absolute rounded-full bg-[#F2F2F2] dark:bg-[#9CA3AF] ${dot.size} ${dot.opacity}`} style={{ top: dot.top, bottom: dot.bottom, left: dot.left, right: dot.right }} />
 			))}
 
-			<div className='grid grid-cols-1 lg:grid-cols-2 text-center md:text-left gap-10 md:gap-15 max-w-7xl'>
+			<div className='grid grid-cols-1 lg:grid-cols-2 items-center text-center md:text-left gap-10 md:gap-15 max-w-7xl'>
 
 				{/* Left Section */}
 				<div className='flex flex-col text-white gap-3 md:gap-5'>
@@ -99,9 +99,9 @@ export default function Hero() {
 						className="w-full rounded-3xl shadow-2xl border-2 border-white/50"
 						onLoad={() => setImgLoaded(true)}
 					 />
-					<div className='absolute -bottom-6 -right-2 lg:bottom-2 lg:-right-6 w-20 h-18 md:w-42 md:h-34 flex items-center flex-col justify-center bg-main rounded-2xl'>
+					<div className='absolute -bottom-5 -right-3 lg:-bottom-8 lg:-right-5 p-3.5 md:p-4.5 lg:p-6 flex items-center flex-col justify-center bg-main rounded-2xl'>
 						<img src={RocketIcon} alt="Rocket Icon" className='w-6 h-6 md:w-12 md:h-12'/>
-						<span className='mt-3 text-center text-primary text-[8px] md:text-sm'>Innovation Hub</span>
+						<span className='mt-3 text-center text-primary text-[11px] md:text-sm'>Innovation Hub</span>
 					</div>
 				</div>
 			</div>
