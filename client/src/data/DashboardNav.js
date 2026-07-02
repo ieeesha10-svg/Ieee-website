@@ -30,7 +30,7 @@ export const navItems = [
     label: "Forms",
     icon: "FileText",
     title: "Registration Forms",
-    sub: "7 forms — 4 currently open",
+    sub: "",
     buttonText: "New Form",
     buttonIcon: "Plus",
   },
