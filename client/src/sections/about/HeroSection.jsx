@@ -1,6 +1,6 @@
 import React from 'react'
 import { ArrowRight } from 'lucide-react'
-import VRPicture from '../../assets/images/about/vr-engineer-robotics-hero.jpg'
+import aboutImage from '../../assets/images/about/about-image.jpg'
 import Badge from '../../components/Badge'
 
 function Chip({ title, subtitle, label, className }) {
@@ -60,14 +60,14 @@ export default function HeroSection() {
           {/* Right Column */}
           <div className="relative rounded-2xl">
             <img
-              src={VRPicture}
+              src={aboutImage}
               alt="Person wearing VR headset working on robotics"
-              className="mx-auto w-full lg:w-[80%] object-cover rounded-2xl"
+              className="mx-auto w-full object-cover rounded-2xl"
             />
 
-            <Chip title="350+" subtitle="Members" className="absolute top-4 -left-2 lg:left-4" />
-            <Chip label="AI Workshop" className="absolute bottom-4 -left-2 lg:left-4" />
-            <Chip label="Robotics Lab" className="absolute bottom-4 -right-2 lg:right-4" />
+            <Chip title="350+" subtitle="Members" className="absolute top-4 -left-2 lg:-left-4" />
+            <Chip label="AI Workshop" className="absolute bottom-4 -left-2 lg:-left-4" />
+            <Chip label="Robotics Lab" className="absolute bottom-4 -right-2 lg:-right-4" />
           </div>
         </div>
       </div>
