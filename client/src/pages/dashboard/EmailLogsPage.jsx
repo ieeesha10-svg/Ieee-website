@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Loader2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { useEmailLogs } from "../../hooks/dashboard/useEmailLogs";
 import api from "../../utils/api";
@@ -131,8 +132,13 @@ export default function EmailLogsPage() {
       link.download = `email-logs-${new Date().toISOString().slice(0, 10)}.csv`;
       link.click();
       URL.revokeObjectURL(url);
+
+      // رسالة النجاح لليوزر
+      toast.success("Email logs exported successfully!");
     } catch (err) {
       console.error("Export failed:", err);
+      // رسالة الخطأ لليوزر
+      toast.error("Failed to export data. Please check your connection.");
     } finally {
       setExporting(false);
     }
