@@ -70,6 +70,11 @@ const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 // @route   POST /api/submissions
 // @access  Private
 const submitForm = catchAsync(async (req, res) => {
+  const userid = req.user._id;
+  const user = await User.findById(userid);
+  if(!userid || !user) {
+    throw new AppError('User not found', 404);
+  }
   const { formId, answers } = req.body;
   if (!formId || !answers) {
     throw new AppError('Form ID and answers are required', 400);

@@ -677,6 +677,23 @@ const deleteMember=catchAsync(async(req,res,next)=>{
     message:'Member deleted successfly'
   });
 });
+
+const getEventsForMember=catchAsync(async(req,res,next)=>{
+  const userId=req.params.id;
+  const user =await User.findById(userId);
+  if(!user){
+    return next(new AppError("User not found",400));
+  }
+  const submissions=await Submission.find({registrantEmail:user.email});
+  if(!submissions||submissions.length===0){
+    return next(new AppError("No events found for this member",400));
+  }
+  res.status(200).json({
+    status:'success',
+    data:submissions
+  });
+})
+
 module.exports = {
   loginUser,
   logoutUser,
@@ -694,5 +711,6 @@ module.exports = {
   updateUserProfile,
   updatePassword,
   forgetPassword,
-  resetPassword
+  resetPassword,
+  getEventsForMember
 };

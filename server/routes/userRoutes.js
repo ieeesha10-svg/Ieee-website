@@ -15,6 +15,10 @@ const {
   getMember,
   upgradeMemberRole,
   deleteMember,
+  updatePassword,
+  forgetPassword,
+  resetPassword,
+  getEventsForMember
 } = require("../controllers/userController");
 
 const { protect, authorize } = require("../middleware/authMiddleware");
@@ -35,6 +39,11 @@ userRouter.get("/profile", protect, getUserProfile);
 // Edit Profile
 userRouter.put("/profile/:id", protect, updateUserProfile);
 
+userRouter.get(
+  "/:id/events",
+  protect,
+  getEventsForMember,
+);
 // Admin / XCom Routes
 userRouter.get("/all", protect, authorize("xcom", "board"), getUsers);
 
@@ -82,4 +91,5 @@ userRouter.delete(
   authorize("xcom", "board", "member", "scanner"),
   deleteMember,
 );
+
 module.exports = userRouter;
