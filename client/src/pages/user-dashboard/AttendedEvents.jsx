@@ -168,10 +168,10 @@ export default function AttendedEvents() {
             <div className="w-[64px] h-[64px] rounded-[18px] bg-gray-100 flex items-center justify-center mb-4">
               <CalendarDays size={28} className="text-gray-400" />
             </div>
-            <h3 className="font-bold text-[16px] text-gray-900 mb-2">
+            <h3 className="font-bold text-[16px] text-gray-900 dark:text-white mb-2">
               No events yet
             </h3>
-            <p className="text-[14px] text-gray-500 max-w-[300px]">
+            <p className="text-[14px] text-gray-500 dark:text-gray-400 max-w-[300px]">
               Events you attend will appear here. Check out upcoming events to
               get started!
             </p>

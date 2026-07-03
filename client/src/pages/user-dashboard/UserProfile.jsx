@@ -53,7 +53,10 @@ export default function UserProfile() {
 
       setOriginalData(userData);
       setIsEditing(false);
-      setSaveMessage({ type: "success", text: "Profile updated successfully!" });
+      setSaveMessage({
+        type: "success",
+        text: "Profile updated successfully!",
+      });
     } catch (error) {
       console.error("Error saving data:", error);
       setSaveMessage({
@@ -97,7 +100,6 @@ export default function UserProfile() {
 
   return (
     <div className="bg-white dark:bg-[#13161D] rounded-[20px] md:rounded-[24px] border-[0.8px] border-[rgba(0,120,255,0.11)] dark:border-[#222936] shadow-sm p-5 sm:p-6 md:p-8 lg:p-10">
-
       {/* Form Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-10 gap-4">
         <div className="flex items-center gap-4 md:gap-6">
@@ -115,18 +117,17 @@ export default function UserProfile() {
         </div>
 
         {/* Desktop Buttons */}
-        <div className="hidden lg:flex gap-3">
-          {renderActionButtons()}
-        </div>
+        <div className="hidden lg:flex gap-3">{renderActionButtons()}</div>
       </div>
 
       {/* Save/Error Message */}
       {saveMessage.text && (
         <div
-          className={`mb-6 p-4 rounded-xl flex items-center gap-3 text-sm font-medium ${saveMessage.type === "success"
-            ? "bg-green-50/50 text-green-600"
-            : "bg-red-50/50 text-red-600"
-            }`}
+          className={`mb-6 p-4 rounded-xl flex items-center gap-3 text-sm font-medium ${
+            saveMessage.type === "success"
+              ? "bg-green-50/50 text-green-600"
+              : "bg-red-50/50 text-red-600"
+          }`}
         >
           {saveMessage.type === "success" ? (
             <CheckCircle2 size={18} />
@@ -227,9 +228,7 @@ export default function UserProfile() {
         </div>
 
         {/* Mobile Buttons */}
-        <div className="flex lg:hidden gap-3 mt-8">
-          {renderActionButtons()}
-        </div>
+        <div className="flex lg:hidden gap-3 mt-8">{renderActionButtons()}</div>
       </div>
     </div>
   );

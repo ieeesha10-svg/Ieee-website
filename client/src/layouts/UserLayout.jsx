@@ -4,13 +4,10 @@ import { SidebarSection, NavItem } from "../components/UserSidebar";
 import ProfileBadge from "../components/ProfileBadge";
 import api from "../utils/api";
 import {
-  LayoutGrid,
   User,
   Lock,
   Users,
   Bookmark,
-  Activity,
-  Settings,
   Loader2,
   AlertTriangle,
   RefreshCcw,
@@ -174,14 +171,6 @@ export default function UserLayout() {
           {/* Sidebar */}
           <div className="w-full lg:w-[308px] flex-shrink-0 space-y-8">
             <SidebarSection title="Account">
-              <Link to="/profile/overview">
-                <NavItem
-                  icon={<LayoutGrid size={20} />}
-                  title="Overview"
-                  subtitle="Dashboard & stats"
-                  isActive={location.pathname === "/profile/overview"}
-                />
-              </Link>
               <Link to="/profile">
                 <NavItem
                   icon={<User size={20} />}
@@ -215,26 +204,6 @@ export default function UserLayout() {
                   title="Attended Events"
                   subtitle="Previous events"
                   isActive={location.pathname === "/profile/events"}
-                />
-              </Link>
-              <Link to="/profile/activity">
-                <NavItem
-                  icon={<Activity size={18} />}
-                  title="Activity History"
-                  subtitle="Timeline of actions"
-                  isActive={location.pathname === "/profile/activity"}
-                  hasNotification
-                />
-              </Link>
-            </SidebarSection>
-
-            <SidebarSection title="Preferences">
-              <Link to="/profile/settings">
-                <NavItem
-                  icon={<Settings size={18} />}
-                  title="Settings"
-                  subtitle="App preferences"
-                  isActive={location.pathname === "/profile/settings"}
                 />
               </Link>
             </SidebarSection>
