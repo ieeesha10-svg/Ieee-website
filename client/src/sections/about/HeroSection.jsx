@@ -1,8 +1,8 @@
 import React from 'react'
+import { useAuth } from '../../context/AuthContext'
 import { ArrowRight } from 'lucide-react'
 import aboutImage from '../../assets/images/about/about-image.jpg'
 import Badge from '../../components/Badge'
-
 function Chip({ title, subtitle, label, className }) {
   return (
     <div className={`bg-card/90 backdrop-blur rounded-xl px-5 py-2 flex items-center gap-2 shadow-lg ${className}`}>
@@ -20,6 +20,7 @@ function Chip({ title, subtitle, label, className }) {
 }
 
 export default function HeroSection() {
+	const {user} = useAuth()
   return (
     <section className="py-16 md:py-24 about-page-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -34,9 +35,13 @@ export default function HeroSection() {
               We&apos;re a community of curious engineers, designers, and builders at the heart of campus — driving innovation through workshops, real-world projects, and a shared passion for technology.
             </p>
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3 w-[80%] sm:w-auto">
-              <a href='/signup' className="bg-primary-linear text-white font-semibold rounded-full px-6 py-3 flex items-center justify-center gap-2 w-full sm:w-auto transition-all duration-300 hover:opacity-85 hover:scale-[1.02]">
-                Become a Member <ArrowRight size={18} />
-              </a>
+							{
+								!user && (
+									<a href='/signup' className="bg-primary-linear text-white font-semibold rounded-full px-6 py-3 flex items-center justify-center gap-2 w-full sm:w-auto transition-all duration-300 hover:opacity-85 hover:scale-[1.02]">
+		                Become a Member <ArrowRight size={18} />
+		              </a>
+								)
+             	}
               <a href='/events' className="border border-border text-foreground rounded-full px-6 py-3 font-semibold text-center w-full sm:w-auto transition-all duration-300 hover:bg-card hover:border-primary/50">
                 Explore Events
               </a>

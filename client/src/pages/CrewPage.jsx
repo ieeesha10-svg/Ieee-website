@@ -1,39 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Linkedin, Mail, Globe } from "lucide-react";
-import api from "../utils/api";
+import { useCrew } from "../hooks/useCrew";
 
 export default function CrewPage() {
-  const [team, setTeam] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCrew = async () => {
-      try {
-        const response = await api.get("/crew");
-
-        const formattedTeam = response.data.map((member) => ({
-          id: member._id || member.id,
-          name: member.name || "Unknown Member",
-          role: member.role || member.position || "Member",
-          description: member.description || "No description provided.",
-          image: member.image || "/images/avatar.jpg",
-          socials: {
-            linkedin: member.socials?.linkedin || member.linkedin || null,
-            email: member.socials?.email || member.email || null,
-            website: member.socials?.website || member.website || null,
-          },
-        }));
-
-        setTeam(formattedTeam);
-      } catch (error) {
-        console.error("Error fetching crew members:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCrew();
-  }, []);
+  const { team, isLoading } = useCrew();
 
   return (
     <div className="min-h-screen py-24 px-4 lg:px-8 bg-[#F2F2F2] dark:bg-[#0A0E1A] transition-colors duration-300">
