@@ -143,8 +143,8 @@ export default function EmailLogsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0F1117] p-4 md:p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div className="max-w-7xl mx-auto space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">
               Email Logs
@@ -180,7 +180,7 @@ export default function EmailLogsPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 md:p-6 mb-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 md:p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
               <Filter size={16} />
