@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import api from "../../utils/api";
-import * as mock from "../../data/dashboardData";
 
 const ORDINAL = { 1: "1st", 2: "2nd", 3: "3rd", 4: "4th" };
 
 const CHART_COLORS = ["#00629B", "#0EA5E9", "#6366F1", "#22D3EE", "#F59E0B", "#EF4444"];
+
+const RANK_DISPLAY = ["🥇", "🥈", "🥉"];
 
 const AVATAR_COLORS = [
   "bg-blue-500", "bg-teal-500", "bg-orange-500", "bg-purple-500",
@@ -35,6 +36,21 @@ function timeAgo(dateStr) {
   return `${days} day${days > 1 ? "s" : ""} ago`;
 }
 
+function getInitials(name) {
+  if (!name) return "??";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function capitalize(str) {
+  if (!str) return "N/A";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 export function useDashboard() {
   const [stats, setStats] = useState(null);
   const [formCounts, setFormCounts] = useState(null);
@@ -58,31 +74,20 @@ export function useDashboard() {
   }, []);
 
   if (!stats) {
-    return {
-      data: {
-        statsCards: mock.statsCards,
-        academicBackgroundData: mock.academicBackgroundData,
-        academicYearData: mock.academicYearData,
-        formStatusData: mock.formStatusData,
-        topMembers: mock.topMembers,
-        latestSignups: mock.latestSignups,
-      },
-      loading,
-      error,
-    };
+    return { data: null, loading, error };
   }
 
   const statsCards = [
-    { ...mock.statsCards[0], value: String(stats.totalMembers ?? mock.statsCards[0].value) },
-    { ...mock.statsCards[1], value: String(stats.activeActivities ?? mock.statsCards[1].value) },
-    { ...mock.statsCards[2], value: String(stats.newRegistrations ?? mock.statsCards[2].value) },
-    { ...mock.statsCards[3], value: String(stats.emailsSent ?? mock.statsCards[3].value) },
+    { id: 1, icon: "Users", label: "Total Members", value: String(stats.totalMembers ?? 0), sub: "Registered students" },
+    { id: 2, icon: "Calendar", label: "Active Events", value: String(stats.activeActivities ?? 0), sub: "Forms currently open" },
+    { id: 3, icon: "TrendingUp", label: "New Registrations", value: String(stats.newRegistrations ?? 0), sub: "Last 7 days" },
+    { id: 4, icon: "Mail", label: "Emails Sent", value: String(stats.emailsSent ?? 0), sub: "Bulk dispatches total" },
   ];
 
   const academicBackgroundData = (stats.collegeSplit || [])
     .filter((c) => c.college)
     .map((c, i) => ({
-      name: c.college.charAt(0).toUpperCase() + c.college.slice(1),
+      name: capitalize(c.college),
       value: c.count,
       color: CHART_COLORS[i % CHART_COLORS.length],
     }));
@@ -94,19 +99,19 @@ export function useDashboard() {
       students: y.count,
     }));
 
+  const topMembers = (stats.topActiveMembers || []).map((m, i) => ({
+    rank: RANK_DISPLAY[i] || `#${i + 1}`,
+    initials: getInitials(m.name),
+    name: m.name,
+    college: capitalize(m.college),
+    scans: m.scans ?? m.count ?? 0,
+    avatarColor: pickColor(m._id),
+  }));
+
   const latestSignups = (stats.latestSignups || []).slice(0, 5).map((u) => ({
-    initials: u.name
-      ? u.name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .slice(0, 2)
-          .toUpperCase()
-      : "??",
+    initials: getInitials(u.name),
     name: u.name,
-    college: u.college
-      ? u.college.charAt(0).toUpperCase() + u.college.slice(1)
-      : "N/A",
+    college: capitalize(u.college),
     time: timeAgo(u.createdAt),
     avatarColor: pickColor(u._id),
   }));
@@ -114,19 +119,22 @@ export function useDashboard() {
   const fc = formCounts;
   const formStatusData = fc
     ? [
-        { status: "Open", count: fc.activeCount, total: fc.count, colorClass: "green" },
-        { status: "Closed", count: fc.closedCount, total: fc.count, colorClass: "red" },
+        { status: "Open", count: fc.activeCount ?? 0, total: fc.count ?? 0, colorClass: "green" },
+        { status: "Closed", count: fc.closedCount ?? 0, total: fc.count ?? 0, colorClass: "red" },
       ]
-    : mock.formStatusData;
+    : [
+        { status: "Open", count: 0, total: 0, colorClass: "green" },
+        { status: "Closed", count: 0, total: 0, colorClass: "red" },
+      ];
 
   return {
     data: {
       statsCards,
-      academicBackgroundData: academicBackgroundData.length > 0 ? academicBackgroundData : mock.academicBackgroundData,
-      academicYearData: academicYearData.length > 0 ? academicYearData : mock.academicYearData,
+      academicBackgroundData,
+      academicYearData,
       formStatusData,
-      topMembers: stats.topActiveMembers?.length > 0 ? stats.topActiveMembers : mock.topMembers,
-      latestSignups: latestSignups.length > 0 ? latestSignups : mock.latestSignups,
+      topMembers,
+      latestSignups,
     },
     loading,
     error,

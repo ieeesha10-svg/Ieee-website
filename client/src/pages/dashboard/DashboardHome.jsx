@@ -1,3 +1,11 @@
+{/*
+
+	POST /api/users/create-internal**
+- **Auth required** (cookie)
+- **Auth role required:** `xcom` only
+- **Body:** `{ name, email, password, role }` (role can be `xcom`, `board`, etc.)
+	
+	*/}
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Calendar, TrendingUp, Mail, Trophy, ChevronRight } from 'lucide-react';
@@ -232,9 +240,13 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
-
+    {/* 
+	    🥇
+	    🥈
+	    🥉
+    */}
       {/* Row 3 — Members + Signups */}
-      <sectionChevronRight className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Panel: Top Active Members */}
         <div className="bg-card-alt rounded-2xl shadow-sm p-5 md:p-6">
@@ -246,28 +258,32 @@ export default function Dashboard() {
             <img src={MedalIcon} alt="medal" />
           </div>
 
-					<div className='flex flex-col gap-0 md:gap-4 overflow-hidden'>
-			      {data.topMembers.map((member) => (
-	            <div
-	              key={member.rank}
-	              className="flex items-center gap-3 py-2.5"
-	            >
-	              <span className={`w-5 text-center text-sm font-bold ${rankColor(member.rank)}`}>
-	                {member.rank}
-	              </span>
-	              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white ${member.avatarColor}`}>
-	                {member.initials}
-	              </div>
-	              <div className="flex-1 min-w-0">
-	                <p className="font-medium text-sm text-foreground truncate">{member.name}</p>
-	                <p className="text-xs text-muted truncate">{member.college}</p>
-	              </div>
-	              <span className="ml-auto bg-primary-dark text-white text-xs px-3 py-1 rounded-full font-medium shrink-0">
-	                {member.scans} scans
-	              </span>
-	            </div>
-						))}
-					</div>
+					{data.topMembers.length === 0 ? (
+                <p className="text-sm text-muted text-center py-8">No active members yet</p>
+              ) : (
+                <div className='flex flex-col gap-0 md:gap-4 overflow-hidden'>
+                  {data.topMembers.map((member) => (
+                    <div
+                      key={member.rank}
+                      className="flex items-center gap-3 py-2.5"
+                    >
+                      <span className={`w-5 text-center text-sm font-bold ${rankColor(member.rank)}`}>
+                        {member.rank}
+                      </span>
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white ${member.avatarColor}`}>
+                        {member.initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm text-foreground truncate">{member.name}</p>
+                        <p className="text-xs text-muted truncate">{member.college}</p>
+                      </div>
+                      <span className="ml-auto bg-primary-dark text-white text-xs px-3 py-1 rounded-full font-medium shrink-0">
+                        {member.scans} scans
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
         </div>
 
         {/* Panel: Latest Signups */}
@@ -313,7 +329,7 @@ export default function Dashboard() {
             View all members <ChevronRight />
           </Link>
         </div>
-      </sectionChevronRight>
+      </section>
     </div>
   );
 }
