@@ -24,6 +24,7 @@ const SignupPage = () => {
     age: "",
     university: "",
     college: "",
+    committee: "",
     yearOfStudy: "1", // Default to 1st year
     password: "",
     confirmPassword: "",
@@ -56,6 +57,7 @@ const SignupPage = () => {
         age: formData.age ? Number(formData.age) : undefined,
         university: formData.university,
         college: formData.college,
+        committee: formData.committee,
         yearOfStudy: Number(formData.yearOfStudy),
       };
 
@@ -185,6 +187,30 @@ const SignupPage = () => {
               className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
               required
             />
+          </div>
+
+          {/* Committee */}
+          <div className="relative flex items-center bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-sky-500 transition-all">
+            <span className="pl-3 pr-2 text-gray-500 dark:text-gray-400 text-sm font-medium border-r border-gray-200 dark:border-gray-600">
+              Committee
+            </span>
+            <select
+              name="committee"
+              value={formData.committee}
+              onChange={handleChange}
+              className="w-full bg-transparent py-3 px-3 focus:outline-none dark:text-white *:dark:text-black appearance-none cursor-pointer"
+              required
+            >
+              <option value="">Select Committee</option>
+              <option value="PR">PR</option>
+              <option value="HR">HR</option>
+              <option value="LOGISTICS">LOGISTICS</option>
+              <option value="MARKETING">MARKETING</option>
+              <option value="BRANDING & MEDIA">BRANDING & MEDIA</option>
+              <option value="TECHNICAL">TECHNICAL</option>
+              <option value="NON-TECHNICAL">NON-TECHNICAL</option>
+              <option value="WEBSITE">WEBSITE</option>
+            </select>
           </div>
 
           {/* Year of Study (Converted to a clean Select dropdown) */}
