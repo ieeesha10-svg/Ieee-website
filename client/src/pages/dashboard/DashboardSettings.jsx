@@ -1,65 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Save,
   Camera,
-  Plus,
-  Trash2,
+  Loader2,
+  CheckCircle2,
   AlertTriangle,
-  ChevronDown,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useUserUpdate } from "../../hooks/dashboard/useUserUpdate";
 
-/* ─── Toggle Switch ────────────────────────────────────────────── */
-function Toggle({ checked, onChange }) {
-  return (
-    <button
-      role="switch"
-      aria-checked={checked}
-      onClick={onChange}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-200 ${
-        checked ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
-      }`}
-    >
-      <span
-        className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          checked ? "translate-x-5" : "translate-x-1"
-        }`}
-      />
-    </button>
-  );
-}
+const ORDINAL_OPTIONS = [
+  { label: "Prep", value: 0 },
+  { label: "1st Year", value: 1 },
+  { label: "2nd Year", value: 2 },
+  { label: "3rd Year", value: 3 },
+  { label: "4th Year", value: 4 },
+  { label: "5th Year", value: 5 },
+];
 
-/* ─── Role Select ──────────────────────────────────────────────── */
-function RoleSelect({ value, onChange }) {
-  const roles = ["Admin", "Super Admin", "Moderator"];
-  const colors = {
-    Admin: "bg-primary/10 text-primary border-primary/20",
-    "Super Admin": "bg-teal-50 dark:bg-teal-900/25 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700/40",
-    Moderator: "bg-indigo-50 dark:bg-indigo-900/25 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700/40",
-  };
+const COMMITTEE_OPTIONS = [
+  { label: "Public Relations", value: "Public Relations" },
+  { label: "Human Resources", value: "Human Resources" },
+  { label: "Logistics", value: "Logistics" },
+  { label: "Marketing", value: "Marketing" },
+  { label: "Branding & Media", value: "Branding & Media" },
+  { label: "Technical", value: "Technical" },
+  { label: "Non-Technical", value: "Non-Technical" },
+  { label: "Website", value: "Website" },
+];
 
-  return (
-    <div className="relative">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`appearance-none text-[11px] font-bold px-2.5 py-1 pr-6 rounded-md border cursor-pointer focus:outline-none ${colors[value] || colors.Admin}`}
-      >
-        {roles.map((r) => (
-          <option key={r} value={r}>
-            {r}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={10}
-        className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60"
-      />
-    </div>
-  );
-}
-
-/* ─── Section Card Wrapper ─────────────────────────────────────── */
 function SectionCard({ children, className = "" }) {
   return (
     <div
@@ -70,7 +41,6 @@ function SectionCard({ children, className = "" }) {
   );
 }
 
-/* ─── Input Field ──────────────────────────────────────────────── */
 function Field({ label, ...props }) {
   return (
     <div>
@@ -85,87 +55,194 @@ function Field({ label, ...props }) {
   );
 }
 
-/* ─── Mock Admins Data ─────────────────────────────────────────── */
-const initialAdmins = [
-  {
-    id: 1,
-    name: "Dr. Rania Ibrahim",
-    email: "r.ibrahim@ieee-sb.edu",
-    role: "Admin",
-    initials: "RI",
-    color: "bg-primary",
-  },
-  {
-    id: 2,
-    name: "Eng. Tarek Mousa",
-    email: "t.mousa@ieee-sb.edu",
-    role: "Super Admin",
-    initials: "TM",
-    color: "bg-teal-500",
-  },
-  {
-    id: 3,
-    name: "Nour El-Din Hassan",
-    email: "n.hassan@ieee-sb.edu",
-    role: "Moderator",
-    initials: "NH",
-    color: "bg-indigo-500",
-  },
-];
+function SelectField({ label, value, onChange, options }) {
+  return (
+    <div>
+      <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors appearance-none"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
-/* ─── Main Component ───────────────────────────────────────────── */
+function MessageBanner({ message }) {
+  if (!message.text) return null;
+  return (
+    <div
+      className={`mb-6 p-4 rounded-xl flex items-center gap-3 text-sm font-medium ${
+        message.type === "success"
+          ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+          : "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+      }`}
+    >
+      {message.type === "success" ? (
+        <CheckCircle2 size={18} className="shrink-0" />
+      ) : (
+        <AlertTriangle size={18} className="shrink-0" />
+      )}
+      {message.text}
+    </div>
+  );
+}
+
+function Skeleton() {
+  return (
+    <div className="min-h-screen p-4 md:p-6 space-y-6 max-w-4xl animate-pulse">
+      <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm p-5 md:p-6 space-y-4">
+        <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-gray-700" />
+          <div className="space-y-2">
+            <div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-3 w-52 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardSettings() {
   const { user } = useAuth();
+  const {
+    userData,
+    loading,
+    error: fetchError,
+    savingProfile,
+    savingPassword,
+    updateProfile,
+    updatePassword,
+  } = useUserUpdate(user?._id);
 
-  /* Admin Profile state */
-  const [profile, setProfile] = useState({
-    fullName: user?.name || "Dr. Rania Ibrahim",
-    email: user?.email || "r.ibrahim@ieee-sb.edu",
-    phone: "+20 100 123 4567",
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
+  const [edits, setEdits] = useState({});
+
+  const baseProfile = useMemo(() => ({
+    fullName: userData?.name || "",
+    phone: userData?.phone || "",
+    age: userData?.age ?? "",
+    university: userData?.university || "",
+    college: userData?.college || "",
+    yearOfStudy: userData?.yearOfStudy ?? "",
+    committee: userData?.committee || "",
+    interests: userData?.interests?.join(", ") || "",
+    aboutMe: userData?.optionalData?.aboutMe || "",
+  }), [userData]);
+
+  const profile = useMemo(() => ({ ...baseProfile, ...edits }), [baseProfile, edits]);
+
+  useEffect(() => {
+    setEdits({});
+  }, [userData]);
+
+  const [passwords, setPasswords] = useState({
+    current: "",
+    new: "",
+    confirm: "",
   });
-
-  /* Website Configuration state */
-  const [config, setConfig] = useState({
-    branchName: "IEEE Student Branch — Faculty of Engineering",
-    contactEmail: "contact@ieee-sb.edu",
-    websiteUrl: "https://ieee-sb.edu",
-    aboutText: "",
-    allowRegistration: true,
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
   });
+  const [profileMessage, setProfileMessage] = useState({ type: "", text: "" });
+  const [passwordMessage, setPasswordMessage] = useState({ type: "", text: "" });
 
-  /* User Permissions state */
-  const [admins, setAdmins] = useState(initialAdmins);
+  const updateField = (key, value) =>
+    setEdits((prev) => ({ ...prev, [key]: value }));
 
-  const updateProfile = (key, value) =>
-    setProfile((p) => ({ ...p, [key]: value }));
-  const updateConfig = (key, value) =>
-    setConfig((c) => ({ ...c, [key]: value }));
-  const updateAdminRole = (id, role) =>
-    setAdmins((a) => a.map((admin) => (admin.id === id ? { ...admin, role } : admin)));
-  const removeAdmin = (id) =>
-    setAdmins((a) => a.filter((admin) => admin.id !== id));
-
-  const initials = user?.name
-    ? user.name
+  const initials = profile.fullName
+    ? profile.fullName
         .split(" ")
         .map((n) => n[0])
         .join("")
         .slice(0, 2)
         .toUpperCase()
-    : "RI";
+    : "??";
+
+  const handleSaveProfile = async () => {
+    const payload = {
+      name: profile.fullName,
+      phone: profile.phone,
+      age: profile.age !== "" ? Number(profile.age) : undefined,
+      university: profile.university,
+      college: profile.college,
+      yearOfStudy: profile.yearOfStudy !== "" ? Number(profile.yearOfStudy) : undefined,
+      committee: profile.committee,
+      interests: profile.interests
+        ? profile.interests.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
+      optionalData: { aboutMe: profile.aboutMe },
+    };
+
+    const result = await updateProfile(payload);
+    setProfileMessage({ type: result.success ? "success" : "error", text: result.message });
+    setTimeout(() => setProfileMessage({ type: "", text: "" }), 4000);
+  };
+
+  const handleSavePassword = async () => {
+    if (!passwords.current || !passwords.new || !passwords.confirm) {
+      setPasswordMessage({ type: "error", text: "Please fill in all password fields." });
+      return;
+    }
+    if (passwords.new.length < 8) {
+      setPasswordMessage({ type: "error", text: "New password must be at least 8 characters." });
+      return;
+    }
+    if (passwords.new !== passwords.confirm) {
+      setPasswordMessage({ type: "error", text: "New passwords do not match." });
+      return;
+    }
+
+    const result = await updatePassword({
+      currentPassword: passwords.current,
+      newPassword: passwords.new,
+    });
+    setPasswordMessage({ type: result.success ? "success" : "error", text: result.message });
+    if (result.success) setPasswords({ current: "", new: "", confirm: "" });
+    setTimeout(() => setPasswordMessage({ type: "", text: "" }), 4000);
+  };
+
+  if (loading) return <Skeleton />;
+
+  if (fetchError) {
+    return (
+      <div className="min-h-screen p-4 md:p-6 max-w-4xl flex items-center justify-center">
+        <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-red-200 dark:border-red-900/40 shadow-sm p-8 text-center max-w-md">
+          <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+            <span className="text-red-500 text-xl font-bold">!</span>
+          </div>
+          <p className="text-foreground font-semibold text-lg mb-1">Failed to load profile</p>
+          <p className="text-muted text-sm">{fetchError}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-6 max-w-4xl">
+
       {/* ─── Section 1: Admin Profile ──────────────────────────── */}
       <SectionCard>
         <h2 className="text-base font-bold text-foreground mb-5">
           Admin Profile
         </h2>
 
-        {/* Avatar Row */}
         <div className="flex items-center gap-4 mb-6">
           <div className="relative">
             <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-lg font-bold">
@@ -177,204 +254,209 @@ export default function DashboardSettings() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">
-              {profile.fullName}
+              {profile.fullName || "User"}
             </h3>
             <p className="text-xs text-muted">
-              Super Admin — IEEE Student Branch
+              {userData?.email || ""}
             </p>
-            <button className="text-xs text-primary font-medium hover:underline mt-0.5">
-              Change photo
-            </button>
           </div>
         </div>
 
-        {/* Profile Form */}
+        <MessageBanner message={profileMessage} />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <Field
             label="Full Name"
             type="text"
             value={profile.fullName}
-            onChange={(e) => updateProfile("fullName", e.target.value)}
-          />
-          <Field
-            label="Email Address"
-            type="email"
-            value={profile.email}
-            onChange={(e) => updateProfile("email", e.target.value)}
+            onChange={(e) => updateField("fullName", e.target.value)}
           />
           <Field
             label="Phone Number"
             type="tel"
             value={profile.phone}
-            onChange={(e) => updateProfile("phone", e.target.value)}
+            onChange={(e) => updateField("phone", e.target.value)}
           />
           <Field
-            label="Current Password"
-            type="password"
-            value={profile.currentPassword}
-            onChange={(e) => updateProfile("currentPassword", e.target.value)}
-            placeholder="••••••••"
+            label="Email (read-only)"
+            type="email"
+            value={userData?.email || ""}
+            disabled
           />
           <Field
-            label="New Password"
-            type="password"
-            value={profile.newPassword}
-            onChange={(e) => updateProfile("newPassword", e.target.value)}
-            placeholder="••••••••"
+            label="Age"
+            type="number"
+            min={15}
+            max={99}
+            value={profile.age}
+            onChange={(e) => updateField("age", e.target.value)}
           />
           <Field
-            label="Confirm Password"
-            type="password"
-            value={profile.confirmPassword}
-            onChange={(e) => updateProfile("confirmPassword", e.target.value)}
-            placeholder="••••••••"
+            label="University"
+            type="text"
+            value={profile.university}
+            onChange={(e) => updateField("university", e.target.value)}
           />
+          <Field
+            label="College"
+            type="text"
+            value={profile.college}
+            onChange={(e) => updateField("college", e.target.value)}
+          />
+          <SelectField
+            label="Year of Study"
+            value={profile.yearOfStudy}
+            onChange={(e) => updateField("yearOfStudy", e.target.value)}
+            options={ORDINAL_OPTIONS}
+          />
+          <SelectField
+            label="Committee"
+            value={profile.committee}
+            onChange={(e) => updateField("committee", e.target.value)}
+            options={COMMITTEE_OPTIONS}
+          />
+          <div className="sm:col-span-2">
+            <Field
+              label="Interests (comma-separated)"
+              type="text"
+              value={profile.interests}
+              onChange={(e) => updateField("interests", e.target.value)}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
+              About Me
+            </label>
+            <textarea
+              value={profile.aboutMe}
+              onChange={(e) => updateField("aboutMe", e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none"
+            />
+          </div>
         </div>
 
-        <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm mt-1">
-          <Save size={14} />
+        <button
+          onClick={handleSaveProfile}
+          disabled={savingProfile}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {savingProfile ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Save size={14} />
+          )}
           Save Profile
         </button>
       </SectionCard>
 
-      {/* ─── Section 2: Website Configuration ──────────────────── */}
+      {/* ─── Section 2: Change Password ────────────────────────── */}
       <SectionCard>
         <h2 className="text-base font-bold text-foreground mb-5">
-          Website Configuration
+          Change Password
         </h2>
 
-        <div className="space-y-4 mb-4">
-          <Field
-            label="Branch Display Name"
-            type="text"
-            value={config.branchName}
-            onChange={(e) => updateConfig("branchName", e.target.value)}
-          />
-          <Field
-            label="Contact Email"
-            type="email"
-            value={config.contactEmail}
-            onChange={(e) => updateConfig("contactEmail", e.target.value)}
-          />
-          <Field
-            label="Branch Website URL"
-            type="url"
-            value={config.websiteUrl}
-            onChange={(e) => updateConfig("websiteUrl", e.target.value)}
-          />
+        <MessageBanner message={passwordMessage} />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
-              About Text
+              Current Password
             </label>
-            <textarea
-              value={config.aboutText}
-              onChange={(e) => updateConfig("aboutText", e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none"
-            />
-          </div>
-
-          {/* Registration Toggle */}
-          <div className="flex items-center justify-between py-1">
-            <div>
-              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide">
-                Registration Status
-              </label>
-              <p className="text-xs text-muted mt-0.5">
-                Allow new member registrations
-              </p>
+            <div className="relative">
+              <input
+                type={showPasswords.current ? "text" : "password"}
+                value={passwords.current}
+                onChange={(e) =>
+                  setPasswords((p) => ({ ...p, current: e.target.value }))
+                }
+                placeholder="Enter current password"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors pr-10"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setShowPasswords((s) => ({
+                    ...s,
+                    current: !s.current,
+                  }))
+                }
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"
+              >
+                {showPasswords.current ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
             </div>
-            <Toggle
-              checked={config.allowRegistration}
-              onChange={() =>
-                updateConfig("allowRegistration", !config.allowRegistration)
-              }
-            />
           </div>
-        </div>
-
-        <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm">
-          <Save size={14} />
-          Save Configuration
-        </button>
-      </SectionCard>
-
-      {/* ─── Section 3: User Permissions ───────────────────────── */}
-      <SectionCard>
-        <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-base font-bold text-foreground">
-              User Permissions
-            </h2>
-            <p className="text-xs text-muted mt-0.5">
-              Manage admin roles and access levels
-            </p>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
+              New Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPasswords.new ? "text" : "password"}
+                value={passwords.new}
+                onChange={(e) =>
+                  setPasswords((p) => ({ ...p, new: e.target.value }))
+                }
+                placeholder="New password"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors pr-10"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setShowPasswords((s) => ({ ...s, new: !s.new }))
+                }
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"
+              >
+                {showPasswords.new ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
           </div>
-          <button className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">
-            <Plus size={14} />
-            Add Admin
-          </button>
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
+              Confirm New Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPasswords.confirm ? "text" : "password"}
+                value={passwords.confirm}
+                onChange={(e) =>
+                  setPasswords((p) => ({ ...p, confirm: e.target.value }))
+                }
+                placeholder="Confirm new password"
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors pr-10"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setShowPasswords((s) => ({
+                    ...s,
+                    confirm: !s.confirm,
+                  }))
+                }
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"
+              >
+                {showPasswords.confirm ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Admins Table */}
-        <div className="overflow-x-auto -mx-5 md:-mx-6">
-          <table className="w-full min-w-[500px]">
-            <thead>
-              <tr className="text-[11px] font-bold text-muted uppercase tracking-wide border-b border-gray-100 dark:border-[#222936]">
-                <th className="text-left px-5 md:px-6 pb-3">Admin</th>
-                <th className="text-left px-4 pb-3">Email</th>
-                <th className="text-left px-4 pb-3">Role</th>
-                <th className="text-right px-5 md:px-6 pb-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {admins.map((admin) => (
-                <tr
-                  key={admin.id}
-                  className="border-b border-gray-50 dark:border-[#222936] last:border-b-0"
-                >
-                  <td className="px-5 md:px-6 py-3">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={`w-8 h-8 rounded-full ${admin.color} flex items-center justify-center text-white text-[11px] font-bold shrink-0`}
-                      >
-                        {admin.initials}
-                      </div>
-                      <span className="text-sm font-medium text-foreground whitespace-nowrap">
-                        {admin.name}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted whitespace-nowrap">
-                    {admin.email}
-                  </td>
-                  <td className="px-4 py-3">
-                    <RoleSelect
-                      value={admin.role}
-                      onChange={(role) => updateAdminRole(admin.id, role)}
-                    />
-                  </td>
-                  <td className="px-5 md:px-6 py-3 text-right">
-                    <button
-                      onClick={() => removeAdmin(admin.id)}
-                      className="p-1.5 text-muted hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm mt-5">
-          <Save size={14} />
-          Save Permissions
+        <button
+          onClick={handleSavePassword}
+          disabled={savingPassword}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {savingPassword ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Save size={14} />
+          )}
+          Update Password
         </button>
       </SectionCard>
 
-      {/* ─── Section 4: Danger Zone ────────────────────────────── */}
+      {/* ─── Section 3: Danger Zone ────────────────────────────── */}
       <SectionCard className="border-red-200 dark:border-red-900/40">
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle size={16} className="text-red-500" />
@@ -389,8 +471,7 @@ export default function DashboardSettings() {
               Reset All Member Data
             </h4>
             <p className="text-xs text-muted">
-              Permanently delete all registrations. This action cannot be
-              undone.
+              Permanently delete all registrations. This action cannot be undone.
             </p>
           </div>
           <button className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline whitespace-nowrap shrink-0">

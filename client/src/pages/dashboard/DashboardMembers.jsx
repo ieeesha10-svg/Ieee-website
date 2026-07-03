@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
-import { Search, Filter, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { Search, Filter, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { useMembers } from '../../hooks/dashboard/useMembers';
+import { useUpdateRole } from '../../hooks/dashboard/useUpdateRole';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../utils/api';
 
 export default function DashboardMembers() {
+  const { user } = useAuth();
   const {
     members, totalCount,
     collegeFilters, yearFilters, roleFilters,
@@ -11,16 +15,63 @@ export default function DashboardMembers() {
     activeYears, toggleYear,
     activeRoles, toggleRole,
     page, setPage, totalPages,
+    loading,
   } = useMembers();
 
+  const { updatingRole, updateRole } = useUpdateRole();
   const [memberRoles, setMemberRoles] = useState({});
   const [selectedIds, setSelectedIds] = useState([]);
+  const [exporting, setExporting] = useState(false);
 
   const toggleSelect = (id) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
+
+  const handleRoleChange = useCallback((memberId, newRole) => {
+    const previousRole = memberRoles[memberId] ?? members.find((m) => m.id === memberId)?.role;
+    updateRole(memberId, newRole, previousRole, setMemberRoles);
+  }, [memberRoles, members, updateRole]);
+
+  const handleExportCSV = useCallback(async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("limit", "1000");
+      if (search) params.set("search", search);
+      if (activeRoles.length > 0) params.set("role", activeRoles.join(","));
+      if (activeColleges.length === 1) params.set("college", activeColleges[0]);
+      if (activeYears.length === 1) {
+        const yearMap = { "Prep": 0, "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4 };
+        params.set("yearOfStudy", String(yearMap[activeYears[0]] ?? activeYears[0]));
+      }
+      const res = await api.get(`/users/all?${params.toString()}`);
+      const users = res.data.users || [];
+
+      const headers = ["Name", "Email", "College", "Year of Study", "Role"];
+      const rows = users.map((u) => [
+        u.name || "",
+        u.email || "",
+        u.college || "",
+        u.yearOfStudy ?? "",
+        u.role || "member",
+      ]);
+
+      const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `ieee-members-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  }, [search, activeColleges, activeYears, activeRoles]);
 
   return (
     <div className="min-h-screen bg-main p-4 md:p-6">
@@ -105,9 +156,13 @@ export default function DashboardMembers() {
             </div>
           </div>
 
-          <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 w-full lg:w-auto">
-            <Download size={16} />
-            Export CSV
+          <button
+            onClick={handleExportCSV}
+            disabled={exporting}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 w-full lg:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            Export As Excel
           </button>
         </div>
       </div>
@@ -126,7 +181,7 @@ export default function DashboardMembers() {
                         ? setSelectedIds((prev) => prev.filter((id) => !members.some((m) => m.id === id)))
                         : setSelectedIds((prev) => [...new Set([...prev, ...members.map((m) => m.id)])])
                     }
-                    className="w-4 h-4 accent-primary cursor-pointer"
+                    className="ml-3 w-4 h-4 accent-primary cursor-pointer"
                   />
                 </th>
                 <th className="px-6 w-[30%]">MEMBER</th>
@@ -138,7 +193,16 @@ export default function DashboardMembers() {
               </tr>
             </thead>
             <tbody>
-              {members.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="text-sm text-muted py-16 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 size={18} className="animate-spin" />
+                      Loading members...
+                    </div>
+                  </td>
+                </tr>
+              ) : members.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-sm text-muted py-16 text-center">
                     No members match your filters.
@@ -152,7 +216,7 @@ export default function DashboardMembers() {
                         type="checkbox"
                         checked={selectedIds.includes(member.id)}
                         onChange={() => toggleSelect(member.id)}
-                        className="w-4 h-4 accent-primary cursor-pointer"
+                        className="ml-3 w-4 h-4 accent-primary cursor-pointer"
                       />
                     </td>
                     <td className="py-3 px-6">
@@ -160,15 +224,23 @@ export default function DashboardMembers() {
                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0 ${member.avatarColor}`}>
                           {member.initials}
                         </div>
-                        <span className="text-sm font-medium text-foreground">{member.name}</span>
+                        <span className="text-sm font-medium text-foreground">
+                            {member.name}
+                            {member.id === user?._id && (
+                              <span className="ml-1.5 text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                You
+                              </span>
+                            )}
+                          </span>
                       </div>
                     </td>
                     <td className="py-3 px-4 text-sm text-muted">{member.college}</td>
                     <td className="py-3 px-4">
                       <select
                         value={memberRoles[member.id] ?? member.role}
-                        onChange={(e) => setMemberRoles((prev) => ({ ...prev, [member.id]: e.target.value }))}
-                        className="text-xs font-medium bg-card-alt border border-border rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                        onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                        disabled={updatingRole === member.id}
+                        className="text-xs font-medium bg-card-alt border border-border rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {roleFilters.map((r) => (
                           <option key={r} value={r}>{r}</option>
