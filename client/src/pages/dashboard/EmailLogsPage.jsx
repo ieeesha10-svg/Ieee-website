@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   RefreshCw,
   Download,
@@ -9,10 +9,13 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
+
+import { useEmailLogs } from "../../hooks/dashboard/useEmailLogs";
 import api from "../../utils/api";
 
-// ─── Status Badge Component ────────────────────────────────────────────────
+// ─── Components (StatusBadge & FilterChip) ────────────────────────────────
 function StatusBadge({ status }) {
   const statusConfig = {
     delivered: {
@@ -37,10 +40,8 @@ function StatusBadge({ status }) {
       label: "Pending",
     },
   };
-
   const config = statusConfig[status] || statusConfig.pending;
   const Icon = config.icon;
-
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${config.bgColor} ${config.color} ${config.borderColor}`}
@@ -51,7 +52,6 @@ function StatusBadge({ status }) {
   );
 }
 
-// ─── Filter Chip Component ─────────────────────────────────────────────────
 function FilterChip({ label, active, onClick }) {
   return (
     <button
@@ -69,105 +69,80 @@ function FilterChip({ label, active, onClick }) {
 
 // ─── Main Component ────────────────────────────────────────────────────────
 export default function EmailLogsPage() {
-  // ─── State ───────────────────────────────────────────────────────────────
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState({
-    totalItems: 0,
-    page: 1,
-    limit: 10,
-    totalPages: 0,
-  });
-  const itemsPerPage = 10;
+  const {
+    logs,
+    loading,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+    page,
+    setPage,
+    pagination,
+  } = useEmailLogs();
 
-  // ─── API Call ─────────────────────────────────────────────────────────────
-  const fetchEmailLogs = async (
-    page = 1,
-    search = searchQuery,
-    status = statusFilter,
-  ) => {
-    setLoading(true);
+  const [exporting, setExporting] = useState(false);
+
+  // ─── Export CSV (بنفس منطق DashboardMembers) ───────────────────────────
+  const handleExportCSV = async () => {
+    setExporting(true);
     try {
-      // بناء الـ URL بناءً على الفلاتر
-      let url = `/emails/logs?page=${page}&limit=${itemsPerPage}`;
-
-      if (search) {
-        url += `&search=${search}`;
-      }
-
-      if (status !== "all") {
-        // تحويل الـ Status للي الباك إند بيفهمه (حسب صورة البوستمان القديمة)
+      const params = new URLSearchParams();
+      params.set("limit", "1000");
+      if (search) params.set("search", search);
+      if (statusFilter !== "all") {
         const backendStatus =
-          status === "delivered"
+          statusFilter === "delivered"
             ? "Done"
-            : status === "failed"
+            : statusFilter === "failed"
               ? "Failed"
-              : status;
-        url += `&status=${backendStatus}`;
+              : statusFilter;
+        params.set("status", backendStatus);
       }
 
-      const response = await api.get(url);
+      const res = await api.get(`/emails/logs?${params.toString()}`);
+      const dataToExport = res.data.data || [];
 
-      // Map API response to component structure
-      const mappedLogs = response.data.data.map((log) => {
-        let uiStatus = "pending";
-        if (log.status === "Done" || log.status === "delivered")
-          uiStatus = "delivered";
-        else if (log.status === "Failed" || log.status === "failed")
-          uiStatus = "failed";
+      const headers = [
+        "Log ID",
+        "Recipient Email",
+        "Subject",
+        "Date",
+        "Status",
+      ];
+      const rows = dataToExport.map((log) => [
+        log._id || "",
+        log.email || "",
+        log.subject || "",
+        new Date(log.sentAt).toLocaleString(),
+        log.status || "pending",
+      ]);
 
-        return {
-          id: log._id,
-          recipientEmail: log.email,
-          subject: log.subject,
-          messageBody: log.messageBody,
-          date: new Date(log.sentAt).toLocaleDateString(),
-          time: new Date(log.sentAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          status: uiStatus,
-        };
-      });
-
-      setLogs(mappedLogs);
-      setPagination(response.data.pagination);
-      setCurrentPage(page);
-    } catch (error) {
-      console.error("Error fetching email logs:", error);
+      const csv = [
+        headers.join(","),
+        ...rows.map((r) =>
+          r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","),
+        ),
+      ].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `email-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed:", err);
     } finally {
-      setLoading(false);
+      setExporting(false);
     }
   };
 
-  // ─── Fetch on Mount & Filter Change ──────────────────────────────────────
-  useEffect(() => {
-    // استخدمنا setTimeout عشان نعمل Debounce للبحث (نستنى نص ثانية بعد ما اليوزر يكتب)
-    const timeoutId = setTimeout(() => {
-      fetchEmailLogs(1, searchQuery, statusFilter);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, statusFilter]); // هيشتغل كل ما البحث أو الفلتر يتغير
-
-  // ─── Export CSV ─────────────────────────────────────────────────────────
-  const handleExportCSV = () => {
-    // TODO: Implement CSV export logic
-    console.log("Exporting CSV...");
-  };
-
-  // حساب أرقام الـ Pagination للـ UI
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const totalItems = pagination.totalItems || 0;
-  const totalPages = pagination.totalPages || 1;
+  // حساب أرقام العرض
+  const startIndex = (page - 1) * pagination.limit;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0F1117] p-4 md:p-6">
-      {/* ─── Header ───────────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
@@ -180,7 +155,10 @@ export default function EmailLogsPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => fetchEmailLogs(currentPage)}
+              onClick={() => {
+                // Refresh by triggering page change or search re-eval
+                setPage(page);
+              }}
               disabled={loading}
               className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
             >
@@ -189,45 +167,35 @@ export default function EmailLogsPage() {
             </button>
             <button
               onClick={handleExportCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+              disabled={exporting}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-60"
             >
-              <Download size={16} />
+              {exporting ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Download size={16} />
+              )}
               Export CSV
             </button>
           </div>
         </div>
 
-        {/* ─── Filters & Search ─────────────────────────────────────────────── */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 md:p-6 mb-6 shadow-sm">
-          {/* Status Filters */}
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
               <Filter size={16} />
               Status:
             </span>
-            <FilterChip
-              label="All"
-              active={statusFilter === "all"}
-              onClick={() => setStatusFilter("all")}
-            />
-            <FilterChip
-              label="Delivered"
-              active={statusFilter === "delivered"}
-              onClick={() => setStatusFilter("delivered")}
-            />
-            <FilterChip
-              label="Failed"
-              active={statusFilter === "failed"}
-              onClick={() => setStatusFilter("failed")}
-            />
-            <FilterChip
-              label="Pending"
-              active={statusFilter === "pending"}
-              onClick={() => setStatusFilter("pending")}
-            />
+            {["all", "delivered", "failed", "pending"].map((status) => (
+              <FilterChip
+                key={status}
+                label={status.charAt(0).toUpperCase() + status.slice(1)}
+                active={statusFilter === status}
+                onClick={() => setStatusFilter(status)}
+              />
+            ))}
           </div>
 
-          {/* Search Bar */}
           <div className="relative">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -236,14 +204,13 @@ export default function EmailLogsPage() {
             <input
               type="text"
               placeholder="Search by recipient, subject, or log ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary-dark"
             />
           </div>
         </div>
 
-        {/* ─── Table ───────────────────────────────────────────────────────── */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -273,7 +240,10 @@ export default function EmailLogsPage() {
                       colSpan="5"
                       className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                     >
-                      Loading...
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 size={18} className="animate-spin" />
+                        Loading logs...
+                      </div>
                     </td>
                   </tr>
                 ) : logs.length > 0 ? (
@@ -305,7 +275,7 @@ export default function EmailLogsPage() {
                       colSpan="5"
                       className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                     >
-                      No email logs found
+                      No email logs found matching your filters.
                     </td>
                   </tr>
                 )}
@@ -313,47 +283,46 @@ export default function EmailLogsPage() {
             </table>
           </div>
 
-          {/* ─── Pagination ─────────────────────────────────────────────────── */}
           {logs.length > 0 && (
             <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
                 Showing {startIndex + 1}-
-                {Math.min(startIndex + itemsPerPage, totalItems)} of{" "}
-                {totalItems} entries
-              </p>
+                {Math.min(startIndex + pagination.limit, pagination.totalItems)}{" "}
+                of {pagination.totalItems} entries
+              </span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => fetchEmailLogs(Math.max(currentPage - 1, 1))}
-                  disabled={currentPage === 1}
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1}
                   className="flex items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft size={16} />
                   Previous
                 </button>
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    // Logic to show pages around current page could be added here for large datasets
-                    const pageNum = i + 1;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => fetchEmailLogs(pageNum)}
-                        className={`w-10 h-10 rounded-lg font-medium transition-colors ${
-                          currentPage === pageNum
-                            ? "bg-primary text-white"
-                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
+                  {Array.from(
+                    { length: Math.min(pagination.totalPages, 5) },
+                    (_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setPage(pageNum)}
+                          className={`w-10 h-10 rounded-lg font-medium transition-colors ${
+                            page === pageNum
+                              ? "bg-primary text-white"
+                              : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    },
+                  )}
                 </div>
                 <button
-                  onClick={() =>
-                    fetchEmailLogs(Math.min(currentPage + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
+                  onClick={() => setPage(page + 1)}
+                  disabled={page === pagination.totalPages}
                   className="flex items-center gap-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Next
