@@ -25,10 +25,17 @@ const DashboardLayout = () => {
   const { pathname } = useLocation();
 
   const [formStats, setFormStats] = useState(null);
+  const [eventCount, setEventCount] = useState(null);
 
   useEffect(() => {
     if (pathname === "/dashboard/forms") {
       api.get("/form").then((res) => setFormStats(res.data)).catch(() => {});
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === "/dashboard/events") {
+      api.get("/activities").then((res) => setEventCount(res.data.length ?? 0)).catch(() => {});
     }
   }, [pathname]);
 
@@ -38,6 +45,10 @@ const DashboardLayout = () => {
 
   if (pathname === "/dashboard/forms" && formStats) {
     meta.sub = `${formStats.count} ${formStats.count === 1 ? "form" : "forms"} — ${formStats.activeCount} currently open`;
+  }
+
+  if (pathname === "/dashboard/events" && eventCount != null) {
+    meta.sub = `${eventCount} ${eventCount === 1 ? "event" : "events"} managed`;
   }
 
   const rightSide = (
