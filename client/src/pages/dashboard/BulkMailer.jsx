@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef } from "react";
 import {
   Send,
   Clock,
@@ -18,6 +18,7 @@ import {
 import * as XLSX from "xlsx";
 import api from "../../utils/api";
 import { emailHistoryData } from "../../data/emailData";
+import { useBulkMembers } from "../../hooks/dashboard/useBulkMembers";
 
 /* ─── Progress Bar ─────────────────────────────────────────────── */
 function ProgressStat({ label, value, color = "bg-primary" }) {
@@ -90,73 +91,39 @@ export default function BulkMailer() {
 
   // ── Recipients State ──
   const [recipientMode, setRecipientMode] = useState("api"); // 'api' | 'excel'
-
-  // API Mode
-  const [members, setMembers] = useState([]);
-  const [loadingMembers, setLoadingMembers] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filterRole, setFilterRole] = useState("all");
-  const [filterCollege, setFilterCollege] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
   const [selectedEmails, setSelectedEmails] = useState(new Set());
 
   // Excel Mode
   const [recipientExcel, setRecipientExcel] = useState(null);
   const recipientExcelInputRef = useRef(null);
 
-  // Fetch Members on Mount
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const res = await api.get("/users/members");
-        const data = Array.isArray(res.data) ? res.data : res.data.data || [];
-        setMembers(data);
-      } catch (err) {
-        console.error("Failed to fetch members", err);
-      } finally {
-        setLoadingMembers(false);
-      }
-    };
-    fetchMembers();
-  }, []);
-
-  // Filter Members
-  const filteredMembers = useMemo(() => {
-    return members.filter((m) => {
-      const matchSearch =
-        m.name?.toLowerCase().includes(search.toLowerCase()) ||
-        m.email?.toLowerCase().includes(search.toLowerCase());
-      const matchRole =
-        filterRole === "all" ||
-        m.role?.toLowerCase() === filterRole.toLowerCase();
-      const matchCollege =
-        filterCollege === "all" ||
-        m.college?.toLowerCase().includes(filterCollege.toLowerCase());
-      const matchStatus =
-        filterStatus === "all" ||
-        (filterStatus === "active" && m.status === "Active") ||
-        (filterStatus === "inactive" && m.status !== "Active");
-      return matchSearch && matchRole && matchCollege && matchStatus;
-    });
-  }, [members, search, filterRole, filterCollege, filterStatus]);
-
-  // Options for dropdowns
-  const uniqueColleges = useMemo(() => {
-    const colleges = new Set(members.map((m) => m.college).filter(Boolean));
-    return Array.from(colleges);
-  }, [members]);
+  // Use Custom Hook for Members
+  const {
+    members,
+    loadingMembers,
+    search,
+    setSearch,
+    filterRole,
+    setFilterRole,
+    filterCollege,
+    setFilterCollege,
+    uniqueColleges,
+  } = useBulkMembers();
 
   // Handlers for selection
   const handleSelectAll = () => {
-    if (filteredMembers.every((m) => selectedEmails.has(m.email))) {
+    if (
+      members.length > 0 &&
+      members.every((m) => selectedEmails.has(m.email))
+    ) {
       // Deselect all filtered
       const newSet = new Set(selectedEmails);
-      filteredMembers.forEach((m) => newSet.delete(m.email));
+      members.forEach((m) => newSet.delete(m.email));
       setSelectedEmails(newSet);
     } else {
       // Select all filtered
       const newSet = new Set(selectedEmails);
-      filteredMembers.forEach((m) => {
+      members.forEach((m) => {
         if (m.email) newSet.add(m.email);
       });
       setSelectedEmails(newSet);
@@ -418,7 +385,7 @@ export default function BulkMailer() {
                     <select
                       value={filterCollege}
                       onChange={(e) => setFilterCollege(e.target.value)}
-                      className="px-2 py-2 text-xs rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-foreground focus:outline-none focus:border-primary max-w-[120px]"
+                      className="px-2 py-2 text-xs rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-foreground focus:outline-none focus:border-primary max-w-30"
                     >
                       <option value="all">All Colleges</option>
                       {uniqueColleges.map((col) => (
@@ -438,10 +405,8 @@ export default function BulkMailer() {
                         onClick={handleSelectAll}
                         className="text-primary hover:text-primary-dark transition-colors"
                       >
-                        {filteredMembers.length > 0 &&
-                        filteredMembers.every((m) =>
-                          selectedEmails.has(m.email),
-                        ) ? (
+                        {members.length > 0 &&
+                        members.every((m) => selectedEmails.has(m.email)) ? (
                           <CheckSquare size={16} />
                         ) : (
                           <Square size={16} className="text-muted" />
@@ -456,7 +421,7 @@ export default function BulkMailer() {
                     </span>
                   </div>
 
-                  <div className="max-h-[250px] overflow-y-auto p-1 bg-white dark:bg-[#1a1f2e]">
+                  <div className="max-h-62.5 overflow-y-auto p-1 bg-white dark:bg-[#1a1f2e]">
                     {loadingMembers ? (
                       <div className="flex justify-center py-8">
                         <Loader2
@@ -464,12 +429,12 @@ export default function BulkMailer() {
                           className="animate-spin text-muted"
                         />
                       </div>
-                    ) : filteredMembers.length === 0 ? (
+                    ) : members.length === 0 ? (
                       <div className="text-center py-8 text-xs text-muted">
                         No members found matching filters.
                       </div>
                     ) : (
-                      filteredMembers.map((m) => (
+                      members.map((m) => (
                         <label
                           key={m._id || m.email}
                           className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-md cursor-pointer transition-colors"
