@@ -9,9 +9,18 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import api from "../../utils/api";
+import { useAuth } from "../../context/AuthContext";
 
 // ─── Defined OUTSIDE the component to prevent remount on every render ─────────
-function PasswordField({ label, name, placeholder, value, show, onChange, onToggle }) {
+function PasswordField({
+  label,
+  name,
+  placeholder,
+  value,
+  show,
+  onChange,
+  onToggle,
+}) {
   return (
     <div className="flex flex-col gap-[8px]">
       <label className="font-lakes font-bold text-[12px] md:text-[13px] leading-[18px] tracking-[0.69px] uppercase text-[#3A5068] dark:text-[#7A96B2]">
@@ -39,6 +48,7 @@ function PasswordField({ label, name, placeholder, value, show, onChange, onTogg
 }
 
 export default function ChangePassword() {
+  const { user } = useAuth();
   const [passwords, setPasswords] = useState({
     current: "",
     new: "",
@@ -72,7 +82,10 @@ export default function ChangePassword() {
       return;
     }
     if (passwords.new.length < 8) {
-      setMessage({ type: "error", text: "New password must be at least 8 characters." });
+      setMessage({
+        type: "error",
+        text: "New password must be at least 8 characters.",
+      });
       return;
     }
     if (passwords.new !== passwords.confirm) {
@@ -83,10 +96,7 @@ export default function ChangePassword() {
     setIsSaving(true);
     setMessage({ type: "", text: "" });
     try {
-      // NOTE: As per API documentation, there is no official route documented for password changes.
-      // The current implementation attempts to call PUT /api/users/update-password.
-      // Please verify with the backend developer if this endpoint is supported or needs to be added.
-      await api.put("/users/update-password", {
+      await api.put(`/users/update-password/${user._id}`, {
         currentPassword: passwords.current,
         newPassword: passwords.new,
       });
@@ -113,10 +123,8 @@ export default function ChangePassword() {
 
   return (
     <div className="space-y-4 md:space-y-5">
-
       {/* ─── Main Form Card ───────────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-[#13161D] rounded-[20px] md:rounded-[24px] border-[0.8px] border-[rgba(0,120,255,0.11)] dark:border-[#222936] shadow-[0px_6px_24px_rgba(0,100,220,0.08)] dark:shadow-none p-6 md:p-8 lg:p-10 transition-colors">
-
         {/* Header */}
         <div className="flex items-center gap-[12px] mb-[28px] md:mb-[32px]">
           <div className="w-[46px] h-[46px] rounded-[14px] bg-gradient-to-br from-[#FF6B35] to-[#CC3D00] flex items-center justify-center text-white shrink-0 shadow-[0px_4px_14px_rgba(255,107,53,0.3)]">
