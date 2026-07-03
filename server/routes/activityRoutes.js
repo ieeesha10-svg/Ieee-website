@@ -7,10 +7,13 @@ const {
   updateActivity,
   deleteActivity
 } = require('../controllers/activityController');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
-activityRouter.post('/', createActivity);
 activityRouter.get('/', getActivities);
 activityRouter.get('/:id', getActivityById);
+
+activityRouter.use(protect, authorize('xcom','board'));
+activityRouter.post('/', createActivity);
 activityRouter.put('/:id', updateActivity);
 activityRouter.delete('/:id', deleteActivity);
 

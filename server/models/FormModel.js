@@ -13,6 +13,7 @@ const formSchema = new mongoose.Schema({
     ref: "Activity",
     // required: true,
     unique: true,
+    sparse: true
   },
   status: { 
     type: String,
