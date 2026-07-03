@@ -25,6 +25,7 @@ export const navItems = [
     buttonText: "Create New Event",
     buttonIcon: "Plus",
   },
+
   {
     to: "/dashboard/forms",
     label: "Forms",
@@ -40,6 +41,13 @@ export const navItems = [
     icon: "Mail",
     title: "Bulk Mailer",
     sub: "Compose and send broadcast emails to members",
+  },
+  {
+    to: "/dashboard/email-logs",
+    label: "Email Logs",
+    icon: "FileText",
+    title: "Email Logs",
+    sub: "View delivery history and status",
   },
   {
     to: "/dashboard/settings",
