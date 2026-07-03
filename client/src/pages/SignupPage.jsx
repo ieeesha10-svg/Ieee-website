@@ -53,6 +53,7 @@ const SignupPage = () => {
         name: formData.name,
         email: formData.email,
         password: formData.password,
+        confirmPassword: formData.confirmPassword,
         phone: formData.phone,
         age: formData.age ? Number(formData.age) : undefined,
         university: formData.university,
