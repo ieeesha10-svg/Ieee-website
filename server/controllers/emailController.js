@@ -15,6 +15,10 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // @access  Private (XCom/Board)
 const sendBulkEmails = async (req, res) => {
   try {
+    const userId = req.user._id;
+    if(!userId) {
+      return res.status(401).json({ error: 'Unauthorized user' });
+    }
     const file = req.file;
     const { email: bodyMessage, subject } = req.body;
 
@@ -50,6 +54,7 @@ const sendBulkEmails = async (req, res) => {
             } else {
                 // for invalid 
                 await EmailLog.create({
+                    sendBy: userId,
                     email: emailStr,
                     status: 'Not email',
                     messageBody: bodyMessage
@@ -80,6 +85,7 @@ const sendBulkEmails = async (req, res) => {
             });
             // Log the successful email send to the database
             await EmailLog.create({
+                sendBy: userId,
                 email: email,
                 status: 'Done',
                 messageBody: bodyMessage
@@ -90,6 +96,7 @@ const sendBulkEmails = async (req, res) => {
         } catch (err) {
             // for failed email
             await EmailLog.create({
+                sendBy: userId,
                 email: email,
                 status: 'Rejected',
                 messageBody: bodyMessage
@@ -131,6 +138,10 @@ const getPaginatedEmails = async (req, res) => {
     const totalEmails = await EmailLog.countDocuments();
     const totalPages = Math.ceil(totalEmails / limit);
 
+    const totalDone = await EmailLog.countDocuments({ status: 'Done' });
+    const totalRejected = await EmailLog.countDocuments({ status: 'Rejected' });
+    const totalNotEmail = await EmailLog.countDocuments({ status: 'Not email' });
+
     res.status(200).json({
       success: true,
       data: emails,
@@ -139,6 +150,11 @@ const getPaginatedEmails = async (req, res) => {
         totalPages: totalPages,
         currentPage: page,
         itemsPerPage: limit
+      },
+      stats: {
+        totalDone: totalDone,
+        totalRejected: totalRejected,
+        totalNotEmail: totalNotEmail
       }
     });
 

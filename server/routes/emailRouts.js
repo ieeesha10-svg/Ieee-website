@@ -44,7 +44,7 @@ router.post('/bulk-send',
 */
 
 // 1. Send Bulk
-emailRouter.post('/bulk-send', /*protect, authorize('xcom', 'board'),*/ upload.single('excelFile'), sendBulkEmails);
+emailRouter.post('/bulk-send', protect, authorize('xcom', 'board'), upload.single('excelFile'), sendBulkEmails);
 
 // 2. Settings
 emailRouter.put('/settings', protect, authorize('xcom','board'), updateEmailSettings);

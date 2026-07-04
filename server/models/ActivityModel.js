@@ -32,6 +32,10 @@ const activitySchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    coverImage: {
+      type: String,
+      // default: ""
+    }
   },
   { timestamps: true }
 );

@@ -249,7 +249,7 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
 // @desc    Get single submission
 // @route   GET /api/submission/:formid/:userid
 // @access  Private
-const getSubmission = catchAsync(async (req, res) => {
+const getUserSubmission = catchAsync(async (req, res) => {
   const { formid, userid } = req.params;
   const submission = await Submission.findOne({ formId: formid, userId: userid });
   if (!submission) {
@@ -363,7 +363,15 @@ const editSubmission = catchAsync(async (req, res) => {
   res.json(submission);
 });
 
-module.exports = { submitForm, scanTicket, getSubmissions, getSubmission, editSubmission, exportSubmissionsToExcel };
+
+const getSubmissionsForForm = catchAsync(async (req, res) => {
+  const { formId } = req.params;
+  const submissions = await Submission.find({ formId }).populate('userId', 'name email');
+
+  res.json({total : submissions.length, submissions});
+});
+
+module.exports = { submitForm, scanTicket, getUserSubmission, getSubmissions, getSubmissionsForForm, editSubmission, exportSubmissionsToExcel };
 
 
 /*
