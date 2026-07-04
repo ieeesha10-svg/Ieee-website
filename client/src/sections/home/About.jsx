@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 // Components
 import SectionHeader from "../../components/SectionHeader";
-import ImageSkeleton from '../../components/ImageSkeleton.jsx';
+import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 // Images
 import AboutImage from '../../assets/images/home/about-image.png'
 // Icons
