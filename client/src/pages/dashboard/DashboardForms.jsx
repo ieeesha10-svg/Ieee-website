@@ -64,14 +64,16 @@ function FormRow({ form, onToggle, onDelete }) {
           <Eye size={13} className="text-primary" />
           View Results
         </button>
-        <button
-          type="button"
-          onClick={() => onDelete(form.id)}
-          aria-label={`Delete ${form.title}`}
-          className="p-1.5 text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-        >
-          <Trash2 size={15} />
-        </button>
+        {!form.activityID && (
+          <button
+            type="button"
+            onClick={() => onDelete(form.id)}
+            aria-label={`Delete ${form.title}`}
+            className="p-1.5 text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+          >
+            <Trash2 size={15} />
+          </button>
+        )}
       </div>
     </div>
   );

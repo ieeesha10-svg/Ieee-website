@@ -14,19 +14,38 @@ export function useForms() {
       try {
         const response = await api.get("/form");
         const data = response.data;
-        const formsData = (data.forms || []).map((form) => ({
-          id: form._id,
-          title: form.title,
-          responses: form.responses ?? 0,
-          createdAt: form.createdAt
-            ? new Date(form.createdAt).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })
-            : "",
-          isOpen: form.status === "Active",
-        }));
+        const formsData = await Promise.all(
+          (data.forms || []).map(async (form) => {
+            let title = form.title;
+
+            if (form.activityID) {
+              try {
+                const activityRes = await api.get(
+                  `/activities/${form.activityID}`
+                );
+                const activity = activityRes.data.activity;
+                if (activity?.title) title = activity.title;
+              } catch {
+                // fallback to form.title or "Untitled Form"
+              }
+            }
+
+            return {
+              id: form._id,
+              activityID: form.activityID,
+              title: form.activityID ? "'" + title + "' Event Form" : title,
+              responses: form.responses ?? 0,
+              createdAt: form.createdAt
+                ? new Date(form.createdAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "",
+              isOpen: form.status === "Active",
+            };
+          })
+        );
         setForms(formsData);
       } catch (error) {
         console.error("Error fetching forms:", error);
