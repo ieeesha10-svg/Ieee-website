@@ -13,7 +13,6 @@ export default function EventsHero({ featuredEvent, loading }) {
   const title = featuredEvent?.title || "No Upcoming Events";
   const description = featuredEvent?.content || "Stay tuned, we're cooking up something exciting. Check back soon for our next event!";
   const eventImage = featuredEvent?.image || HeroImage;
-  const badge = featuredEvent?.date;
 
 	return <section id="events-hero" className="py-10 min-h-[calc(100vh-var(--navbar-height))] grid place-items-center gap-20 grid-cols-1 lg:grid-cols-2 text-center md:text-left max-w-7xl mx-auto">
 
@@ -77,13 +76,9 @@ export default function EventsHero({ featuredEvent, loading }) {
 							/>
 						</div>
 						<div className='flex flex-col gap-6 py-7 px-5'>
-							{
-								badge && (
-									<div className='text-[10px] lg:text-sm text-[#2563EB] bg-[#2563EB]/20 dark:text-primary-light dark:bg-primary-light/20 rounded-full w-fit px-3.5 py-2'>
-										Upcoming Event
-									</div>
-								)
-							}
+							<div className='text-[10px] lg:text-sm text-[#2563EB] bg-[#2563EB]/20 dark:text-primary-light dark:bg-primary-light/20 rounded-full w-fit px-3.5 py-2'>
+								Upcoming Event
+							</div>
 							<h3 className='font-gotham text-xl lg:text-3xl'>
 								{title}
 							</h3>
