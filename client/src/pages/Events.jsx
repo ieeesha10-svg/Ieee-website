@@ -10,7 +10,7 @@ import PreviousEvents from '../sections/events/PreviousEvents'
 const Events = () => {
   const { user } = useAuth()
   const [registeredFormIds, setRegisteredFormIds] = useState(new Set())
-  const { upcoming, previous, loading, error } = usePublicEvents()
+  const { upcoming, previous, loading } = usePublicEvents()
 
   useEffect(() => {
     if (!user?._id) {
