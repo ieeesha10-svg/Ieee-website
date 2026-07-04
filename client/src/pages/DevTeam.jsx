@@ -82,7 +82,7 @@ export default function DevTeam() {
                       <img
                         src={member.image}
                         alt={member.name}
-                        className="hover:scale-120 hover:brightness-110 transition duration-300 w-full h-full object-cover border border-primary/60"
+                        className="hover:scale-110 hover:brightness-110 transition duration-300 w-full h-full object-cover border border-primary/60"
                       />
                     ) : (
                       <div className="w-20 h-20 md:w-15 md:h-15 rounded-full border border-primary/30 flex items-center justify-center">

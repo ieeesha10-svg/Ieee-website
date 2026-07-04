@@ -32,6 +32,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useDashboard } from "../../hooks/dashboard/useDashboard";
+import Skeleton from "../../components/skeletons/DashHomeSkeleton";
 
 const ICON_MAP = { Users, Calendar, TrendingUp, Mail, Trophy };
 
@@ -43,83 +44,25 @@ const rankColor = (rank) => {
 };
 
 const formStyles = {
-  green: {
+  published: {
     bg: "bg-green-50",
     badge: "bg-green-500 text-white",
     label: "text-green-700",
     sub: "text-green-600",
   },
-  red: {
-    bg: "bg-red-50",
-    badge: "bg-red-500 text-white",
-    label: "text-red-700",
-    sub: "text-red-600",
+  draft: {
+    bg: "bg-amber-50",
+    badge: "bg-amber-500 text-white",
+    label: "text-amber-700",
+    sub: "text-amber-600",
+  },
+  archived: {
+    bg: "bg-gray-100 dark:bg-gray-800",
+    badge: "bg-gray-500 text-white",
+    label: "text-gray-700 dark:text-gray-300",
+    sub: "text-gray-600 dark:text-gray-400",
   },
 };
-
-function Skeleton() {
-  const skeletonCard = (key, rows) => (
-    <div
-      key={key}
-      className="bg-card-alt rounded-2xl shadow-sm p-5 md:p-6 animate-pulse"
-    >
-      {rows}
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen p-6 space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) =>
-          skeletonCard(
-            i,
-            <>
-              <div className="h-10 w-10 rounded-lg bg-gray-200 dark:bg-gray-700 mb-4" />
-              <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
-              <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-1" />
-              <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
-            </>,
-          ),
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {[1, 2, 3].map((i) =>
-          skeletonCard(
-            i,
-            <>
-              <div className="h-4 w-36 bg-gray-200 dark:bg-gray-700 rounded mb-1" />
-              <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-5" />
-              <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-lg" />
-            </>,
-          ),
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {[1, 2].map((i) =>
-          skeletonCard(
-            i,
-            <>
-              <div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-1" />
-              <div className="h-3 w-28 bg-gray-200 dark:bg-gray-700 rounded mb-5" />
-              {[1, 2, 3, 4, 5].map((j) => (
-                <div key={j} className="flex items-center gap-3 py-2.5">
-                  <div className="h-9 w-9 rounded-full bg-gray-200 dark:bg-gray-700" />
-                  <div className="flex-1">
-                    <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded mb-1" />
-                    <div className="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded" />
-                  </div>
-                  <div className="h-6 w-14 bg-gray-200 dark:bg-gray-700 rounded-full" />
-                </div>
-              ))}
-            </>,
-          ),
-        )}
-      </div>
-    </div>
-  );
-}
 
 const totalBackground = (arr) => arr.reduce((s, e) => s + e.value, 0);
 
@@ -145,7 +88,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen p-6 space-y-4">
+    <div className="p-6 space-y-4">
       {/* Row 1 — Stat Cards */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {data.statsCards.map((card) => {
@@ -258,82 +201,45 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Panel: Form Status Summary */}
-        <div className="flex flex-col justify-between bg-card-alt rounded-2xl shadow-sm p-5 md:p-6 overflow-hidden lg:col-span-1">
+        {/* Panel: Activity Status Summary */}
+        <div className="flex flex-col bg-card-alt rounded-2xl shadow-sm p-5 md:p-6 overflow-hidden lg:col-span-1">
           <div>
-            <div>
-              <h3 className="text-foreground font-semibold text-sm">
-                Form Status Summary
-              </h3>
-              <p className="text-muted text-xs mb-4">
-                {data.formStatusData[0]?.total ?? "—"} total forms tracked
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {data.formStatusData.map((item) => {
-                const s = formStyles[item.colorClass];
-                return (
-                  <div
-                    key={item.status}
-                    className={`${s.bg} rounded-xl p-4 flex items-center gap-3`}
-                  >
-                    <div
-                      className={`${s.badge} w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0`}
-                    >
-                      {item.count}
-                    </div>
-                    <div>
-                      <p className={`${s.label} font-semibold text-sm`}>
-                        {item.status}
-                      </p>
-                      <p className={`${s.sub} text-xs`}>
-                        {item.count} forms {item.status.toLowerCase()}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <h3 className="text-foreground font-semibold text-sm">
+              Activity Status Summary
+            </h3>
+            <p className="text-muted text-xs mb-4">
+              {data.activityStatusSummary.reduce((s, a) => s + a.count, 0)} total activities
+            </p>
           </div>
 
-          <div className="mt-5">
-            <div className="flex justify-between items-center mb-2">
-              <p className="text-foreground text-xs font-semibold">
-                Open vs Closed
-              </p>
-              <p className="text-xs text-muted">
-                {Math.round(
-                  (data.formStatusData.find((f) => f.status === "Open").count /
-                    data.formStatusData.find((f) => f.status === "Open")
-                      .total) *
-                    100,
-                )}
-                % open
-              </p>
-            </div>
-            <div className="h-2.5 rounded-full bg-gray-100 dark:bg-gray-800 flex overflow-hidden">
-              <div
-                className="h-full bg-green-500 rounded-l-full transition-all"
-                style={{
-                  width: `${(data.formStatusData.find((f) => f.status === "Open").count / data.formStatusData.find((f) => f.status === "Open").total) * 100}%`,
-                }}
-              />
-              <div
-                className="h-full bg-red-500 rounded-r-full transition-all"
-                style={{
-                  width: `${(data.formStatusData.find((f) => f.status === "Closed").count / data.formStatusData.find((f) => f.status === "Closed").total) * 100}%`,
-                }}
-              />
-            </div>
+          <div className="space-y-3">
+            {data.activityStatusSummary.map((item) => {
+              const s = formStyles[item.status] || formStyles.archived;
+              return (
+                <div
+                  key={item.status}
+                  className={`${s.bg} rounded-xl p-4 flex items-center gap-3`}
+                >
+                  <div
+                    className={`${s.badge} w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0`}
+                  >
+                    {item.count}
+                  </div>
+                  <div>
+                    <p className={`${s.label} font-semibold text-sm capitalize`}>
+                      {item.status}
+                    </p>
+                    <p className={`${s.sub} text-xs`}>
+                      {item.count} {item.status} activity{item.count !== 1 ? "ies" : "y"}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
-      {/* 
-	    🥇
-	    🥈
-	    🥉
-    */}
+
       {/* Row 3 — Members + Signups */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Panel: Top Active Members */}

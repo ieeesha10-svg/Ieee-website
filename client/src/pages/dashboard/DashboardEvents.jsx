@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import {
   Calendar, MapPin, Eye, Plus, X, Loader2,
   Trash2, Edit, AlertTriangle, CheckCircle2, FileText,
-  Upload,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useEvents } from "../../hooks/dashboard/useEvents";
+import DeleteModal from "../../components/DeleteModal";
+import Skeleton from "../../components/skeletons/DashEventsSkeleton";
 
 const TYPE_COLORS = {
   teal: { bg: "bg-teal-50 dark:bg-teal-900/25", text: "text-teal-700 dark:text-teal-300", border: "border-teal-200 dark:border-teal-700/40" },
@@ -57,14 +58,6 @@ function EventForm({ initial, onSubmit, submitLabel, loading }) {
   const [speakerImagePreview, setSpeakerImagePreview] = useState(null);
 
   const set = (key, value) => setForm((p) => ({ ...p, [key]: value }));
-
-  const handleSpeakerImage = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSpeakerImageFile(file);
-      setSpeakerImagePreview(URL.createObjectURL(file));
-    }
-  };
 
   const addSpeaker = () => {
     if (!speakerName.trim()) return;
@@ -146,16 +139,7 @@ function EventForm({ initial, onSubmit, submitLabel, loading }) {
           <input value={speakerName} onChange={(e) => setSpeakerName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker name" />
           <input value={speakerTitle} onChange={(e) => setSpeakerTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker title (e.g. Senior Engineer)" />
           <textarea value={speakerBio} onChange={(e) => setSpeakerBio(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none" placeholder="Speaker bio" />
-          <div className="flex items-center gap-3">
-            <label className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors cursor-pointer">
-              <Upload size={13} />
-              {speakerImageFile ? "Change Image" : "Upload Image"}
-              <input type="file" accept="image/*" onChange={handleSpeakerImage} className="hidden" />
-            </label>
-            {speakerImagePreview && (
-              <img src={speakerImagePreview} alt="Preview" className="w-8 h-8 rounded-full object-cover" />
-            )}
-          </div>
+
           <button type="button" onClick={addSpeaker} disabled={!speakerName.trim()} className="px-3 py-2 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Add Speaker</button>
         </div>
         {form.speakers.length > 0 && (
@@ -288,52 +272,6 @@ function ViewModal({ open, onClose, eventId, getEventById }) {
 }
 
 /* ─── Delete Confirmation ────────────────────────────────────────── */
-function DeleteModal({ open, onClose, onConfirm, loading }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 dark:bg-black/70" onClick={onClose} />
-      <div className="relative bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-xl w-full max-w-sm p-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
-          <AlertTriangle size={20} className="text-red-500" />
-        </div>
-        <h3 className="text-foreground font-semibold text-base mb-1">Delete Activity</h3>
-        <p className="text-muted text-sm mb-5">This will permanently delete the activity, its form, and all submissions. This action cannot be undone.</p>
-        <div className="flex gap-3 justify-center">
-          <button onClick={onClose} disabled={loading} className="px-4 py-2 text-sm font-medium text-muted border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors disabled:opacity-50">Cancel</button>
-          <button onClick={onConfirm} disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60">
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Skeleton ───────────────────────────────────────────────────── */
-function Skeleton() {
-  return (
-    <div className="min-h-screen p-4 md:p-6 space-y-5 animate-pulse">
-      <div className="flex items-center justify-between">
-        <div><div className="h-6 w-28 bg-gray-200 dark:bg-gray-700 rounded mb-2" /><div className="h-3 w-36 bg-gray-200 dark:bg-gray-700 rounded" /></div>
-        <div className="h-9 w-40 bg-gray-200 dark:bg-gray-700 rounded-lg" />
-      </div>
-      <div className="flex gap-2">{[1, 2, 3, 4].map((i) => <div key={i} className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded-full" />)}</div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="bg-card-alt rounded-xl p-5 space-y-4">
-            <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
-            <div className="h-5 w-3/4 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-3 w-1/2 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-3 w-2/3 bg-gray-200 dark:bg-gray-700 rounded" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* ─── Event Card ─────────────────────────────────────────────────── */
 function EventCard({ event, onView, onEdit, onDelete }) {
   const typeStyle = TYPE_COLORS[event.typeColor] || TYPE_COLORS.blue;
@@ -513,7 +451,14 @@ export default function DashboardEvents() {
       <ViewModal open={!!viewEventId} onClose={() => setViewEventId(null)} eventId={viewEventId} getEventById={getEventById} />
 
       {/* Delete Confirmation */}
-      <DeleteModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={saving} />
+      <DeleteModal
+        isOpen={!!deleteTarget}
+        title="Delete Activity"
+        description="This will permanently delete the activity, its form, and all submissions. This action cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+        isLoading={saving}
+      />
     </div>
   );
 }

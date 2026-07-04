@@ -18,27 +18,43 @@ const createActivity = catchAsync(async (req, res) => {
   if(!title || !content || !location) {
     throw new AppError("Title, content, and location are required", 400);
   }
-  const activitySpeakers = speakers || [];
+
+  // speakers come as a JSON string from FormData
+  let parsedSpeakers = [];
+  if (speakers) {
+    try {
+      parsedSpeakers = typeof speakers === 'string' ? JSON.parse(speakers) : speakers;
+    } catch { parsedSpeakers = []; }
+  }
+
+  // Map uploaded images to speakers by index
+  if (req.files && req.files.length > 0) {
+    req.files.forEach((file, i) => {
+      if (parsedSpeakers[i]) {
+        parsedSpeakers[i].image = `/uploads/speakers/${file.filename}`;
+      }
+    });
+  }
+
   const activity = await Activity.create({
     title,
     content,
-    type, // default is "general" as per schema
-    speakers: activitySpeakers,
+    type,
+    speakers: parsedSpeakers,
     location,
-    // registrationEnabled: isRegistrationEnabled
+    registrationEnabled: registrationEnabled !== "false",
   });
 
   // default form fields for event/workshop
   if (!fields) {
     fields = [
-      { id: "name", label: "Name", type: "text", required: true },
-      { id: "email", label: "Email", type: "email", required: true }
+      { id: "name", label: "Name", type: "TextInput", required: true },
+      { id: "email", label: "Email", type: "TextInput", required: true }
     ];
   }
-  // default form date range: registration opens now, closes 1 day before event
   if (!startDate) startDate = new Date();
   if (!endDate) endDate = new Date((activity.createdAt || Date.now()) + 6.5 * 24 * 60 * 60 * 1000);
-  // Create associated form
+
   const form = await Form.create({
     activityID: activity._id,
     createdBy: req.user._id,
@@ -60,7 +76,8 @@ const getActivities = catchAsync(async (req, res) => {
     content: activity.content,
     type: activity.type,
     speakers: activity.speakers,
-    location: activity.location
+    location: activity.location,
+    registrationEnabled: activity.registrationEnabled
   })) });
 });
 
@@ -73,13 +90,53 @@ const getActivityById = catchAsync(async (req, res) => {
 });
 
 const updateActivity = catchAsync(async (req, res) => {
-  // if inputs are not provided, they will be ignored and not updated
-  const activity = await Activity.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true }
-  );
+  const { title, content, type, speakers, location, registrationEnabled, startDate, endDate, maxSubmissions } = req.body;
+
+  const activity = await Activity.findById(req.params.id);
   if (!activity) throw new AppError("Activity not found", 404);
+
+  // Update activity fields if provided
+  if (title != null) activity.title = title;
+  if (content != null) activity.content = content;
+  if (type != null) activity.type = type;
+  if (location != null) activity.location = location;
+  if (registrationEnabled != null) activity.registrationEnabled = registrationEnabled === "true" || registrationEnabled === true;
+
+  // Parse and update speakers
+  if (speakers != null) {
+    let parsedSpeakers = [];
+    try { parsedSpeakers = typeof speakers === 'string' ? JSON.parse(speakers) : speakers; } catch { parsedSpeakers = []; }
+
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file, i) => {
+        if (parsedSpeakers[i]) {
+          parsedSpeakers[i].image = `/uploads/speakers/${file.filename}`;
+        }
+      });
+    }
+
+    // Keep existing images for speakers that weren't replaced
+    parsedSpeakers = parsedSpeakers.map((s, i) => {
+      if (!s.image && activity.speakers[i]?.image) {
+        s.image = activity.speakers[i].image;
+      }
+      return s;
+    });
+
+    activity.speakers = parsedSpeakers;
+  }
+
+  await activity.save();
+
+  // Update associated form if date/submission fields provided
+  const form = await Form.findOne({ activityID: activity._id });
+  if (form) {
+    if (startDate != null) form.startDate = startDate;
+    if (endDate != null) form.endDate = endDate;
+    if (maxSubmissions != null && maxSubmissions !== "") form.maxSubmissions = Number(maxSubmissions);
+    await form.save();
+  }
+
   res.json({ success: true, activity });
 });
 

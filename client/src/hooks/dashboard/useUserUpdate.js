@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import api from "../../utils/api";
 
 export function useUserUpdate(userId) {
@@ -8,39 +9,36 @@ export function useUserUpdate(userId) {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
 
-  const fetchUser = useCallback(() => {
+  useEffect(() => {
     if (!userId) {
       setLoading(false);
       return;
     }
+    let cancelled = false;
     setLoading(true);
     setError(null);
     api
       .get(`/users/members/${userId}`)
       .then((res) => {
-        setUserData(res.data?.data || res.data);
+        if (!cancelled) setUserData(res.data?.data || res.data);
       })
       .catch((err) => {
-        setError(err.response?.data?.message || err.message || "Failed to load user data");
+        if (!cancelled) setError(err.response?.data?.message || err.message || "Failed to load user data");
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, [userId]);
-
-  useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
 
   const updateProfile = async (payload) => {
     setSavingProfile(true);
     try {
       const res = await api.put(`/users/profile/${userId}`, payload);
       if (res.data?.user) setUserData(res.data.user);
-      return { success: true, message: "Profile updated successfully!" };
+      toast.success("Profile updated successfully!");
     } catch (err) {
-      return {
-        success: false,
-        message: err.response?.data?.message || "Failed to update profile.",
-      };
+      toast.error(err.response?.data?.message || "Failed to update profile.");
     } finally {
       setSavingProfile(false);
     }
@@ -50,12 +48,9 @@ export function useUserUpdate(userId) {
     setSavingPassword(true);
     try {
       await api.put(`/users/update-password/${userId}`, payload);
-      return { success: true, message: "Password updated successfully!" };
+      toast.success("Password updated successfully!");
     } catch (err) {
-      return {
-        success: false,
-        message: err.response?.data?.message || "Failed to update password.",
-      };
+      toast.error(err.response?.data?.message || "Failed to update password.");
     } finally {
       setSavingPassword(false);
     }
@@ -69,6 +64,5 @@ export function useUserUpdate(userId) {
     savingPassword,
     updateProfile,
     updatePassword,
-    refetch: fetchUser,
   };
 }

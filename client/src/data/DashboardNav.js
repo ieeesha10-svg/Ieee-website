@@ -12,18 +12,12 @@ export const navItems = [
     label: "Members",
     icon: "Users",
     title: "Members",
-    sub: "12 students",
-    buttonText: "Export CSV",
-    buttonIcon: "Download",
   },
   {
     to: "/dashboard/events",
     label: "Events",
     icon: "Calendar",
     title: "Events",
-    sub: "8 events managed",
-    buttonText: "Create New Event",
-    buttonIcon: "Plus",
   },
 
   {
@@ -31,9 +25,6 @@ export const navItems = [
     label: "Forms",
     icon: "FileText",
     title: "Registration Forms",
-    sub: "",
-    buttonText: "New Form",
-    buttonIcon: "Plus",
   },
   {
     to: "/dashboard/email",

@@ -1,15 +1,30 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useAuth } from "../../context/AuthContext";
 import {
   Save,
-  Camera,
+  Mail,
   Loader2,
   CheckCircle2,
   AlertTriangle,
   Eye,
   EyeOff,
+  ChevronDown,
+  Trash2,
+  Plus,
+  Search,
+  X,
+  Check,
 } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import toast from "react-hot-toast";
+// Hooks
 import { useUserUpdate } from "../../hooks/dashboard/useUserUpdate";
+import { useUpdateRole } from "../../hooks/dashboard/useUpdateRole";
+import { useSearchMembers } from "../../hooks/dashboard/useSearchMembers";
+import DeleteModal from "../../components/DeleteModal";
+import api from "../../utils/api";
+import { ADMIN_ROLES } from '../../data/roles'
+// Components
+import Skeleton from "../../components/skeletons/DashSettingsSkeleton";
 
 const ORDINAL_OPTIONS = [
   { label: "Prep", value: 0 },
@@ -41,15 +56,20 @@ function SectionCard({ children, className = "" }) {
   );
 }
 
-function Field({ label, ...props }) {
+function Field({ label, disabled, ...props }) {
   return (
     <div>
       <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
         {label}
       </label>
       <input
+        disabled={disabled}
         {...props}
-        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+        className={`w-full px-3 py-2.5 rounded-lg border text-sm transition-colors ${
+          disabled
+            ? "border-gray-200 dark:border-[#222936] bg-gray-100 dark:bg-gray-800/60 text-muted cursor-not-allowed"
+            : "border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+        }`}
       />
     </div>
   );
@@ -61,17 +81,20 @@ function SelectField({ label, value, onChange, options }) {
       <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
         {label}
       </label>
-      <select
-        value={value}
-        onChange={onChange}
-        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors appearance-none"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={onChange}
+          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors appearance-none pr-9"
+        >
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+      </div>
     </div>
   );
 }
@@ -96,26 +119,44 @@ function MessageBanner({ message }) {
   );
 }
 
-function Skeleton() {
+const AVATAR_COLORS = [
+  "bg-blue-500", "bg-teal-500", "bg-orange-500", "bg-purple-500",
+  "bg-yellow-500", "bg-green-500", "bg-red-400", "bg-cyan-600",
+];
+
+function pickColor(id) {
+  const hash = String(id).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
+
+function RoleSelect({ value, onChange }) {
   return (
-    <div className="min-h-screen p-4 md:p-6 space-y-6 max-w-4xl animate-pulse">
-      <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm p-5 md:p-6 space-y-4">
-        <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-gray-700" />
-          <div className="space-y-2">
-            <div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-3 w-52 bg-gray-200 dark:bg-gray-700 rounded" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
-          ))}
-        </div>
-      </div>
-    </div>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
+    >
+      {ADMIN_ROLES.map((r) => (
+        <option key={r} value={r}>
+          {r.charAt(0).toUpperCase() + r.slice(1)}
+        </option>
+      ))}
+    </select>
   );
+}
+
+function mapAdmin(u) {
+  return {
+    id: u._id,
+    name: u.name,
+    email: u.email,
+    role: u.role || "member",
+    initials: u.name
+      ? u.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+      : "??",
+    color: pickColor(u._id),
+  };
 }
 
 export default function DashboardSettings() {
@@ -163,6 +204,45 @@ export default function DashboardSettings() {
   const [profileMessage, setProfileMessage] = useState({ type: "", text: "" });
   const [passwordMessage, setPasswordMessage] = useState({ type: "", text: "" });
 
+  const [admins, setAdmins] = useState([]);
+  const [adminRoles, setAdminRoles] = useState({});
+  const [adminsLoading, setAdminsLoading] = useState(true);
+  const { updatingRole, updateRole } = useUpdateRole();
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const fetchAdmins = useCallback(async () => {
+    setAdminsLoading(true);
+    try {
+      const res = await api.get(`/users/all?role=${ADMIN_ROLES.join(",")}&limit=100`);
+      const users = (res.data.users || []).map(mapAdmin);
+      setAdmins(users);
+      const rolesMap = {};
+      users.forEach((a) => { rolesMap[a.id] = a.role; });
+      setAdminRoles(rolesMap);
+    } catch (err) {
+      console.error("Failed to fetch admins:", err);
+    } finally {
+      setAdminsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAdmins();
+  }, [fetchAdmins]);
+
+  const handleRoleChange = (adminId, newRole) => {
+    const previousRole = adminRoles[adminId];
+    updateRole(adminId, newRole, previousRole, setAdminRoles);
+  };
+
+  const removeAdmin = async (id) => {
+    const previousRole = adminRoles[id];
+    updateRole(id, "member", previousRole, setAdminRoles);
+    setAdmins((prev) => prev.filter((a) => a.id !== id));
+  };
+
   const updateField = (key, value) =>
     setEdits((prev) => ({ ...prev, [key]: value }));
 
@@ -190,9 +270,7 @@ export default function DashboardSettings() {
       optionalData: { aboutMe: profile.aboutMe },
     };
 
-    const result = await updateProfile(payload);
-    setProfileMessage({ type: result.success ? "success" : "error", text: result.message });
-    setTimeout(() => setProfileMessage({ type: "", text: "" }), 4000);
+    await updateProfile(payload);
   };
 
   const handleSavePassword = async () => {
@@ -209,13 +287,13 @@ export default function DashboardSettings() {
       return;
     }
 
-    const result = await updatePassword({
+    await updatePassword({
       currentPassword: passwords.current,
       newPassword: passwords.new,
+      confirmNewPassword: passwords.confirm,
     });
-    setPasswordMessage({ type: result.success ? "success" : "error", text: result.message });
-    if (result.success) setPasswords({ current: "", new: "", confirm: "" });
-    setTimeout(() => setPasswordMessage({ type: "", text: "" }), 4000);
+    setPasswords({ current: "", new: "", confirm: "" });
+    setPasswordMessage({ type: "", text: "" });
   };
 
   if (loading) return <Skeleton />;
@@ -230,35 +308,32 @@ export default function DashboardSettings() {
           <p className="text-foreground font-semibold text-lg mb-1">Failed to load profile</p>
           <p className="text-muted text-sm">{fetchError}</p>
         </div>
-      </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-6 max-w-4xl">
 
       {/* ─── Section 1: Admin Profile ──────────────────────────── */}
       <SectionCard>
-        <h2 className="text-base font-bold text-foreground mb-5">
+        <h2 className="text-xl font-bold text-foreground mb-5">
           Admin Profile
         </h2>
 
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative">
-            <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white text-lg font-bold">
+        <div className="mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-lg font-bold text-white shrink-0">
               {initials}
             </div>
-            <button className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white dark:bg-[#1a1f2e] border border-gray-200 dark:border-[#222936] flex items-center justify-center shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-              <Camera size={11} className="text-muted" />
-            </button>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">
-              {profile.fullName || "User"}
-            </h3>
-            <p className="text-xs text-muted">
-              {userData?.email || ""}
-            </p>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">
+                {profile.fullName || "User"}
+              </h3>
+              <p className="flex gap-2 items-center text-xs text-muted">
+                <Mail size={13} /> {userData?.email || ""}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -352,7 +427,7 @@ export default function DashboardSettings() {
 
       {/* ─── Section 2: Change Password ────────────────────────── */}
       <SectionCard>
-        <h2 className="text-base font-bold text-foreground mb-5">
+        <h2 className="text-xl font-bold text-foreground mb-5">
           Change Password
         </h2>
 
@@ -456,29 +531,247 @@ export default function DashboardSettings() {
         </button>
       </SectionCard>
 
-      {/* ─── Section 3: Danger Zone ────────────────────────────── */}
-      <SectionCard className="border-red-200 dark:border-red-900/40">
-        <div className="flex items-center gap-2 mb-4">
-          <AlertTriangle size={16} className="text-red-500" />
-          <h2 className="text-base font-bold text-red-600 dark:text-red-400">
-            Danger Zone
-          </h2>
-        </div>
+      {/* ─── Section 3: User Permissions ───────────────────────── */}
+            <SectionCard>
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-base font-bold text-foreground">
+                    User Permissions
+                  </h2>
+                  <p className="text-xs text-muted mt-0.5">
+                    Manage admin roles and access levels
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
+                  <Plus size={14} />
+                  Add Admin
+                </button>
+              </div>
+      
+              {/* Admins Table */}
+              <div className="overflow-x-auto -mx-5 md:-mx-6">
+                <table className="w-full min-w-[500px]">
+                  <thead>
+                    <tr className="text-[11px] font-bold text-muted uppercase tracking-wide border-b border-gray-100 dark:border-[#222936]">
+                      <th className="text-left px-5 md:px-6 pb-3">Admin</th>
+                      <th className="text-left px-4 pb-3">Email</th>
+                      <th className="text-left px-4 pb-3">Role</th>
+                      <th className="text-right px-5 md:px-6 pb-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {admins.map((admin) => (
+                      <tr
+                        key={admin.id}
+                        className="border-b border-gray-50 dark:border-[#222936] last:border-b-0"
+                      >
+                        <td className="px-5 md:px-6 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`w-8 h-8 rounded-full ${admin.color} flex items-center justify-center text-white text-[11px] font-bold shrink-0`}
+                            >
+                              {admin.initials}
+                            </div>
+                            <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                              {admin.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted whitespace-nowrap">
+                          {admin.email}
+                        </td>
+                        <td className="px-4 py-3">
+                          <RoleSelect
+                            value={adminRoles[admin.id] || admin.role}
+                            onChange={(role) => handleRoleChange(admin.id, role)}
+                          />
+                        </td>
+                        <td className="px-5 md:px-6 py-3 text-right">
+                          <button
+                            onClick={() => setDeleteTarget(admin)}
+                            className="p-1.5 text-muted hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+      
+              <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm mt-5">
+                <Save size={14} />
+                Save Permissions
+              </button>
+            </SectionCard>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-lg px-4 py-3">
-          <div>
-            <h4 className="text-sm font-semibold text-foreground">
-              Reset All Member Data
-            </h4>
-            <p className="text-xs text-muted">
-              Permanently delete all registrations. This action cannot be undone.
-            </p>
-          </div>
-          <button className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline whitespace-nowrap shrink-0">
-            Delete All Data
+      {/* ─── Delete Admin Modal ──────────────────────────── */}
+      <DeleteModal
+        isOpen={!!deleteTarget}
+        title="Remove admin"
+        description={deleteTarget ? `Are you sure you want to remove "${deleteTarget.name}" from admins? They will be demoted to member.` : ""}
+        onConfirm={() => { removeAdmin(deleteTarget.id); setDeleteTarget(null); }}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      {/* ─── Add Admin Modal ──────────────────────────── */}
+      {showAddModal && <AddAdminModal
+        onClose={() => setShowAddModal(false)}
+        onAdded={() => { setShowAddModal(false); fetchAdmins(); }}
+      />}
+
+    </div>
+  );
+}
+
+function AddAdminModal({ onClose, onAdded }) {
+  const [adding, setAdding] = useState(false);
+  const [selected, setSelected] = useState({});
+
+  const {
+    members, loading,
+    search, setSearch,
+    page, setPage, totalPages,
+  } = useSearchMembers({ initialRoles: ["member", "user", "scanner"] });
+
+  const nonAdminMembers = members.filter((m) => !ADMIN_ROLES.includes(m.role));
+  const selectedCount = Object.keys(selected).length;
+
+  const toggleSelect = (member) => {
+    setSelected((prev) => {
+      if (prev[member.id]) {
+        const { [member.id]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [member.id]: member };
+    });
+  };
+
+  const addAsAdmins = async () => {
+    setAdding(true);
+    const users = Object.values(selected);
+    console.log("Promoting users:", users);
+    try {
+      const results = await Promise.allSettled(
+        users.map((m) => {
+          console.log("Calling PATCH /users/members/" + m.id, { role: "admin" });
+          return api.patch(`/users/members/${m.id}`, { role: "board" });
+        })
+      );
+      const failed = results.filter((r) => r.status === "rejected");
+      if (failed.length > 0) {
+        failed.forEach((r) => console.error("Promote user failed:", r.reason?.response?.data || r.reason));
+        toast.error(`Failed to promote ${failed.length} user(s)`);
+      } else {
+        toast.success(`${selectedCount} user(s) promoted to admin`);
+        onAdded();
+      }
+    } catch (err) {
+      console.error("Unexpected error promoting users:", err);
+      toast.error("Failed to promote some users");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-xl w-full max-w-lg flex flex-col max-h-[80vh]">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-[#222936]">
+          <h3 className="text-base font-bold text-foreground">Add Admin</h3>
+          <button
+            onClick={onClose}
+            className="p-1 text-muted hover:text-foreground transition-colors rounded-lg"
+          >
+            <X size={18} />
           </button>
         </div>
-      </SectionCard>
+
+        <div className="p-4 border-b border-gray-100 dark:border-[#222936]">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent">
+            <Search className="w-4 h-4 text-muted shrink-0" />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 text-sm bg-transparent focus:outline-none border-none p-0"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {loading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 size={20} className="animate-spin text-muted" />
+            </div>
+          ) : nonAdminMembers.length === 0 ? (
+            <p className="text-sm text-muted text-center py-10">No users found.</p>
+          ) : (
+            nonAdminMembers.map((member) => {
+              const isSelected = !!selected[member.id];
+              return (
+                <button
+                  key={member.id}
+                  onClick={() => toggleSelect(member)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left ${
+                    isSelected
+                      ? "bg-primary/10 ring-1 ring-primary/30"
+                      : "hover:bg-muted/5"
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full ${member.avatarColor} flex items-center justify-center text-white text-xs font-bold shrink-0`}
+                  >
+                    {member.initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {member.name}
+                    </p>
+                    <p className="text-xs text-muted truncate">{member.email}</p>
+                  </div>
+                  <div
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      isSelected
+                        ? "bg-primary border-primary"
+                        : "border-gray-300 dark:border-gray-600"
+                    }`}
+                  >
+                    {isSelected && <Check size={12} className="text-white" />}
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        <div className="flex items-center justify-between p-4 border-t border-gray-100 dark:border-[#222936]">
+          <span className="text-sm text-muted">
+            {selectedCount} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-muted hover:text-foreground transition-colors rounded-lg"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={addAsAdmins}
+              disabled={selectedCount === 0 || adding}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {adding && <Loader2 size={14} className="animate-spin" />}
+              Add As Admins
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

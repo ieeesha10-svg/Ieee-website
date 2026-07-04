@@ -428,9 +428,19 @@ const updateUserProfile = catchAsync(async (req, res) => {
   if (!user) {
     throw new AppError('User not found', 404);
   }
-  // Check if any restricted fields are being updated
-  // We use a flag instead of throwing immediately to check all fields and provide a comprehensive error message if needed
-  const hasRestrictedField = false;
+
+  const restrictedFields = [
+    "email",
+    "password",
+    "role",
+    "isVerified",
+    "otp",
+    "otpExpires",
+    "resetPasswordToken",
+    "resetPasswordExpires",
+  ];
+
+  let hasRestrictedField = false;
   restrictedFields.forEach((field) => {
     if (req.body[field] !== undefined) {
       hasRestrictedField = true;
@@ -459,17 +469,6 @@ const updateUserProfile = catchAsync(async (req, res) => {
       updates[field] = req.body[field];
     }
   });
-
-  const restrictedFields = [
-    "email",
-    "password",
-    "role",
-    "isVerified",
-    "otp",
-    "otpExpires",
-    "resetPasswordToken",
-    "resetPasswordExpires",
-  ];
 
   const updatedUser = await User.findByIdAndUpdate(
     req.user.id,
@@ -501,7 +500,7 @@ const updateUserProfile = catchAsync(async (req, res) => {
 
 const updatePassword = catchAsync(async (req, res) => {
   const userId = req.user.id;
-  const user = await User.findById(userId);
+  const user = await User.findById(userId).select('+password');
     if (!user) {
       throw new AppError('User not found', 404);
     }
