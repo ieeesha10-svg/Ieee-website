@@ -54,36 +54,30 @@ function mapActivity(activity, form) {
   };
 }
 
-function buildFormData(payload) {
-  const fd = new FormData();
-  fd.append("title", payload.title || "");
-  fd.append("content", payload.content || "");
-  fd.append("type", payload.type || "event");
-  fd.append("location", payload.location || "");
-  fd.append("registrationEnabled", String(payload.registrationEnabled ?? true));
-  if (payload.startDate) fd.append("startDate", payload.startDate);
-  if (payload.endDate) fd.append("endDate", payload.endDate);
-  if (payload.maxSubmissions !== "" && payload.maxSubmissions != null) {
-    fd.append("maxSubmissions", String(payload.maxSubmissions));
-  }
-
-  // Strip non-serializable fields before sending speakers as JSON
+function buildPayload(payload) {
   const speakers = (payload.speakers || []).map((s) => ({
     name: s.name || "",
     title: s.title || "",
     bio: s.bio || "",
     image: s.image || "",
   }));
-  fd.append("speakers", JSON.stringify(speakers));
 
-  // Append image files separately, matched by index
-  (payload.speakers || []).forEach((s) => {
-    if (s.imageFile) {
-      fd.append("speakerImages", s.imageFile);
-    }
-  });
+  const body = {
+    title: payload.title || "",
+    content: payload.content || "",
+    type: payload.type || "event",
+    location: payload.location || "",
+    registrationEnabled: payload.registrationEnabled ?? true,
+    speakers,
+  };
 
-  return fd;
+  if (payload.startDate) body.startDate = payload.startDate;
+  if (payload.endDate) body.endDate = payload.endDate;
+  if (payload.maxSubmissions !== "" && payload.maxSubmissions != null) {
+    body.maxSubmissions = Number(payload.maxSubmissions);
+  }
+
+  return body;
 }
 
 export function useEvents() {
@@ -139,19 +133,15 @@ export function useEvents() {
   };
 
   const createEvent = async (payload) => {
-    const formData = buildFormData(payload);
-    const res = await api.post("/activities", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const body = buildPayload(payload);
+    const res = await api.post("/activities", body);
     await fetchData();
     return res.data;
   };
 
   const updateEvent = async (id, payload) => {
-    const formData = buildFormData(payload);
-    const res = await api.put(`/activities/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const body = buildPayload(payload);
+    const res = await api.put(`/activities/${id}`, body);
     await fetchData();
     return res.data;
   };

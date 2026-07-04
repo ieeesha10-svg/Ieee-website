@@ -6,9 +6,8 @@ import AdminSidebar from "../components/AdminSidebar";
 import Notifications from "../components/Notifications";
 import ThemeToggle from "../components/ThemeToggle";
 import { navItems, toolsItems } from "../data/DashboardNav";
+import DashNavSkeleton from "../components/skeletons/DashNavSkeleton";
 import api from "../utils/api";
-
-const ICON_MAP = { Download, Plus };
 
 const pageMeta = [...navItems, ...toolsItems].reduce((acc, item) => {
   acc[item.to] = {
@@ -26,6 +25,7 @@ const DashboardLayout = () => {
 
   const [formStats, setFormStats] = useState(null);
   const [eventCount, setEventCount] = useState(null);
+  const [userCount, setUserCount] = useState(null);
 
   useEffect(() => {
     if (pathname === "/dashboard/forms") {
@@ -39,6 +39,14 @@ const DashboardLayout = () => {
     }
   }, [pathname]);
 
+  useEffect(() => {
+    if (pathname === "/dashboard/users") {
+      api.get("/users/all?limit=1").then((res) => {
+        setUserCount(res.data.total ?? 0);
+      }).catch(() => {});
+    }
+  }, [pathname]);
+
   const meta = Object.entries(pageMeta).find(
     ([path]) => pathname === path,
   )?.[1] || { title: "Dashboard", sub: "", buttonText: "" };
@@ -49,6 +57,10 @@ const DashboardLayout = () => {
 
   if (pathname === "/dashboard/events" && eventCount != null) {
     meta.sub = `${eventCount} ${eventCount === 1 ? "event" : "events"} managed`;
+  }
+
+  if (pathname === "/dashboard/users" && userCount != null) {
+    meta.sub = `${userCount} ${userCount === 1 ? "student" : "students"}`;
   }
 
   const rightSide = (
@@ -97,7 +109,7 @@ const DashboardLayout = () => {
                   {meta.title}
                 </h2>
                 <p className="hidden md:block text-xs text-gray-400 dark:text-gray-500 leading-tight mt-0.5">
-                  {meta.sub}
+                  {(pathname === "/dashboard/users" && userCount === null) || (pathname === "/dashboard/forms" && formStats === null) || (pathname === "/dashboard/events" && eventCount === null) ? <DashNavSkeleton /> : meta.sub}
                 </p>
               </div>
               <div className="flex items-center gap-4">
