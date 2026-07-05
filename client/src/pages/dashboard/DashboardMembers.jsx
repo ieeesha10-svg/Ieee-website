@@ -47,50 +47,18 @@ export default function DashboardMembers() {
     [memberRoles, members, updateRole],
   );
 
-  const handleExportCSV = useCallback(async () => {
+  const handleExport = useCallback(async () => {
     setExporting(true);
     try {
-      const params = new URLSearchParams();
-      params.set("limit", "1000");
-      if (search) params.set("search", search);
-      if (activeRoles.length > 0) params.set("role", activeRoles.join(","));
-      if (activeColleges.length === 1) params.set("college", activeColleges[0]);
-      if (activeYears.length === 1) {
-        const yearMap = {
-          Prep: 0,
-          "1st Year": 1,
-          "2nd Year": 2,
-          "3rd Year": 3,
-          "4th Year": 4,
-        };
-        params.set(
-          "yearOfStudy",
-          String(yearMap[activeYears[0]] ?? activeYears[0]),
-        );
-      }
-      const res = await api.get(`/users/all?${params.toString()}`);
-      const users = res.data.users || [];
-
-      const headers = ["Name", "Email", "College", "Year of Study", "Role"];
-      const rows = users.map((u) => [
-        u.name || "",
-        u.email || "",
-        u.college || "",
-        u.yearOfStudy ?? "",
-        u.role || "member",
-      ]);
-
-      const csv = [
-        headers.join(","),
-        ...rows.map((r) =>
-          r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","),
-        ),
-      ].join("\n");
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
+      const res = await api.post(
+        "/users/export-specific",
+        { userIds: selectedIds },
+        { responseType: "blob" },
+      );
+      const url = URL.createObjectURL(res.data);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `ieee-members-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.download = `ieee-members-${new Date().toISOString().slice(0, 10)}.xlsx`;
       link.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -98,7 +66,7 @@ export default function DashboardMembers() {
     } finally {
       setExporting(false);
     }
-  }, [search, activeColleges, activeYears, activeRoles]);
+  }, [selectedIds]);
 
   return (
     <div className="min-h-screen bg-main p-4 md:p-6">
@@ -183,8 +151,9 @@ export default function DashboardMembers() {
           </div>
 
           <button
-            onClick={handleExportCSV}
-            disabled={exporting}
+            onClick={handleExport}
+            disabled={exporting || selectedIds.length === 0}
+            title={selectedIds.length === 0 ? "Select members to export" : ""}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 w-full lg:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {exporting ? (
@@ -192,7 +161,7 @@ export default function DashboardMembers() {
             ) : (
               <Download size={16} />
             )}
-            Export As Excel
+            Export as Excel ({selectedIds.length})
           </button>
         </div>
       </div>
