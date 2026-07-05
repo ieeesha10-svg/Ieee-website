@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 // Components
 import Button from '../../components/Button.jsx'
-import ImageSkeleton from '../../components/ImageSkeleton.jsx';
+import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 // Images
 import HeroBackground from '../../assets/backgrounds/hero-bg.jpg';
 import IEEEFamilyPic from '../../assets/images/home/ieee-family.jpg';
