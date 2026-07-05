@@ -69,6 +69,14 @@ const DashboardLayout = () => {
     }
   }, [pathname]);
 
+  useEffect(() => {
+    if (pathname === "/dashboard/users") {
+      api.get("/users/all?limit=1").then((res) => {
+        setUserCount(res.data.total ?? 0);
+      }).catch(() => {});
+    }
+  }, [pathname]);
+
   const meta = Object.entries(pageMeta).find(
     ([path]) => pathname === path,
   )?.[1] || { title: "Dashboard", sub: "", buttonText: "" };

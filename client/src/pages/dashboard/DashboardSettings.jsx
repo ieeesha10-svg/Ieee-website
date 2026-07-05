@@ -207,7 +207,7 @@ export default function DashboardSettings() {
   const [admins, setAdmins] = useState([]);
   const [adminRoles, setAdminRoles] = useState({});
   const [adminsLoading, setAdminsLoading] = useState(true);
-  const { updatingRole, updateRole } = useUpdateRole();
+  const { updateRole } = useUpdateRole();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -577,6 +577,11 @@ export default function DashboardSettings() {
                             </div>
                             <span className="text-sm font-medium text-foreground whitespace-nowrap">
                               {admin.name}
+                              {admin.id === user?._id && (
+                                <span className="ml-1.5 text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                  You
+                                </span>
+                              )}
                             </span>
                           </div>
                         </td>
@@ -603,10 +608,10 @@ export default function DashboardSettings() {
                 </table>
               </div>
       
-              <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm mt-5">
+              {/* <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm mt-5">
                 <Save size={14} />
                 Save Permissions
-              </button>
+              </button>*/}
             </SectionCard>
 
       {/* ─── Delete Admin Modal ──────────────────────────── */}

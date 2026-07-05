@@ -76,6 +76,7 @@ function buildPayload(payload) {
   if (payload.maxSubmissions !== "" && payload.maxSubmissions != null) {
     body.maxSubmissions = Number(payload.maxSubmissions);
   }
+  if (payload.fields) body.fields = payload.fields;
 
   return body;
 }
@@ -134,6 +135,7 @@ export function useEvents() {
 
   const createEvent = async (payload) => {
     const body = buildPayload(payload);
+    if (body.fields) body.status = "Active";
     const res = await api.post("/activities", body);
     await fetchData();
     return res.data;
