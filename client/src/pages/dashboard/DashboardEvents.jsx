@@ -4,17 +4,13 @@ import {
   Trash2, Edit, CheckCircle2, FileText,
   Check, GripVertical,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useEvents } from "../../hooks/dashboard/useEvents";
+import api from "../../utils/api";
+import { FIELD_TYPE_OPTIONS } from "../../data/fieldTypes";
 import DeleteModal from "../../components/DeleteModal";
 import Skeleton from "../../components/skeletons/DashEventsSkeleton";
-
-const FIELD_TYPE_OPTIONS = [
-  { value: "TextInput", label: "Short Text" },
-  { value: "TextArea", label: "Paragraph" },
-  { value: "Dropdown", label: "Dropdown" },
-  { value: "Checkbox", label: "Checkbox" },
-];
 
 const TYPE_COLORS = {
   teal: { bg: "bg-teal-50 dark:bg-teal-900/25", text: "text-teal-700 dark:text-teal-300", border: "border-teal-200 dark:border-teal-700/40" },
@@ -65,31 +61,44 @@ function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }) {
 }
 
 /* ─── Event Form (shared by Create + Edit) ──────────────────────── */
-function EventForm({ initial, onSubmit, submitLabel, loading }) {
+function EventForm({ initial, onSubmit, submitLabel, loading, formId }) {
   const [form, setForm] = useState(initial);
   const [speakerName, setSpeakerName] = useState("");
   const [speakerTitle, setSpeakerTitle] = useState("");
   const [speakerBio, setSpeakerBio] = useState("");
   const [speakerImageFile, setSpeakerImageFile] = useState(null);
   const [speakerImagePreview, setSpeakerImagePreview] = useState(null);
-
   const [fieldsList, setFieldsList] = useState(initial.fields || []);
+  const [dragIndex, setDragIndex] = useState(null);
   const [newFieldLabel, setNewFieldLabel] = useState("");
   const [newFieldType, setNewFieldType] = useState("TextInput");
 
   const set = (key, value) => setForm((p) => ({ ...p, [key]: value }));
 
+  const moveField = (from, to) => {
+    setFieldsList((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(from, 1);
+      updated.splice(to, 0, moved);
+      return updated;
+    });
+  };
+
   const addField = () => {
     setFieldsList((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), label: "", type: "TextInput", required: false },
+      { id: crypto.randomUUID(), label: "", type: "TextInput", required: false, options: [] },
     ]);
   };
 
   const updateFieldAt = (index, patch) => {
     setFieldsList((prev) => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], ...patch };
+      const field = updated[index];
+      if (patch.type && (patch.type === "Dropdown" || patch.type === "Checkbox") && !field.options) {
+        patch.options = [];
+      }
+      updated[index] = { ...field, ...patch };
       return updated;
     });
   };
@@ -102,7 +111,9 @@ function EventForm({ initial, onSubmit, submitLabel, loading }) {
     if (!newFieldLabel.trim()) return;
     const idx = fieldsList.length;
     addField();
-    updateFieldAt(idx, { label: newFieldLabel.trim(), type: newFieldType });
+    const patch = { label: newFieldLabel.trim(), type: newFieldType };
+    if (newFieldType === "Dropdown" || newFieldType === "Checkbox") patch.options = [];
+    updateFieldAt(idx, patch);
     setNewFieldLabel("");
     setNewFieldType("TextInput");
   };
@@ -182,7 +193,11 @@ function EventForm({ initial, onSubmit, submitLabel, loading }) {
         </div>
         <div>
           <label className="block text-[10px] font-bold text-muted uppercase tracking-wide mb-1.5">Registration</label>
-          <button type="button" onClick={() => set("registrationEnabled", !form.registrationEnabled)} className={`mt-1 w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${form.registrationEnabled ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-[#222936] text-muted"}`}>
+          <button
+            type="button"
+            onClick={() => set("registrationEnabled", !form.registrationEnabled)}
+            className={`mt-1 w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${form.registrationEnabled ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-[#222936] text-muted"}`}
+          >
             {form.registrationEnabled ? "Accepting Registrations" : "Closing Registration"}
           </button>
         </div>
@@ -219,157 +234,172 @@ function EventForm({ initial, onSubmit, submitLabel, loading }) {
         )}
       </div>
 
-      <div>
-        <div className="flex items-center gap-3 mb-3">
-          <label className="block text-[11px] font-bold text-muted uppercase tracking-wide">Form Fields</label>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary-dark/10">
-            {fieldsList.length} {fieldsList.length === 1 ? "field" : "fields"}
-          </span>
-        </div>
-
-        <div className="rounded-xl border border-gray-200 dark:border-[#222936] overflow-hidden">
-          <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-[#222936]">
-            <div className="w-5 shrink-0" />
-            <div className="flex-1">
-              <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Field Label</span>
-            </div>
-            <div className="w-[120px] shrink-0">
-              <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Type</span>
-            </div>
-            <div className="w-[60px] shrink-0 text-center">
-              <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Req</span>
-            </div>
-            <div className="w-7 shrink-0" />
+      {!formId && (
+        <div>
+          <div className="flex items-center gap-3 mb-3">
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide">Form Fields</label>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary-dark/10">
+              {fieldsList.length} {fieldsList.length === 1 ? "field" : "fields"}
+            </span>
           </div>
 
-          {fieldsList.map((field, idx) => {
-            const isDropdown = field.type === "Dropdown";
-            return (
-              <div key={field.id || idx} className="border-b border-gray-100 dark:border-[#222936] last:border-b-0">
-                <div className="flex items-start gap-2 px-4 py-2.5">
-                  <div className="pt-1.5 text-muted shrink-0 cursor-grab">
-                    <GripVertical size={14} />
-                  </div>
+          <div className="rounded-xl border border-gray-200 dark:border-[#222936] overflow-hidden">
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-[#222936]">
+              <div className="w-5 shrink-0" />
+              <div className="flex-1">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Field Label</span>
+              </div>
+              <div className="w-[120px] shrink-0">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Type</span>
+              </div>
+              <div className="w-[60px] shrink-0 text-center">
+                <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Req</span>
+              </div>
+              <div className="w-7 shrink-0" />
+            </div>
 
-                  <div className="flex-1 min-w-0">
-                    <input
-                      type="text"
-                      value={field.label}
-                      onChange={(e) => updateFieldAt(idx, { label: e.target.value })}
-                      placeholder="Field label"
-                      className="w-full rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
-                    />
+            {fieldsList.map((field, idx) => {
+              const hasOptions = field.type === "Dropdown" || field.type === "Checkbox";
+              const isDragging = dragIndex === idx;
+              return (
+                <div
+                  key={field.id || idx}
+                  draggable
+                  onDragStart={() => setDragIndex(idx)}
+                  onDragOver={(e) => {
+                    if (dragIndex === null || dragIndex === idx) return;
+                    e.preventDefault();
+                    moveField(dragIndex, idx);
+                    setDragIndex(idx);
+                  }}
+                  onDragEnd={() => setDragIndex(null)}
+                  className={`border-b border-gray-100 dark:border-[#222936] last:border-b-0 transition-opacity ${isDragging ? "opacity-40" : ""}`}
+                >
+                  <div className="flex items-start gap-2 px-4 py-2.5">
+                    <div className="pt-1.5 text-muted shrink-0 cursor-grab">
+                      <GripVertical size={14} />
+                    </div>
 
-                    {isDropdown && (
-                      <div className="mt-1.5 space-y-1">
-                        {(field.options || []).map((opt, oi) => (
-                          <div key={oi} className="flex items-center gap-1">
-                            <input
-                              type="text"
-                              value={opt}
-                              onChange={(e) => {
-                                const updated = [...(field.options || [])];
-                                updated[oi] = e.target.value;
-                                updateFieldAt(idx, { options: updated });
-                              }}
-                              placeholder={`Option ${oi + 1}`}
-                              className="flex-1 rounded-md border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1 text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const updated = field.options.filter((_, i) => i !== oi);
-                                updateFieldAt(idx, { options: updated });
-                              }}
-                              aria-label={`Remove option ${oi + 1}`}
-                              className="text-muted hover:text-red-500 transition-colors shrink-0"
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() => updateFieldAt(idx, { options: [...(field.options || []), ""] })}
-                          className="text-xs font-medium text-primary hover:text-primary-dark transition-colors"
-                        >
-                          + Add Option
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={field.label}
+                        onChange={(e) => updateFieldAt(idx, { label: e.target.value })}
+                        placeholder="Field label"
+                        className="w-full rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+                      />
 
-                  <select
-                    value={field.type}
-                    onChange={(e) => updateFieldAt(idx, { type: e.target.value })}
-                    aria-label={`Field type for ${field.label || `field ${idx + 1}`}`}
-                    className="w-[120px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-                  >
-                    {FIELD_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+                      {hasOptions && (
+                        <div className="mt-1.5 space-y-1">
+                          {(field.options || []).map((opt, oi) => (
+                            <div key={oi} className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                value={opt}
+                                onChange={(e) => {
+                                  const updated = [...(field.options || [])];
+                                  updated[oi] = e.target.value;
+                                  updateFieldAt(idx, { options: updated });
+                                }}
+                                placeholder={`Option ${oi + 1}`}
+                                className="flex-1 rounded-md border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1 text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = field.options.filter((_, i) => i !== oi);
+                                  updateFieldAt(idx, { options: updated });
+                                }}
+                                aria-label={`Remove option ${oi + 1}`}
+                                className="text-muted hover:text-red-500 transition-colors shrink-0"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => updateFieldAt(idx, { options: [...(field.options || []), ""] })}
+                            className="text-xs font-medium text-primary hover:text-primary-dark transition-colors"
+                          >
+                            + Add Option
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="w-[60px] shrink-0 flex justify-center pt-0.5">
+                    <select
+                      value={field.type}
+                      onChange={(e) => updateFieldAt(idx, { type: e.target.value })}
+                      aria-label={`Field type for ${field.label || `field ${idx + 1}`}`}
+                      className="w-[120px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                    >
+                      {FIELD_TYPE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+
+                    <div className="w-[60px] shrink-0 flex justify-center pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => updateFieldAt(idx, { required: !field.required })}
+                        className={`text-[10px] font-bold px-2 py-1 rounded-full border transition-colors ${
+                          field.required
+                            ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-700/40"
+                            : "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700"
+                        }`}
+                      >
+                        {field.required ? "Yes" : "No"}
+                      </button>
+                    </div>
+
                     <button
                       type="button"
-                      onClick={() => updateFieldAt(idx, { required: !field.required })}
-                      className={`text-[10px] font-bold px-2 py-1 rounded-full border transition-colors ${
-                        field.required
-                          ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-700/40"
-                          : "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700"
-                      }`}
+                      onClick={() => removeFieldAt(idx)}
+                      aria-label={`Remove ${field.label || `field ${idx + 1}`}`}
+                      className="pt-1.5 text-muted hover:text-red-500 transition-colors shrink-0"
                     >
-                      {field.required ? "Yes" : "No"}
+                      <Trash2 size={13} />
                     </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => removeFieldAt(idx)}
-                    aria-label={`Remove ${field.label || `field ${idx + 1}`}`}
-                    className="pt-1.5 text-muted hover:text-red-500 transition-colors shrink-0"
-                  >
-                    <Trash2 size={13} />
-                  </button>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
 
-          <div className="flex items-center gap-2 px-4 py-2.5 border-t border-gray-200 dark:border-[#222936]">
-            <input
-              type="text"
-              value={newFieldLabel}
-              onChange={(e) => setNewFieldLabel(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="New field label"
-              className="flex-1 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
-            />
-            <select
-              value={newFieldType}
-              onChange={(e) => setNewFieldType(e.target.value)}
-              aria-label="New field type"
-              className="w-[120px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-            >
-              {FIELD_TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={handleConfirmAddField}
-              disabled={!newFieldLabel.trim()}
-              aria-label="Confirm add field"
-              className="w-7 h-7 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-            >
-              <Check size={14} />
-            </button>
+            <div className="flex items-center gap-2 px-4 py-2.5 border-t border-gray-200 dark:border-[#222936]">
+              <input
+                type="text"
+                value={newFieldLabel}
+                onChange={(e) => setNewFieldLabel(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="New field label"
+                className="flex-1 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+              />
+              <select
+                value={newFieldType}
+                onChange={(e) => setNewFieldType(e.target.value)}
+                aria-label="New field type"
+                className="w-[120px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+              >
+                {FIELD_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleConfirmAddField}
+                disabled={!newFieldLabel.trim()}
+                aria-label="Confirm add field"
+                className="w-7 h-7 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              >
+                <Check size={14} />
+              </button>
+            </div>
           </div>
-        </div>
 
-        <p className="mt-1.5 text-xs text-muted">Click Required to toggle · Press Enter to confirm a new field</p>
-      </div>
+          <p className="mt-1.5 text-xs text-muted">Click Required to toggle · Press Enter to confirm a new field</p>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2 pt-2">
         <button type="button" onClick={() => onSubmit({ ...form, fields: fieldsList })} disabled={loading || !form.title || !form.location || !form.content || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
@@ -478,12 +508,9 @@ function ViewModal({ open, onClose, eventId, getEventById }) {
   );
 }
 
-/* ─── Delete Confirmation ────────────────────────────────────────── */
-/* ─── Event Card ─────────────────────────────────────────────────── */
 function EventCard({ event, onView, onEdit, onDelete }) {
   const typeStyle = TYPE_COLORS[event.typeColor] || TYPE_COLORS.blue;
   const statusStyle = STATUS_STYLES[event.status] || STATUS_STYLES.Completed;
-  const attendeePercent = event.maxAttendees > 0 ? Math.round((event.attendees / event.maxAttendees) * 100) : 0;
 
   return (
     <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20 transition-all duration-200 p-5 flex flex-col justify-between">
@@ -496,11 +523,11 @@ function EventCard({ event, onView, onEdit, onDelete }) {
           </span>
         </div>
         <h3 className="text-foreground font-semibold text-[15px] leading-snug mb-3">{event.title}</h3>
-        <div className="space-y-1.5 mb-4">
+        <div className="space-y-1.5 pb-3 border-b border-b-border">
           {event.date && <div className="flex items-center gap-2 text-muted text-xs"><Calendar size={13} className="shrink-0" /><span>{event.date}</span></div>}
           <div className="flex items-center gap-2 text-muted text-xs"><MapPin size={13} className="shrink-0" /><span>{event.location}</span></div>
         </div>
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <div className="flex items-center justify-between text-xs mb-1.5">
             <span className="text-muted font-medium">Attendees</span>
             <span className="text-foreground font-semibold">{event.attendees}</span>
@@ -508,9 +535,9 @@ function EventCard({ event, onView, onEdit, onDelete }) {
           <div className="h-[5px] w-full rounded-full bg-gray-100 dark:bg-gray-700/50 overflow-hidden">
             <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${attendeePercent}%` }} />
           </div>
-        </div>
+        </div>*/}
       </div>
-      <div className="flex items-center gap-2 pt-1">
+      <div className="flex items-center gap-2 pt-3">
         <button onClick={() => onView(event.id)} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
           <Eye size={13} /> View
         </button>
@@ -529,6 +556,7 @@ function EventCard({ event, onView, onEdit, onDelete }) {
 export default function DashboardEvents() {
   const { events, filter, setFilter, counts, totalCount, loading, error, createEvent, updateEvent, deleteEvent, getEventById } = useEvents();
 
+	const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [editEvent, setEditEvent] = useState(null);
   const [viewEventId, setViewEventId] = useState(null);
@@ -553,6 +581,9 @@ export default function DashboardEvents() {
     setSaving(true);
     try {
       await updateEvent(editEvent.id, form);
+      if (editEvent.formId && form.registrationEnabled !== editEvent.registrationEnabled) {
+        await api.put(`/form/${editEvent.formId}/toggle`);
+      }
       toast.success("Activity updated successfully!");
       setEditEvent(null);
     } catch (err) {
@@ -604,7 +635,7 @@ export default function DashboardEvents() {
           ))}
           <span className="text-xs text-muted font-medium ml-1">{events.length} results</span>
         </div>
-        <button onClick={() => setShowCreate(true)} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
+        <button onClick={() => navigate("/dashboard/events/create-event")} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
           <Plus size={16} /> Create New Event
         </button>
       </div>
@@ -629,7 +660,13 @@ export default function DashboardEvents() {
 
       {/* Create Modal */}
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create New Event">
-        <EventForm initial={getDefaultForm()} onSubmit={handleCreate} submitLabel="Create Event" loading={saving} />
+				<EventForm
+					initial={getDefaultForm()}
+					onSubmit={handleCreate}
+					submitLabel="Create Event"
+					loading={saving} 
+					formId={null}
+				/>
       </Modal>
 
       {/* Edit Modal */}
@@ -648,6 +685,7 @@ export default function DashboardEvents() {
               registrationEnabled: editEvent.registrationEnabled,
               fields: editEvent.form?.fields || [],
             }}
+            formId={editEvent.formId}
             onSubmit={handleEdit}
             submitLabel="Save Changes"
             loading={saving}
