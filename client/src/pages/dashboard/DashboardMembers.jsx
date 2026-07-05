@@ -1,16 +1,9 @@
-import React, { useState, useCallback } from "react";
-import {
-  Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  Loader2,
-} from "lucide-react";
-import { useMembers } from "../../hooks/dashboard/useMembers";
-import { useUpdateRole } from "../../hooks/dashboard/useUpdateRole";
-import { useAuth } from "../../context/AuthContext";
-import api from "../../utils/api";
+import React, { useState, useCallback } from 'react';
+import { Search, Filter, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
+import { useSearchMembers } from '../../hooks/dashboard/useSearchMembers';
+import { useUpdateRole } from '../../hooks/dashboard/useUpdateRole';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../utils/api';
 
 export default function DashboardMembers() {
   const { user } = useAuth();
@@ -32,7 +25,7 @@ export default function DashboardMembers() {
     setPage,
     totalPages,
     loading,
-  } = useMembers();
+  } = useSearchMembers();
 
   const { updatingRole, updateRole } = useUpdateRole();
   const [memberRoles, setMemberRoles] = useState({});
