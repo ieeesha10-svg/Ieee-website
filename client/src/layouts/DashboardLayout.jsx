@@ -29,13 +29,43 @@ const DashboardLayout = () => {
 
   useEffect(() => {
     if (pathname === "/dashboard/forms") {
-      api.get("/form").then((res) => setFormStats(res.data)).catch(() => {});
+      api
+        .get("/form")
+        .then((res) => setFormStats(res.data))
+        .catch(() => {});
     }
   }, [pathname]);
 
   useEffect(() => {
     if (pathname === "/dashboard/events") {
-      api.get("/activities").then((res) => setEventCount(res.data.length ?? 0)).catch(() => {});
+      api
+        .get("/activities")
+        .then((res) => {
+          const count = res.data.activities?.length ?? 0;
+          console.log("Events count:", count);
+          setEventCount(count);
+        })
+        .catch((err) => {
+          console.error("Error fetching events:", err);
+          setEventCount(0);
+        });
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === "/dashboard/users") {
+      api
+        .get("/users/all?limit=1")
+        .then((res) => setMembersCount(res.data.total ?? 0))
+        .catch(() => {});
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === "/dashboard/users") {
+      api.get("/users/all?limit=1").then((res) => {
+        setUserCount(res.data.total ?? 0);
+      }).catch(() => {});
     }
   }, [pathname]);
 

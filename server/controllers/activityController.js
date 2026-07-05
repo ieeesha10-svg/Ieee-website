@@ -18,31 +18,14 @@ const createActivity = catchAsync(async (req, res) => {
   if(!title || !content || !location) {
     throw new AppError("Title, content, and location are required", 400);
   }
-
-  // speakers come as a JSON string from FormData
-  let parsedSpeakers = [];
-  if (speakers) {
-    try {
-      parsedSpeakers = typeof speakers === 'string' ? JSON.parse(speakers) : speakers;
-    } catch { parsedSpeakers = []; }
-  }
-
-  // Map uploaded images to speakers by index
-  if (req.files && req.files.length > 0) {
-    req.files.forEach((file, i) => {
-      if (parsedSpeakers[i]) {
-        parsedSpeakers[i].image = `/uploads/speakers/${file.filename}`;
-      }
-    });
-  }
-
+  const activitySpeakers = speakers || [];
   const activity = await Activity.create({
     title,
     content,
-    type,
-    speakers: parsedSpeakers,
+    type, // default is "general" as per schema
+    speakers: activitySpeakers,
     location,
-    registrationEnabled: registrationEnabled !== "false",
+    // registrationEnabled: isRegistrationEnabled
   });
 
   // default form fields for event/workshop
@@ -52,10 +35,12 @@ const createActivity = catchAsync(async (req, res) => {
       { id: "email", label: "Email", type: "TextInput", required: true }
     ];
   }
+  // default form date range: registration opens now, closes 1 day before event
   if (!startDate) startDate = new Date();
   if (!endDate) endDate = new Date((activity.createdAt || Date.now()) + 6.5 * 24 * 60 * 60 * 1000);
-
+  // Create associated form
   const form = await Form.create({
+    title: `${activity.title} Registration Form`,
     activityID: activity._id,
     createdBy: req.user._id,
     fields,
@@ -69,16 +54,42 @@ const createActivity = catchAsync(async (req, res) => {
 
 const getActivities = catchAsync(async (req, res) => {
   const activities = await Activity.find();
+  // pagination feature
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+  
   const numberOfActivities = activities.length;
-  res.json({ success: true, length: numberOfActivities, activities : activities.map(activity => ({
-    _id: activity._id,
-    title: activity.title,
-    content: activity.content,
-    type: activity.type,
-    speakers: activity.speakers,
-    location: activity.location,
-    registrationEnabled: activity.registrationEnabled
-  })) });
+  const paginatedActivities = activities.slice(skip, skip + limit);
+
+  const formattedActivities = await Promise.all(
+    paginatedActivities.map(async (activity) => {
+      const form = await Form.findOne({ activityID: activity._id });
+      return {
+        _id: activity._id,
+        title: activity.title,
+        content: activity.content,
+        type: activity.type,
+        speakers: activity.speakers,
+        location: activity.location,
+        startDate: activity.startDate,
+        endDate: activity.endDate,
+        createdAt: activity.createdAt,
+        status: form ? form.status : "No Form Found" 
+      };
+    })
+  );
+
+  res.json({ 
+    success: true, 
+    pagination: {
+      totalItems: numberOfActivities,
+      totalPages: Math.ceil(numberOfActivities / limit),
+      currentPage: page,
+      itemsPerPage: limit
+    },
+    activities: formattedActivities
+  });
 });
 
 const getActivityById = catchAsync(async (req, res) => {
@@ -90,53 +101,13 @@ const getActivityById = catchAsync(async (req, res) => {
 });
 
 const updateActivity = catchAsync(async (req, res) => {
-  const { title, content, type, speakers, location, registrationEnabled, startDate, endDate, maxSubmissions } = req.body;
-
-  const activity = await Activity.findById(req.params.id);
+  // if inputs are not provided, they will be ignored and not updated
+  const activity = await Activity.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true }
+  );
   if (!activity) throw new AppError("Activity not found", 404);
-
-  // Update activity fields if provided
-  if (title != null) activity.title = title;
-  if (content != null) activity.content = content;
-  if (type != null) activity.type = type;
-  if (location != null) activity.location = location;
-  if (registrationEnabled != null) activity.registrationEnabled = registrationEnabled === "true" || registrationEnabled === true;
-
-  // Parse and update speakers
-  if (speakers != null) {
-    let parsedSpeakers = [];
-    try { parsedSpeakers = typeof speakers === 'string' ? JSON.parse(speakers) : speakers; } catch { parsedSpeakers = []; }
-
-    if (req.files && req.files.length > 0) {
-      req.files.forEach((file, i) => {
-        if (parsedSpeakers[i]) {
-          parsedSpeakers[i].image = `/uploads/speakers/${file.filename}`;
-        }
-      });
-    }
-
-    // Keep existing images for speakers that weren't replaced
-    parsedSpeakers = parsedSpeakers.map((s, i) => {
-      if (!s.image && activity.speakers[i]?.image) {
-        s.image = activity.speakers[i].image;
-      }
-      return s;
-    });
-
-    activity.speakers = parsedSpeakers;
-  }
-
-  await activity.save();
-
-  // Update associated form if date/submission fields provided
-  const form = await Form.findOne({ activityID: activity._id });
-  if (form) {
-    if (startDate != null) form.startDate = startDate;
-    if (endDate != null) form.endDate = endDate;
-    if (maxSubmissions != null && maxSubmissions !== "") form.maxSubmissions = Number(maxSubmissions);
-    await form.save();
-  }
-
   res.json({ success: true, activity });
 });
 
