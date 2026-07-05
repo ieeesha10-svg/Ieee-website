@@ -1,21 +1,21 @@
 import React, {useState} from 'react'
 import { Link } from 'react-router-dom';
 
-// Components
 import Button from '../../components/Button';
-import ImageSkeleton from '../../components/ImageSkeleton.jsx';
-// Images
+import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 import HeroImage from '../../assets/images/events/events-hero.jpg';
 import { useAuth } from '../../context/AuthContext';
-				
-export default function EventsHero() {
-  const { user } = useAuth();
-	const [imgLoaded, setImgLoaded] = useState(false);
-	
-	return <section id="events-hero" className="py-10 min-h-[calc(100vh-var(--navbar-height))] grid place-items-center gap-20 grid-cols-1 lg:grid-cols-2 text-center md:text-left max-w-7xl mx-auto">
 
-		  {/* Bottom shadow overlay */}
-		  {/* <div className="absolute bottom-0 left-0 right-0 h-8 shadow-[0px_4px_6px_6px_#00000040] pointer-events-none" />*/}
+export default function EventsHero({ featuredEvent, loading }) {
+  const { user } = useAuth();
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  const title = featuredEvent?.title || "No Upcoming Events";
+  const description = featuredEvent?.content || "Stay tuned, we're cooking up something exciting. Check back soon for our next event!";
+  const eventImage = featuredEvent?.image || HeroImage;
+  const badge = featuredEvent?.date;
+
+	return <section id="events-hero" className="py-10 min-h-[calc(100vh-var(--navbar-height))] grid place-items-center gap-20 grid-cols-1 lg:grid-cols-2 text-center md:text-left max-w-7xl mx-auto">
 
 			{/* Left Section */}
 			<div className='flex flex-col gap-3 md:gap-5'>
@@ -55,31 +55,44 @@ export default function EventsHero() {
 			</div>
 
 			{/* Right Section - images & card */}
-			<div className='mx-10 md:mx-0 rounded-2xl shadow-[0px_10px_30px_0px_#2563EB1F] dark:shadow-[0px_0px_40px_0px_#2563EB33]rounded-3xl dark:bg-[#0F172ACC] border border-[#E2E8F0]/8'>
-				<div className='relative'>
-					{!imgLoaded && <ImageSkeleton />}
-					<img
-					  src={HeroImage}
-						onLoad={() => setImgLoaded(true)}
-					  className="w-full h-full object-cover rounded-3xl"
-					/>
-				</div>
-				<div className='flex flex-col gap-6 py-7 px-5'>
-					{/* Badge */}
-					<div className='text-[10px] lg:text-sm text-[#2563EB] bg-[#2563EB]/20 dark:text-primary-light dark:bg-primary-light/20 rounded-full w-fit px-3.5 py-2'>
-						Upcoming Event
+			<div className='mx-10 md:mx-0 rounded-2xl shadow-[0px_10px_30px_0px_#2563EB1F] dark:shadow-[0px_0px_40px_0px_#2563EB33]rounded-3xl dark:bg-[#0F172ACC] border border-[#E2E8F0]/8 overflow-hidden'>
+				{loading && !featuredEvent ? (
+					<div className="animate-pulse">
+						<div className="h-64 md:h-80 bg-white/10" />
+						<div className='flex flex-col gap-4 py-7 px-5'>
+							<div className="h-5 w-24 rounded-full bg-white/10" />
+							<div className="h-7 w-48 rounded-lg bg-white/10" />
+							<div className="h-4 w-full rounded-lg bg-white/10" />
+							<div className="h-4 w-3/4 rounded-lg bg-white/10" />
+						</div>
 					</div>
-
-					{/* Card Title*/}
-					<h3 className='font-gotham text-xl lg:text-3xl'>
-						IEEE AI Bootcamp
-					</h3>
-
-					{/* Card Body*/}
-					<p className='text-muted text-xs lg:text-base'>
-						Join our hands-on AI workshop exploring machine learning, embedded systems, and future technologies. 
-					</p>
-				</div>
+				) : (
+					<>
+						<div className='relative h-64 md:h-80'>
+							{!imgLoaded && <ImageSkeleton />}
+							<img
+							  src={eventImage}
+								onLoad={() => setImgLoaded(true)}
+							  className="w-full h-full object-cover"
+							/>
+						</div>
+						<div className='flex flex-col gap-6 py-7 px-5'>
+							{
+								badge && (
+									<div className='text-[10px] lg:text-sm text-[#2563EB] bg-[#2563EB]/20 dark:text-primary-light dark:bg-primary-light/20 rounded-full w-fit px-3.5 py-2'>
+										Upcoming Event
+									</div>
+								)
+							}
+							<h3 className='font-gotham text-xl lg:text-3xl'>
+								{title}
+							</h3>
+							<p className='text-muted text-xs lg:text-base'>
+								{description}
+							</p>
+						</div>
+					</>
+				)}
 			</div>
 	</section>
 }
