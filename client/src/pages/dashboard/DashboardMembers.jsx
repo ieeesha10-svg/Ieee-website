@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Search, Filter, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
-import { useMembers } from '../../hooks/dashboard/useMembers';
+import { useSearchMembers } from '../../hooks/dashboard/useSearchMembers';
 import { useUpdateRole } from '../../hooks/dashboard/useUpdateRole';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
@@ -8,15 +8,24 @@ import api from '../../utils/api';
 export default function DashboardMembers() {
   const { user } = useAuth();
   const {
-    members, totalCount,
-    collegeFilters, yearFilters, roleFilters,
-    search, setSearch,
-    activeColleges, toggleCollege,
-    activeYears, toggleYear,
-    activeRoles, toggleRole,
-    page, setPage, totalPages,
+    members,
+    totalCount,
+    collegeFilters,
+    yearFilters,
+    roleFilters,
+    search,
+    setSearch,
+    activeColleges,
+    toggleCollege,
+    activeYears,
+    toggleYear,
+    activeRoles,
+    toggleRole,
+    page,
+    setPage,
+    totalPages,
     loading,
-  } = useMembers();
+  } = useSearchMembers();
 
   const { updatingRole, updateRole } = useUpdateRole();
   const [memberRoles, setMemberRoles] = useState({});
@@ -29,10 +38,14 @@ export default function DashboardMembers() {
     );
   };
 
-  const handleRoleChange = useCallback((memberId, newRole) => {
-    const previousRole = memberRoles[memberId] ?? members.find((m) => m.id === memberId)?.role;
-    updateRole(memberId, newRole, previousRole, setMemberRoles);
-  }, [memberRoles, members, updateRole]);
+  const handleRoleChange = useCallback(
+    (memberId, newRole) => {
+      const previousRole =
+        memberRoles[memberId] ?? members.find((m) => m.id === memberId)?.role;
+      updateRole(memberId, newRole, previousRole, setMemberRoles);
+    },
+    [memberRoles, members, updateRole],
+  );
 
   const handleExportCSV = useCallback(async () => {
     setExporting(true);
@@ -43,8 +56,17 @@ export default function DashboardMembers() {
       if (activeRoles.length > 0) params.set("role", activeRoles.join(","));
       if (activeColleges.length === 1) params.set("college", activeColleges[0]);
       if (activeYears.length === 1) {
-        const yearMap = { "Prep": 0, "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4 };
-        params.set("yearOfStudy", String(yearMap[activeYears[0]] ?? activeYears[0]));
+        const yearMap = {
+          Prep: 0,
+          "1st Year": 1,
+          "2nd Year": 2,
+          "3rd Year": 3,
+          "4th Year": 4,
+        };
+        params.set(
+          "yearOfStudy",
+          String(yearMap[activeYears[0]] ?? activeYears[0]),
+        );
       }
       const res = await api.get(`/users/all?${params.toString()}`);
       const users = res.data.users || [];
@@ -58,7 +80,12 @@ export default function DashboardMembers() {
         u.role || "member",
       ]);
 
-      const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n");
+      const csv = [
+        headers.join(","),
+        ...rows.map((r) =>
+          r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","),
+        ),
+      ].join("\n");
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -75,22 +102,21 @@ export default function DashboardMembers() {
 
   return (
     <div className="min-h-screen bg-main p-4 md:p-6">
-
       <div className="bg-card-alt rounded-xl shadow-sm p-4 mb-4">
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-center gap-5">
           <div className="flex-1 flex flex-col md:flex-row gap-5 w-full">
-            <div className="w-full md:max-w-xs flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card-alt focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent">
+            <div className="my-auto w-full md:max-w-xs self-start flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card-alt focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent">
               <Search className="w-4 h-4 text-muted shrink-0" />
               <input
                 type="text"
-                placeholder="Search by name or college..."
+                placeholder="Search for members by name"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 text-sm bg-transparent focus:outline-none border-none p-0"
               />
             </div>
 
-            <div className="flex gap-3 flex-1">
+            <div className="flex flex-col gap-3 flex-1">
               <div className='flex flex-wrap items-center gap-1'>
                 <div className='flex items-center gap-1'>
                   <Filter className="w-4 h-4 text-muted" />
@@ -103,8 +129,8 @@ export default function DashboardMembers() {
                     onClick={() => toggleCollege(college)}
                     className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                       activeColleges.includes(college)
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-card-alt text-muted border border-border hover:border-primary hover:text-primary'
+                        ? "bg-primary text-white border-primary"
+                        : "bg-card-alt text-muted border border-border hover:border-primary hover:text-primary"
                     }`}
                   >
                     {college}
@@ -112,8 +138,8 @@ export default function DashboardMembers() {
                 ))}
               </div>
 
-              <div className='flex flex-wrap items-center gap-1'>
-                <div className='flex items-center gap-1'>
+              <div className="flex flex-wrap items-center gap-1">
+                <div className="flex items-center gap-1">
                   <Filter className="w-4 h-4 text-muted" />
                   <span className="text-xs text-muted font-bold">Year</span>
                 </div>
@@ -124,8 +150,8 @@ export default function DashboardMembers() {
                     onClick={() => toggleYear(year)}
                     className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                       activeYears.includes(year)
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-card-alt text-muted border border-border hover:border-primary hover:text-primary'
+                        ? "bg-primary text-white border-primary"
+                        : "bg-card-alt text-muted border border-border hover:border-primary hover:text-primary"
                     }`}
                   >
                     {year}
@@ -133,8 +159,8 @@ export default function DashboardMembers() {
                 ))}
               </div>
 
-              <div className='flex flex-wrap items-center gap-1'>
-                <div className='flex items-center gap-1'>
+              <div className="flex flex-wrap items-center gap-1">
+                <div className="flex items-center gap-1">
                   <Filter className="w-4 h-4 text-muted" />
                   <span className="text-xs text-muted font-bold">Role</span>
                 </div>
@@ -145,8 +171,8 @@ export default function DashboardMembers() {
                     onClick={() => toggleRole(role)}
                     className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                       activeRoles.includes(role)
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-card-alt text-muted border border-border hover:border-primary hover:text-primary'
+                        ? "bg-primary text-white border-primary"
+                        : "bg-card-alt text-muted border border-border hover:border-primary hover:text-primary"
                     }`}
                   >
                     {role}
@@ -161,7 +187,11 @@ export default function DashboardMembers() {
             disabled={exporting}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 w-full lg:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            {exporting ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Download size={16} />
+            )}
             Export As Excel
           </button>
         </div>
@@ -170,16 +200,25 @@ export default function DashboardMembers() {
       <div className="bg-card-alt rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className='bg-[#F8FAFC] dark:bg-[#202636]'>
+            <thead className="bg-[#F8FAFC] dark:bg-[#202636]">
               <tr className="*:text-left *:text-xs *:font-semibold *:text-muted *:uppercase *:tracking-wide *:py-3">
                 <th className="px-2 w-10">
                   <input
                     type="checkbox"
-                    checked={members.length > 0 && members.every((m) => selectedIds.includes(m.id))}
+                    checked={
+                      members.length > 0 &&
+                      members.every((m) => selectedIds.includes(m.id))
+                    }
                     onChange={() =>
                       members.every((m) => selectedIds.includes(m.id))
-                        ? setSelectedIds((prev) => prev.filter((id) => !members.some((m) => m.id === id)))
-                        : setSelectedIds((prev) => [...new Set([...prev, ...members.map((m) => m.id)])])
+                        ? setSelectedIds((prev) =>
+                            prev.filter(
+                              (id) => !members.some((m) => m.id === id),
+                            ),
+                          )
+                        : setSelectedIds((prev) => [
+                            ...new Set([...prev, ...members.map((m) => m.id)]),
+                          ])
                     }
                     className="ml-3 w-4 h-4 accent-primary cursor-pointer"
                   />
@@ -195,7 +234,10 @@ export default function DashboardMembers() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-sm text-muted py-16 text-center">
+                  <td
+                    colSpan={7}
+                    className="text-sm text-muted py-16 text-center"
+                  >
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 size={18} className="animate-spin" />
                       Loading members...
@@ -204,13 +246,19 @@ export default function DashboardMembers() {
                 </tr>
               ) : members.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-sm text-muted py-16 text-center">
+                  <td
+                    colSpan={7}
+                    className="text-sm text-muted py-16 text-center"
+                  >
                     No members match your filters.
                   </td>
                 </tr>
               ) : (
                 members.map((member) => (
-                  <tr key={member.id} className="last:border-0 hover:bg-muted/5 transition-colors">
+                  <tr
+                    key={member.id}
+                    className="last:border-0 hover:bg-muted/5 transition-colors"
+                  >
                     <td className="py-3 px-2">
                       <input
                         type="checkbox"
@@ -221,42 +269,56 @@ export default function DashboardMembers() {
                     </td>
                     <td className="py-3 px-6">
                       <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0 ${member.avatarColor}`}>
+                        <div
+                          className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0 ${member.avatarColor}`}
+                        >
                           {member.initials}
                         </div>
                         <span className="text-sm font-medium text-foreground">
-                            {member.name}
-                            {member.id === user?._id && (
-                              <span className="ml-1.5 text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
-                                You
-                              </span>
-                            )}
-                          </span>
+                          {member.name}
+                          {member.id === user?._id && (
+                            <span className="ml-1.5 text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                              You
+                            </span>
+                          )}
+                        </span>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-sm text-muted">{member.college}</td>
+                    <td className="py-3 px-4 text-sm text-muted">
+                      {member.college}
+                    </td>
                     <td className="py-3 px-4">
                       <select
                         value={memberRoles[member.id] ?? member.role}
-                        onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                        onChange={(e) =>
+                          handleRoleChange(member.id, e.target.value)
+                        }
                         disabled={updatingRole === member.id}
                         className="text-xs font-medium bg-card-alt border border-border rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {roleFilters.map((r) => (
-                          <option key={r} value={r}>{r}</option>
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
                         ))}
                       </select>
                     </td>
-                    <td className="py-3 px-4 text-sm text-muted">{member.year}</td>
+                    <td className="py-3 px-4 text-sm text-muted">
+                      {member.year}
+                    </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <div className="flex-1 h-1.5 bg-muted/20 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary rounded-full transition-all"
-                            style={{ width: `${(member.attendance / member.maxAttendance) * 100}%` }}
+                            style={{
+                              width: `${(member.attendance / member.maxAttendance) * 100}%`,
+                            }}
                           />
                         </div>
-                        <span className="text-sm font-medium text-foreground w-6 text-right">{member.attendance}</span>
+                        <span className="text-sm font-medium text-foreground w-6 text-right">
+                          {member.attendance}
+                        </span>
                       </div>
                     </td>
                     <td className="py-3 px-4">
@@ -285,7 +347,7 @@ export default function DashboardMembers() {
           </span>
           <div className="flex items-center gap-2">
             <button
-              disabled={page === 1}
+              disabled={page === 1 || totalPages === 0}
               onClick={() => setPage(page - 1)}
               className="flex items-center gap-1 px-4 py-2 text-sm rounded-lg hover:bg-muted/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
@@ -293,7 +355,7 @@ export default function DashboardMembers() {
               Previous
             </button>
             <button
-              disabled={page === totalPages}
+              disabled={page === totalPages || totalPages === 0}
               onClick={() => setPage(page + 1)}
               className="flex items-center gap-1 px-4 py-2 text-sm bg-primary text-white border border-primary rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             >

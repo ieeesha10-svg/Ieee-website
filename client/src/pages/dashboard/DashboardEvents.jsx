@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from "react";
 import {
   Calendar, MapPin, Eye, Plus, X, Loader2,
-  Trash2, Edit, AlertTriangle, CheckCircle2, FileText,
-  Upload,
+  Trash2, Edit, CheckCircle2, FileText,
+  Check, GripVertical,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useEvents } from "../../hooks/dashboard/useEvents";
+import DeleteModal from "../../components/DeleteModal";
+import Skeleton from "../../components/skeletons/DashEventsSkeleton";
+
+const FIELD_TYPE_OPTIONS = [
+  { value: "TextInput", label: "Short Text" },
+  { value: "TextArea", label: "Paragraph" },
+  { value: "Dropdown", label: "Dropdown" },
+  { value: "Checkbox", label: "Checkbox" },
+];
 
 const TYPE_COLORS = {
   teal: { bg: "bg-teal-50 dark:bg-teal-900/25", text: "text-teal-700 dark:text-teal-300", border: "border-teal-200 dark:border-teal-700/40" },
@@ -26,7 +35,15 @@ const EVENT_TYPES = ["general", "event", "workshop", "webinar"];
 
 const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Workshop", webinar: "Webinar" };
 
-const EMPTY_FORM = { title: "", content: "", type: "event", location: "", speakers: [], startDate: "", endDate: "", maxSubmissions: "", registrationEnabled: true };
+const EMPTY_FORM = { title: "", content: "", type: "event", location: "", speakers: [], startDate: "", endDate: "", maxSubmissions: "", registrationEnabled: true, fields: [
+  { id: "name", label: "Full Name", type: "TextInput", required: true },
+  { id: "email", label: "Email", type: "TextInput", required: true },
+] };
+
+const getDefaultForm = () => ({
+  ...EMPTY_FORM,
+  startDate: new Date().toISOString().slice(0, 16),
+});
 
 /* ─── Modal Wrapper ─────────────────────────────────────────────── */
 function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }) {
@@ -56,13 +73,44 @@ function EventForm({ initial, onSubmit, submitLabel, loading }) {
   const [speakerImageFile, setSpeakerImageFile] = useState(null);
   const [speakerImagePreview, setSpeakerImagePreview] = useState(null);
 
+  const [fieldsList, setFieldsList] = useState(initial.fields || []);
+  const [newFieldLabel, setNewFieldLabel] = useState("");
+  const [newFieldType, setNewFieldType] = useState("TextInput");
+
   const set = (key, value) => setForm((p) => ({ ...p, [key]: value }));
 
-  const handleSpeakerImage = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSpeakerImageFile(file);
-      setSpeakerImagePreview(URL.createObjectURL(file));
+  const addField = () => {
+    setFieldsList((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), label: "", type: "TextInput", required: false },
+    ]);
+  };
+
+  const updateFieldAt = (index, patch) => {
+    setFieldsList((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], ...patch };
+      return updated;
+    });
+  };
+
+  const removeFieldAt = (index) => {
+    setFieldsList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleConfirmAddField = () => {
+    if (!newFieldLabel.trim()) return;
+    const idx = fieldsList.length;
+    addField();
+    updateFieldAt(idx, { label: newFieldLabel.trim(), type: newFieldType });
+    setNewFieldLabel("");
+    setNewFieldType("TextInput");
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleConfirmAddField();
     }
   };
 
@@ -146,16 +194,7 @@ function EventForm({ initial, onSubmit, submitLabel, loading }) {
           <input value={speakerName} onChange={(e) => setSpeakerName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker name" />
           <input value={speakerTitle} onChange={(e) => setSpeakerTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker title (e.g. Senior Engineer)" />
           <textarea value={speakerBio} onChange={(e) => setSpeakerBio(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none" placeholder="Speaker bio" />
-          <div className="flex items-center gap-3">
-            <label className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors cursor-pointer">
-              <Upload size={13} />
-              {speakerImageFile ? "Change Image" : "Upload Image"}
-              <input type="file" accept="image/*" onChange={handleSpeakerImage} className="hidden" />
-            </label>
-            {speakerImagePreview && (
-              <img src={speakerImagePreview} alt="Preview" className="w-8 h-8 rounded-full object-cover" />
-            )}
-          </div>
+
           <button type="button" onClick={addSpeaker} disabled={!speakerName.trim()} className="px-3 py-2 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Add Speaker</button>
         </div>
         {form.speakers.length > 0 && (
@@ -180,8 +219,160 @@ function EventForm({ initial, onSubmit, submitLabel, loading }) {
         )}
       </div>
 
+      <div>
+        <div className="flex items-center gap-3 mb-3">
+          <label className="block text-[11px] font-bold text-muted uppercase tracking-wide">Form Fields</label>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary-dark/10">
+            {fieldsList.length} {fieldsList.length === 1 ? "field" : "fields"}
+          </span>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 dark:border-[#222936] overflow-hidden">
+          <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-[#222936]">
+            <div className="w-5 shrink-0" />
+            <div className="flex-1">
+              <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Field Label</span>
+            </div>
+            <div className="w-[120px] shrink-0">
+              <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Type</span>
+            </div>
+            <div className="w-[60px] shrink-0 text-center">
+              <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Req</span>
+            </div>
+            <div className="w-7 shrink-0" />
+          </div>
+
+          {fieldsList.map((field, idx) => {
+            const isDropdown = field.type === "Dropdown";
+            return (
+              <div key={field.id || idx} className="border-b border-gray-100 dark:border-[#222936] last:border-b-0">
+                <div className="flex items-start gap-2 px-4 py-2.5">
+                  <div className="pt-1.5 text-muted shrink-0 cursor-grab">
+                    <GripVertical size={14} />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <input
+                      type="text"
+                      value={field.label}
+                      onChange={(e) => updateFieldAt(idx, { label: e.target.value })}
+                      placeholder="Field label"
+                      className="w-full rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+                    />
+
+                    {isDropdown && (
+                      <div className="mt-1.5 space-y-1">
+                        {(field.options || []).map((opt, oi) => (
+                          <div key={oi} className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={opt}
+                              onChange={(e) => {
+                                const updated = [...(field.options || [])];
+                                updated[oi] = e.target.value;
+                                updateFieldAt(idx, { options: updated });
+                              }}
+                              placeholder={`Option ${oi + 1}`}
+                              className="flex-1 rounded-md border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1 text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = field.options.filter((_, i) => i !== oi);
+                                updateFieldAt(idx, { options: updated });
+                              }}
+                              aria-label={`Remove option ${oi + 1}`}
+                              className="text-muted hover:text-red-500 transition-colors shrink-0"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => updateFieldAt(idx, { options: [...(field.options || []), ""] })}
+                          className="text-xs font-medium text-primary hover:text-primary-dark transition-colors"
+                        >
+                          + Add Option
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <select
+                    value={field.type}
+                    onChange={(e) => updateFieldAt(idx, { type: e.target.value })}
+                    aria-label={`Field type for ${field.label || `field ${idx + 1}`}`}
+                    className="w-[120px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                  >
+                    {FIELD_TYPE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+
+                  <div className="w-[60px] shrink-0 flex justify-center pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => updateFieldAt(idx, { required: !field.required })}
+                      className={`text-[10px] font-bold px-2 py-1 rounded-full border transition-colors ${
+                        field.required
+                          ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-700/40"
+                          : "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700"
+                      }`}
+                    >
+                      {field.required ? "Yes" : "No"}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => removeFieldAt(idx)}
+                    aria-label={`Remove ${field.label || `field ${idx + 1}`}`}
+                    className="pt-1.5 text-muted hover:text-red-500 transition-colors shrink-0"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          <div className="flex items-center gap-2 px-4 py-2.5 border-t border-gray-200 dark:border-[#222936]">
+            <input
+              type="text"
+              value={newFieldLabel}
+              onChange={(e) => setNewFieldLabel(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="New field label"
+              className="flex-1 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+            />
+            <select
+              value={newFieldType}
+              onChange={(e) => setNewFieldType(e.target.value)}
+              aria-label="New field type"
+              className="w-[120px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+            >
+              {FIELD_TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleConfirmAddField}
+              disabled={!newFieldLabel.trim()}
+              aria-label="Confirm add field"
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            >
+              <Check size={14} />
+            </button>
+          </div>
+        </div>
+
+        <p className="mt-1.5 text-xs text-muted">Click Required to toggle · Press Enter to confirm a new field</p>
+      </div>
+
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={() => onSubmit(form)} disabled={loading || !form.title || !form.location || !form.content || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+        <button type="button" onClick={() => onSubmit({ ...form, fields: fieldsList })} disabled={loading || !form.title || !form.location || !form.content || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
           {loading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
           {submitLabel}
         </button>
@@ -288,52 +479,6 @@ function ViewModal({ open, onClose, eventId, getEventById }) {
 }
 
 /* ─── Delete Confirmation ────────────────────────────────────────── */
-function DeleteModal({ open, onClose, onConfirm, loading }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 dark:bg-black/70" onClick={onClose} />
-      <div className="relative bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-xl w-full max-w-sm p-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
-          <AlertTriangle size={20} className="text-red-500" />
-        </div>
-        <h3 className="text-foreground font-semibold text-base mb-1">Delete Activity</h3>
-        <p className="text-muted text-sm mb-5">This will permanently delete the activity, its form, and all submissions. This action cannot be undone.</p>
-        <div className="flex gap-3 justify-center">
-          <button onClick={onClose} disabled={loading} className="px-4 py-2 text-sm font-medium text-muted border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors disabled:opacity-50">Cancel</button>
-          <button onClick={onConfirm} disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60">
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Skeleton ───────────────────────────────────────────────────── */
-function Skeleton() {
-  return (
-    <div className="min-h-screen p-4 md:p-6 space-y-5 animate-pulse">
-      <div className="flex items-center justify-between">
-        <div><div className="h-6 w-28 bg-gray-200 dark:bg-gray-700 rounded mb-2" /><div className="h-3 w-36 bg-gray-200 dark:bg-gray-700 rounded" /></div>
-        <div className="h-9 w-40 bg-gray-200 dark:bg-gray-700 rounded-lg" />
-      </div>
-      <div className="flex gap-2">{[1, 2, 3, 4].map((i) => <div key={i} className="h-8 w-24 bg-gray-200 dark:bg-gray-700 rounded-full" />)}</div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="bg-card-alt rounded-xl p-5 space-y-4">
-            <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded-full" />
-            <div className="h-5 w-3/4 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-3 w-1/2 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-3 w-2/3 bg-gray-200 dark:bg-gray-700 rounded" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* ─── Event Card ─────────────────────────────────────────────────── */
 function EventCard({ event, onView, onEdit, onDelete }) {
   const typeStyle = TYPE_COLORS[event.typeColor] || TYPE_COLORS.blue;
@@ -352,7 +497,7 @@ function EventCard({ event, onView, onEdit, onDelete }) {
         </div>
         <h3 className="text-foreground font-semibold text-[15px] leading-snug mb-3">{event.title}</h3>
         <div className="space-y-1.5 mb-4">
-          <div className="flex items-center gap-2 text-muted text-xs"><Calendar size={13} className="shrink-0" /><span>{event.date}</span></div>
+          {event.date && <div className="flex items-center gap-2 text-muted text-xs"><Calendar size={13} className="shrink-0" /><span>{event.date}</span></div>}
           <div className="flex items-center gap-2 text-muted text-xs"><MapPin size={13} className="shrink-0" /><span>{event.location}</span></div>
         </div>
         <div className="mb-4">
@@ -484,7 +629,7 @@ export default function DashboardEvents() {
 
       {/* Create Modal */}
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create New Event">
-        <EventForm initial={EMPTY_FORM} onSubmit={handleCreate} submitLabel="Create Event" loading={saving} />
+        <EventForm initial={getDefaultForm()} onSubmit={handleCreate} submitLabel="Create Event" loading={saving} />
       </Modal>
 
       {/* Edit Modal */}
@@ -501,6 +646,7 @@ export default function DashboardEvents() {
               endDate: editEvent.form?.endDate ? new Date(editEvent.form.endDate).toISOString().slice(0, 16) : "",
               maxSubmissions: editEvent.form?.maxSubmissions || "",
               registrationEnabled: editEvent.registrationEnabled,
+              fields: editEvent.form?.fields || [],
             }}
             onSubmit={handleEdit}
             submitLabel="Save Changes"
@@ -513,7 +659,14 @@ export default function DashboardEvents() {
       <ViewModal open={!!viewEventId} onClose={() => setViewEventId(null)} eventId={viewEventId} getEventById={getEventById} />
 
       {/* Delete Confirmation */}
-      <DeleteModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={saving} />
+      <DeleteModal
+        isOpen={!!deleteTarget}
+        title="Delete Activity"
+        description="This will permanently delete the activity, its form, and all submissions. This action cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+        isLoading={saving}
+      />
     </div>
   );
 }

@@ -5,10 +5,10 @@ import farahImg from "../assets/images/dev-team/farah-orabi.jpeg";
 import ahmedImg from "../assets/images/dev-team/ahmed-elmalah.jpeg";
 import abdallahImg from "../assets/images/dev-team/abdallah-aziz.jpeg";
 import hossamImg from "../assets/images/dev-team/hossam-ghallab.jpeg";
-// import madihaImg from "../assets/images/dev-team/madiha.jpeg";
+import madihaImg from "../assets/images/dev-team/madiha-elyazal.jpeg";
 
 export const stats = [
-  { id: 1, value: "6", label: "Engineers" },
+  { id: 1, value: "7", label: "Engineers" },
   { id: 2, value: "3", label: "Tracks" },
   { id: 3, value: "1", label: "Vision" },
 ];
@@ -23,7 +23,7 @@ export const tracks = [
         id: 0,
         number: "01",
         name: "Ali Ahmed",
-        role: "Full Stack Developer",
+        role: "Full Stack Engineer",
         dept: "IEEE SHA",
         image: null,
         links: {
@@ -36,13 +36,13 @@ export const tracks = [
   {
     id: "track-02",
     number: "02",
-    title: "UI/UX Designres Team",
+    title: "UI/UX Design Team",
     members: [
       {
         id: 1,
         number: "01",
         name: "Mohamed Alaa",
-        role: "UI/UX Design",
+        role: "UI/UX Designer",
         dept: "IEEE SHA",
         image: mohamedImg,
         links: {
@@ -54,7 +54,7 @@ export const tracks = [
         id: 2,
         number: "02",
         name: "Farah Orabi",
-        role: "UI/UX Design",
+        role: "UI/UX Designer",
         dept: "IEEE SHA",
         image: farahImg,
         links: {
@@ -66,7 +66,7 @@ export const tracks = [
   {
     id: "track-03",
     number: "03",
-    title: "Frontend Developers Team",
+    title: "Frontend Development Team",
     members: [
       {
         id: 3,
@@ -99,7 +99,7 @@ export const tracks = [
   {
     id: "track-04",
     number: "04",
-    title: "Backend Developers Team",
+    title: "Backend Development Team",
     members: [
       {
         id: 5,
@@ -116,14 +116,13 @@ export const tracks = [
       {
         id: 6,
         number: "06",
-        name: "Madiha",
+        name: "Madiha Elyazal",
         role: "Backend Engineer",
         dept: "IEEE SHA",
-        image: null,
+        image: madihaImg,
         links: {
           linkedin: "https://www.linkedin.com/in/madiha-elyazal-/",
           github: "https://github.com/madiha179",
-          // portfolio: "",
         },
       },
     ],

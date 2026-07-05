@@ -1,4 +1,14 @@
 import React from "react";
+import { Link } from "react-router-dom";
+
+const QUICK_LINKS = [
+  { label: "About", to: "/about" },
+  { label: "Events", to: "/events" },
+  { label: "Our Crew", to: "/crew" },
+  { label: "Dev Team", to: "/dev-team" },
+  { label: "Committees", to: "/committees" },
+  { label: "Contact", to: "/contact" },
+];
 
 export default function Footer() {
   return (
@@ -22,22 +32,22 @@ export default function Footer() {
           <h4 className="font-lakes font-bold text-[#1A1A1A] dark:text-[#F2F2F2] text-[16px] lg:text-[18px] transition-colors duration-300">
             Quick Links
           </h4>
-          <ul className="flex flex-col items-center lg:items-start gap-3">
-            {["About", "Chapters", "Events", "Membership"].map((link) => (
-              <li key={link}>
-                <a
-                  href={`#${link.toLowerCase().replace(" ", "-")}`}
+          <ul className="grid grid-cols-2 items-center lg:items-start gap-x-6 gap-y-3">
+            {QUICK_LINKS.map(({ label, to }) => (
+              <li key={to}>
+                <Link
+                  to={to}
                   className="font-lakes text-[#4A5565] dark:text-[#9CA3AF] text-[14px] hover:text-[#0077CC] dark:hover:text-[#33B5FF] transition-colors duration-300"
                 >
-                  {link}
-                </a>
+                  {label}
+                </Link>
               </li>
             ))}
           </ul>
         </div>
 
         {/* 3. Resources */}
-        <div className="flex flex-col items-center lg:items-start gap-4">
+        {/* <div className="flex flex-col items-center lg:items-start gap-4">
           <h4 className="font-lakes font-bold text-[#1A1A1A] dark:text-[#F2F2F2] text-[16px] lg:text-[18px] transition-colors duration-300">
             Resources
           </h4>
@@ -53,7 +63,7 @@ export default function Footer() {
               </li>
             ))}
           </ul>
-        </div>
+        </div>*/}
 
         {/* 4. Connect With Us */}
         <div className="flex flex-col items-center lg:items-start gap-4">

@@ -1,9 +1,9 @@
 import React, {useState} from 'react'
 import { Link } from 'react-router-dom';
 import Button from './Button'
-import ImageSkeleton from './ImageSkeleton.jsx';
+import ImageSkeleton from './skeletons/ImageSkeleton.jsx';
 
-export default function EventsListCard({ type = "upcoming", id, image, badge, title, dateTime, attendees, description }) {
+export default function EventsListCard({ type = "upcoming", id, image, badge, title, dateTime, attendees, description, isRegistered }) {
 	const [imgLoaded, setImgLoaded] = useState(false);
   const isUpcoming = type === "upcoming"
 
@@ -14,6 +14,11 @@ export default function EventsListCard({ type = "upcoming", id, image, badge, ti
   return (
     <div className="flex flex-col bg-card dark:bg-[#0F172A] border border-border rounded-3xl overflow-hidden h-full">
       <div className="relative h-50 md:h-60 overflow-hidden">
+        {isRegistered && (
+          <div className="absolute top-3 right-3 z-10 rounded-full bg-green-500 text-white text-xs font-semibold px-3 py-1 shadow-lg">
+            Registered
+          </div>
+        )}
       	{!imgLoaded && <ImageSkeleton />}
 				<img
           src={image}
@@ -47,7 +52,7 @@ export default function EventsListCard({ type = "upcoming", id, image, badge, ti
         {isUpcoming && (
           <Link to={`/events/${id}`} state={{ image, title, description }} className='mt-auto'>
 	          <Button variant="default" className="bg-primary-dark text-white w-full">
-	          	Join Now
+	          	{isRegistered ? 'View Details' : 'Join Now'}
 	          </Button>
           </Link>
         )}

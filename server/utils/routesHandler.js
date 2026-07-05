@@ -14,7 +14,7 @@ const routersHandler = (app) => {
   // app.use('/api/users', require('./routes/userRoutes'));
   app.use('/api/users', userRouter);
 
-  app.use('/api/states', protect, authorize('xcom','board'), dashboardRouter);
+  app.use('/api/states', dashboardRouter);
 
   app.use('/api/crew', crewRouter);
 

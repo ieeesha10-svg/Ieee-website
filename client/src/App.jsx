@@ -103,7 +103,7 @@ function App() {
           </Route>
         </Route>
 
-        {/* <Route element={<ProtectedRoute requireAdmin />}> */}
+        <Route element={<ProtectedRoute requireAdmin />}> 
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/dashboard/users" element={<DashboardMembers />} />
@@ -115,7 +115,7 @@ function App() {
           <Route path="/dashboard/settings" element={<DashboardSettings />} />
           <Route path="/dashboard/scan" element={<QRScanner />} />
         </Route>
-        {/* </Route> */}
+        </Route> 
 
         <Route
           path="*"

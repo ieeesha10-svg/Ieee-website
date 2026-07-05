@@ -53,19 +53,12 @@ function capitalize(str) {
 
 export function useDashboard() {
   const [stats, setStats] = useState(null);
-  const [formCounts, setFormCounts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    Promise.all([
-      api.get("/states/dashboard"),
-      api.get("/form").catch(() => null),
-    ])
-      .then(([statsRes, formRes]) => {
-        setStats(statsRes.data);
-        if (formRes) setFormCounts(formRes.data);
-      })
+    api.get("/states/dashboard")
+      .then((res) => setStats(res.data))
       .catch((err) => {
         console.error("Error fetching dashboard data:", err);
         setError(err.response?.data?.message || err.message || "Failed to load dashboard data");
@@ -170,13 +163,14 @@ const formStatusData = fc
         colorClass: "blue",
       },
     ];
+  const activityStatusSummary = stats.activityStatusSummary || [];
 
   return {
     data: {
       statsCards,
       academicBackgroundData,
       academicYearData,
-      formStatusData,
+      activityStatusSummary,
       topMembers,
       latestSignups,
     },

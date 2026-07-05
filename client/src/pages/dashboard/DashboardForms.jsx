@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { FileText, Eye, Plus, Trash2 } from "lucide-react";
 import { useForms } from "../../hooks/dashboard/useGetForms";
-import ConfirmModal from "../../components/ConfirmModal";
+import DeleteModal from "../../components/DeleteModal";
+import DashFormsSkeleton from "../../components/skeletons/DashFormsSkeleton";
 import { Link } from "react-router-dom";
 
 /* ─── Toggle Switch ────────────────────────────────────────────── */
@@ -63,14 +64,16 @@ function FormRow({ form, onToggle, onDelete }) {
           <Eye size={13} className="text-primary" />
           View Results
         </button>
-        <button
-          type="button"
-          onClick={() => onDelete(form.id)}
-          aria-label={`Delete ${form.title}`}
-          className="p-1.5 text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-        >
-          <Trash2 size={15} />
-        </button>
+        {!form.activityID && (
+          <button
+            type="button"
+            onClick={() => onDelete(form.id)}
+            aria-label={`Delete ${form.title}`}
+            className="p-1.5 text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+          >
+            <Trash2 size={15} />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -78,9 +81,11 @@ function FormRow({ form, onToggle, onDelete }) {
 
 /* ─── Main Component ───────────────────────────────────────────── */
 export default function DashboardForms() {
-  const { forms, toggleFormStatus, deleteForm, openCount, closedCount, totalResponses } =
+  const { forms, isLoading, toggleFormStatus, deleteForm, openCount, closedCount, totalResponses } =
     useForms();
   const [deletingId, setDeletingId] = useState(null);
+
+  if (isLoading) return <DashFormsSkeleton />;
 
   const formToDelete = forms.find((f) => f.id === deletingId);
 
@@ -141,17 +146,14 @@ export default function DashboardForms() {
         )}
       </div>
 
-      <ConfirmModal
+      <DeleteModal
         isOpen={!!deletingId}
         title="Delete form"
-        message={
+        description={
           formToDelete
             ? `Are you sure you want to delete "${formToDelete.title}"? This action cannot be undone.`
             : "Are you sure you want to delete this form? This action cannot be undone."
         }
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        variant="danger"
         onConfirm={() => {
           if (deletingId) deleteForm(deletingId);
           setDeletingId(null);
