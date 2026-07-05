@@ -1,5 +1,5 @@
 
-// import aliImg from "../assets/images/dev-team/mohamed-alaa.jpeg";
+import aliImg from "../assets/images/dev-team/ali-ahmed.jpeg";
 import mohamedImg from "../assets/images/dev-team/mohamed-alaa.jpeg";
 import farahImg from "../assets/images/dev-team/farah-orabi.jpeg";
 import ahmedImg from "../assets/images/dev-team/ahmed-elmalah.jpeg";
@@ -25,10 +25,10 @@ export const tracks = [
         name: "Ali Ahmed",
         role: "Full Stack Engineer",
         dept: "IEEE SHA",
-        image: null,
+        image: aliImg,
         links: {
-          // linkedin: "https://www.linkedin.com/in/mohamed-alaa-a498602b7",
-          // portfolio: "https://www.behance.net/mohamedalaa8950",
+          linkedin: "https://www.linkedin.com/in/ali-ahmed-3621a8247/",
+          github: "https://github.com/ALi-ahmed-e",
         },
       },
     ],

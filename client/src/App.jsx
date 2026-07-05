@@ -32,8 +32,11 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import DashboardMembers from "./pages/dashboard/DashboardMembers";
 import DashboardEvents from "./pages/dashboard/DashboardEvents";
+import CreateEvent from "./pages/dashboard/CreateEvent";
 import EmailLogsPage from "./pages/dashboard/EmailLogsPage";
-import DashboardForms from "./pages/dashboard/DashboardForms";
+import DashboardForms from "./pages/dashboard/forms/DashboardForms";
+import CreateForm from "./pages/dashboard/forms/CreateForm";
+import ShowFormSubmissions from "./pages/dashboard/forms/ShowFormSubmissions";
 import BulkMailer from "./pages/dashboard/BulkMailer";
 import DashboardSettings from "./pages/dashboard/DashboardSettings";
 import QRScanner from "./pages/dashboard/QRScanner";
@@ -42,7 +45,6 @@ import UserProfile from "./pages/user-dashboard/UserProfile";
 import ChangePassword from "./pages/user-dashboard/ChangePassword";
 import MyCommittees from "./pages/user-dashboard/MyCommittees";
 import AttendedEvents from "./pages/user-dashboard/AttendedEvents";
-import CreateForm from "./pages/dashboard/CreateForm";
 
 const ProtectedRoute = ({ requireAdmin = false }) => {
   const { user } = useAuth();
@@ -108,9 +110,11 @@ function App() {
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/dashboard/users" element={<DashboardMembers />} />
           <Route path="/dashboard/events" element={<DashboardEvents />} />
+          <Route path="/dashboard/events/create-event" element={<CreateEvent />} />
           <Route path="/dashboard/email-logs" element={<EmailLogsPage />} />
           <Route path="/dashboard/forms" element={<DashboardForms />} />
           <Route path="/dashboard/forms/create-form" element={<CreateForm />} />
+          <Route path="/dashboard/forms/submissions/:formId" element={<ShowFormSubmissions />} />
           <Route path="/dashboard/email" element={<BulkMailer />} />
           <Route path="/dashboard/settings" element={<DashboardSettings />} />
           <Route path="/dashboard/scan" element={<QRScanner />} />

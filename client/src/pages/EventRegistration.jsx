@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useSubmitForm } from '../hooks/useSubmitForm';
+import { ChevronDown } from 'lucide-react';
 
 import Button from "../components/Button";
 import Input from "../components/Input";
@@ -112,11 +113,14 @@ export default function EventRegistration() {
   const validate = () => {
     const errs = {};
     formData.fields?.forEach(f => {
-      if (f.required && !answers[f.id]?.trim()) {
-        errs[f.id] = `${f.label} is required`;
-      }
-      if (f.type === 'email' && answers[f.id] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(answers[f.id])) {
-        errs[f.id] = 'Invalid email format';
+      if (f.required) {
+        if (f.type === 'Checkbox') {
+          if (!answers[f.id] || answers[f.id].length === 0) {
+            errs[f.id] = `${f.label} is required`;
+          }
+        } else if (!answers[f.id]?.trim()) {
+          errs[f.id] = `${f.label} is required`;
+        }
       }
     });
     return errs;
@@ -145,19 +149,85 @@ export default function EventRegistration() {
     };
 
     switch (field.type) {
-      case 'textarea':
+      case 'TextArea':
         return <Input {...common} type="textarea" />;
-      case 'select':
+      case 'Dropdown':
         return (
-          <Input {...common} type="select">
-            <option value="" disabled>Select {field.label.toLowerCase()}</option>
-            {field.options?.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </Input>
+          <div className="flex flex-col gap-1.5">
+            {field.label && (
+              <label htmlFor={field.id} className="text-sm md:text-base lg:text-xl xl:text-2xl font-bold text-[#334155] dark:text-white">
+                {field.label}
+              </label>
+            )}
+            <div className="relative">
+              <select
+                id={field.id}
+                name={field.id}
+                value={answers[field.id] || ''}
+                onChange={handleChange}
+                className="w-full appearance-none rounded-lg border border-border bg-input px-4 py-4 pr-12 lg:text-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors duration-200"
+              >
+                <option value="" disabled>Select {field.label.toLowerCase()}</option>
+                {field.options?.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+              <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+            </div>
+            {errors[field.id] && <span className="text-xs text-red-500">{errors[field.id]}</span>}
+          </div>
+        );
+      case 'Checkbox':
+        return (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm md:text-base lg:text-xl xl:text-2xl font-bold text-[#334155] dark:text-white">
+              {field.label}
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+              {field.options?.map(opt => (
+                <label
+                  key={opt}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
+                    (answers[field.id] || []).includes(opt)
+                      ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                      : 'border-border bg-input hover:border-primary/50'
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    (answers[field.id] || []).includes(opt)
+                      ? 'bg-primary border-primary'
+                      : 'border-muted'
+                  }`}>
+                    {(answers[field.id] || []).includes(opt) && (
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <input
+                    type="checkbox"
+                    name={field.id}
+                    value={opt}
+                    checked={(answers[field.id] || []).includes(opt)}
+                    onChange={(e) => {
+                      const current = answers[field.id] || [];
+                      const next = e.target.checked
+                        ? [...current, opt]
+                        : current.filter(v => v !== opt);
+                      setAnswers(prev => ({ ...prev, [field.id]: next }));
+                      setErrors(prev => ({ ...prev, [field.id]: '' }));
+                    }}
+                    className="sr-only"
+                  />
+                  <span className="text-sm text-foreground font-medium">{opt}</span>
+                </label>
+              ))}
+            </div>
+            {errors[field.id] && <span className="text-xs text-red-500">{errors[field.id]}</span>}
+          </div>
         );
       default:
-        return <Input {...common} type={field.type || 'text'} />;
+        return <Input {...common} type="text" />;
     }
   };
 
@@ -251,11 +321,14 @@ export default function EventRegistration() {
 
               <form className="flex flex-col flex-1 gap-5" onSubmit={handleSubmit}>
                 {ticketCode && (
-                  <div className="rounded-xl border border-green-400/30 bg-green-50 dark:bg-green-900/20 p-4">
-                    <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                      Registration submitted successfully!
-                    </p>
-                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  <div className="flex flex-col items-center justify-center text-center py-8">
+                    <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6">
+                      <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">You're Registered!</h2>
+                    <p className="text-muted max-w-md">
                       Check your email for the QR code to use at the event.
                     </p>
                   </div>
@@ -279,7 +352,7 @@ export default function EventRegistration() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {formData.fields?.map(field => (
-                        <div key={field.id} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
+                        <div key={field.id} className={field.type === 'TextArea' || field.type === 'Checkbox' ? 'md:col-span-2' : ''}>
                           {renderField(field)}
                         </div>
                       ))}
