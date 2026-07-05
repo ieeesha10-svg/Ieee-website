@@ -26,16 +26,39 @@ const DashboardLayout = () => {
 
   const [formStats, setFormStats] = useState(null);
   const [eventCount, setEventCount] = useState(null);
+  const [membersCount, setMembersCount] = useState(null);
 
   useEffect(() => {
     if (pathname === "/dashboard/forms") {
-      api.get("/form").then((res) => setFormStats(res.data)).catch(() => {});
+      api
+        .get("/form")
+        .then((res) => setFormStats(res.data))
+        .catch(() => {});
     }
   }, [pathname]);
 
   useEffect(() => {
     if (pathname === "/dashboard/events") {
-      api.get("/activities").then((res) => setEventCount(res.data.length ?? 0)).catch(() => {});
+      api
+        .get("/activities")
+        .then((res) => {
+          const count = res.data.activities?.length ?? 0;
+          console.log("Events count:", count);
+          setEventCount(count);
+        })
+        .catch((err) => {
+          console.error("Error fetching events:", err);
+          setEventCount(0);
+        });
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname === "/dashboard/users") {
+      api
+        .get("/users/all?limit=1")
+        .then((res) => setMembersCount(res.data.total ?? 0))
+        .catch(() => {});
     }
   }, [pathname]);
 
@@ -49,6 +72,10 @@ const DashboardLayout = () => {
 
   if (pathname === "/dashboard/events" && eventCount != null) {
     meta.sub = `${eventCount} ${eventCount === 1 ? "event" : "events"} managed`;
+  }
+
+  if (pathname === "/dashboard/users" && membersCount != null) {
+    meta.sub = `${membersCount} ${membersCount === 1 ? "student" : "students"}`;
   }
 
   const rightSide = (
