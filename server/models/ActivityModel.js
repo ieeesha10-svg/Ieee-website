@@ -2,6 +2,19 @@ const mongoose = require("mongoose");
 
 const activitySchema = new mongoose.Schema(
   {
+    startDate: {
+      type: Date,
+      required: true,
+    },
+    endDate: {
+      type: Date,
+      required: true,
+    },
+    statusActivity: {
+      type: String,
+      enum: ["upcoming", "ongoing", "completed"],
+      default: "upcoming",
+    },
     title: {
       type: String,
       required: true,
@@ -32,6 +45,8 @@ const activitySchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    // NOT DONE
     coverImage: {
       type: String,
       // default: ""

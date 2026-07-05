@@ -18,7 +18,8 @@ const {
   updatePassword,
   forgetPassword,
   resetPassword,
-  getEventsForMember
+  getEventsForMember,
+  exportSpecificUsersToExcel,
 } = require("../controllers/userController");
 
 const { protect, authorize } = require("../middleware/authMiddleware");
@@ -39,11 +40,7 @@ userRouter.get("/profile", protect, getUserProfile);
 // Edit Profile
 userRouter.put("/profile/:id", protect, updateUserProfile);
 
-userRouter.get(
-  "/:id/events",
-  protect,
-  getEventsForMember,
-);
+userRouter.get("/:id/events", protect, getEventsForMember);
 // Admin / XCom Routes
 userRouter.get("/all", protect, authorize("xcom", "board"), getUsers);
 
@@ -90,6 +87,13 @@ userRouter.delete(
   protect,
   authorize("xcom", "board", "member", "scanner"),
   deleteMember,
+);
+
+userRouter.get(
+  "/export-specific",
+  protect,
+  authorize("xcom", "board"),
+  exportSpecificUsersToExcel,
 );
 
 module.exports = userRouter;

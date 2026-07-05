@@ -4,63 +4,8 @@ const User = require('../models/UserModel');
 const QRCode = require('qrcode');
 const ExcelJS = require('exceljs');
 const {sendTicketEmail}=require('../utils/sendEmail');
-//const nodemailer = require('nodemailer');
 const { nanoid } = require('nanoid');
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
-
-// --- HELPER: Send Static Ticket Email (Fixed Image) ---
-
-/** //added send ticket email handeler in utils/sendEmail.js//
- * 
-  const sendTicketEmail = async (email, userName, ticketCode, eventTitle, qrImage) => {
-  if (!process.env.EMAIL_USER) return;
-
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-
-  // We strip the "data:image/png;base64," prefix for the attachment content
-  const base64Data = qrImage.split("base64,")[1];
-
-  const mailOptions = {
-    from: `"IEEE Student Branch" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: `Confirmation of Registration – ${eventTitle}`,
-
-    //added html in veiw/emails_Template//
-
-    html: `
-      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-        <p>Dear <strong>${userName}</strong>,</p>
-        
-        <p>This email is to confirm that we have received your registration for <strong>${eventTitle}</strong>.</p>
-        
-        <p>Please find your QR code attached below. Kindly ensure that you bring this QR code with you, as it is required for attendance and entry to the event.</p>
-        
-        <div style="margin: 20px 0; text-align: center;">
-          <img src="cid:qr-code-image" alt="QR Code" style="width: 200px; height: 200px; border: 1px solid #ddd; padding: 5px;" />
-          <p style="font-size: 14px; color: #555; font-family: monospace;">Ticket ID: ${ticketCode}</p>
-        </div>
-
-        <p>Should you have any questions or require further assistance, please do not hesitate to contact us.</p>
-        
-        <p>Best regards,<br>IEEE Team</p>
-      </div>
-    `,
-    attachments: [{
-      filename: 'ticket-qr.png',
-      content: base64Data,
-      encoding: 'base64',
-      cid: 'qr-code-image' // <--- MATCHES THE HTML 'src'
-    }]
-  };
-
-  await transporter.sendMail(mailOptions);
-};*/
 
 // ==========================================
 // 1. STUDENT ACTIONS
@@ -69,7 +14,7 @@ const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 // @desc    Submit a form & Get Ticket
 // @route   POST /api/submissions
 // @access  Private
-const submitForm = catchAsync(async (req, res) => {
+const submitForm = catchAsync(async (req, res,) => {
   const userid = req.user._id;
   const user = await User.findById(userid);
   if(!userid || !user) {
@@ -109,7 +54,7 @@ const submitForm = catchAsync(async (req, res) => {
   qrImage = await QRCode.toDataURL(ticketCode);
 
   // 6. Save Submission
-  const submission = await Submission.create({
+  const newSubmission = new Submission({
     formId,
     userId: req.user._id,
     registrantEmail: req.user.email,
@@ -117,6 +62,18 @@ const submitForm = catchAsync(async (req, res) => {
     ticketCode,
     qrImage
   });
+  try {
+    await newSubmission.save();
+  } catch (error) {
+    // pre-hook validation errors will be caught here
+    if (error.name === 'ValidationError') {
+      throw new AppError(error.message, 400);
+    }
+    if (error.code === 11000) {
+      throw new AppError('You already submitted this form', 400);
+    }
+    throw new AppError(error.message, 500);
+  }
 
   // 7. Send Email (Async)
   if (ticketCode && qrImage) {
@@ -130,7 +87,12 @@ const submitForm = catchAsync(async (req, res) => {
     ).catch(err => console.error("Email Error:", err));
   }
 
-  res.status(201).json({ message: 'Submitted successfully', ticketCode });
+  res.status(201).json({ 
+    status: 'success', 
+    message: 'Submitted successfully', 
+    ticketCode,
+    data: newSubmission 
+  });
 });
 
 // ==========================================
@@ -168,34 +130,27 @@ const scanTicket = catchAsync(async (req, res) => {
   }
 });
 
-// @desc    Get All Submissions (Table View)
-// @route   GET /api/submissions?formId=...
-// @access  Private (XCom/Board)
-
-// const getSubmissions = catchAsync(async (req, res) => {
-//   const { formId } = req.query;
-//   if (!formId) return res.status(400).json({ message: 'Form ID is required' });
-
-//   const submissions = await Submission.find({ formId })
-//     .populate('userId', 'name email phone university yearOfStudy')
-//     .sort('-createdAt');
-
-//   res.json(submissions);
-// });
-
 // @desc    Export Responses to Excel (Print Feature)
 // @route   GET /api/submissions/export?formId=...
 // @access  Private (XCom/Board)
 const exportSubmissionsToExcel = catchAsync(async (req, res) => {
   try {
-    const { formId } = req.query;
+    const { formId } = req.params;
     if (!formId) return res.status(400).json({ message: 'Form ID is required' });
-
+    
     // 1. Get Form & Submissions
     const form = await Form.findById(formId);
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found in database' });
+    }
     const submissions = await Submission.find({ formId })
       .populate('userId', 'name email phone university')
-      .sort('-createdAt');
+      .sort('-createdAt')
+      .lean();
+
+    if (!submissions || submissions.length === 0) {
+      return res.status(404).json({ message: 'No submissions found for this form' });
+    }
 
     // 2. Setup Excel
     const workbook = new ExcelJS.Workbook();
@@ -211,11 +166,13 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
     ];
 
     // Add columns dynamically based on Form questions
-    form.structure.forEach(field => {
-      if (['TextInput', 'TextArea', 'Dropdown', 'Checkbox'].includes(field.element)) {
-        columns.push({ header: field.label || 'Question', key: field.id, width: 30 });
-      }
-    });
+    if (form.structure && Array.isArray(form.structure)) {
+      form.structure.forEach(field => {
+        if (['TextInput', 'TextArea', 'Dropdown', 'Checkbox'].includes(field.element)) {
+          columns.push({ header: field.label || 'Question', key: field.id, width: 30 });
+        }
+      });
+    }
 
     worksheet.columns = columns;
     worksheet.getRow(1).font = { bold: true };
@@ -223,14 +180,25 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
     // 4. Fill Data
     submissions.forEach(sub => {
       const rowData = {
-        date: sub.createdAt.toISOString().split('T')[0],
+        date: sub.createdAt ? sub.createdAt.toISOString().split('T')[0] : '-',
         attended: sub.attended ? 'Yes' : 'No',
         userName: sub.userId?.name || 'Guest',
-        userEmail: sub.registrantEmail,
+        userEmail: sub.registrantEmail || '-',
         userPhone: sub.userId?.phone || '-'
       };
-      // Merge Dynamic Answers
-      if (sub.answers) Object.assign(rowData, sub.answers);
+
+      // Merge Dynamic Answers & Handle Arrays (like Checkboxes)
+      if (sub.answers) {
+        const processedAnswers = {};
+        for (const [key, value] of Object.entries(sub.answers)) {
+          if (Array.isArray(value)) {
+            processedAnswers[key] = value.join(' - ');
+          } else {
+            processedAnswers[key] = value;
+          }
+        }
+        Object.assign(rowData, processedAnswers);
+      }
       
       worksheet.addRow(rowData);
     });
@@ -242,6 +210,7 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
     res.status(200).end();
 
   } catch (error) {
+    console.error("Excel Export Error:", error);
     res.status(500).json({ message: error.message });
   }
 });
