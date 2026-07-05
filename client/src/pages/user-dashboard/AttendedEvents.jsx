@@ -94,7 +94,7 @@ export default function AttendedEvents() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await api.get("/users?attendedOnly=true");
+        const response = await api.get(`/users/${userData._id}/events`);
         const data = Array.isArray(response.data)
           ? response.data
           : response.data?.events || [];
@@ -123,7 +123,7 @@ export default function AttendedEvents() {
     };
 
     fetchEvents();
-  }, []);
+  }, [userData._id]);
 
   return (
     <div className="bg-white dark:bg-[#13161D] rounded-[24px] shadow-sm p-6 md:p-8">

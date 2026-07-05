@@ -8,7 +8,9 @@ import {
   Info,
   MapPin,
   Calendar,
-  Mail,
+	Mail,
+	Braces,
+  Briefcase,
   ChevronRight,
   Sparkles,
 } from "lucide-react";
@@ -23,6 +25,8 @@ const NAV_LINKS = [
   { label: "About", href: "/about", icon: Info },
   { label: "Chapters", href: "#chapters", icon: MapPin },
   { label: "Events", href: "/events", icon: Calendar, badge: "100+" },
+  { label: "Committees", href: "/committees", icon: Briefcase },
+  { label: "Dev Team", href: "/dev-team", icon: Braces },
   { label: "Contact", href: "/contact", icon: Mail },
 ];
 
@@ -68,18 +72,24 @@ const PublicNavbar = () => {
         {/* --- DESKTOP MENU (Hidden on small screens) --- */}
         <div className="hidden md:flex items-center gap-6">
           {NAV_LINKS.map((nav_link, index) => {
-            return (
-              <Link
-                key={index}
-                to={
-                  nav_link.href.startsWith("#") && !isHome
-                    ? "/" + nav_link.href
-                    : nav_link.href
-                }
-                className="text-lg text-white hover:text-primary-light transition flex items-center"
-              >
-                {nav_link.label}
-              </Link>
+						return (
+							nav_link.href.startsWith("#") && isHome ? (
+								<a className="text-lg text-white hover:text-primary-light transition flex items-center" href={`${nav_link.href}`}>
+									{nav_link.label}
+								</a>
+							): (
+	              <Link
+	                key={index}
+	                to={
+	                  nav_link.href.startsWith("#") && !isHome
+	                    ? `/${nav_link.href}`
+	                    : nav_link.href
+	                }
+	                className="text-lg text-white hover:text-primary-light transition flex items-center"
+	              >
+	                {nav_link.label}
+	              </Link>
+							)
             );
           })}
 

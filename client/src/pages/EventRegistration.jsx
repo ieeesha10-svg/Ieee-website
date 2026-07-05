@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,30 +18,13 @@ const fallbackFields = [
   { id: 'reason', type: 'textarea', label: 'Why do you want to attend?', required: true },
 ];
 
-const fallbackDetails = [
-  { label: "Date",     value: "June 15, 2026" },
-  { label: "Time",     value: "6:00 PM - 9:00 PM" },
-  { label: "Location", value: "IEEE Innovation Lab, Room 203" },
-  { label: "Seats",    value: "150 Available" },
-];
-
-const fallbackSchedule = [
-  { time: "6:00 PM", session: "Introduction to Robotics" },
-  { time: "6:45 PM", session: "Sensors & Automation Systems" },
-  { time: "7:30 PM", session: "Hands-on Session" },
-  { time: "8:30 PM", session: "Q&A Session" },
-];
-
 export default function EventRegistration() {
   const { id } = useParams();
   const location = useLocation();
 	const { user } = useAuth();
-	const fallbackTitle = "IEEE Robotics Bootcamp 2026";
-	const fallbackDescription = "Explore robotics, automation systems, and intelligent technologies through a hands-on engineering experience.";
 	
   const eventImage = location.state?.image || RegistrationImage;
-  const eventTitle = location.state?.title || fallbackTitle;
-  const eventDescription = location.state?.description || fallbackDescription;
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -53,34 +36,57 @@ export default function EventRegistration() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const fetchForm = async () => {
+    const fetchEvent = async () => {
       try {
         setLoading(true);
         setError(null);
-        const { data } = await api.get(`/forms/${id}`);
-        setFormData(data);
+        const { data } = await api.get(`/activities/${id}`);
+        const activity = data.activity;
+        const form = data.form;
+
+        const startDate = form?.startDate || null;
+        const endDate = form?.endDate || null;
+
+        const dateStr = startDate
+          ? new Date(startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+          : "";
+        const startTime = startDate
+          ? new Date(startDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+          : "";
+        const endTime = endDate
+          ? new Date(endDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+          : "";
+        const timeStr = startTime && endTime ? `${startTime} – ${endTime}` : startTime || "";
+
+        setFormData({
+          title: activity.title,
+          description: activity.content,
+          location: activity.location,
+          date: dateStr,
+          time: timeStr,
+          speakers: activity.speakers || [],
+          fields: form?.fields || fallbackFields,
+          maxSubmissions: form?.maxSubmissions || 0,
+          settings: { requiresLogin: false },
+        });
+
         const initial = {};
-        data.fields?.forEach(f => { initial[f.id] = ''; });
+        (form?.fields || fallbackFields).forEach(f => { initial[f.id] = ''; });
         setAnswers(initial);
       } catch (err) {
-        // Use fallback data during development
-        const fallback = {
-          title: eventTitle,
-          description: eventDescription,
-          fields: fallbackFields,
-          settings: { requiresLogin: false },
-        };
-        setFormData(fallback);
-        const initial = {};
-        fallbackFields.forEach(f => { initial[f.id] = ''; });
-        setAnswers(initial);
-        setError(null);
+        setError("not_found");
       } finally {
         setLoading(false);
       }
     };
-    fetchForm();
+    fetchEvent();
   }, [id]);
+
+  useEffect(() => {
+    if (error === "not_found") {
+      navigate("/not-found", { replace: true });
+    }
+  }, [error, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -166,12 +172,16 @@ export default function EventRegistration() {
     );
   }
 
+  if (error === "not_found") {
+    return null;
+  }
+
   if (error) {
     return (
       <section className="py-24">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-foreground mb-4">Registration Unavailable</h2>
-          <p className="text-muted text-lg">{error}</p>
+          <p className="text-muted text-lg">This event could not be loaded.</p>
         </div>
       </section>
     );
@@ -185,14 +195,14 @@ export default function EventRegistration() {
         className="dark:bg-[#020716] relative overflow-hidden bg-cover bg-center py-24"
         style={{ backgroundImage: `url(${eventImage})` }}
       >
-        <div className="absolute inset-0 bg-black/70" />
+        <div className="absolute inset-0 bg-black/83" />
 
         <div className="relative z-10 container mx-auto px-4">
           <h1 className="text-white text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
             {formData.title}
           </h1>
           {formData.description && (
-            <p className="text-white text-lg font-bold md:text-xl mt-3 max-w-2xl">
+            <p className="text-white md:text-lg mt-3 max-w-2xl">
               {formData.description}
             </p>
           )}
@@ -266,25 +276,50 @@ export default function EventRegistration() {
             </div>
 
             <div className="flex flex-col gap-6">
-              {fallbackDetails.map((item, index) => (
-                <div key={index} className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
-                  <span className="font-semibold tracking-wider text-primary dark:text-primary-light">{item.label}</span>
-                  <p className="text-xs text-foreground font-gotham font-medium mt-1">{item.value}</p>
+              {formData.date && (
+                <div className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
+                  <span className="font-semibold tracking-wider text-primary dark:text-primary-light">Date</span>
+                  <p className="text-xs text-foreground font-gotham font-medium mt-1">{formData.date}</p>
                 </div>
-              ))}
+              )}
+              {formData.time && (
+                <div className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
+                  <span className="font-semibold tracking-wider text-primary dark:text-primary-light">Time</span>
+                  <p className="text-xs text-foreground font-gotham font-medium mt-1">{formData.time}</p>
+                </div>
+              )}
+              {formData.location && (
+                <div className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
+                  <span className="font-semibold tracking-wider text-primary dark:text-primary-light">Location</span>
+                  <p className="text-xs text-foreground font-gotham font-medium mt-1">{formData.location}</p>
+                </div>
+              )}
+              {formData.maxSubmissions > 0 && (
+                <div className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
+                  <span className="font-semibold tracking-wider text-primary dark:text-primary-light">Seats</span>
+                  <p className="text-xs text-foreground font-gotham font-medium mt-1">{formData.maxSubmissions} Available</p>
+                </div>
+              )}
             </div>
 
-            <div>
-              <h3 className="text-lg lg:text-xl font-bold text-foreground mb-4">Schedule</h3>
-              <div className="flex flex-col gap-6">
-                {fallbackSchedule.map((item, index) => (
-                  <div key={index} className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
-                    <span className="font-semibold tracking-wider text-primary dark:text-primary-light">{item.session}</span>
-                    <p className="text-xs text-foreground font-gotham font-light mt-1">{item.time}</p>
-                  </div>
-                ))}
+            {formData.speakers?.length > 0 && (
+              <div>
+                <h3 className="text-lg lg:text-xl font-bold text-foreground mb-4">Speakers</h3>
+                <div className="flex flex-col gap-4">
+                  {formData.speakers.map((speaker, index) => (
+                    <div key={index} className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
+                      <span className="font-semibold tracking-wider text-primary dark:text-primary-light">{speaker.name}</span>
+                      {speaker.title && (
+                        <p className="text-xs text-foreground font-gotham font-light mt-1">{speaker.title}</p>
+                      )}
+                      {speaker.bio && (
+                        <p className="text-xs text-muted mt-1">{speaker.bio}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
