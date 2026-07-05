@@ -55,6 +55,18 @@ const formStyles = {
     label: "text-red-700",
     sub: "text-red-600",
   },
+  yellow: {
+    bg: "bg-yellow-50",
+    badge: "bg-yellow-500 text-white",
+    label: "text-yellow-700",
+    sub: "text-yellow-600",
+  },
+  blue: {
+    bg: "bg-blue-50",
+    badge: "bg-blue-500 text-white",
+    label: "text-blue-700",
+    sub: "text-blue-600",
+  },
 };
 
 function Skeleton() {

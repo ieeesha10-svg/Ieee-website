@@ -116,16 +116,60 @@ export function useDashboard() {
     avatarColor: pickColor(u._id),
   }));
 
-  const fc = formCounts;
-  const formStatusData = fc
-    ? [
-        { status: "Open", count: fc.activeCount ?? 0, total: fc.count ?? 0, colorClass: "green" },
-        { status: "Closed", count: fc.closedCount ?? 0, total: fc.count ?? 0, colorClass: "red" },
-      ]
-    : [
-        { status: "Open", count: 0, total: 0, colorClass: "green" },
-        { status: "Closed", count: 0, total: 0, colorClass: "red" },
-      ];
+const fc = formCounts;
+const formStatusData = fc
+  ? [
+      {
+        status: "Open",
+        count: fc.activeCount ?? 0,
+        total: fc.count ?? 0,
+        colorClass: "green",
+      },
+      {
+        status: "Closed",
+        count: fc.closedCount ?? 0,
+        total: fc.count ?? 0,
+        colorClass: "red",
+      },
+      {
+        status: "Draft",
+        count: fc.draftCount ?? 0,
+        total: fc.count ?? 0,
+        colorClass: "yellow",
+      },
+      {
+        status: "Upcoming",
+        count: fc.upcomingCount ?? 0,
+        total: fc.count ?? 0,
+        colorClass: "blue",
+      },
+    ]
+  : [
+      {
+        status: "Open",
+        count: 0,
+        total: 0,
+        colorClass: "green",
+      },
+      {
+        status: "Closed",
+        count: 0,
+        total: 0,
+        colorClass: "red",
+      },
+      {
+        status: "Draft",
+        count: 0,
+        total: 0,
+        colorClass: "yellow",
+      },
+      {
+        status: "Upcoming",
+        count: 0,
+        total: 0,
+        colorClass: "blue",
+      },
+    ];
 
   return {
     data: {

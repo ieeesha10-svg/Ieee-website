@@ -1,5 +1,6 @@
 const User = require('../models/UserModel');
 const Submission = require('../models/SubmissionModel');
+const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const ExcelJS = require('exceljs');
@@ -415,6 +416,91 @@ const exportUsersToExcel = async (req, res) => {
   }
 };
 
+const exportSpecificUsersToExcel = async (req, res) => {
+  try {
+    let userIds = req.body.userIds; // Expecting an array of user IDs in the request body
+
+    if (typeof userIds === 'string') {
+      userIds = userIds.split(',');
+    }
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ message: 'Please provide an array of userIds' });
+    }
+
+    // Filter out invalid ObjectIds to prevent errors during the query
+    const validUserIds = userIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    if (validUserIds.length === 0) {
+      return res.status(400).json({ message: 'None of the provided IDs are valid.' });
+    }
+
+    const users = await User.find({ _id: { $in: validUserIds } })
+      .sort('-createdAt')
+      .lean();
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'No users found with the provided IDs' });
+    }
+
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'No users found with the provided IDs' });
+    }
+
+    // CREATE EXCEL WORKBOOK
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Selected Users');
+
+    // Define Columns
+    worksheet.columns = [
+      { header: 'Name', key: 'name', width: 25 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'Role', key: 'role', width: 10 },
+      { header: 'Phone', key: 'phone', width: 15 },
+      { header: 'University', key: 'university', width: 20 },
+      { header: 'Year', key: 'yearOfStudy', width: 10 },
+      { header: 'Committee', key: 'committee', width: 15 }
+    ];
+
+    // Style the Header Row (Bold & Yellow)
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFE0' } // Light Yellow
+    };
+
+    // Add Data Rows
+    users.forEach(user => {
+      worksheet.addRow({
+        name: user.name || 'Unknown',
+        email: user.email || '-',
+        role: user.role || '-',
+        phone: user.phone || '-',
+        university: user.university || '-',
+        yearOfStudy: user.yearOfStudy || '-',
+        committee: user.committee || '-'
+      });
+    });
+
+    // SEND RESPONSE (Download)
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=selected_users_export.xlsx'
+    );
+
+    await workbook.xlsx.write(res);
+    return res.status(200).end();
+
+  } catch (error) {
+    console.error("Export Specific Users Error:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 //admins-members CRUD operations
 // @desc    Update User Profile (Self-Service)
 // @route   PUT /api/users/:id
@@ -712,5 +798,6 @@ module.exports = {
   updatePassword,
   forgetPassword,
   resetPassword,
-  getEventsForMember
+  getEventsForMember,
+  exportSpecificUsersToExcel
 };
