@@ -31,8 +31,8 @@ const createActivity = catchAsync(async (req, res) => {
   // default form fields for event/workshop
   if (!fields) {
     fields = [
-      { id: "name", label: "Name", type: "text", required: true },
-      { id: "email", label: "Email", type: "email", required: true }
+      { id: "name", label: "Name", type: "TextInput", required: true },
+      { id: "email", label: "Email", type: "TextInput", required: true }
     ];
   }
   // default form date range: registration opens now, closes 1 day before event
@@ -40,6 +40,7 @@ const createActivity = catchAsync(async (req, res) => {
   if (!endDate) endDate = new Date((activity.createdAt || Date.now()) + 6.5 * 24 * 60 * 60 * 1000);
   // Create associated form
   const form = await Form.create({
+    title: `${activity.title} Registration Form`,
     activityID: activity._id,
     createdBy: req.user._id,
     fields,
@@ -53,15 +54,42 @@ const createActivity = catchAsync(async (req, res) => {
 
 const getActivities = catchAsync(async (req, res) => {
   const activities = await Activity.find();
+  // pagination feature
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+  
   const numberOfActivities = activities.length;
-  res.json({ success: true, length: numberOfActivities, activities : activities.map(activity => ({
-    _id: activity._id,
-    title: activity.title,
-    content: activity.content,
-    type: activity.type,
-    speakers: activity.speakers,
-    location: activity.location
-  })) });
+  const paginatedActivities = activities.slice(skip, skip + limit);
+
+  const formattedActivities = await Promise.all(
+    paginatedActivities.map(async (activity) => {
+      const form = await Form.findOne({ activityID: activity._id });
+      return {
+        _id: activity._id,
+        title: activity.title,
+        content: activity.content,
+        type: activity.type,
+        speakers: activity.speakers,
+        location: activity.location,
+        startDate: activity.startDate,
+        endDate: activity.endDate,
+        createdAt: activity.createdAt,
+        status: form ? form.status : "No Form Found" 
+      };
+    })
+  );
+
+  res.json({ 
+    success: true, 
+    pagination: {
+      totalItems: numberOfActivities,
+      totalPages: Math.ceil(numberOfActivities / limit),
+      currentPage: page,
+      itemsPerPage: limit
+    },
+    activities: formattedActivities
+  });
 });
 
 const getActivityById = catchAsync(async (req, res) => {

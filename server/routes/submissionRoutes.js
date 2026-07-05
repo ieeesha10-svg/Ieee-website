@@ -3,7 +3,10 @@ const submissionRouter = express.Router();
 const { 
   submitForm, 
   scanTicket, 
-  getSubmissions, 
+  getUserSubmission,
+  getSubmissions,
+  getSubmissionsForForm,
+  editSubmission, 
   exportSubmissionsToExcel 
 } = require('../controllers/submissionController');
 
@@ -16,7 +19,11 @@ submissionRouter.post('/', submitForm);
 submissionRouter.post('/scan', authorize('xcom', 'scanner', 'board'), scanTicket);
 
 // 3. View & Export (Admins Only)
-submissionRouter.get('/', authorize('xcom', 'board'), getSubmissions);
 submissionRouter.get('/export', authorize('xcom', 'board'), exportSubmissionsToExcel);
+
+submissionRouter.get('/:userid/:formid', protect, getUserSubmission);
+submissionRouter.get('/form/:formId', authorize('xcom', 'board'), getSubmissionsForForm);
+submissionRouter.get('/', authorize('xcom', 'board'), getSubmissions);
+// submissionRouter.put('/:userid/:formid', authorize('xcom', 'board'), editSubmission);
 
 module.exports = submissionRouter; 

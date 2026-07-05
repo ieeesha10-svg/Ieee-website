@@ -42,11 +42,11 @@
 const mongoose = require('mongoose');
 
 const emailLogSchema = new mongoose.Schema({
-  // sendBy: { 
-  //   type: mongoose.Schema.Types.ObjectId, 
-  //   ref: 'User', 
-  //   required: true 
-  // },
+  sendBy: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
+  },
   email: { 
     type: String, 
     required: true 

@@ -1,10 +1,48 @@
 const mongoose = require('mongoose');
 
 const fieldSchema = new mongoose.Schema({
-  id: { type: String, required: true, validate: { validator: (v) => typeof v === 'string' && v.trim() !== '', message: 'ID is required and must be a non-empty string' } },
-  label: { type: String, required: true, validate: { validator: (v) => typeof v === 'string' && v.trim() !== '', message: 'Label is required and must be a non-empty string' } },
-  type: { type: String, required: true, enum: ['TextInput', 'TextArea', 'Dropdown', 'Checkbox'] },
-  required: { type: Boolean, default: false, validate: { validator: (v) => typeof v === 'boolean', message: 'Required must be a boolean' } },
+  id: { 
+    type: String, 
+    required: true, 
+    validate: { 
+      validator: (v) => typeof v === 'string' && v.trim() !== '', 
+      message: 'ID is required and must be a non-empty string' 
+    } 
+  },
+  label: { 
+    type: String, 
+    required: true, 
+    validate: { 
+      validator: (v) => typeof v === 'string' && v.trim() !== '', 
+      message: 'Label is required and must be a non-empty string' 
+    } 
+  },
+  type: { 
+    type: String, 
+    required: true, 
+    enum: ['TextInput', 'TextArea', 'Dropdown', 'Checkbox'] 
+  },
+  required: { 
+    type: Boolean, 
+    default: true, 
+    validate: { 
+      validator: (v) => typeof v === 'boolean', 
+      message: 'Required must be a boolean' 
+    } 
+  },
+  
+  options: {
+    type: [String],
+    validate: {
+      validator: function(v) {
+        if (['Dropdown', 'Checkbox'].includes(this.type)) {
+          return Array.isArray(v) && v.length > 0;
+        }
+        return true; 
+      },
+      message: 'Options array is required and must have at least one item for Dropdown and Checkbox types'
+    }
+  }
 });
 
 const formSchema = new mongoose.Schema({
@@ -17,7 +55,7 @@ const formSchema = new mongoose.Schema({
   },
   status: { 
     type: String,
-    enum: ["Active", "Closed", "Draft"],
+    enum: ["Active", "Closed", "Draft", "upcoming"],
     default: "Draft"
   },
   title: String,
