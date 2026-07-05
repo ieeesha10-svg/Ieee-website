@@ -2,8 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
-
-const ALLOWED_TYPES = ["TextInput", "TextArea", "Dropdown", "Checkbox"];
+import { ALLOWED_TYPES } from "../../data/fieldTypes";
 
 const INITIAL_FORM_DATA = {
   title: "",

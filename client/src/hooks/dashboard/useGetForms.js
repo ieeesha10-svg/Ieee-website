@@ -7,9 +7,11 @@ export function useForms() {
   const { pathname } = useLocation();
   const [forms, setForms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [totalResponses, setTotalResponses] = useState(0);
 
   useEffect(() => {
     setIsLoading(true);
+
     const fetchForms = async () => {
       try {
         const response = await api.get("/form");
@@ -30,11 +32,20 @@ export function useForms() {
               }
             }
 
+            let responses = 0;
+            try {
+              const subRes = await api.get(`/submissions/form/${form._id}`);
+              responses = subRes.data.total ?? 0;
+            } catch {
+              // fallback to 0
+            }
+
             return {
               id: form._id,
               activityID: form.activityID,
               title: form.activityID ? "'" + title + "' Event Form" : title,
-              responses: form.responses ?? 0,
+              responses,
+              fields: form.fields || [],
               createdAt: form.createdAt
                 ? new Date(form.createdAt).toLocaleDateString("en-US", {
                     month: "short",
@@ -53,7 +64,18 @@ export function useForms() {
         setIsLoading(false);
       }
     };
+
+    const fetchTotalResponses = async () => {
+      try {
+        const res = await api.get("/submissions");
+        setTotalResponses(res.data.totalCount ?? 0);
+      } catch {
+        // fallback to 0
+      }
+    };
+
     fetchForms();
+    fetchTotalResponses();
   }, [pathname]);
 
   const deleteForm = async (id) => {
@@ -73,21 +95,27 @@ export function useForms() {
   };
 
   const toggleFormStatus = async (id) => {
+    const form = forms.find((f) => f.id === id);
+    const becomingOpen = !form?.isOpen;
+
     setForms((prev) =>
       prev.map((form) =>
-        form.id === id ? { ...form, isOpen: !form.isOpen } : form
+        form.id === id ? { ...form, isOpen: becomingOpen } : form
       )
     );
     try {
       await api.put(`/form/${id}/toggle`);
+      toast.success(
+        `"${form?.title || "Form"}" is now ${becomingOpen ? "open" : "closed"}`
+      );
     } catch (error) {
       console.error("Error toggling form status:", error);
+      toast.error("Failed to toggle form status");
     }
   };
 
   const openCount = forms.filter((f) => f.isOpen).length;
   const closedCount = forms.filter((f) => !f.isOpen).length;
-  const totalResponses = forms.reduce((sum, f) => sum + f.responses, 0);
 
   return {
     forms,
