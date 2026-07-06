@@ -1,10 +1,8 @@
-import React, {useState} from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom';
 import Button from './Button'
-import ImageSkeleton from './skeletons/ImageSkeleton.jsx';
 
 export default function EventsListCard({ type = "upcoming", id, image, badge, title, dateTime, attendees, description, isRegistered }) {
-	const [imgLoaded, setImgLoaded] = useState(false);
   const isUpcoming = type === "upcoming"
 
   const formattedDate = dateTime && typeof dateTime === "object"
@@ -19,10 +17,8 @@ export default function EventsListCard({ type = "upcoming", id, image, badge, ti
             Registered
           </div>
         )}
-      	{!imgLoaded && <ImageSkeleton />}
 				<img
           src={image}
-					onLoad={() => setImgLoaded(true)}
           alt={title}
           className="w-full h-full object-cover"
         />
