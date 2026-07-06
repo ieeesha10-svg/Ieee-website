@@ -27,7 +27,7 @@ export default function ChapterCard({ title, icon, branch, body, activeMembers, 
 					<span className="text-2xl text-primary">{activeMembers}+</span>
 					<span className="text-sm text-muted">Active Members</span>
 				</div>
-				<Button variant="link">Explore</Button>
+				{/* <Button variant="link">Explore</Button>*/}
 			</div>
 		</div>
 	</div>
