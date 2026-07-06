@@ -123,7 +123,7 @@ const toggleFormStatus = catchAsync(async (req, res) => {
     form.status = form.status === 'Active' ? 'Closed' : 'Active';
     await form.save();
 
-    res.json({ message: `Form is now ${form.settings.isActive ? 'Active' : 'Closed'}` });
+    res.json({ message: `Form is now ${form.status}` });
 });
 
 module.exports = { 
