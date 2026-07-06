@@ -7,7 +7,7 @@ import {
   Lock,
   ArrowRight,
 } from "lucide-react";
-import { FaFacebook, FaInstagram, FaLinkedin, FaDiscord } from "react-icons/fa";
+import { SOCIAL_MEDIA } from '../data/socialMedia';
 import Badge from '../components/Badge'
 
 function InfoCard({ Icon, label, value, subtext }) {
@@ -31,13 +31,6 @@ const INFO_CARDS = [
   { Icon: Mail,    label: "EMAIL US",   value: "ieee@university.edu.eg",   subtext: "We reply within 24 hours" },
   { Icon: MapPin,  label: "VISIT US",   value: "Faculty of Engineering",   subtext: "Shorouk Academy, Shorouk" },
   { Icon: Share2,  label: "FOLLOW US",  value: "@ieee.studentbranch",      subtext: "Active on all platforms" },
-];
-
-const SOCIAL_MEDIA = [
-  { Icon: FaFacebook, href: "https://www.facebook.com/IEEE.ElShoroukAcademy.SB", title: "Facebook", subtitle: "IEEE Student Branch", linkLabel: "Follow Page" },
-  { Icon: FaInstagram, href: "https://www.instagram.com/ieee.sha.sb/", title: "Instagram", subtitle: "@ieee.studentbranch", linkLabel: "Follow Us" },
-  { Icon: FaLinkedin, href: "https://www.linkedin.com/company/ieee-el-shorouk-academy-student-branch/ ", title: "LinkedIn", subtitle: "IEEE Student Branch", linkLabel: "Connect" },
-  { Icon: FaDiscord, href: "https://discord.gg/ieee-sb", title: "Discord", subtitle: "IEEE SB Community", linkLabel: "Join Server" },
 ];
 
 function SocialCard({ Icon, href, title, subtitle, linkLabel }) {
