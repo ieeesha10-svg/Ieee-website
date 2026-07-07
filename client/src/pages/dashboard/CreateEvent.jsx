@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useEvents } from "../../hooks/dashboard/useEvents";
 import { FIELD_TYPE_OPTIONS } from "../../data/fieldTypes";
 import SectionCard from "../../components/SectionCard";
+import RequiredAsterisk from "../../components/RequiredAsterisk";
 
 const EVENT_TYPES = ["general", "event", "workshop", "webinar"];
 const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Workshop", webinar: "Webinar" };
@@ -124,7 +125,7 @@ export default function CreateEvent() {
   };
 
   return (
-    <div className="min-h-screen bg-main p-4 md:p-6 space-y-5">
+    <div className="min-h-screen bg-main p-4 md:p-6 space-y-5 mx-auto max-w-4xl">
       {/* Page Header */}
       <div className="flex items-center gap-3">
         <button
@@ -143,7 +144,7 @@ export default function CreateEvent() {
         <h2 className="text-base font-bold text-foreground mb-5">Event Details</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Title</label>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Title <RequiredAsterisk /></label>
             <input value={form.title} onChange={(e) => set("title", e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Event title" />
           </div>
 
@@ -155,13 +156,13 @@ export default function CreateEvent() {
               </select>
             </div>
             <div>
-              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Location</label>
+              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Location <RequiredAsterisk /></label>
               <input value={form.location} onChange={(e) => set("location", e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Event location" />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Description</label>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Description <RequiredAsterisk /></label>
             <textarea value={form.content} onChange={(e) => set("content", e.target.value)} rows={3} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none" placeholder="Event description" />
           </div>
         </div>

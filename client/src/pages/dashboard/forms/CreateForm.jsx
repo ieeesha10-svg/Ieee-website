@@ -4,6 +4,7 @@ import { X, GripVertical, Check, Trash2, Loader2, ArrowLeft } from "lucide-react
 import { useCreateForm } from "../../../hooks/dashboard/useCreateForm";
 import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
 import SectionCard from "../../../components/SectionCard";
+import RequiredAsterisk from "../../../components/RequiredAsterisk";
 
 const FORM_TYPE_OPTIONS = [
   { value: "", label: "Select a form type" },
@@ -157,7 +158,7 @@ export default function CreateForm() {
   };
 
   return (
-    <div className="min-h-screen bg-main p-4 md:p-6 space-y-5">
+    <div className="min-h-screen bg-main p-4 md:p-6 space-y-5 mx-auto max-w-4xl">
       {/* Page Header */}
       <div className="flex items-center gap-3">
         <button
@@ -170,7 +171,7 @@ export default function CreateForm() {
         </button>
         <div>
           <h1 className="text-lg font-bold text-foreground">Create New Form</h1>
-          <p className="text-sm text-muted">Build a custom form for registrations or surveys</p>
+          {/* <p className="text-sm text-muted">Build a custom form for registrations or surveys</p>*/}
         </div>
       </div>
 
@@ -183,7 +184,7 @@ export default function CreateForm() {
               htmlFor="form-title"
               className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5"
             >
-              Form Title <span className="text-red-500">*</span>
+              Form Title <RequiredAsterisk />
             </label>
             <input
               id="form-title"
@@ -203,7 +204,7 @@ export default function CreateForm() {
               htmlFor="form-type"
               className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5"
             >
-              Form Type <span className="text-red-500">*</span>
+              Form Type <RequiredAsterisk />
             </label>
             <select
               id="form-type"
@@ -415,7 +416,7 @@ export default function CreateForm() {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !formData.title?.trim() || !formData.type}
           className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isSubmitting && <Loader2 size={16} className="animate-spin" />}

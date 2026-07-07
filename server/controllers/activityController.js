@@ -19,25 +19,24 @@ const createActivity = catchAsync(async (req, res) => {
     throw new AppError("Title, content, and location are required", 400);
   }
   const activitySpeakers = speakers || [];
+  if (!startDate) startDate = new Date();
+  if (!endDate) endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const activity = await Activity.create({
     title,
     content,
-    type, // default is "general" as per schema
+    type,
     speakers: activitySpeakers,
     location,
-    // registrationEnabled: isRegistrationEnabled
+    startDate,
+    endDate,
   });
 
-  // default form fields for event/workshop
   if (!fields) {
     fields = [
       { id: "name", label: "Name", type: "TextInput", required: true },
       { id: "email", label: "Email", type: "TextInput", required: true }
     ];
   }
-  // default form date range: registration opens now, closes 1 day before event
-  if (!startDate) startDate = new Date();
-  if (!endDate) endDate = new Date((activity.createdAt || Date.now()) + 6.5 * 24 * 60 * 60 * 1000);
   // Create associated form
   const form = await Form.create({
     title: `${activity.title} Registration Form`,
@@ -101,13 +100,27 @@ const getActivityById = catchAsync(async (req, res) => {
 });
 
 const updateActivity = catchAsync(async (req, res) => {
-  // if inputs are not provided, they will be ignored and not updated
   const activity = await Activity.findByIdAndUpdate(
     req.params.id,
     req.body,
     { new: true }
   );
   if (!activity) throw new AppError("Activity not found", 404);
+
+  if (req.body.fields || req.body.startDate || req.body.endDate || req.body.maxSubmissions) {
+    const formUpdates = {};
+    if (req.body.fields) formUpdates.fields = req.body.fields;
+    if (req.body.startDate) formUpdates.startDate = req.body.startDate;
+    if (req.body.endDate) formUpdates.endDate = req.body.endDate;
+    if (req.body.maxSubmissions !== undefined) formUpdates.maxSubmissions = req.body.maxSubmissions;
+
+    await Form.findOneAndUpdate(
+      { activityID: activity._id },
+      formUpdates,
+      { new: true }
+    );
+  }
+
   res.json({ success: true, activity });
 });
 

@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { SOCIAL_MEDIA } from "../data/socialMedia";
 
 const QUICK_LINKS = [
   { label: "About", to: "/about" },
@@ -73,36 +74,19 @@ export default function Footer() {
 
           {/* Social Icons */}
           <div className="flex flex-row items-center gap-4">
-            <a
-              href="https://www.facebook.com/IEEE.ElShoroukAcademy.SB"
-              className="hover:scale-110 transition-transform duration-300"
-            >
-              <img
-                src="/icons/facebook.svg"
-                alt="Facebook"
-                className="w-[32px] h-[32px] lg:w-[40px] lg:h-[40px]"
-              />
-            </a>
-            <a
-              href="https://www.instagram.com/ieee.sha.sb"
-              className="hover:scale-110 transition-transform duration-300"
-            >
-              <img
-                src="/icons/instagram.svg"
-                alt="Instagram"
-                className="w-[32px] h-[32px] lg:w-[40px] lg:h-[40px]"
-              />
-            </a>
-            <a
-              href="#"
-              className="hover:scale-110 transition-transform duration-300"
-            >
-              <img
-                src="/icons/x.svg"
-                alt="X"
-                className="w-[32px] h-[32px] lg:w-[40px] lg:h-[40px]"
-              />
-            </a>
+            {SOCIAL_MEDIA.slice(0, 3).map(({ Icon, href, title }) => (
+              <a
+                key={title}
+                href={href}
+                className="hover:scale-110 transition-transform duration-300"
+                aria-label={title}
+              >
+                <Icon
+                  size={25}
+                  className="text-primary-dark dark:text-primary-light lg:w-[40px] lg:h-[40px]"
+                />
+              </a>
+            ))}
           </div>
 
           <a

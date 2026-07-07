@@ -13,6 +13,11 @@ const INITIAL_FORM_DATA = {
   maxSubmissions: "",
 };
 
+const DEFAULT_FIELDS = [
+  { id: "name", label: "Full Name", type: "TextInput", required: true },
+  { id: "email", label: "Email", type: "TextInput", required: true },
+];
+
 function slugify(str) {
   return str.toLowerCase().trim().replace(/\s+/g, "_");
 }
@@ -22,7 +27,7 @@ export function useCreateForm() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({ ...INITIAL_FORM_DATA });
-  const [fieldsList, setFieldsList] = useState([]);
+  const [fieldsList, setFieldsList] = useState(DEFAULT_FIELDS);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
