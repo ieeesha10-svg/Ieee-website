@@ -9,7 +9,7 @@ require("dotenv").config({quiet: true});
 const app = express();
 connectDB();
 
-const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:3000")
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:3000,https://www.ieeesha.org")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
