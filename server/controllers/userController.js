@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const ExcelJS = require('exceljs');
-const {sendOTPEmail, resetPasswordEmailToken} = require('../utils/sendEmail.js');
+const { sendOTPEmail, resetPasswordEmailToken } = require('../utils/sendEmail.js');
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware.js');
 // --- HELPER: Generate JWT Token ---
 const generateToken = (id) => {
@@ -24,7 +24,7 @@ const loginUser = catchAsync(async (req, res) => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
-  
+
   if (!user || !(await bcrypt.compare(password, user.password))) {
     throw new AppError('Invalid email or password', 401);
   }
@@ -34,10 +34,13 @@ const loginUser = catchAsync(async (req, res) => {
   }
 
   const token = generateToken(user._id);
+  const isProduction = process.env.NODE_ENV !== 'development';
+
   res.cookie('jwt', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV !== 'development', // HTTPS in production
+    secure: isProduction, // HTTPS in production
     sameSite: 'lax',
+    domain: isProduction ? '.ieeesha.org' : undefined, // THE MISSING PIECE
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
 
@@ -54,8 +57,13 @@ const loginUser = catchAsync(async (req, res) => {
 // @route   POST /api/users/logout
 // @access  Public
 const logoutUser = (req, res) => {
+  const isProduction = process.env.NODE_ENV !== 'development';
+
   res.cookie('jwt', '', {
     httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax',
+    domain: isProduction ? '.ieeesha.org' : undefined, // MUST MATCH TO CLEAR IT
     expires: new Date(0)
   });
   res.status(200).json({ message: 'Logged out' });
@@ -99,16 +107,16 @@ const getUserProfile = async (req, res) => {
 // @access  Public
 const registerUser = async (req, res) => {
   try {
-    const { 
+    const {
       name, email, password, confirmPassword,
       phone, age, university, college, yearOfStudy, interests, role
     } = req.body;
 
-    if(password !== confirmPassword){
+    if (password !== confirmPassword) {
       throw new AppError('Passwords do not match', 400);
     }
 
-    const userExists = await User.findOne({email : email.toLowerCase()});
+    const userExists = await User.findOne({ email: email.toLowerCase() });
     if (userExists) {
       throw new AppError('User already exists', 400);
     }
@@ -144,7 +152,7 @@ const registerUser = async (req, res) => {
       throw new AppError("User registered, but failed to send OTP email.", 500);
     }
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: "Registration successful. Please check your email for the OTP.",
       email: user.email
     });
@@ -245,15 +253,15 @@ const getUsers = async (req, res) => {
     // --- A. FORM PARTICIPATION LOGIC ---
     if (req.query.formId) {
       const submissionQuery = { formId: req.query.formId };
-      
+
       // Filter by Attendance (Scanned users only)
       if (req.query.attendedOnly === 'true') {
         submissionQuery.attended = true;
       }
-      
+
       const submissions = await Submission.find(submissionQuery).select('registrantEmail');
       const registrantEmails = submissions.map(sub => sub.registrantEmail);
-      
+
       // Filter Users by these emails
       queryObj.email = { $in: registrantEmails };
     }
@@ -307,11 +315,11 @@ const getUsers = async (req, res) => {
     const users = await query;
     const count = await User.countDocuments(queryObj);
 
-    res.json({ 
-      users, 
-      total: count, 
-      page, 
-      pages: Math.ceil(count / limit) 
+    res.json({
+      users,
+      total: count,
+      page,
+      pages: Math.ceil(count / limit)
     });
 
   } catch (error) {
@@ -506,7 +514,7 @@ const exportSpecificUsersToExcel = async (req, res) => {
 // @route   PUT /api/users/:id
 // @access  Private (User can only update their own profile)
 const updateUserProfile = catchAsync(async (req, res) => {
-  if(req.user.id != req.params.id){
+  if (req.user.id != req.params.id) {
     throw new AppError('HACKER : You can only update your own profile', 403);
   }
   const user = await User.findById(req.user.id);
@@ -530,7 +538,7 @@ const updateUserProfile = catchAsync(async (req, res) => {
   restrictedFields.forEach((field) => {
     if (req.body[field] !== undefined) {
       hasRestrictedField = true;
-    } 
+    }
   });
 
   if (hasRestrictedField) {
@@ -548,7 +556,7 @@ const updateUserProfile = catchAsync(async (req, res) => {
     "committee",
     "optionalData",
   ];
-  
+
   const updates = {};
   allowedUpdates.forEach((field) => {
     if (req.body[field] !== undefined) {
@@ -587,10 +595,10 @@ const updateUserProfile = catchAsync(async (req, res) => {
 const updatePassword = catchAsync(async (req, res) => {
   const userId = req.user.id;
   const user = await User.findById(userId).select('+password');
-    if (!user) {
-      throw new AppError('User not found', 404);
-    }
-  
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
   const { currentPassword, newPassword, confirmNewPassword } = req.body;
 
   if (!currentPassword || !newPassword || !confirmNewPassword) {
@@ -619,7 +627,7 @@ const updatePassword = catchAsync(async (req, res) => {
 
 const forgetPassword = catchAsync(async (req, res) => {
   const { email } = req.body;
-  
+
   const user = await User.findOne({ email });
   if (!user) {
     throw new AppError('User not found', 404);
@@ -644,7 +652,7 @@ const forgetPassword = catchAsync(async (req, res) => {
 const resetPassword = catchAsync(async (req, res) => {
   const { email, newPassword, confirmNewPassword } = req.body;
   const { token } = req.query;
-  
+
   if (!token || !email || !newPassword || !confirmNewPassword) {
     throw new AppError('Please provide all required fields', 400);
   }
@@ -675,107 +683,109 @@ const resetPassword = catchAsync(async (req, res) => {
 });
 
 // get all members for member, board, xcom, scanner
-const getAllMembers=catchAsync(async(req,res,next)=>{
-  const allUsers=await User.find();
-  if(!allUsers||allUsers.length===0){
-    return next(new AppError("No users to show",400));
+const getAllMembers = catchAsync(async (req, res, next) => {
+  const allUsers = await User.find();
+  if (!allUsers || allUsers.length === 0) {
+    return next(new AppError("No users to show", 400));
   }
   res.status(200).json({
-    dataLength:allUsers.length,
-    data:allUsers
+    dataLength: allUsers.length,
+    data: allUsers
   });
 });
 
 //create member
-const createMember=catchAsync(async(req,res,next)=>{
-    const allowedRoles=User.schema.path("role").enumValues;
-  const {name,email,password,role,phone,age,university,college,yearOfStudy,interests,committee,optionalData}=req.body;
-  if(!name || !email || !password || !password || !role){
-    return next(new AppError("Please Provide name, email, role and password",400));
+const createMember = catchAsync(async (req, res, next) => {
+  const allowedRoles = User.schema.path("role").enumValues;
+  const { name, email, password, role, phone, age, university, college, yearOfStudy, interests, committee, optionalData } = req.body;
+  if (!name || !email || !password || !password || !role) {
+    return next(new AppError("Please Provide name, email, role and password", 400));
   }
-  if(!allowedRoles.includes(role)){
-      return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`,400 ));}
-  const exists=await User.findOne({email:email});
-  if(exists){
-    return next(new AppError('Member already exists',400));
+  if (!allowedRoles.includes(role)) {
+    return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`, 400));
   }
-  const newMember=await User.create({
-    name:name,
-    email:email,
-    password:password,
-    role:role,
-    phone:phone,
-    age:age,
-    university:university,
-    college:college,
-    yearOfStudy:yearOfStudy,
+  const exists = await User.findOne({ email: email });
+  if (exists) {
+    return next(new AppError('Member already exists', 400));
+  }
+  const newMember = await User.create({
+    name: name,
+    email: email,
+    password: password,
+    role: role,
+    phone: phone,
+    age: age,
+    university: university,
+    college: college,
+    yearOfStudy: yearOfStudy,
     interests,
-    committee:committee,
-    optionalData:optionalData
+    committee: committee,
+    optionalData: optionalData
   });
   res.status(201).json({
-    status:'success',
-      message:'Member created successfly',
-      data:newMember
+    status: 'success',
+    message: 'Member created successfly',
+    data: newMember
   });
 });
 
 //get member
-const getMember=catchAsync(async(req,res,next)=>{
-  const member=await User.findById(req.params.id);
-  if(!member){
-    return next(new AppError("Member not found",400));
+const getMember = catchAsync(async (req, res, next) => {
+  const member = await User.findById(req.params.id);
+  if (!member) {
+    return next(new AppError("Member not found", 400));
   }
   res.status(200).json({
-    status:'success',
-    data:member
+    status: 'success',
+    data: member
   });
 });
 // upgrade member role 
-const upgradeMemberRole=catchAsync(async(req,res,next)=>{
-  const {role}=req.body;
-  const allowedRoles=User.schema.path("role").enumValues;
-  if(!role){
-     return next(new AppError("Role is required",400));
+const upgradeMemberRole = catchAsync(async (req, res, next) => {
+  const { role } = req.body;
+  const allowedRoles = User.schema.path("role").enumValues;
+  if (!role) {
+    return next(new AppError("Role is required", 400));
   }
-  if(!allowedRoles.includes(role)){
-    return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`,400 ));}
-  const updatedMember=await User.findByIdAndUpdate(req.params.id,{role},{new:true});
-  if(!updatedMember){
-    return next(new AppError("Member not found",400));
+  if (!allowedRoles.includes(role)) {
+    return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`, 400));
+  }
+  const updatedMember = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
+  if (!updatedMember) {
+    return next(new AppError("Member not found", 400));
   }
   res.status(200).json({
-    status:'success',
-    message:'Member role updated successfly',
-    data:updatedMember
+    status: 'success',
+    message: 'Member role updated successfly',
+    data: updatedMember
   });
 });
 
 //delete member 
-const deleteMember=catchAsync(async(req,res,next)=>{
-  const member=await User.findByIdAndDelete(req.params.id);
-  if(!member){
-    return next(new AppError("Member not found",400));
+const deleteMember = catchAsync(async (req, res, next) => {
+  const member = await User.findByIdAndDelete(req.params.id);
+  if (!member) {
+    return next(new AppError("Member not found", 400));
   }
   res.status(204).json({
-    status:'success',
-    message:'Member deleted successfly'
+    status: 'success',
+    message: 'Member deleted successfly'
   });
 });
 
-const getEventsForMember=catchAsync(async(req,res,next)=>{
-  const userId=req.params.id;
-  const user =await User.findById(userId);
-  if(!user){
-    return next(new AppError("User not found",400));
+const getEventsForMember = catchAsync(async (req, res, next) => {
+  const userId = req.params.id;
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new AppError("User not found", 400));
   }
-  const submissions=await Submission.find({registrantEmail:user.email});
-  if(!submissions||submissions.length===0){
-    return next(new AppError("No events found for this member",400));
+  const submissions = await Submission.find({ registrantEmail: user.email });
+  if (!submissions || submissions.length === 0) {
+    return next(new AppError("No events found for this member", 400));
   }
   res.status(200).json({
-    status:'success',
-    data:submissions
+    status: 'success',
+    data: submissions
   });
 })
 
