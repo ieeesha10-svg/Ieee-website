@@ -38,10 +38,10 @@ const loginUser = catchAsync(async (req, res) => {
 
   res.cookie('jwt', token, {
     httpOnly: true,
-    secure: isProduction, // HTTPS in production
-    sameSite: 'lax',
-    domain: isProduction ? '.ieeesha.org' : undefined, // THE MISSING PIECE
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    secure: isProduction, // MUST be true in production for 'none' to work
+    sameSite: isProduction ? 'none' : 'lax', // 'none' allows the AJAX POST
+    domain: isProduction ? '.ieeesha.org' : undefined,
+    maxAge: 30 * 24 * 60 * 60 * 1000
   });
 
   res.json({
@@ -57,16 +57,16 @@ const loginUser = catchAsync(async (req, res) => {
 // @route   POST /api/users/logout
 // @access  Public
 const logoutUser = (req, res) => {
-  const isProduction = process.env.NODE_ENV !== 'development';
-
-  res.cookie('jwt', '', {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'lax',
-    domain: isProduction ? '.ieeesha.org' : undefined, // MUST MATCH TO CLEAR IT
-    expires: new Date(0)
-  });
-  res.status(200).json({ message: 'Logged out' });
+    const isProduction = process.env.NODE_ENV !== 'development';
+    
+    res.cookie('jwt', '', {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        domain: isProduction ? '.ieeesha.org' : undefined, 
+        expires: new Date(0)
+    });
+    res.status(200).json({ message: 'Logged out' });
 };
 
 // @desc    Get current user profile
