@@ -13,13 +13,14 @@ const path = require('path');
 // --- UPDATED TRANSPORTER (Bypasses Render IPv6 block) ---
 const getTransport = () => nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, 
+  port: 587, // <--- Change to 587
+  secure: false, // <--- MUST be false for 587
+  requireTLS: true, // <--- Add this to force encryption
   auth: {
     user: process.env.EMAIL_USER, 
     pass: process.env.EMAIL_PASS
   },
-  family: 4 // Forces IPv4 to prevent ENETUNREACH errors on Render
+  family: 4 
 });
 
 // load html templates
