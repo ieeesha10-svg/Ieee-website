@@ -1,99 +1,104 @@
-const nodemailer = require('nodemailer');
-
-const dns = require('dns'); 
-
-// Force Node.js to strictly prefer IPv4 globally
-dns.setDefaultResultOrder('ipv4first'); 
-
+const { Resend } = require('resend');
+const dotenv = require('dotenv').config()
 const { getEmailFooter } = require('./emailTemplates');
 const fs = require('fs');
-const htmlToText = require('html-to-text');
 const path = require('path');
 
-// --- UPDATED TRANSPORTER (Bypasses Render IPv6 block) ---
-const getTransport = () => nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587, // <--- Change to 587
-  secure: false, // <--- MUST be false for 587
-  requireTLS: true, // <--- Add this to force encryption
-  auth: {
-    user: process.env.EMAIL_USER, 
-    pass: process.env.EMAIL_PASS
-  },
-  family: 4 
-});
+// Initialize Resend with your API Key from Render Environment Variables
+const resend = new Resend(process.env.RESEND_API_KEY);
+// const resend = new Resend(process.env.RESEND_API_KEY);
 
-// load html templates
+// The email address you verified in Resend (e.g., noreply@ieeesha.org)
+const SENDER_EMAIL = 'IEEE SHA Student Branch <noreply@ieeesha.org>'; 
+
+// Load HTML templates from your views folder
 const loadTemplate = (templateName) => {
   return fs.readFileSync(
     path.join(__dirname, '../view/emails_Templates', templateName), 'utf-8'
   )
 }
 
-// OTP email
+// 1. OTP Email
 const sendOTPEmail = async (recipientEmail, otpCode) => {
   try {
     let html = loadTemplate('sendOTP.html');
     html = html.replace('{{otpCode}}', otpCode);
     html += getEmailFooter();
-    await getTransport().sendMail({
-      from: `"IEEE SHA Student Branch" <${process.env.EMAIL_USER}>`,
+    
+    const { error } = await resend.emails.send({
+      from: SENDER_EMAIL,
       to: recipientEmail,
       subject: 'Verify Your Account - OTP',
-      html
-    })
+      html: html
+    });
+
+    if (error) {
+      console.error('Resend API Error (OTP):', error);
+      return false;
+    }
     return true;
   }
   catch(err){
-    console.log('Error sending OTP Email:', err);
+    console.log('Server Error sending OTP Email:', err);
     return false;
   }
 };
 
-// Ticket email for submission controller
+// 2. Ticket Email for Submission Controller
 const sendTicketEmail = async(email, userName, ticketCode, eventTitle, qrImage) => {
   try {
     const base64Data = qrImage.split('base64,')[1];
     let html = loadTemplate('ticketEmail.html');
     html = html.replace('{{userName}}', userName)
-    .replace('{{eventTitle}}', eventTitle)
-    .replace('{{ticketCode}}', ticketCode);
+      .replace('{{eventTitle}}', eventTitle)
+      .replace('{{ticketCode}}', ticketCode);
     html += getEmailFooter();
-    await getTransport().sendMail({
-       from:`"IEEE SHA Student Branch" <${process.env.EMAIL_USER}>`,
+    
+    const { error } = await resend.emails.send({
+       from: SENDER_EMAIL,
        to: email,
-       subject:`Confirmation of Registration – ${eventTitle}`,
-       html,
-       attachments:[{
+       subject: `Confirmation of Registration – ${eventTitle}`,
+       html: html,
+       attachments: [{
         filename: 'ticket-qr.png',
-        content: base64Data,
-        encoding: 'base64',
-        cid: 'qr-code-image'
+        content: base64Data // Resend automatically handles base64 string attachments
        }]
     });
+
+    if (error) {
+      console.error('Resend API Error (Ticket):', error);
+      return false;
+    }
     return true
   }
   catch(err){
-    console.error('Error sending Ticket Email:', err);
+    console.error('Server Error sending Ticket Email:', err);
     return false;
   }
 };
 
+// 3. Reset Password Email
 const resetPasswordEmailToken = async (recipientEmail, resetToken) => {
   try {
     let html = loadTemplate('resetPassword.html');
     html = html.replace('{{resetToken}}', resetToken);
     html += getEmailFooter();
-    await getTransport().sendMail({
-      from: `"IEEE SHA Student Branch" <${process.env.EMAIL_USER}>`,
+    
+    const { error } = await resend.emails.send({
+      from: SENDER_EMAIL,
       to: recipientEmail,
       subject: 'Reset Your Password',
-      html
-    })
+      html: html
+    });
+
+    if (error) {
+      console.error('Resend API Error (Reset Password):', error);
+      return false;
+    }
     return true;
   }
   catch(err){
-    console.log('Error sending Reset Password Email:', err);
+    console.log('Server Error sending Reset Password Email:', err);
     return false;
   }
 };
