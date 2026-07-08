@@ -1,4 +1,10 @@
 const nodemailer = require('nodemailer');
+
+const dns = require('dns'); 
+
+// Force Node.js to strictly prefer IPv4 globally
+dns.setDefaultResultOrder('ipv4first'); 
+
 const { getEmailFooter } = require('./emailTemplates');
 const fs = require('fs');
 const htmlToText = require('html-to-text');
