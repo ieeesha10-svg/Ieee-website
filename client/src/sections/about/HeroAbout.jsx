@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import { ArrowRight } from 'lucide-react'
 import aboutImage from '../../assets/images/about/about-image.jpg'
 import Badge from '../../components/Badge'
+import { committees } from '../../data/committeesData'
 function Chip({ title, subtitle, label, className }) {
   return (
     <div className={`bg-card/90 backdrop-blur rounded-xl px-5 py-2 flex items-center gap-2 shadow-lg ${className}`}>
@@ -37,7 +38,7 @@ export default function HeroSection() {
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3 w-[80%] sm:w-auto">
 							{
 								!user && (
-									<a href='/signup' className="bg-primary-linear text-white font-semibold rounded-full px-6 py-3 flex items-center justify-center gap-2 w-full sm:w-auto transition-all duration-300 hover:opacity-85 hover:scale-[1.02]">
+									<a href='/committees' className="bg-primary-linear text-white font-semibold rounded-full px-6 py-3 flex items-center justify-center gap-2 w-full sm:w-auto transition-all duration-300 hover:opacity-85 hover:scale-[1.02]">
 		                Become a Member <ArrowRight size={18} />
 		              </a>
 								)
@@ -48,15 +49,15 @@ export default function HeroSection() {
             </div>
             <div className="flex gap-8 mt-2">
               <div>
-                <span className="text-2xl md:text-3xl font-bold text-primary">350+</span>
-                <span className="block text-xs text-muted">Active Members</span>
+                <span className="text-2xl md:text-3xl font-bold text-primary">150+</span>
+                <span className="block text-xs text-muted">Volunteers</span>
               </div>
               <div>
-                <span className="text-2xl md:text-3xl font-bold text-primary">60+</span>
+                <span className="text-2xl md:text-3xl font-bold text-primary">30+</span>
                 <span className="block text-xs text-muted">Events Hosted</span>
               </div>
               <div>
-                <span className="text-2xl md:text-3xl font-bold text-primary">8</span>
+								<span className="text-2xl md:text-3xl font-bold text-primary">{committees.length}</span>
                 <span className="block text-xs text-muted">Committees</span>
               </div>
             </div>
@@ -70,7 +71,7 @@ export default function HeroSection() {
               className="mx-auto w-full object-cover rounded-2xl"
             />
 
-            <Chip title="350+" subtitle="Members" className="absolute top-4 -left-2 lg:-left-4" />
+            <Chip title="150+" subtitle="Members" className="absolute top-4 -left-2 lg:-left-4" />
             <Chip label="AI Workshop" className="absolute bottom-4 -left-2 lg:-left-4" />
             <Chip label="Robotics Lab" className="absolute bottom-4 -right-2 lg:-right-4" />
           </div>
