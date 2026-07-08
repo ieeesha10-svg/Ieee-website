@@ -1,10 +1,9 @@
 import React from "react";
 
-export default function ImageSkeleton({ className = "", aspectRatio = "16/9", rounded = "rounded-3xl" }) {
+export default function ImageSkeleton({ className = "", rounded = "rounded-3xl" }) {
   return (
     <div
-      className={`relative overflow-hidden bg-[#e5e7eb] dark:bg-[#1f2937] ${rounded} ${className}`}
-      style={{ aspectRatio }}
+      className={`absolute inset-0 overflow-hidden bg-[#e5e7eb] dark:bg-[#1f2937] ${rounded} ${className}`}
     >
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent animate-shimmer" />
       <style>{`
