@@ -37,7 +37,7 @@ const loginUser = catchAsync(async (req, res) => {
   res.cookie('jwt', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV !== 'development', // HTTPS in production
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
   });
 
