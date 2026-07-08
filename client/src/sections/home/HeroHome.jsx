@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 // Components
 import Button from '../../components/Button.jsx'
 import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
@@ -48,7 +49,7 @@ export default function Hero() {
 
 				{/* Left Section */}
 				<div className='flex flex-col text-white gap-3 md:gap-5'>
-					<span className='text-xs md:text-base rounded-4xl bg-white/20 border border-white/20 mx-auto md:mx-0 w-fit p-3'>:✨ Empowering Innovation Since 2010</span>
+					<span className='text-xs md:text-base rounded-4xl bg-white/20 border border-white/20 mx-auto md:mx-0 w-fit p-3'>:✨ Empowering Innovation Since 2016</span>
 					<h2 className='text-4xl md:text-7xl font-gotham text-ceter md:text-left uppercase'>
 						<p>Lead</p>
 						<div>
@@ -62,30 +63,26 @@ export default function Hero() {
 
 					{/* Call-To-Action Buttons*/}
 					<div className='flex gap-3 justify-center md:justify-start'>
-						<Button>
-							Get Started
-						</Button>
-						<Button variant='outline'>
-							Learn More
-						</Button>
+						<Link to="/committees">
+							<Button>
+								Get Started
+							</Button>
+						</Link>
+						<Link to="/about">
+							<Button variant='outline'>
+								Learn More
+							</Button>
+						</Link>
 					</div>
 
-					<div className='flex justify-center gap-10 md:justify-between *:flex *:flex-col
-						[&_span:first-child]:text-2xl md:[&_span:first-child]:text-4xl [&_span:first-child]:font-sans
-						font-light md:pr-10
-						[&_span:last-child]:text-sm'
-					>
-						<div>
-							<span>500+</span>
-							<span>Members</span>
+					<div className='flex justify-center md:justify-start gap-30 font-light md:pr-10'>
+						<div className='flex flex-col'>
+							<span className='text-2xl md:text-4xl font-sans'>10+</span>
+							<span className='text-sm'>Years</span>
 						</div>
-						<div>
-							<span>100+</span>
-							<span>Events</span>
-						</div>
-						<div>
-							<span>15+</span>
-							<span>Awards</span>
+						<div className='flex flex-col'>
+							<span className='text-2xl md:text-4xl font-sans'>200+</span>
+							<span className='text-sm'>Events Hosted</span>
 						</div>
 					</div>
 

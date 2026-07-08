@@ -76,7 +76,7 @@ export default function MembershipBenefits() {
     <section className="relative w-full py-24 px-4 bg-gradient-to-b from-[#0077CC] via-[#0096FF] to-[#0077CC] dark:from-[#0F1420] dark:to-[#0F1420] transition-colors duration-500 overflow-hidden">
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-16 space-y-6">
-          <h2 className="font-gotham font-bold text-3xl md:text-4xl lg:text-5xl text-white drop-shadow-md">
+          <h2 className="uppercase font-black font-bold text-3xl md:text-4xl lg:text-5xl text-white drop-shadow-md">
             <span className="text-primary-light">I</span>nstitute of{" "}
             <span className="text-primary-light">E</span>lectrical and{" "}
             <span className="text-primary-light">E</span>lectronics{" "}
@@ -107,9 +107,8 @@ export default function MembershipBenefits() {
           ))}
         </div>
 
-        {/* الجزء الثاني: المزايا والتفاصيل */}
         <div className="text-center mb-16 space-y-6">
-          <h2 className="font-gotham font-bold text-4xl lg:text-5xl text-white">
+          <h2 className="font-black font-bold text-4xl lg:text-5xl text-white uppercase">
             <span className="text-primary-light">M</span>embership{" "}
             <span className="text-primary-light">B</span>enefits
           </h2>
