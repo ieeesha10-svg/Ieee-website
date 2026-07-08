@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { SOCIAL_MEDIA } from "../data/socialMedia";
+import { EMAIL_ADDRESS, SOCIAL_MEDIA } from "../data/socialMedia";
 
 const QUICK_LINKS = [
   { label: "About", to: "/about" },
@@ -90,10 +90,10 @@ export default function Footer() {
           </div>
 
           <a
-            href="mailto:info@ieeesb.org"
+            href={`mailto:${EMAIL_ADDRESS}`}
             className="font-lakes text-[#4A5565] dark:text-[#9CA3AF] text-[14px] hover:text-[#0077CC] dark:hover:text-[#33B5FF] transition-colors duration-300 mt-1"
           >
-            info@ieeesb.org
+            {EMAIL_ADDRESS}
           </a>
         </div>
       </div>
