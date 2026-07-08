@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 // Components
-import SectionHeader from "../../components/SectionHeader";
+import SectionHeader from "../../components/SectionHeader.jsx";
 import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 // Images
 import AboutImage from '../../assets/images/home/about-image.png'

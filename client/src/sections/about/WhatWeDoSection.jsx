@@ -1,14 +1,14 @@
 import React from 'react'
-import { Activity, Wrench, Lightbulb, Users, Phone, PenLine } from 'lucide-react'
+import { Activity, Wrench, Lightbulb, Users, Phone, Rocket } from 'lucide-react'
 import Badge from '../../components/Badge'
 
-const items = [
+const ourActivities = [
   { tag: '02', icon: Activity, title: 'Technical Sessions', desc: 'Deep-dive sessions on emerging tech, research topics, and career-defining skill sets.' },
   { tag: '01', icon: Wrench, title: 'Workshops', desc: 'Hands-on sessions covering embedded systems, web dev, AI, and more — led by experienced members.' },
   { tag: '03', icon: Lightbulb, title: 'Competitions', desc: 'Hackathons, robotics challenges, and case competitions that push members to apply what they\'ve learned.' },
   { tag: '04', icon: Users, title: 'Community Activities', desc: 'Social events, team bonding trips, and volunteering initiatives that build lasting friendships.' },
   { tag: '05', icon: Phone, title: 'Industry Talks', desc: 'Sessions with engineers and founders from leading tech companies sharing real career insight.' },
-  { tag: '06', icon: PenLine, title: 'Design Sprints', desc: 'Fast-paced UI/UX and product design challenges to sharpen creative problem-solving skills.' },
+  { tag: '06', icon: Rocket, title: 'Real Projects', desc: 'Build and ship real-world projects guided by experienced mentors from start to finish.' },
 ]
 
 export default function WhatWeDoSection() {
@@ -28,7 +28,7 @@ export default function WhatWeDoSection() {
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {items.map((item, i) => {
+          {ourActivities.map((item, i) => {
             const Icon = item.icon
             return (
               <div key={i} className="flex flex-col bg-white dark:bg-card border border-border rounded-xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">

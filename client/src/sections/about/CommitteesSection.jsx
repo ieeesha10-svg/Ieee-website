@@ -1,16 +1,6 @@
 import React from 'react'
 import Badge from '../../components/Badge'
-
-const COMMITTES = [
-  { emoji: '🎨', title: 'UI/UX', subtitle: 'Design & prototyping' },
-  { emoji: '💻', title: 'Web Development', subtitle: 'Frontend & backend' },
-  { emoji: '📱', title: 'Mobile Development', subtitle: 'iOS & Android apps' },
-  { emoji: '🤖', title: 'Robotics', subtitle: 'Build & automate' },
-  { emoji: '⚙️', title: 'Embedded Systems', subtitle: 'Hardware & firmware' },
-  { emoji: '🧠', title: 'AI & Machine Learning', subtitle: 'Models & research' },
-  { emoji: '📣', title: 'Marketing', subtitle: 'Brand & outreach' },
-  { emoji: '🤝', title: 'Human Resources', subtitle: 'People & culture' },
-]
+import { committees } from '../../data/committeesData'
 
 export default function CommitteesSection() {
   return (
@@ -29,10 +19,12 @@ export default function CommitteesSection() {
 
         {/* Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {COMMITTES.map((c, i) => (
-            <div key={i} className="bg-white dark:bg-card rounded-xl p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <div className="text-4xl mb-3">{c.emoji}</div>
-              <h3 className="font-bold text-foreground">{c.title}</h3>
+          {committees.map((c) => (
+            <div key={c.id} className="bg-white dark:bg-card rounded-xl p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+              <div className="flex justify-center mb-3">
+                <img src={c.icon} alt={c.label} className="w-10 h-10 object-contain" />
+              </div>
+              <h3 className="font-bold text-foreground">{c.label}</h3>
               <p className="text-xs text-muted mt-1">{c.subtitle}</p>
             </div>
           ))}

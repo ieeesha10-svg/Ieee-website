@@ -10,9 +10,9 @@ export default function CtaSection() {
             Ready to Build Something Great?
           </h2>
           <p className="text-white/80 mt-3 max-w-lg mx-auto">
-            Join 350+ students already learning, building, and growing together at IEEE Student Branch.
+            Join 150+ students already learning, building, and growing together at IEEE Student Branch.
           </p>
-          <a href="/signup" className="mt-6 bg-white text-primary font-semibold rounded-full px-6 py-3 inline-flex items-center gap-2 mx-auto transition-all duration-300 hover:opacity-90 hover:scale-[1.02]">
+          <a href="/committees" className="mt-6 bg-white text-primary font-semibold rounded-full px-6 py-3 inline-flex items-center gap-2 mx-auto transition-all duration-300 hover:opacity-90 hover:scale-[1.02]">
             Apply Now <ArrowRight size={18} />
           </a>
         </div>

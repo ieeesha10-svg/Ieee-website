@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import robotImage from "../assets/images/404-robot.png";
+import { EMAIL_ADDRESS } from "../data/socialMedia";
 
 function ScatteredDecorators() {
   return (
@@ -171,10 +172,10 @@ function FooterNote() {
       <span className="font-semibold text-primary">404</span>
       {" · "}IEEE Student Branch Web Systems{" · "}Still lost?{" "}
       <a
-        href="mailto:ieee@university.edu.eg"
+        href={`mailto:${EMAIL_ADDRESS}`}
         className="text-primary hover:underline"
       >
-        ieee@university.edu.eg
+        {EMAIL_ADDRESS}
       </a>
     </p>
   );
@@ -214,7 +215,7 @@ function HeroBlock() {
           <span className="absolute -right-2 top-1/2 text-primary font-bold text-lg leading-none select-none">X</span>
           <span className="absolute left-1/2 -bottom-2 text-primary font-bold text-lg leading-none select-none">X</span>
         </div>
-      
+
       {/* Text block */}
       <div className="mt-6 flex flex-col items-center gap-2">
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground">

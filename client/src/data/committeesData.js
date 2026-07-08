@@ -13,6 +13,7 @@ export const committees = [
     icon: prIcon,
     label: "Public Relations",
     title: "Public Relations & FundRaising",
+    subtitle: "Communications & partnerships",
     points: [
       "Responsible for external communications, speakers, and VIPs.",
       "Securing sponsorships and financial resources.",
@@ -25,6 +26,7 @@ export const committees = [
     icon: hrIcon,
     label: "Human Resources",
     title: "Human Resources",
+    subtitle: "People & culture",
     points: [
       "Managing member onboarding and team integration processes.",
       "Organizing internal training, workshops, and skill development.",
@@ -37,6 +39,7 @@ export const committees = [
     icon: logisticsIcon,
     label: "Logistics",
     title: "Logistics",
+    subtitle: "Operations & coordination",
     points: [
       "Coordinating venues, schedules, and event resources.",
       "Managing equipment inventory and material procurement.",
@@ -49,6 +52,7 @@ export const committees = [
     icon: marketingIcon,
     label: "Marketing",
     title: "Marketing",
+    subtitle: "Brand & outreach",
     points: [
       "Planning and executing promotional campaigns for branch events.",
       "Analyzing outreach metrics to optimize engagement strategies.",
@@ -61,6 +65,7 @@ export const committees = [
     icon: paletteIcon,
     label: "Branding & Media",
     title: "Branding & Media",
+    subtitle: "Design & prototyping",
     points: [
       "Defining and maintaining the branch's visual identity standards.",
       "Producing photography, videography, and graphic assets.",
@@ -73,6 +78,7 @@ export const committees = [
     icon: developerIcon,
     label: "Technical",
     title: "Technical",
+    subtitle: "Software & engineering",
     points: [
       "Organizing technical workshops, hackathons, and coding challenges.",
       "Mentoring members on software, hardware, and engineering skills.",
@@ -85,6 +91,7 @@ export const committees = [
     icon: bookshelfIcon,
     label: "Non-Technical",
     title: "Non-Technical",
+    subtitle: "Soft skills & growth",
     points: [
       "Hosting soft-skill sessions, leadership talks, and personal growth events.",
       "Curating cultural, social, and recreational activities for members.",
@@ -97,6 +104,7 @@ export const committees = [
     icon: webIcon,
     label: "Website",
     title: "Website",
+    subtitle: "Frontend & backend",
     points: [
       "Designing and developing the official IEEE Student Branch website.",
       "Maintaining platform uptime, performance, and content accuracy.",

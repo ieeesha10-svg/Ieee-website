@@ -3,20 +3,20 @@ import EventCard from "../../components/EventCard";
 
 const eventsData = [
   {
-    id: 1,
-    badge: "Annual Event",
-    title: "IEEE DAY 2026",
+    id: 0,
+    badge: "Flagship Program",
+    title: "WORKSHOPS",
     image: "/images/ieee-day.png",
     description:
-      "Celebrating IEEE's founding with workshops, competitions, and networking opportunities bringing together students and professionals from across the region.",
+      "A season-long learning journey across Technical, Non-Technical, and PES tracks, blending hands-on projects with industry mentorship and a final competition showcasing participants' work.",
   },
   {
-    id: 2,
-    badge: "Competition",
-    title: "INNOVATE HACKATHON",
+    id: 1,
+    badge: "2-Day Event",
+    title: "ELECTROVISION X",
     image: "/images/hackathon.png",
     description:
-      "A 48-hour innovation marathon where teams build groundbreaking solutions to real-world challenges with expert mentorship and exciting prizes.",
+      "An immersive two-day experience in Electrical Power Engineering, pairing expert-led technical talks with hands-on training on KNX, PLC, lighting, and PV systems.",
   },
 ];
 
@@ -26,7 +26,7 @@ export default function FlagshipEvents() {
       id="flagship-events"
       className="w-full py-12 lg:py-20 px-4 lg:px-6 bg-main transition-colors duration-300"
     >
-      <div className="max-w-[1280px] mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="flex flex-col items-center mb-12 lg:mb-20">
           <h2 className="text-3xl md:text-4xl lg:text-[72px] font-black uppercase text-center leading-tight">
             <span className="text-foreground transition-colors duration-300">

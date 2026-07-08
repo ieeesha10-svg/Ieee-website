@@ -3,7 +3,7 @@ import React from "react";
 export default function EventCard({ badge, title, image, description }) {
   return (
     <div className="w-full lg:max-w-[620px] flex flex-col">
-      <div className="relative h-[250px] md:h-[300px] lg:h-[384px] rounded-[16px] lg:rounded-[24px] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]">
+      <div className="hover:scale-104 transition-transform relative h-[250px] md:h-[300px] lg:h-[384px] rounded-[16px] lg:rounded-[24px] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]">
         <img
           src={image}
           alt={title}

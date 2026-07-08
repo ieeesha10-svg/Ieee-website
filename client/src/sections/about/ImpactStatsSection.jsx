@@ -1,12 +1,13 @@
 import React from 'react'
 import { Users, Calendar, FileText, LayoutGrid } from 'lucide-react'
 import Badge from '../../components/Badge'
+import { committees } from '../../data/committeesData'
 
 const stats = [
-  { icon: Users, value: '350+', label: 'Active Members' },
-  { icon: Calendar, value: '60+', label: 'Events Hosted' },
-  { icon: FileText, value: '45+', label: 'Workshops' },
-  { icon: LayoutGrid, value: '8', label: 'Committees' },
+  { icon: Users, value: '150+', label: 'Active Members' },
+  { icon: Calendar, value: '35+', label: 'Events Hosted' },
+  { icon: FileText, value: '23+', label: 'Workshops' },
+  { icon: LayoutGrid, value: committees.length, label: 'Committees' },
 ]
 
 export default function ImpactStatsSection() {

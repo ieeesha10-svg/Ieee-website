@@ -1,92 +1,52 @@
 import React from "react";
-// Components
 import SectionHeader from "../../components/SectionHeader";
-// Images
-import SectionBackground from '../../assets/backgrounds/tech-circuit-pattern.png'
-// Icons
-import LaptopIcon from '../../assets/icons/laptop.png'
-import FlashIcon from '../../assets/icons/flash.png'
-import BotIcon from '../../assets/icons/ai.png'
-import GlobeIcon from '../../assets/icons/globe.png'
-import HospitalIcon from '../../assets/icons/hospital.png'
-import ChapterCard from "../../components/ChapterCard";
-
-const CHAPTERS_DATA = [
-  {
-    title: "Computer Society",
-    icon: LaptopIcon,
-    branch: "IEEE CS",
-    body: "Empowering students with the latest in software development, AI, and computing technologies to lead the digital transformation.",
-		activeMembers: 150,
-		bgColor: {from: '#2B7FFF', to: '#155DFC'},
-  },
-  {
-    title: "Power & Energy",
-    icon: FlashIcon,
-    branch: "IEEE PES",
-    body: "Exploring the future of electrical power, sustainable energy systems, and renewable technologies for a greener planet.",
-    activeMembers: 120,
-		bgColor: {from: '#F0B100', to: '#FF6900'},
-  },
-  {
-    title: "Robotics & Automation",
-    icon: BotIcon,
-    branch: "IEEE RAS",
-    body: "Merging technical creativity with engineering to design, build, and innovate the next generation of intelligent machines.",
-    activeMembers: 100,
-    bgColor: {from: '#901BED', to: '#4814C2'},
-  },
-  {
-    title: "Communications",
-    icon: GlobeIcon,
-    branch: "IEEE ComSoc",
-    body: "Connecting the world through advanced wireless networking, telecommunications, and AI-driven communication systems.",
-    activeMembers: 90,
-    bgColor: {from: '#00C950', to: '#00BC7D'},
-  },
-  {
-    title: "Women in Engineering",
-    icon: HospitalIcon,
-    branch: "IEEE EMBS",
-    body: "Bridging the gap between engineering and healthcare to innovate life-saving medical technologies and biological sciences.",
-    activeMembers: 80,
-    bgColor: {from: '#FB2C36', to: '#FF2056'},
-  },
-];
+import SectionBackground from '../../assets/backgrounds/tech-circuit-pattern.png';
+import FlashIcon from '../../assets/icons/flash.png';
+import Button from "../../components/Button";
 
 export default function Chapters() {
+  return (
+    <section id="chapters" className="relative overflow-hidden py-20 bg-contain" style={{ backgroundImage: `url(${SectionBackground})`}}>
+      <div className='absolute inset-0 bg-primary/97 dark:bg-main/98' />
 
-	return <section id="chapters" className="relative min-h-screen overflow-hidden py-20 bg-contain" style={{ backgroundImage: `url(${SectionBackground})`}}>
-		{/* Overlay */}
-		<div className='absolute inset-0 bg-primary/97 dark:bg-main/98' />
+      <div className="relative z-10">
+        <div className="text-center">
+          <SectionHeader title="Our" highlight="chapters" highlightColor="primary-light" variant="dark" />
+          <p className="text-white text-2xl mt-4">Explore our diverse technical chapters, each focus on advancing specialized fields of technology.</p>
+        </div>
 
-		{/* Section Header & Text */}
-		<div className="relative z-10">
-			<div className="text-center">
-				<SectionHeader
-				  title="Our"
-					highlight="chapters"
-					highlightColor="primary-light"
-				  variant="dark"
-				  line="white"
-				/>
-				<p className="text-white text-2xl mt-4">Explore our diverse technical chapters, each focus on advancing specialized fields of technology.</p>
-			</div>
+        <div className="max-w-md mx-auto mt-20">
+          <div className="flex flex-col overflow-hidden border border-border rounded-3xl h-full">
+            <div className="pl-6 py-6 relative overflow-hidden" style={{ background: 'linear-gradient(to right, #00C950, #00BC7D)' }}>
+              <span className="absolute bottom-5 right-3 z-10 bg-yellow-400 text-gray-900 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full">
+                Coming Soon
+              </span>
+              <div className="absolute rounded-full w-32 h-32 bg-white/20 -right-14 -top-14" />
+              <div className="bg-white/20 rounded-2xl p-3 w-fit">
+                <img src={FlashIcon} className="w-12 h-12" alt="Chapter's Icon" />
+              </div>
+              <h3 className="text-white fton-semibold text-xl md:text-3xl mt-6 mb-10">PES</h3>
+              <span className="text-white text-sm font-light">IEEE PES</span>
+            </div>
 
-			{/* Cards */}
-			<div className="max-w-7xl mx-auto mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-				{CHAPTERS_DATA.map((chapter, index) => {
-					return <ChapterCard key={index}
-						title={chapter.title}
-						icon={chapter.icon}
-						branch={chapter.branch}
-						body={chapter.body}
-						activeMembers={chapter.activeMembers}
-						bgColor={chapter.bgColor}
-					/>
-				})}
-			</div>
+            <div className="flex-1 bg-main p-6 flex flex-col gap-6">
+              <p className="text-muted">
+                PES is the chapter inside the student branch which is specialized in electrical power engineering society. Launched in 2019-2020
+              </p>
 
-		</div>
-	</section>
+              <div className="flex justify-between items-center mt-auto">
+                <div className="flex flex-col gap-1">
+                  <span className="text-2xl text-primary">50+</span>
+                  <span className="text-sm text-muted">Events</span>
+                </div>
+								<a href="https://www.facebook.com/IEEE.PES.SHA.SC">
+									<Button variant="link">Learn More</Button>
+								</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }

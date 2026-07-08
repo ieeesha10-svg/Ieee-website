@@ -1,23 +1,21 @@
 import React from "react";
-import Hero from "../sections/home/Hero";
+import Hero from "../sections/home/HeroHome";
 import Chapters from "../sections/home/Chapters";
-import About from "../sections/home/About";
 import FlagshipEvents from "../sections/home/FlagshipEvents";
 import Chairpersons from "../sections/home/Chairpersons";
-import Achievements from "../sections/home/Achievements";
-import JoinUs from "../components/JoinUs";
-import MembershipBenefits from "../components/MembershipBenefits";
+import JoinUs from "../sections/home/JoinUs";
+import MembershipBenefits from "../sections/home/MembershipBenefits";
+import MissionVisionSection from "../sections/home/MissionVisionSection";
 
 function Home() {
   return (
     <div className="*:px-4 md:*:px-8">
-      <Hero />
-      <About />
-      <Chapters />
-      <FlagshipEvents />
-      <Achievements />
-      <Chairpersons />
+			<Hero />
+      <MissionVisionSection />
       <MembershipBenefits />
+      <FlagshipEvents />
+      <Chapters />
+      <Chairpersons />
       <JoinUs />
     </div>
   );

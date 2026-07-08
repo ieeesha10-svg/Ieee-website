@@ -7,11 +7,12 @@ import {
   Lock,
   ArrowRight,
 } from "lucide-react";
-import { SOCIAL_MEDIA } from '../data/socialMedia';
+import { EMAIL_ADDRESS, SOCIAL_MEDIA } from '../data/socialMedia';
 import Badge from '../components/Badge'
+import RequiredAsterisk from '../components/RequiredAsterisk'
 
-function InfoCard({ Icon, label, value, subtext }) {
-  return (
+function InfoCard({ Icon, label, value, subtext, href }) {
+  const content = (
     <div className="flex flex-col shadow dark:shadow-2xl items-center bg-card rounded-xl py-7.5 px-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
       <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary shadow-lg shadow-primary/40">
         <Icon className="text-white" size={22} aria-hidden="true" />
@@ -25,12 +26,22 @@ function InfoCard({ Icon, label, value, subtext }) {
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="block">
+        {content}
+      </a>
+    );
+  }
+
+  return content;
 }
 
 const INFO_CARDS = [
-  { Icon: Mail,    label: "EMAIL US",   value: "ieee@university.edu.eg",   subtext: "We reply within 24 hours" },
-  { Icon: MapPin,  label: "VISIT US",   value: "Faculty of Engineering",   subtext: "Shorouk Academy, Shorouk" },
-  { Icon: Share2,  label: "FOLLOW US",  value: "@ieee.studentbranch",      subtext: "Active on all platforms" },
+  { Icon: Mail,    label: "EMAIL US",   value: EMAIL_ADDRESS,   subtext: "We reply within 24 hours", href: `mailto:${EMAIL_ADDRESS}` },
+  { Icon: MapPin,  label: "VISIT US",   value: "Faculty of Engineering",   subtext: "Shorouk Academy, Shorouk", href: "https://maps.app.goo.gl/ENkABHeXemrkYXKv8?g_st=aw" },
+  { Icon: Share2,  label: "FOLLOW US",  value: "IEEE Student Branch",      subtext: "Active on all platforms" },
 ];
 
 function SocialCard({ Icon, href, title, subtitle, linkLabel }) {
@@ -96,7 +107,7 @@ export default function ContactPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-medium tracking-wide uppercase text-muted">
-                    FULL NAME <span className="text-red-500">*</span>
+                    FULL NAME <RequiredAsterisk />
                   </label>
                   <input
                     type="text"
@@ -106,7 +117,7 @@ export default function ContactPage() {
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-medium tracking-wide uppercase text-muted">
-                    EMAIL ADDRESS <span className="text-red-500">*</span>
+                    EMAIL ADDRESS <RequiredAsterisk />
                   </label>
                   <input
                     type="email"
@@ -119,7 +130,7 @@ export default function ContactPage() {
               {/* Subject */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium tracking-wide uppercase text-muted">
-                  SUBJECT <span className="text-red-500">*</span>
+                  SUBJECT <RequiredAsterisk />
                 </label>
                 <input
                   type="text"
@@ -131,7 +142,7 @@ export default function ContactPage() {
               {/* Message */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-medium tracking-wide uppercase text-muted">
-                  MESSAGE <span className="text-red-500">*</span>
+                  MESSAGE <RequiredAsterisk />
                 </label>
                 <textarea
                   rows={4}
