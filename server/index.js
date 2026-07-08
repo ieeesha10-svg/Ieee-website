@@ -9,10 +9,22 @@ require("dotenv").config({quiet: true});
 const app = express();
 connectDB();
 
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:3000,https://www.ieeesha.org")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(helmet());
 app.use(cors({
-  origin: 'http://localhost:5173', 
-  credentials: true 
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
