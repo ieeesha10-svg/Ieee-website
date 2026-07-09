@@ -4,7 +4,6 @@ import Badge from "../../components/Badge";
 import SectionHeader from "../../components/SectionHeader";
 // Social icons
 import linkedinIcon from "../../assets/images/chairpersons/linkedin.png";
-import whatsappIcon from "../../assets/images/chairpersons/whatsapp.png";
 import facebookIcon from "../../assets/images/chairpersons/facebook.png";
 import collabratecIcon from "../../assets/images/chairpersons/collabratec-logo.png";
 // Chairpersons
@@ -22,6 +21,8 @@ import neo from "../../assets/images/sponsers/neo (1).jpg";
 import porto from "../../assets/images/sponsers/PORTO (1).jpg";
 import seweddy from "../../assets/images/sponsers/SEWEDY (1).jpg";
 import ult from "../../assets/images/sponsers/ULT.jpg";
+import itc from "../../assets/images/sponsers/itc.JPG";
+import MeLed from "../../assets/images/sponsers/me-led.JPG";
 
 const SPONSORS = [
   { src: codeClouders, alt: "Code Clouders" },
@@ -36,6 +37,8 @@ const SPONSORS = [
   { src: porto, alt: "Porto" },
   { src: seweddy, alt: "Sewedy" },
   { src: ult, alt: "ULT" },
+  { src: itc, alt: "ITC" },
+  { src: MeLed, alt: "ME-LED" },
 ];
 
 function PersonCard({ person }) {
@@ -63,19 +66,14 @@ function PersonCard({ person }) {
         </div>
 
         <div className="flex items-center justify-center gap-2 mt-auto">
-          {person.socials?.linkedin && (
-            <a href={person.socials.linkedin} target="_blank" rel="noopener noreferrer" className="w-[24px] lg:w-[32px] h-[24px] lg:h-[32px] rounded-full flex items-center justify-center">
-              <img src={linkedinIcon} alt="LinkedIn Account" className="w-full h-full object-contain" />
-            </a>
-          )}
           {person.socials?.facebook && (
             <a href={person.socials.facebook} target="_blank" rel="noopener noreferrer" className="w-[24px] lg:w-[32px] h-[24px] lg:h-[32px] rounded-full flex items-center justify-center">
               <img src={facebookIcon} alt="facebook Account" className="w-full h-full object-contain" />
             </a>
           )}
-          {person.socials?.whatsapp && (
-            <a href={person.socials.whatsapp} target="_blank" rel="noopener noreferrer" className="w-[24px] lg:w-[32px] h-[24px] lg:h-[32px] rounded-full flex items-center justify-center">
-              <img src={whatsappIcon} alt="Whatsapp" className="w-full h-full object-contain" />
+          {person.socials?.linkedin && (
+            <a href={person.socials.linkedin} target="_blank" rel="noopener noreferrer" className="w-[24px] lg:w-[32px] h-[24px] lg:h-[32px] rounded-full flex items-center justify-center">
+              <img src={linkedinIcon} alt="LinkedIn Account" className="w-full h-full object-contain" />
             </a>
           )}
           {person.socials?.collabratec && (
