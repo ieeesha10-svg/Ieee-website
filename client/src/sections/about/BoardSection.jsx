@@ -2,7 +2,6 @@ import React from 'react'
 import Badge from '../../components/Badge'
 import { MEMBERS } from '../../data/chairpersons'
 import linkedinIcon from "../../assets/images/chairpersons/linkedin.png";
-import whatsappIcon from "../../assets/images/chairpersons/whatsapp.png";
 import facebookIcon from "../../assets/images/chairpersons/facebook.png";
 import collabratecIcon from "../../assets/images/chairpersons/collabratec-logo.png";
 
@@ -36,19 +35,14 @@ export default function BoardSection() {
                 <p className="text-xs font-semibold text-primary uppercase mt-1">{m.role}</p>
 
                 <div className="flex items-center justify-center gap-2 mt-3">
-                  {m.socials?.linkedin && (
-                    <a href={m.socials.linkedin} target="_blank" rel="noopener noreferrer" className="w-7 lg:w-9 h-7 lg:h-9 rounded-full flex items-center justify-center">
-                      <img src={linkedinIcon} alt="LinkedIn Account" className="w-full h-full object-contain" />
-                    </a>
-                  )}
                   {m.socials?.facebook && (
                     <a href={m.socials.facebook} target="_blank" rel="noopener noreferrer" className="w-7 lg:w-9 h-7 lg:h-9 rounded-full flex items-center justify-center">
                       <img src={facebookIcon} alt="facebook Account" className="w-full h-full object-contain" />
                     </a>
                   )}
-                  {m.socials?.whatsapp && (
-                    <a href={m.socials.whatsapp} target="_blank" rel="noopener noreferrer" className="w-7 lg:w-9 h-7 lg:h-9 rounded-full flex items-center justify-center">
-                      <img src={whatsappIcon} alt="Whatsapp" className="w-full h-full object-contain" />
+                  {m.socials?.linkedin && (
+                    <a href={m.socials.linkedin} target="_blank" rel="noopener noreferrer" className="w-7 lg:w-9 h-7 lg:h-9 rounded-full flex items-center justify-center">
+                      <img src={linkedinIcon} alt="LinkedIn Account" className="w-full h-full object-contain" />
                     </a>
                   )}
                   {m.socials?.collabratec && (

@@ -73,7 +73,7 @@ export default function HeroSection() {
               className="mx-auto w-full object-cover rounded-2xl"
             />
 
-            <Chip title="150+" subtitle="Members" className="absolute top-4 -left-2 lg:-left-4" />
+            <Chip title="150+" subtitle="Volunteers" className="absolute top-4 -left-2 lg:-left-4" />
             <Chip label="AI Workshop" className="absolute bottom-4 -left-2 lg:-left-4" />
             <Chip label="Robotics Lab" className="absolute bottom-4 -right-2 lg:-right-4" />
           </div>
