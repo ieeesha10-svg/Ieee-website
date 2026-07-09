@@ -1,45 +1,10 @@
 import React from 'react'
-import { Linkedin, Twitter, Github, Instagram } from 'lucide-react'
 import Badge from '../../components/Badge'
-
-const members = [
-  {
-    initials: 'MK',
-    name: 'Mariam Khaled',
-    role: 'BRANCH CHAIR',
-    socials: [
-      { icon: Linkedin, label: 'LinkedIn' },
-      { icon: Twitter, label: 'Twitter' },
-    ],
-  },
-  {
-    initials: 'YA',
-    name: 'Youssef Adel',
-    role: 'VICE CHAIR',
-    socials: [
-      { icon: Linkedin, label: 'LinkedIn' },
-      { icon: Instagram, label: 'Instagram' },
-    ],
-  },
-  {
-    initials: 'NS',
-    name: 'Nour Sherif',
-    role: 'TECHNICAL LEAD',
-    socials: [
-      { icon: Github, label: 'GitHub' },
-      { icon: Linkedin, label: 'LinkedIn' },
-    ],
-  },
-  {
-    initials: 'OH',
-    name: 'Omar Hesham',
-    role: 'EVENTS DIRECTOR',
-    socials: [
-      { icon: Instagram, label: 'Instagram' },
-      { icon: Twitter, label: 'Twitter' },
-    ],
-  },
-]
+import { MEMBERS } from '../../data/chairpersons'
+import linkedinIcon from "../../assets/images/chairpersons/linkedin.png";
+import whatsappIcon from "../../assets/images/chairpersons/whatsapp.png";
+import facebookIcon from "../../assets/images/chairpersons/facebook.png";
+import collabratecIcon from "../../assets/images/chairpersons/collabratec-logo.png";
 
 export default function BoardSection() {
   return (
@@ -49,7 +14,7 @@ export default function BoardSection() {
         <div className="text-center max-w-2xl mx-auto mb-12">
           <Badge text={"Leadership"} />
           <h2 className="font-gotham text-3xl sm:text-4xl font-bold mt-4">
-            Meet the <span className="text-primary">Board</span>
+            Meet the <span className="text-primary">Executive Committee</span>
           </h2>
           <p className="text-muted mt-3">
             The students leading the branch this academic year.
@@ -58,27 +23,39 @@ export default function BoardSection() {
 
         {/* Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {members.map((m, i) => (
+          {MEMBERS.map((m, i) => (
             <div key={i} style={{ boxShadow: '0 2px 6px -1px rgba(0,150,255,0.04), 0 4px 14px -4px rgba(0,150,255,0.03), 0 8px 28px -6px rgba(0,0,0,0.12)' }} className="bg-card rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              {/* Avatar gradient */}
-              <div className="flex items-center justify-center h-32 sm:h-70 bg-primary-light/30">
-                <span className="text-3xl sm:text-4xl font-bold text-primary text-primary-light">{m.initials}</span>
+              {/* Avatar */}
+              <div className="h-32 sm:h-70 overflow-hidden bg-gray-200 dark:bg-gray-800">
+                <img src={m.image} alt={m.name} className="w-full h-full object-cover" />
               </div>
 
               {/* Info */}
-              <div className="p-4">
+              <div className="text-center py-4">
                 <h3 className="font-bold text-foreground text-sm sm:text-base">{m.name}</h3>
                 <p className="text-xs font-semibold text-primary uppercase mt-1">{m.role}</p>
 
-                <div className="flex gap-2 mt-3">
-                  {m.socials.map((Social, j) => {
-                    const Icon = Social.icon
-                    return (
-                      <a key={j} href="#" aria-label={Social.label} className="text-muted hover:text-white transition-colors">
-                        <Icon size={16} />
-                      </a>
-                    )
-                  })}
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  {m.socials?.linkedin && (
+                    <a href={m.socials.linkedin} target="_blank" rel="noopener noreferrer" className="w-7 lg:w-9 h-7 lg:h-9 rounded-full flex items-center justify-center">
+                      <img src={linkedinIcon} alt="LinkedIn Account" className="w-full h-full object-contain" />
+                    </a>
+                  )}
+                  {m.socials?.facebook && (
+                    <a href={m.socials.facebook} target="_blank" rel="noopener noreferrer" className="w-7 lg:w-9 h-7 lg:h-9 rounded-full flex items-center justify-center">
+                      <img src={facebookIcon} alt="facebook Account" className="w-full h-full object-contain" />
+                    </a>
+                  )}
+                  {m.socials?.whatsapp && (
+                    <a href={m.socials.whatsapp} target="_blank" rel="noopener noreferrer" className="w-7 lg:w-9 h-7 lg:h-9 rounded-full flex items-center justify-center">
+                      <img src={whatsappIcon} alt="Whatsapp" className="w-full h-full object-contain" />
+                    </a>
+                  )}
+                  {m.socials?.collabratec && (
+                    <a href={m.socials.collabratec} target="_blank" rel="noopener noreferrer" className="w-7 lg:w-9 h-7 lg:h-9 flex items-center justify-center">
+                      <img src={collabratecIcon} alt="Collabratec" className="w-full h-full object-contain" />
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
