@@ -2,7 +2,7 @@ import drMohmoud from "../assets/images/chairpersons/dr-mahmoud.JPG";
 import aliElsayed from "../assets/images/chairpersons/ali-elsayed.jpg";
 import reemHendawy from "../assets/images/chairpersons/reem-hendawy.JPG";
 import alaaMohamed from "../assets/images/chairpersons/alaa-mohamed.jpg";
-// import youssifHany from "../assets/images/chairpersons/youssif-hany.jpg";
+import youssifHany from "../assets/images/chairpersons/youssif-hany.jpeg";
 
 export const COUNSELOR = {
   id: 0,
@@ -41,8 +41,11 @@ export const MEMBERS = [
     id: 2,
     name: "Youssif Hany",
     role: "Secretary",
-    image: "/images/ieee-day.png",
-    socials: { linkedin: null, email: null, website: null },
+    image: youssifHany,
+		socials: {
+			linkedin: "https://www.linkedin.com/in/youssef-hany-y038",
+			facebook: "https://www.facebook.com/Youusif.038?mibextid=ZbWKwL"
+		},
   },
   {
     id: 3,
