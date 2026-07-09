@@ -12,25 +12,25 @@ export default function Chapters() {
       <div className="relative z-10">
         <div className="text-center">
           <SectionHeader title="Our" highlight="chapters" highlightColor="primary-light" variant="dark" />
-          <p className="text-white text-2xl mt-4">Explore our diverse technical chapters, each focus on advancing specialized fields of technology.</p>
+          <p className="text-white text-base lg:text-2xl mt-4">Explore our diverse technical chapters, each focus on advancing specialized fields of technology.</p>
         </div>
 
         <div className="max-w-md mx-auto mt-20">
-          <div className="flex flex-col overflow-hidden border border-border rounded-3xl h-full">
-            <div className="pl-6 py-6 relative overflow-hidden" style={{ background: 'linear-gradient(to right, #00C950, #00BC7D)' }}>
+          <div className="group flex flex-col overflow-hidden border border-border rounded-3xl h-full transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
+            <div className="pl-6 py-6 relative overflow-hidden transition-all duration-500 group-hover:brightness-110" style={{ background: 'linear-gradient(to right, #00C950, #00BC7D)' }}>
               <span className="absolute bottom-5 right-3 z-10 bg-yellow-400 text-gray-900 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full">
                 Coming Soon
               </span>
               <div className="absolute rounded-full w-32 h-32 bg-white/20 -right-14 -top-14" />
-              <div className="bg-white/20 rounded-2xl p-3 w-fit">
+              <div className="bg-white/20 rounded-2xl p-3 w-fit transition-transform duration-500 group-hover:scale-110">
                 <img src={FlashIcon} className="w-12 h-12" alt="Chapter's Icon" />
               </div>
-              <h3 className="text-white fton-semibold text-xl md:text-3xl mt-6 mb-10">PES</h3>
+              <h3 className="text-white font-semibold text-xl md:text-3xl mt-6 mb-10">PES</h3>
               <span className="text-white text-sm font-light">IEEE PES</span>
             </div>
 
-            <div className="flex-1 bg-main p-6 flex flex-col gap-6">
-              <p className="text-muted">
+            <div className="flex-1 bg-main dark:bg-[#1A1F2E] p-6 flex flex-col gap-6 transition-colors duration-500 group-hover:bg-[#f0f8ff] dark:group-hover:bg-[#222936]">
+              <p className="text-muted group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors duration-500">
                 PES is the chapter inside the student branch which is specialized in electrical power engineering society. Launched in 2019-2020
               </p>
 
