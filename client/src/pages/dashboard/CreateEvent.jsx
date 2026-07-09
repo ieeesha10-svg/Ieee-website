@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useEvents } from "../../hooks/dashboard/useEvents";
+import { toLocalDatetimeString } from "../../utils/dateUtils";
 import { FIELD_TYPE_OPTIONS } from "../../data/fieldTypes";
 import SectionCard from "../../components/SectionCard";
 import RequiredAsterisk from "../../components/RequiredAsterisk";
@@ -14,8 +15,8 @@ const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Works
 
 const EMPTY_FORM = {
   title: "", content: "", type: "event", location: "", speakers: [],
-  startDate: new Date().toISOString().slice(0, 16),
-  endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+  startDate: toLocalDatetimeString(new Date()),
+  endDate: toLocalDatetimeString(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
   maxSubmissions: "", registrationEnabled: true,
   fields: [
     { id: "name", label: "Full Name", type: "TextInput", required: true },

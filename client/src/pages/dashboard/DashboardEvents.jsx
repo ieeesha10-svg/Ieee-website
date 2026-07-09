@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useEvents } from "../../hooks/dashboard/useEvents";
 import api from "../../utils/api";
+import { toLocalDatetimeString } from "../../utils/dateUtils";
 import { FIELD_TYPE_OPTIONS } from "../../data/fieldTypes";
 import DeleteModal from "../../components/DeleteModal";
 import Skeleton from "../../components/skeletons/DashEventsSkeleton";
@@ -38,7 +39,7 @@ const EMPTY_FORM = { title: "", content: "", type: "event", location: "", speake
 
 const getDefaultForm = () => ({
   ...EMPTY_FORM,
-  startDate: new Date().toISOString().slice(0, 16),
+  startDate: toLocalDatetimeString(new Date()),
 });
 
 /* ─── Modal Wrapper ─────────────────────────────────────────────── */
@@ -679,8 +680,8 @@ export default function DashboardEvents() {
               type: editEvent.type,
               location: editEvent.location,
               speakers: (editEvent.speakers || []).map((s) => ({ ...s, imageFile: null, imagePreview: null })),
-              startDate: editEvent.form?.startDate ? new Date(editEvent.form.startDate).toISOString().slice(0, 16) : "",
-              endDate: editEvent.form?.endDate ? new Date(editEvent.form.endDate).toISOString().slice(0, 16) : "",
+              startDate: editEvent.form?.startDate ? toLocalDatetimeString(editEvent.form.startDate) : "",
+              endDate: editEvent.form?.endDate ? toLocalDatetimeString(editEvent.form.endDate) : "",
               maxSubmissions: editEvent.form?.maxSubmissions || "",
               registrationEnabled: editEvent.registrationEnabled,
               fields: editEvent.form?.fields || [],
