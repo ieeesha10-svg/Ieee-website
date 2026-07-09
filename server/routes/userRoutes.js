@@ -89,7 +89,7 @@ userRouter.delete(
   deleteMember,
 );
 
-userRouter.get(
+userRouter.post(
   "/export-specific",
   protect,
   authorize("xcom", "board"),
