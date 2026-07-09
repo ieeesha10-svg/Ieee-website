@@ -13,6 +13,10 @@ import {
   UploadCloud,
   CheckSquare,
   Square,
+  Bold,
+  Italic,
+  Link,
+  Image as ImageIcon,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import api from "../../utils/api";
@@ -22,9 +26,12 @@ import { useBulkMembers } from "../../hooks/dashboard/useBulkMembers";
    Helper: Build an .xlsx Blob from an array of email strings.
    The backend reads column A of the first sheet, row by row.
    ──────────────────────────────────────────────────────────────── */
-function buildExcelBlob(emails) {
-  // Each row = [email] — column A only, no header
-  const wsData = emails.map((e) => [e]);
+function buildExcelBlob(emails, allMembers = []) {
+  // Each row = [email, name, role] — no headers
+  const wsData = emails.map((e) => {
+    const member = allMembers.find((m) => m.email === e);
+    return [e, member?.name || "Member", member?.role || "Member"];
+  });
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Recipients");
@@ -44,6 +51,28 @@ export default function BulkMailer() {
   const [statusMsg, setStatusMsg] = useState(null); // { type: 'success'|'error'|'info', text: '' }
   const [sendResults, setSendResults] = useState([]); // streamed chunk results
   const fileInputRef = useRef(null);
+  const bodyRef = useRef(null);
+
+  const insertAtCursor = (prefix, suffix = "") => {
+    const textarea = bodyRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const current = body;
+    const selectedText = current.substring(start, end);
+    const textToInsert = prefix + selectedText + suffix;
+
+    setBody(
+      current.substring(0, start) + textToInsert + current.substring(end),
+    );
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + prefix.length + selectedText.length,
+        start + prefix.length + selectedText.length,
+      );
+    }, 0);
+  };
 
   // ── Recipients State ──
   const [recipientMode, setRecipientMode] = useState("api"); // 'api' | 'excel'
@@ -137,7 +166,7 @@ export default function BulkMailer() {
         return;
       }
       setStatusMsg({ type: "info", text: "Generating recipient list..." });
-      const excelBlob = buildExcelBlob(Array.from(selectedEmails));
+      const excelBlob = buildExcelBlob(Array.from(selectedEmails), members);
       excelFile = new File([excelBlob], "recipients.xlsx", {
         type: excelBlob.type,
       });
@@ -258,16 +287,90 @@ export default function BulkMailer() {
 
             {/* Message Body */}
             <div>
-              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
-                Message Body
-              </label>
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder="Write your broadcast message here... (HTML tags like <b>, <h3> are supported)"
-                rows={6}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none"
-              />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-bold text-muted uppercase tracking-wide">
+                  Message Body
+                </label>
+              </div>
+              <div className="border border-gray-200 dark:border-[#222936] rounded-lg overflow-hidden bg-white dark:bg-[#111827] focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/30 transition-colors">
+                {/* Formatting Toolbar */}
+                <div className="flex flex-wrap items-center gap-1 p-2 border-b border-gray-200 dark:border-[#222936] bg-gray-50 dark:bg-[#1a1f2e]">
+                  <button
+                    type="button"
+                    onClick={() => insertAtCursor("<b>", "</b>")}
+                    className="p-1.5 text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Bold"
+                  >
+                    <Bold size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertAtCursor("<i>", "</i>")}
+                    className="p-1.5 text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Italic"
+                  >
+                    <Italic size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      insertAtCursor('<a href="URL_HERE">', "</a>")
+                    }
+                    className="p-1.5 text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Insert Link"
+                  >
+                    <Link size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      insertAtCursor('<img src="IMAGE_URL_HERE" alt="Image" />')
+                    }
+                    className="p-1.5 text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Insert Image"
+                  >
+                    <ImageIcon size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-1.5 text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Attach File"
+                  >
+                    <Paperclip size={14} />
+                  </button>
+                  <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+                  <button
+                    type="button"
+                    onClick={() => insertAtCursor("[Name]")}
+                    className="px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 rounded transition-colors"
+                  >
+                    Insert [Name]
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertAtCursor("[Email]")}
+                    className="px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 rounded transition-colors"
+                  >
+                    Insert [Email]
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertAtCursor("[Role]")}
+                    className="px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 rounded transition-colors"
+                  >
+                    Insert [Role]
+                  </button>
+                </div>
+                <textarea
+                  ref={bodyRef}
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="Write your broadcast message here..."
+                  rows={6}
+                  className="w-full px-3 py-2.5 bg-transparent text-sm text-foreground placeholder:text-muted/60 outline-none resize-y min-h-[120px]"
+                />
+              </div>
               <div className="flex items-center justify-between mt-1">
                 <p className="text-[11px] text-muted">
                   You can use plain text or HTML tags. Footer is added
@@ -387,8 +490,9 @@ export default function BulkMailer() {
                     </div>
                   ) : (
                     members.map((m) => (
-                      <label
+                      <div
                         key={m._id || m.email}
+                        onClick={() => handleSelectMember(m.email)}
                         className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-md cursor-pointer transition-colors"
                       >
                         <div
@@ -412,7 +516,7 @@ export default function BulkMailer() {
                             </span>
                           </div>
                         </div>
-                      </label>
+                      </div>
                     ))
                   )}
                 </div>
@@ -531,14 +635,14 @@ export default function BulkMailer() {
               ref={fileInputRef}
               onChange={handleAttachmentChange}
             />
-            <button
+            {/* <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-foreground border border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
             >
               <Paperclip size={14} />
               Attach Files
-            </button>
+            </button> */}
           </div>
 
           {/* Status message */}
