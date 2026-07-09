@@ -23,7 +23,7 @@ export const MEMBERS = [
     image: aliElsayed,
     socials: {
       linkedin: "https://www.linkedin.com/in/alli-elsayed",
-      whatsapp: "https://wa.me/+201500331132",
+      facebook: "https://www.facebook.com/profile.php?id=100005694163126",
       collabratec: "https://ieee-collabratec.ieee.org/app/p/AliElsayed1187445",
     },
   },
