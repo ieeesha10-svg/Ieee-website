@@ -112,7 +112,7 @@ export default function MembershipBenefits() {
             <span className="text-primary-light">M</span>embership{" "}
             <span className="text-primary-light">B</span>enefits
           </h2>
-          <p className="max-w-2xl mx-auto font-lakes text-lg lg:text-xl text-[#F2F2F2] dark:text-[#9CA3AF]">
+          <p className="max-w-2xl mx-auto font-lakes text-lg lg:text-xl text-white">
             Unlock exclusive resources, connect with global professionals, and
             advance your career with IEEE membership.
           </p>

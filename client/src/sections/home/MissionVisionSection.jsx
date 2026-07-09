@@ -9,7 +9,7 @@ export default function MissionVisionSection() {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <Badge text='Purpose' />
-          <h2 className="font-black text-4xl lg:text-5xl font-bold mt-4">
+          <h2 className="font-black uppercase text-4xl lg:text-5xl font-bold mt-4">
             <span className="text-primary">Our Mission</span>{' '}
             <span className="text-foreground">& Vision</span>
           </h2>
@@ -27,7 +27,7 @@ export default function MissionVisionSection() {
             </span>
             <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">Our Mission</h3>
             <p className="text-sm text-muted">
-              To empower students through hands-on technical experience, mentorship, and collaborative projects — bridging the gap between classroom theory and real-world engineering practice across Egypt.
+            	We provide students with opportunities to learn and improve through workshops, events, competitions, and networking that enhance technical knowledge, practical abilities, and soft skills. We create a friendly and supportive environment where everyone can collaborate, try new ideas, and prepare for the challenges in engineering and technology.
             </p>
           </div>
 
@@ -38,8 +38,8 @@ export default function MissionVisionSection() {
             </span>
             <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">Our Vision</h3>
             <p className="text-sm text-muted">
-              To be the leading student-driven technical community in the region — recognized for innovation, inclusivity, and producing graduates ready to lead the next generation of technology.
-            </p>
+							we aim to be a place where students grow in engineering and technology, develop practical and soft skills, work on exciting projects, and collaborate with each other, while building leadership, creativity, and a passion for technology.
+						</p>
           </div>
         </div>
       </div>

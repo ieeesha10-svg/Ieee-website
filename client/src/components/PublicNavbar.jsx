@@ -24,7 +24,7 @@ const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
   { label: "About", href: "/about", icon: Info },
   { label: "Chapters", href: "#chapters", icon: MapPin },
-  { label: "Events", href: "/events", icon: Calendar, badge: "100+" },
+  { label: "Events", href: "/events", icon: Calendar, badge: "50+" },
   { label: "Committees", href: "/committees", icon: Briefcase },
   { label: "Dev Team", href: "/dev-team", icon: Braces },
   { label: "Contact", href: "/contact", icon: Mail },
@@ -61,17 +61,15 @@ const PublicNavbar = () => {
 
   return (
     <nav className="bg-navbar-background lg:bg-navbar-background/88 dark:lg:bg-navbar-background/60 lg:backdrop-blur-xl shadow-md sticky top-0 z-50 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 py-2 h-full flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 pt-2 pb-3 h-full flex items-center justify-between">
         <Toaster position="top-center" />
 
         {/* Logo */}
         <Link to="/">
           <img src="/logo.png" alt="IEEE Logo" />
         </Link>
-
-        {/* --- DESKTOP MENU (Hidden on small screens) --- */}
-        <div className="hidden md:flex items-center gap-6">
-          {NAV_LINKS.map((nav_link, index) => {
+				<div className="hidden md:flex items-center gap-6">
+	        {NAV_LINKS.map((nav_link, index) => {
 						return (
 							nav_link.href.startsWith("#") && isHome ? (
 								<a className="text-lg text-white hover:text-primary-light transition flex items-center" href={`${nav_link.href}`}>
@@ -90,8 +88,12 @@ const PublicNavbar = () => {
 	                {nav_link.label}
 	              </Link>
 							)
-            );
-          })}
+	          );
+					})}
+				</div>
+        
+        {/* --- DESKTOP MENU (Hidden on small screens) --- */}
+        <div className="hidden md:flex items-center gap-6">
 
           <ThemeToggle />
 
@@ -176,7 +178,28 @@ const PublicNavbar = () => {
         <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-2">
           {NAV_LINKS.map((link, index) => {
             const Icon = link.icon;
-            return (
+            return link.href.startsWith("#") && isHome ? (
+              <a
+                key={index}
+                href={link.href}
+                onClick={closeMenu}
+                className="flex items-center gap-3 rounded-xl p-4 transition bg-white/10 dark:bg-[#222936]/20"
+              >
+                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-light/50 dark:bg-border shrink-0">
+                  <Icon size={22} />
+                </span>
+                <span className="flex-1 font-medium">{link.label}</span>
+                {link.badge && (
+                  <span className="text-xs font-semibold bg-white/10 px-2 py-0.5 rounded-full">
+                    {link.badge}
+                  </span>
+                )}
+                <ChevronRight
+                  size={16}
+                  className="text-primary-light transition"
+                />
+              </a>
+            ) : (
               <Link
                 key={index}
                 to={

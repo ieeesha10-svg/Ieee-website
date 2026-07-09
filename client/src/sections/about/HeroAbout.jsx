@@ -1,9 +1,11 @@
 import React from 'react'
 import { useAuth } from '../../context/AuthContext'
+import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import aboutImage from '../../assets/images/about/about-image.jpg'
 import Badge from '../../components/Badge'
 import { committees } from '../../data/committeesData'
+
 function Chip({ title, subtitle, label, className }) {
   return (
     <div className={`bg-card/90 backdrop-blur rounded-xl px-5 py-2 flex items-center gap-2 shadow-lg ${className}`}>
@@ -38,14 +40,14 @@ export default function HeroSection() {
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3 w-[80%] sm:w-auto">
 							{
 								!user && (
-									<a href='/committees' className="bg-primary-linear text-white font-semibold rounded-full px-6 py-3 flex items-center justify-center gap-2 w-full sm:w-auto transition-all duration-300 hover:opacity-85 hover:scale-[1.02]">
+									<Link to='/signup' className="bg-primary-linear text-white font-semibold rounded-full px-6 py-3 flex items-center justify-center gap-2 w-full sm:w-auto transition-all duration-300 hover:opacity-85 hover:scale-[1.02]">
 		                Become a Member <ArrowRight size={18} />
-		              </a>
+		              </Link>
 								)
              	}
-              <a href='/events' className="border border-border text-foreground rounded-full px-6 py-3 font-semibold text-center w-full sm:w-auto transition-all duration-300 hover:bg-card hover:border-primary/50">
+              <Link to='/events' className="border border-border text-foreground rounded-full px-6 py-3 font-semibold text-center w-full sm:w-auto transition-all duration-300 hover:bg-card hover:border-primary/50">
                 Explore Events
-              </a>
+              </Link>
             </div>
             <div className="flex gap-8 mt-2">
               <div>
@@ -53,7 +55,7 @@ export default function HeroSection() {
                 <span className="block text-xs text-muted">Volunteers</span>
               </div>
               <div>
-                <span className="text-2xl md:text-3xl font-bold text-primary">30+</span>
+                <span className="text-2xl md:text-3xl font-bold text-primary">50+</span>
                 <span className="block text-xs text-muted">Events Hosted</span>
               </div>
               <div>
@@ -71,7 +73,7 @@ export default function HeroSection() {
               className="mx-auto w-full object-cover rounded-2xl"
             />
 
-            <Chip title="150+" subtitle="Members" className="absolute top-4 -left-2 lg:-left-4" />
+            <Chip title="150+" subtitle="Volunteers" className="absolute top-4 -left-2 lg:-left-4" />
             <Chip label="AI Workshop" className="absolute bottom-4 -left-2 lg:-left-4" />
             <Chip label="Robotics Lab" className="absolute bottom-4 -right-2 lg:-right-4" />
           </div>

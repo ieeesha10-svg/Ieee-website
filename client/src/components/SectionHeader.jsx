@@ -26,7 +26,7 @@ export default function SectionTitle({
 }) {
 	return (
 		<div className={twMerge("inline-block", className)}>
-			<h2 className="font-black text-5xl sm:text-7xl leading-tight uppercase">
+			<h2 className="font-black text-4xl sm:text-5xl md:text-7xl leading-tight uppercase">
 				<span className={textStyles[variant]}>{title}</span>{" "}
 				<span className={highlightClasses[highlightColor]}>{highlight}</span>
 			</h2>

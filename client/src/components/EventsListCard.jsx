@@ -43,7 +43,7 @@ export default function EventsListCard({ type = "upcoming", id, image, badge, ti
           <span className="text-sm text-muted">{attendees} Attendees</span>
         )}
 
-        <p className={`text-sm text-muted flex-1 ${isUpcoming && "mb-4"}`}>{description}</p>
+        <p className={`text-sm text-muted flex-1 line-clamp-3 ${isUpcoming && "mb-4"}`}>{description}</p>
 
         {isUpcoming && (
           <Link to={`/events/${id}`} state={{ image, title, description }} className='mt-auto'>

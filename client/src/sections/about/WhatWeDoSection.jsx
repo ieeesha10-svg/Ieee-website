@@ -3,8 +3,8 @@ import { Activity, Wrench, Lightbulb, Users, Phone, Rocket } from 'lucide-react'
 import Badge from '../../components/Badge'
 
 const ourActivities = [
-  { tag: '02', icon: Activity, title: 'Technical Sessions', desc: 'Deep-dive sessions on emerging tech, research topics, and career-defining skill sets.' },
   { tag: '01', icon: Wrench, title: 'Workshops', desc: 'Hands-on sessions covering embedded systems, web dev, AI, and more — led by experienced members.' },
+  { tag: '02', icon: Activity, title: 'Technical Sessions', desc: 'Deep-dive sessions on emerging tech, research topics, and career-defining skill sets.' },
   { tag: '03', icon: Lightbulb, title: 'Competitions', desc: 'Hackathons, robotics challenges, and case competitions that push members to apply what they\'ve learned.' },
   { tag: '04', icon: Users, title: 'Community Activities', desc: 'Social events, team bonding trips, and volunteering initiatives that build lasting friendships.' },
   { tag: '05', icon: Phone, title: 'Industry Talks', desc: 'Sessions with engineers and founders from leading tech companies sharing real career insight.' },
