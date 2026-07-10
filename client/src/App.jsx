@@ -31,8 +31,8 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 // Dashboard Pages
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import DashboardMembers from "./pages/dashboard/DashboardMembers";
-import DashboardEvents from "./pages/dashboard/DashboardEvents";
-import CreateEvent from "./pages/dashboard/CreateEvent";
+import DashboardEvents from "./pages/dashboard/events/DashboardEvents";
+import CreateEvent from "./pages/dashboard/events/CreateEvent";
 import EmailLogsPage from "./pages/dashboard/EmailLogsPage";
 import DashboardForms from "./pages/dashboard/forms/DashboardForms";
 import CreateForm from "./pages/dashboard/forms/CreateForm";

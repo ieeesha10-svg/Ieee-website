@@ -6,12 +6,12 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useEvents } from "../../hooks/dashboard/useEvents";
-import api from "../../utils/api";
-import { toLocalDatetimeString } from "../../utils/dateUtils";
-import { FIELD_TYPE_OPTIONS } from "../../data/fieldTypes";
-import DeleteModal from "../../components/DeleteModal";
-import Skeleton from "../../components/skeletons/DashEventsSkeleton";
+import { useEvents } from "../../../hooks/dashboard/useEvents";
+import api from "../../../utils/api";
+import { toLocalDatetimeString } from "../../../utils/dateUtils";
+import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
+import DeleteModal from "../../../components/DeleteModal";
+import Skeleton from "../../../components/skeletons/DashEventsSkeleton";
 
 const TYPE_COLORS = {
   teal: { bg: "bg-teal-50 dark:bg-teal-900/25", text: "text-teal-700 dark:text-teal-300", border: "border-teal-200 dark:border-teal-700/40" },
@@ -528,15 +528,7 @@ function EventCard({ event, onView, onEdit, onDelete }) {
           {event.date && <div className="flex items-center gap-2 text-muted text-xs"><Calendar size={13} className="shrink-0" /><span>{event.date}</span></div>}
           <div className="flex items-center gap-2 text-muted text-xs"><MapPin size={13} className="shrink-0" /><span>{event.location}</span></div>
         </div>
-        {/* <div className="mb-4">
-          <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="text-muted font-medium">Attendees</span>
-            <span className="text-foreground font-semibold">{event.attendees}</span>
-          </div>
-          <div className="h-[5px] w-full rounded-full bg-gray-100 dark:bg-gray-700/50 overflow-hidden">
-            <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${attendeePercent}%` }} />
-          </div>
-        </div>*/}
+
       </div>
       <div className="flex items-center gap-2 pt-3">
         <button onClick={() => onView(event.id)} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">
@@ -555,7 +547,7 @@ function EventCard({ event, onView, onEdit, onDelete }) {
 
 /* ─── Main Component ─────────────────────────────────────────────── */
 export default function DashboardEvents() {
-  const { events, filter, setFilter, counts, totalCount, loading, error, createEvent, updateEvent, deleteEvent, getEventById } = useEvents();
+  const { events, filter, setFilter, loading, error, createEvent, updateEvent, deleteEvent, getEventById } = useEvents();
 
 	const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);

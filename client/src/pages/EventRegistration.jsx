@@ -143,7 +143,7 @@ export default function EventRegistration() {
       key: field.id,
       name: field.id,
       label: field.label,
-      placeholder: field.placeholder || `Enter your ${field.label.toLowerCase()}`,
+      placeholder: field.placeholder || 'Your answer',
       value: answers[field.id] || '',
       onChange: handleChange,
       error: errors[field.id],

@@ -4,11 +4,11 @@ import {
   ArrowLeft, X, Loader2, Check, GripVertical, Trash2, CheckCircle2,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useEvents } from "../../hooks/dashboard/useEvents";
-import { toLocalDatetimeString } from "../../utils/dateUtils";
-import { FIELD_TYPE_OPTIONS } from "../../data/fieldTypes";
-import SectionCard from "../../components/SectionCard";
-import RequiredAsterisk from "../../components/RequiredAsterisk";
+import { useEvents } from "../../../hooks/dashboard/useEvents";
+import { toLocalDatetimeString } from "../../../utils/dateUtils";
+import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
+import SectionCard from "../../../components/SectionCard";
+import RequiredAsterisk from "../../../components/RequiredAsterisk";
 
 const EVENT_TYPES = ["general", "event", "workshop", "webinar"];
 const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Workshop", webinar: "Webinar" };
@@ -241,10 +241,10 @@ export default function CreateEvent() {
             <div className="flex-1">
               <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Field Label</span>
             </div>
-            <div className="w-[130px] shrink-0">
+            <div className="w-32.5 shrink-0">
               <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Type</span>
             </div>
-            <div className="w-[70px] shrink-0 text-center">
+            <div className="w-17.5 shrink-0 text-center">
               <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Required</span>
             </div>
             <div className="w-8 shrink-0" />
@@ -324,14 +324,14 @@ export default function CreateEvent() {
                     value={field.type}
                     onChange={(e) => updateFieldAt(idx, { type: e.target.value })}
                     aria-label={`Field type for ${field.label || `field ${idx + 1}`}`}
-                    className="w-[130px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                    className="w-32.5 shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
                   >
                     {FIELD_TYPE_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
 
-                  <div className="w-[70px] shrink-0 flex justify-center pt-0.5">
+                  <div className="w-17.5 shrink-0 flex justify-center pt-0.5">
                     <button
                       type="button"
                       onClick={() => updateFieldAt(idx, { required: !field.required })}
@@ -371,7 +371,7 @@ export default function CreateEvent() {
               value={newFieldType}
               onChange={(e) => setNewFieldType(e.target.value)}
               aria-label="New field type"
-              className="w-[130px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+              className="w-32.5 shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
             >
               {FIELD_TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>

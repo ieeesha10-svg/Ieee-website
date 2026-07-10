@@ -18,6 +18,16 @@ export const COUNSELOR = {
 export const MEMBERS = [
   {
     id: 0,
+    name: "Alaa Mohamed",
+    role: "Chairperson",
+    image: alaaMohamed,
+		socials: {
+			linkedin: 'https://www.linkedin.com/in/alaa-mohamed-ab78992a0',
+			facebook: 'https://www.facebook.com/share/1D1qrgd5wd/?mibextid=wwXIfr',
+		},
+  },
+  {
+    id: 1,
     name: "Ali Elsayed",
     role: "Vice Chair",
     image: aliElsayed,
@@ -28,7 +38,7 @@ export const MEMBERS = [
     },
   },
   {
-    id: 1,
+    id: 2,
     name: "Reem Hendawy",
     role: "Treasurer",
     image: reemHendawy,
@@ -38,23 +48,13 @@ export const MEMBERS = [
 		},
   },
   {
-    id: 2,
+    id: 3,
     name: "Youssif Hany",
     role: "Secretary",
     image: youssifHany,
 		socials: {
 			linkedin: "https://www.linkedin.com/in/youssef-hany-y038",
 			facebook: "https://www.facebook.com/Youusif.038?mibextid=ZbWKwL"
-		},
-  },
-  {
-    id: 3,
-    name: "Alaa Mohamed",
-    role: "Chairperson",
-    image: alaaMohamed,
-		socials: {
-			linkedin: 'https://www.linkedin.com/in/alaa-mohamed-ab78992a0',
-			facebook: 'https://www.facebook.com/share/1D1qrgd5wd/?mibextid=wwXIfr',
 		},
   },
 ];
