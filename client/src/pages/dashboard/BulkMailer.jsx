@@ -13,22 +13,50 @@ import {
   UploadCloud,
   CheckSquare,
   Square,
+  Bold,
+  Italic,
+  Link,
+  Image as ImageIcon,
+  Filter,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import api from "../../utils/api";
-import { useBulkMembers } from "../../hooks/dashboard/useBulkMembers";
+import { useSearchMembers } from "../../hooks/dashboard/useSearchMembers";
 
 /* ────────────────────────────────────────────────────────────────
-   Helper: Build an .xlsx Blob from an array of email strings.
-   The backend reads column A of the first sheet, row by row.
+   Helper: Build an .xlsx Blob from selected rows (API or Excel).
+   The backend now reads headers. We ensure "Email" is explicit.
    ──────────────────────────────────────────────────────────────── */
-function buildExcelBlob(emails) {
-  // Each row = [email] — column A only, no header
-  const wsData = emails.map((e) => [e]);
+function buildFinalExcelBlob(selectedRows, emailColName) {
+  if (!selectedRows || selectedRows.length === 0) return null;
+
+  // Collect all unique keys across all rows, excluding the email column and our internal ID
+  const allKeys = new Set();
+  selectedRows.forEach((row) => {
+    Object.keys(row).forEach((k) => {
+      if (
+        k !== "_excelRowId" &&
+        String(k).trim() !== String(emailColName).trim()
+      ) {
+        allKeys.add(k);
+      }
+    });
+  });
+
+  const headers = ["Email", ...Array.from(allKeys)];
+  const wsData = [headers];
+
+  selectedRows.forEach((row) => {
+    const rowData = [row[emailColName] || ""];
+    Array.from(allKeys).forEach((k) => {
+      rowData.push(row[k] || "");
+    });
+    wsData.push(rowData);
+  });
+
   const ws = XLSX.utils.aoa_to_sheet(wsData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Recipients");
-  // Write to binary array
   const wbOut = XLSX.write(wb, { bookType: "xlsx", type: "array" });
   return new Blob([wbOut], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -44,6 +72,28 @@ export default function BulkMailer() {
   const [statusMsg, setStatusMsg] = useState(null); // { type: 'success'|'error'|'info', text: '' }
   const [sendResults, setSendResults] = useState([]); // streamed chunk results
   const fileInputRef = useRef(null);
+  const bodyRef = useRef(null);
+
+  const insertAtCursor = (prefix, suffix = "") => {
+    const textarea = bodyRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const current = body;
+    const selectedText = current.substring(start, end);
+    const textToInsert = prefix + selectedText + suffix;
+
+    setBody(
+      current.substring(0, start) + textToInsert + current.substring(end),
+    );
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + prefix.length + selectedText.length,
+        start + prefix.length + selectedText.length,
+      );
+    }, 0);
+  };
 
   // ── Recipients State ──
   const [recipientMode, setRecipientMode] = useState("api"); // 'api' | 'excel'
@@ -52,41 +102,74 @@ export default function BulkMailer() {
   // Excel Mode
   const [recipientExcel, setRecipientExcel] = useState(null);
   const recipientExcelInputRef = useRef(null);
+  const [excelMembers, setExcelMembers] = useState([]);
+  const [excelHeaders, setExcelHeaders] = useState([]);
+  const [emailColumn, setEmailColumn] = useState("");
 
-  // Use Custom Hook for Members
+  // Use Custom Hook for Members (Detailed Search)
   const {
     members,
-    loadingMembers,
+    loading: loadingMembers,
     search,
     setSearch,
-    filterRole,
-    setFilterRole,
-    filterCollege,
-    setFilterCollege,
-    uniqueColleges,
-  } = useBulkMembers();
+    collegeFilters,
+    yearFilters,
+    roleFilters,
+    activeColleges,
+    toggleCollege,
+    activeYears,
+    toggleYear,
+    activeRoles,
+    toggleRole,
+  } = useSearchMembers({ pageSize: 2000 });
+
+  // Derived state for what to show in the list
+  const activeMembersToDisplay = React.useMemo(() => {
+    if (recipientMode === "api") return members;
+
+    let filtered = excelMembers;
+    if (search) {
+      const s = search.toLowerCase();
+      filtered = filtered.filter((m) =>
+        Object.values(m).some((val) => String(val).toLowerCase().includes(s)),
+      );
+    }
+
+    // Dynamic Role filter for Excel if a 'Role' column exists
+    const roleHeader = excelHeaders.find(
+      (h) => String(h).toLowerCase() === "role",
+    );
+    if (roleHeader && activeRoles.length > 0) {
+      filtered = filtered.filter((m) => activeRoles.includes(m[roleHeader]));
+    }
+
+    return filtered;
+  }, [recipientMode, members, excelMembers, search, activeRoles, excelHeaders]);
+
+  const getEmailVal = (m) =>
+    recipientMode === "api" ? m.email : m[emailColumn];
 
   // Handlers for selection
   const handleSelectAll = () => {
-    if (
-      members.length > 0 &&
-      members.every((m) => selectedEmails.has(m.email))
-    ) {
-      // Deselect all filtered
-      const newSet = new Set(selectedEmails);
-      members.forEach((m) => newSet.delete(m.email));
-      setSelectedEmails(newSet);
+    const currentList = activeMembersToDisplay;
+    const allSelected =
+      currentList.length > 0 &&
+      currentList.every((m) => selectedEmails.has(getEmailVal(m)));
+
+    const newSet = new Set(selectedEmails);
+    if (allSelected) {
+      currentList.forEach((m) => newSet.delete(getEmailVal(m)));
     } else {
-      // Select all filtered
-      const newSet = new Set(selectedEmails);
-      members.forEach((m) => {
-        if (m.email) newSet.add(m.email);
+      currentList.forEach((m) => {
+        const e = getEmailVal(m);
+        if (e) newSet.add(e);
       });
-      setSelectedEmails(newSet);
     }
+    setSelectedEmails(newSet);
   };
 
-  const handleSelectMember = (email) => {
+  const handleSelectMember = (m) => {
+    const email = getEmailVal(m);
     if (!email) return;
     const newSet = new Set(selectedEmails);
     if (newSet.has(email)) newSet.delete(email);
@@ -109,7 +192,37 @@ export default function BulkMailer() {
   /* ── Recipient Excel Handler ─────────────────────────────────── */
   const handleRecipientExcelChange = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setRecipientExcel(e.target.files[0]);
+      const file = e.target.files[0];
+      setRecipientExcel(file);
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const bstr = evt.target.result;
+          const wb = XLSX.read(bstr, { type: "binary" });
+          const wsname = wb.SheetNames[0];
+          const ws = wb.Sheets[wsname];
+
+          const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+          if (data.length > 0) {
+            const headers = data[0].map((h) => String(h).trim());
+            setExcelHeaders(headers);
+
+            const guessedEmail =
+              headers.find((h) => h.toLowerCase().includes("mail")) ||
+              headers[0];
+            setEmailColumn(guessedEmail);
+
+            const rows = XLSX.utils.sheet_to_json(ws);
+            const mappedRows = rows.map((r, i) => ({ ...r, _excelRowId: i }));
+            setExcelMembers(mappedRows);
+          }
+        } catch (error) {
+          console.error("Error parsing excel", error);
+          setStatusMsg({ type: "error", text: "Failed to parse Excel file." });
+        }
+      };
+      reader.readAsBinaryString(file);
     }
     e.target.value = "";
   };
@@ -128,28 +241,38 @@ export default function BulkMailer() {
 
     let excelFile;
 
+    if (selectedEmails.size === 0) {
+      setStatusMsg({
+        type: "error",
+        text: "Please select at least one recipient.",
+      });
+      return;
+    }
+
+    setStatusMsg({ type: "info", text: "Generating recipient list..." });
+
+    let selectedRows = [];
     if (recipientMode === "api") {
-      if (selectedEmails.size === 0) {
-        setStatusMsg({
-          type: "error",
-          text: "Please select at least one recipient.",
-        });
-        return;
-      }
-      setStatusMsg({ type: "info", text: "Generating recipient list..." });
-      const excelBlob = buildExcelBlob(Array.from(selectedEmails));
+      selectedRows = members.filter((m) => selectedEmails.has(m.email));
+      const excelBlob = buildFinalExcelBlob(selectedRows, "email");
       excelFile = new File([excelBlob], "recipients.xlsx", {
         type: excelBlob.type,
       });
     } else {
-      if (!recipientExcel) {
+      if (!recipientExcel || excelMembers.length === 0) {
         setStatusMsg({
           type: "error",
           text: "Please upload an Excel file containing recipients.",
         });
         return;
       }
-      excelFile = recipientExcel;
+      selectedRows = excelMembers.filter((m) =>
+        selectedEmails.has(m[emailColumn]),
+      );
+      const excelBlob = buildFinalExcelBlob(selectedRows, emailColumn);
+      excelFile = new File([excelBlob], "recipients.xlsx", {
+        type: excelBlob.type,
+      });
     }
 
     setIsSending(true);
@@ -258,16 +381,82 @@ export default function BulkMailer() {
 
             {/* Message Body */}
             <div>
-              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
-                Message Body
-              </label>
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder="Write your broadcast message here... (HTML tags like <b>, <h3> are supported)"
-                rows={6}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none"
-              />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-bold text-muted uppercase tracking-wide">
+                  Message Body
+                </label>
+              </div>
+              <div className="border border-gray-200 dark:border-[#222936] rounded-lg overflow-hidden bg-white dark:bg-[#111827] focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/30 transition-colors">
+                {/* Formatting Toolbar */}
+                <div className="flex flex-wrap items-center gap-1 p-2 border-b border-gray-200 dark:border-[#222936] bg-gray-50 dark:bg-[#1a1f2e]">
+                  <button
+                    type="button"
+                    onClick={() => insertAtCursor("<b>", "</b>")}
+                    className="p-1.5 text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Bold"
+                  >
+                    <Bold size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertAtCursor("<i>", "</i>")}
+                    className="p-1.5 text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Italic"
+                  >
+                    <Italic size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      insertAtCursor('<a href="URL_HERE">', "</a>")
+                    }
+                    className="p-1.5 text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Insert Link"
+                  >
+                    <Link size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      insertAtCursor('<img src="IMAGE_URL_HERE" alt="Image" />')
+                    }
+                    className="p-1.5 text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Insert Image"
+                  >
+                    <ImageIcon size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-1.5 text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Attach File"
+                  >
+                    <Paperclip size={14} />
+                  </button>
+                  <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+                  {(recipientMode === "api" 
+                    ? ["Name", "Email", "Role"] 
+                    : excelHeaders
+                  ).map((header) => (
+                    <button
+                      key={header}
+                      type="button"
+                      onClick={() => insertAtCursor(`[${header}]`)}
+                      className="px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 rounded transition-colors"
+                    >
+                      Insert [{header}]
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  ref={bodyRef}
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="Write your broadcast message here..."
+                  rows={6}
+                  className="w-full px-3 py-2.5 bg-transparent text-sm text-foreground placeholder:text-muted/60 outline-none resize-y min-h-[120px]"
+                />
+              </div>
               <div className="flex items-center justify-between mt-1">
                 <p className="text-[11px] text-muted">
                   You can use plain text or HTML tags. Footer is added
@@ -311,44 +500,181 @@ export default function BulkMailer() {
             </div>
           </div>
 
-          {recipientMode === "api" && (
+          {recipientMode === "excel" && !recipientExcel && (
+            <div className="animate-in fade-in duration-300">
+              <input
+                type="file"
+                accept=".xlsx, .xls"
+                className="hidden"
+                ref={recipientExcelInputRef}
+                onChange={handleRecipientExcelChange}
+              />
+              <div
+                onClick={() => recipientExcelInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-primary hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-xl p-8 text-center cursor-pointer transition-colors"
+              >
+                <div className="flex flex-col items-center">
+                  <UploadCloud size={32} className="text-muted mb-3" />
+                  <p className="text-sm font-semibold text-foreground mb-1">
+                    Upload Excel File
+                  </p>
+                  <p className="text-xs text-muted max-w-xs mx-auto">
+                    The first row must contain column headers. We'll extract
+                    variables based on them.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(recipientMode === "api" ||
+            (recipientMode === "excel" && recipientExcel)) && (
             <div className="space-y-4 animate-in fade-in duration-300">
+              {recipientMode === "excel" && excelHeaders.length > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-primary uppercase tracking-wide">
+                      Primary Email Column
+                    </span>
+                    <span className="text-[10px] text-muted">
+                      Select the column containing recipient emails.
+                    </span>
+                  </div>
+                  <select
+                    value={emailColumn}
+                    onChange={(e) => setEmailColumn(e.target.value)}
+                    className="ml-auto bg-white dark:bg-[#111827] border border-gray-200 dark:border-[#222936] text-xs font-medium rounded-md px-3 py-1.5 focus:outline-none focus:border-primary"
+                  >
+                    {excelHeaders.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setRecipientExcel(null);
+                      setExcelMembers([]);
+                      setExcelHeaders([]);
+                      setSelectedEmails(new Set());
+                    }}
+                    className="ml-2 text-xs text-red-500 hover:text-red-600 font-medium px-2 py-1 bg-red-50 dark:bg-red-500/10 rounded"
+                  >
+                    Remove File
+                  </button>
+                </div>
+              )}
+
               {/* Filters */}
-              <div className="flex flex-col md:flex-row gap-3">
-                <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] focus-within:border-primary transition-colors">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] focus-within:border-primary transition-colors">
                   <Search size={14} className="text-muted shrink-0" />
                   <input
                     type="text"
-                    placeholder="Search name or email..."
+                    placeholder={
+                      recipientMode === "excel"
+                        ? "Search inside Excel..."
+                        : "Search name or email..."
+                    }
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full text-xs bg-transparent focus:outline-none text-foreground placeholder:text-muted/60"
                   />
                 </div>
-                <div className="flex gap-2">
-                  <select
-                    value={filterRole}
-                    onChange={(e) => setFilterRole(e.target.value)}
-                    className="px-2 py-2 text-xs rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-foreground focus:outline-none focus:border-primary"
-                  >
-                    <option value="all">All Roles</option>
-                    <option value="member">Member</option>
-                    <option value="scanner">Scanner</option>
-                    <option value="xcom">XCom</option>
-                    <option value="board">Board</option>
-                  </select>
-                  <select
-                    value={filterCollege}
-                    onChange={(e) => setFilterCollege(e.target.value)}
-                    className="px-2 py-2 text-xs rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-foreground focus:outline-none focus:border-primary max-w-30"
-                  >
-                    <option value="all">All Colleges</option>
-                    {uniqueColleges.map((col) => (
-                      <option key={col} value={col}>
-                        {col}
-                      </option>
-                    ))}
-                  </select>
+
+                <div className="flex flex-col gap-3">
+                  {/* Dynamic Role Filter for Excel Mode, Standard Filters for API Mode */}
+                  {recipientMode === "api" && (
+                    <>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="flex items-center gap-1 mr-2">
+                          <Filter className="w-3.5 h-3.5 text-muted" />
+                          <span className="text-[11px] text-muted font-bold uppercase tracking-wider">
+                            College
+                          </span>
+                        </div>
+                        {collegeFilters.map((college) => (
+                          <button
+                            key={college}
+                            onClick={() => toggleCollege(college)}
+                            className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                              activeColleges.includes(college)
+                                ? "bg-primary text-white border-primary"
+                                : "bg-gray-50 dark:bg-[#1a1f2e] text-muted border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary"
+                            }`}
+                          >
+                            {college}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="flex items-center gap-1 mr-2">
+                          <Filter className="w-3.5 h-3.5 text-muted" />
+                          <span className="text-[11px] text-muted font-bold uppercase tracking-wider">
+                            Year
+                          </span>
+                        </div>
+                        {yearFilters.map((year) => (
+                          <button
+                            key={year}
+                            onClick={() => toggleYear(year)}
+                            className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                              activeYears.includes(year)
+                                ? "bg-primary text-white border-primary"
+                                : "bg-gray-50 dark:bg-[#1a1f2e] text-muted border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary"
+                            }`}
+                          >
+                            {year}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Shared Role Filter (if available in Excel) */}
+                  {(recipientMode === "api" ||
+                    (recipientMode === "excel" &&
+                      excelHeaders.find(
+                        (h) => String(h).toLowerCase() === "role",
+                      ))) && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <div className="flex items-center gap-1 mr-2">
+                        <Filter className="w-3.5 h-3.5 text-muted" />
+                        <span className="text-[11px] text-muted font-bold uppercase tracking-wider">
+                          Role
+                        </span>
+                      </div>
+                      {(recipientMode === "excel"
+                        ? [
+                            ...new Set(
+                              excelMembers.map(
+                                (m) =>
+                                  m[
+                                    excelHeaders.find(
+                                      (h) => String(h).toLowerCase() === "role",
+                                    )
+                                  ],
+                              ),
+                            ),
+                          ].filter(Boolean)
+                        : roleFilters
+                      ).map((role) => (
+                        <button
+                          key={role}
+                          onClick={() => toggleRole(role)}
+                          className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                            activeRoles.includes(role)
+                              ? "bg-primary text-white border-primary"
+                              : "bg-gray-50 dark:bg-[#1a1f2e] text-muted border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary"
+                          }`}
+                        >
+                          {role}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -360,8 +686,10 @@ export default function BulkMailer() {
                       onClick={handleSelectAll}
                       className="text-primary hover:text-primary-dark transition-colors"
                     >
-                      {members.length > 0 &&
-                      members.every((m) => selectedEmails.has(m.email)) ? (
+                      {activeMembersToDisplay.length > 0 &&
+                      activeMembersToDisplay.every((m) =>
+                        selectedEmails.has(getEmailVal(m)),
+                      ) ? (
                         <CheckSquare size={16} />
                       ) : (
                         <Square size={16} className="text-muted" />
@@ -377,97 +705,73 @@ export default function BulkMailer() {
                 </div>
 
                 <div className="max-h-62.5 overflow-y-auto p-1 bg-white dark:bg-[#1a1f2e]">
-                  {loadingMembers ? (
+                  {loadingMembers && recipientMode === "api" ? (
                     <div className="flex justify-center py-8">
                       <Loader2 size={20} className="animate-spin text-muted" />
                     </div>
-                  ) : members.length === 0 ? (
+                  ) : activeMembersToDisplay.length === 0 ? (
                     <div className="text-center py-8 text-xs text-muted">
                       No members found matching filters.
                     </div>
                   ) : (
-                    members.map((m) => (
-                      <label
-                        key={m._id || m.email}
-                        className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-md cursor-pointer transition-colors"
-                      >
+                    activeMembersToDisplay.map((m) => {
+                      const email = getEmailVal(m);
+                      const key =
+                        recipientMode === "api" ? m.id : m._excelRowId;
+                      // Try to guess a "name" column for Excel mode display, fallback to email
+                      const nameHeader =
+                        recipientMode === "excel"
+                          ? excelHeaders.find((h) =>
+                              String(h).toLowerCase().includes("name"),
+                            )
+                          : "name";
+                      const name =
+                        recipientMode === "api"
+                          ? m.name
+                          : m[nameHeader] || email;
+                      const roleHeader =
+                        recipientMode === "excel"
+                          ? excelHeaders.find(
+                              (h) => String(h).toLowerCase() === "role",
+                            )
+                          : "role";
+                      const role =
+                        recipientMode === "api" ? m.role : m[roleHeader];
+
+                      return (
                         <div
-                          className={`flex items-center justify-center w-4 h-4 rounded-[4px] border transition-colors ${
-                            selectedEmails.has(m.email)
-                              ? "bg-primary border-primary text-white"
-                              : "border-gray-300 dark:border-gray-600 bg-transparent"
-                          }`}
+                          key={key}
+                          onClick={() => handleSelectMember(m)}
+                          className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-md cursor-pointer transition-colors"
                         >
-                          {selectedEmails.has(m.email) && (
-                            <CheckSquare size={14} />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0 flex items-center justify-between">
-                          <span className="text-sm font-medium text-foreground truncate mr-2">
-                            {m.name || m.email}
-                          </span>
-                          <div className="flex gap-2 shrink-0">
-                            <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-muted font-medium uppercase">
-                              {m.role || "Member"}
+                          <div
+                            className={`flex items-center justify-center w-4 h-4 rounded-[4px] border transition-colors ${
+                              selectedEmails.has(email)
+                                ? "bg-primary border-primary text-white"
+                                : "border-gray-300 dark:border-gray-600 bg-transparent"
+                            }`}
+                          >
+                            {selectedEmails.has(email) && (
+                              <CheckSquare size={14} />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0 flex items-center justify-between">
+                            <span className="text-sm font-medium text-foreground truncate mr-2">
+                              {name || email}
                             </span>
+                            <div className="flex gap-2 shrink-0">
+                              {role && (
+                                <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-muted font-medium uppercase">
+                                  {role}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </label>
-                    ))
+                      );
+                    })
                   )}
                 </div>
-              </div>
-            </div>
-          )}
-
-          {recipientMode === "excel" && (
-            <div className="animate-in fade-in duration-300">
-              <input
-                type="file"
-                accept=".xlsx, .xls"
-                className="hidden"
-                ref={recipientExcelInputRef}
-                onChange={handleRecipientExcelChange}
-              />
-              <div
-                onClick={() => recipientExcelInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-                  recipientExcel
-                    ? "border-primary bg-primary/5 dark:bg-primary/10"
-                    : "border-gray-300 dark:border-gray-700 hover:border-primary hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                }`}
-              >
-                {recipientExcel ? (
-                  <div className="flex flex-col items-center">
-                    <FileSpreadsheet size={32} className="text-primary mb-3" />
-                    <p className="text-sm font-semibold text-foreground mb-1">
-                      {recipientExcel.name}
-                    </p>
-                    <p className="text-xs text-muted">
-                      {(recipientExcel.size / 1024).toFixed(0)} KB
-                    </p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setRecipientExcel(null);
-                      }}
-                      className="mt-3 text-xs text-red-500 hover:text-red-600 font-medium"
-                    >
-                      Remove file
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center">
-                    <UploadCloud size={32} className="text-muted mb-3" />
-                    <p className="text-sm font-semibold text-foreground mb-1">
-                      Upload Excel File
-                    </p>
-                    <p className="text-xs text-muted max-w-xs mx-auto">
-                      Column A of the first sheet must contain the emails. No
-                      headers.
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -531,14 +835,14 @@ export default function BulkMailer() {
               ref={fileInputRef}
               onChange={handleAttachmentChange}
             />
-            <button
+            {/* <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-foreground border border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
             >
               <Paperclip size={14} />
               Attach Files
-            </button>
+            </button> */}
           </div>
 
           {/* Status message */}
