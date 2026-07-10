@@ -62,6 +62,15 @@ export function useCreateForm() {
     setFieldsList((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
+  const moveField = useCallback((from, to) => {
+    setFieldsList((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(from, 1);
+      updated.splice(to, 0, moved);
+      return updated;
+    });
+  }, []);
+
   const validate = useCallback(() => {
     const newErrors = {};
 
@@ -294,6 +303,7 @@ export function useCreateForm() {
     addField,
     updateFieldAt,
     removeFieldAt,
+    moveField,
     handleSubmit,
     isSubmitting,
     errors,
