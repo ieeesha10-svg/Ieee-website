@@ -14,8 +14,9 @@ const FORM_TYPE_OPTIONS = [
   { value: "custom", label: "Custom" },
 ];
 
-function FieldRow({ field, index, updateFieldAt, removeFieldAt }) {
+function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDragIndex, moveField }) {
   const isDropdown = field.type === "Dropdown";
+  const isDragging = dragIndex === index;
 
   const handleTypeChange = (newType) => {
     updateFieldAt(index, { type: newType });
@@ -37,7 +38,18 @@ function FieldRow({ field, index, updateFieldAt, removeFieldAt }) {
   };
 
   return (
-    <div className="border-b border-gray-200 dark:border-[#222936] last:border-b-0">
+    <div
+      draggable
+      onDragStart={() => setDragIndex(index)}
+      onDragOver={(e) => {
+        if (dragIndex === null || dragIndex === index) return;
+        e.preventDefault();
+        moveField(dragIndex, index);
+        setDragIndex(index);
+      }}
+      onDragEnd={() => setDragIndex(null)}
+      className={`border-b border-gray-200 dark:border-[#222936] last:border-b-0 transition-opacity ${isDragging ? "opacity-40" : ""}`}
+    >
       <div className="flex items-start gap-2 px-5 py-3">
         <div className="pt-2.5 text-muted shrink-0 cursor-grab">
           <GripVertical size={16} />
@@ -133,11 +145,13 @@ export default function CreateForm() {
     addField,
     updateFieldAt,
     removeFieldAt,
+    moveField,
     handleSubmit,
     isSubmitting,
     errors,
   } = useCreateForm();
 
+  const [dragIndex, setDragIndex] = useState(null);
   const [newFieldLabel, setNewFieldLabel] = useState("");
   const [newFieldType, setNewFieldType] = useState("TextInput");
 
@@ -350,6 +364,9 @@ export default function CreateForm() {
               index={idx}
               updateFieldAt={updateFieldAt}
               removeFieldAt={removeFieldAt}
+              dragIndex={dragIndex}
+              setDragIndex={setDragIndex}
+              moveField={moveField}
               errors={errors}
             />
           ))}
