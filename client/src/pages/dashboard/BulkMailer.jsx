@@ -17,10 +17,11 @@ import {
   Italic,
   Link,
   Image as ImageIcon,
+  Filter,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import api from "../../utils/api";
-import { useBulkMembers } from "../../hooks/dashboard/useBulkMembers";
+import { useSearchMembers } from "../../hooks/dashboard/useSearchMembers";
 
 /* ────────────────────────────────────────────────────────────────
    Helper: Build an .xlsx Blob from an array of email strings.
@@ -82,18 +83,22 @@ export default function BulkMailer() {
   const [recipientExcel, setRecipientExcel] = useState(null);
   const recipientExcelInputRef = useRef(null);
 
-  // Use Custom Hook for Members
+  // Use Custom Hook for Members (Detailed Search)
   const {
     members,
-    loadingMembers,
+    loading: loadingMembers,
     search,
     setSearch,
-    filterRole,
-    setFilterRole,
-    filterCollege,
-    setFilterCollege,
-    uniqueColleges,
-  } = useBulkMembers();
+    collegeFilters,
+    yearFilters,
+    roleFilters,
+    activeColleges,
+    toggleCollege,
+    activeYears,
+    toggleYear,
+    activeRoles,
+    toggleRole,
+  } = useSearchMembers({ pageSize: 2000 });
 
   // Handlers for selection
   const handleSelectAll = () => {
@@ -417,8 +422,8 @@ export default function BulkMailer() {
           {recipientMode === "api" && (
             <div className="space-y-4 animate-in fade-in duration-300">
               {/* Filters */}
-              <div className="flex flex-col md:flex-row gap-3">
-                <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] focus-within:border-primary transition-colors">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] focus-within:border-primary transition-colors">
                   <Search size={14} className="text-muted shrink-0" />
                   <input
                     type="text"
@@ -428,30 +433,67 @@ export default function BulkMailer() {
                     className="w-full text-xs bg-transparent focus:outline-none text-foreground placeholder:text-muted/60"
                   />
                 </div>
-                <div className="flex gap-2">
-                  <select
-                    value={filterRole}
-                    onChange={(e) => setFilterRole(e.target.value)}
-                    className="px-2 py-2 text-xs rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-foreground focus:outline-none focus:border-primary"
-                  >
-                    <option value="all">All Roles</option>
-                    <option value="member">Member</option>
-                    <option value="scanner">Scanner</option>
-                    <option value="xcom">XCom</option>
-                    <option value="board">Board</option>
-                  </select>
-                  <select
-                    value={filterCollege}
-                    onChange={(e) => setFilterCollege(e.target.value)}
-                    className="px-2 py-2 text-xs rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-foreground focus:outline-none focus:border-primary max-w-30"
-                  >
-                    <option value="all">All Colleges</option>
-                    {uniqueColleges.map((col) => (
-                      <option key={col} value={col}>
-                        {col}
-                      </option>
+                
+                <div className="flex flex-col gap-3">
+                  <div className='flex flex-wrap items-center gap-1.5'>
+                    <div className='flex items-center gap-1 mr-2'>
+                      <Filter className="w-3.5 h-3.5 text-muted" />
+                      <span className="text-[11px] text-muted font-bold uppercase tracking-wider">College</span>
+                    </div>
+                    {collegeFilters.map((college) => (
+                      <button
+                        key={college}
+                        onClick={() => toggleCollege(college)}
+                        className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                          activeColleges.includes(college)
+                            ? "bg-primary text-white border-primary"
+                            : "bg-gray-50 dark:bg-[#1a1f2e] text-muted border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary"
+                        }`}
+                      >
+                        {college}
+                      </button>
                     ))}
-                  </select>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="flex items-center gap-1 mr-2">
+                      <Filter className="w-3.5 h-3.5 text-muted" />
+                      <span className="text-[11px] text-muted font-bold uppercase tracking-wider">Year</span>
+                    </div>
+                    {yearFilters.map((year) => (
+                      <button
+                        key={year}
+                        onClick={() => toggleYear(year)}
+                        className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                          activeYears.includes(year)
+                            ? "bg-primary text-white border-primary"
+                            : "bg-gray-50 dark:bg-[#1a1f2e] text-muted border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary"
+                        }`}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="flex items-center gap-1 mr-2">
+                      <Filter className="w-3.5 h-3.5 text-muted" />
+                      <span className="text-[11px] text-muted font-bold uppercase tracking-wider">Role</span>
+                    </div>
+                    {roleFilters.map((role) => (
+                      <button
+                        key={role}
+                        onClick={() => toggleRole(role)}
+                        className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                          activeRoles.includes(role)
+                            ? "bg-primary text-white border-primary"
+                            : "bg-gray-50 dark:bg-[#1a1f2e] text-muted border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary"
+                        }`}
+                      >
+                        {role}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -491,7 +533,7 @@ export default function BulkMailer() {
                   ) : (
                     members.map((m) => (
                       <div
-                        key={m._id || m.email}
+                        key={m.id || m._id || m.email}
                         onClick={() => handleSelectMember(m.email)}
                         className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-md cursor-pointer transition-colors"
                       >
