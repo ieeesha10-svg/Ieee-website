@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Initialize Resend with your API Key from Render Environment Variables
+// console.log('Resend API Key:', process.env.RESEND_API_KEY); // For debugging, remove in production
 const resend = new Resend(process.env.RESEND_API_KEY);
 // const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -49,9 +50,9 @@ const sendTicketEmail = async(email, userName, ticketCode, eventTitle, qrImage) 
   try {
     const base64Data = qrImage.split('base64,')[1];
     let html = loadTemplate('ticketEmail.html');
-    html = html.replace('{{userName}}', userName)
-      .replace('{{eventTitle}}', eventTitle)
-      .replace('{{ticketCode}}', ticketCode);
+    html = html.replaceAll('{{userName}}', userName)
+      .replaceAll('{{eventTitle}}', eventTitle)
+      .replaceAll('{{ticketCode}}', ticketCode);
     html += getEmailFooter();
     
     const { error } = await resend.emails.send({
@@ -59,10 +60,11 @@ const sendTicketEmail = async(email, userName, ticketCode, eventTitle, qrImage) 
        to: email,
        subject: `Confirmation of Registration – ${eventTitle}`,
        html: html,
-       attachments: [{
-        filename: 'ticket-qr.png',
-        content: base64Data // Resend automatically handles base64 string attachments
-       }]
+      //  attachments: [{
+      //   filename: 'ticket-qr.png',
+      //   content: base64Data, // Resend automatically handles base64 string attachments
+      //   content_id: 'qr-code-image'
+      //  }]
     });
 
     if (error) {
