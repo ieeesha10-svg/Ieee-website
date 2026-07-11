@@ -15,7 +15,7 @@ export function useCrew() {
           id: member._id || member.id,
           name: member.name || "Unknown Member",
           role: member.role || member.position || "Member",
-          description: member.description || "No description provided.",
+          description: member.description || member.bio || "No description provided.",
           image: member.image || "/images/avatar.jpg",
           socials: {
             linkedin: member.socials?.linkedin || member.linkedin || null,

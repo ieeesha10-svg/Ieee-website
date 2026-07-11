@@ -56,6 +56,7 @@ export default function EventRegistration() {
         setFormData({
           formId: form?._id,
           title: activity.title,
+          type: activity.type,
           description: activity.content,
           location: activity.location,
           date: dateStr,
@@ -142,7 +143,7 @@ export default function EventRegistration() {
       key: field.id,
       name: field.id,
       label: field.label,
-      placeholder: field.placeholder || `Enter your ${field.label.toLowerCase()}`,
+      placeholder: field.placeholder || 'Your answer',
       value: answers[field.id] || '',
       onChange: handleChange,
       error: errors[field.id],
@@ -280,16 +281,30 @@ export default function EventRegistration() {
         <div className="absolute inset-0 bg-black/83" />
 
         <div className="relative z-10 container mx-auto px-4">
-          <h1 className="text-white text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
+          <h1 className="text-white text-4xl md:text-5xl lg:text-6xl font-black capitalize leading-tight">
             {formData.title}
           </h1>
-          {formData.description && (
-            <p className="text-white md:text-lg mt-3 max-w-2xl">
-              {formData.description}
-            </p>
-          )}
         </div>
       </div>
+
+      {formData.description && (
+        <div className="w-full bg-[#F8FAFC] dark:bg-[#111827] border-y border-border">
+          <div className="max-w-7xl mx-auto px-4 py-12">
+            <div className="prose prose-lg dark:prose-invert max-w-none leading-relaxed text-justify">
+              {formData.description}
+            </div>
+            {formData.location && (
+              <div className="mt-6 flex items-center gap-2 text-muted">
+                <svg className="w-5 h-5 shrink-0 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>{formData.location}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10
@@ -314,7 +329,7 @@ export default function EventRegistration() {
             </div>
           ) : (
             <div className="col-span-1 lg:col-span-2 flex flex-col h-full relative">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Workshop Registration</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground capitalize">{formData.type} Registration</h2>
               <p className="text-muted mt-1 mb-8">
                 Fill this before attending.
               </p>
@@ -375,9 +390,6 @@ export default function EventRegistration() {
           <div className="col-span-1 flex flex-col h-full gap-8">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground">Event Details</h2>
-              {formData.description && (
-                <p className="text-muted mt-1">{formData.description}</p>
-              )}
             </div>
 
             <div className="flex flex-col gap-6">

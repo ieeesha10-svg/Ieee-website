@@ -88,7 +88,7 @@ export default function MembershipBenefits() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-32">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {links.map((link, index) => (
             <a
               key={index}
@@ -105,14 +105,25 @@ export default function MembershipBenefits() {
               </p>
             </a>
           ))}
-        </div>
-
+				</div>
+        
+        <div className="flex justify-center my-20">
+          <a
+          href={`https://www.ieee.org/profile/public/createwebaccount/showCreateAccount.html?url=https%3A%2F%2Fwww.ieee.org%2F&ShowMGAMarkeatbilityOptIn=true`}
+          target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-white dark:bg-[#1A1F2E] text-primary-dark dark:text-primary-light font-bold rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 text-lg"
+          >
+            Become an IEEE Member
+          </a>
+				</div>
+        
         <div className="text-center mb-16 space-y-6">
           <h2 className="font-black font-bold text-4xl lg:text-5xl text-white uppercase">
             <span className="text-primary-light">M</span>embership{" "}
             <span className="text-primary-light">B</span>enefits
           </h2>
-          <p className="max-w-2xl mx-auto font-lakes text-lg lg:text-xl text-[#F2F2F2] dark:text-[#9CA3AF]">
+          <p className="max-w-2xl mx-auto font-lakes text-lg lg:text-xl text-white">
             Unlock exclusive resources, connect with global professionals, and
             advance your career with IEEE membership.
           </p>
@@ -130,8 +141,8 @@ export default function MembershipBenefits() {
                   alt={benefit.title}
                   className="max-h-full max-w-full object-contain"
                 />
-              </div>
-              {/* النصوص */}
+							</div>
+              
               <div className="p-6 space-y-3 flex-1">
                 <h3 className="font-lakes text-base font-bold text-[#1A1A1A] dark:text-white group-hover:text-[#0077CC] dark:group-hover:text-[#33B5FF] transition-colors">
                   {benefit.title}

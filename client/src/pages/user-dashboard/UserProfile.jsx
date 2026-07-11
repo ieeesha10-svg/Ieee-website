@@ -49,7 +49,7 @@ export default function UserProfile() {
         optionalData: { aboutMe: userData.aboutMe },
       };
 
-      await api.put(`/users/${userData._id}`, payload);
+      await api.put(`/users/profile/${userData._id}`, payload);
 
       setOriginalData(userData);
       setIsEditing(false);

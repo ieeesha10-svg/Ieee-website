@@ -31,8 +31,9 @@ import VerifyEmailPage from "./pages/VerifyEmailPage";
 // Dashboard Pages
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import DashboardMembers from "./pages/dashboard/DashboardMembers";
-import DashboardEvents from "./pages/dashboard/DashboardEvents";
-import CreateEvent from "./pages/dashboard/CreateEvent";
+import DashboardEvents from "./pages/dashboard/events/DashboardEvents";
+import CreateEvent from "./pages/dashboard/events/CreateEvent";
+import DashboardCrew from "./pages/dashboard/DashboardCrew";
 import EmailLogsPage from "./pages/dashboard/EmailLogsPage";
 import DashboardForms from "./pages/dashboard/forms/DashboardForms";
 import CreateForm from "./pages/dashboard/forms/CreateForm";
@@ -105,21 +106,31 @@ function App() {
           </Route>
         </Route>
 
-        <Route element={<ProtectedRoute requireAdmin />}> 
-        <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<DashboardHome />} />
-          <Route path="/dashboard/users" element={<DashboardMembers />} />
-          <Route path="/dashboard/events" element={<DashboardEvents />} />
-          <Route path="/dashboard/events/create-event" element={<CreateEvent />} />
-          <Route path="/dashboard/email-logs" element={<EmailLogsPage />} />
-          <Route path="/dashboard/forms" element={<DashboardForms />} />
-          <Route path="/dashboard/forms/create-form" element={<CreateForm />} />
-          <Route path="/dashboard/forms/submissions/:formId" element={<ShowFormSubmissions />} />
-          <Route path="/dashboard/email" element={<BulkMailer />} />
-          <Route path="/dashboard/settings" element={<DashboardSettings />} />
-          <Route path="/dashboard/scan" element={<QRScanner />} />
+        <Route element={<ProtectedRoute requireAdmin />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<DashboardHome />} />
+            <Route path="/dashboard/users" element={<DashboardMembers />} />
+            <Route path="/dashboard/events" element={<DashboardEvents />} />
+            <Route
+              path="/dashboard/events/create-event"
+              element={<CreateEvent />}
+            />
+            <Route path="/dashboard/crew" element={<DashboardCrew />} />
+            <Route path="/dashboard/email-logs" element={<EmailLogsPage />} />
+            <Route path="/dashboard/forms" element={<DashboardForms />} />
+            <Route
+              path="/dashboard/forms/create-form"
+              element={<CreateForm />}
+            />
+            <Route
+              path="/dashboard/forms/submissions/:formId"
+              element={<ShowFormSubmissions />}
+            />
+            <Route path="/dashboard/email" element={<BulkMailer />} />
+            <Route path="/dashboard/settings" element={<DashboardSettings />} />
+            <Route path="/dashboard/scan" element={<QRScanner />} />
+          </Route>
         </Route>
-        </Route> 
 
         <Route
           path="*"

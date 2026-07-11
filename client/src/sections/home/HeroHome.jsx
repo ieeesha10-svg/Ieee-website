@@ -20,7 +20,6 @@ export default function Hero() {
 		// Left
 		{ top: '6%', left: '12%', size: 'w-1.5 h-1.5', opacity: 'bg-white/25' },
 		{ bottom: '15%', left: '8%', size: 'w-1 h-1', opacity: 'bg-white/20' },
-		{ bottom: '25%', left: '18%', size: 'w-2 h-2', opacity: 'bg-white/15' },
 		// Bottom center
 		{ bottom: '10%', left: '45%', size: 'w-1.5 h-1.5', opacity: 'bg-white/20' },
 		{ bottom: '18%', left: '55%', size: 'w-1 h-1', opacity: 'bg-white/30' },
@@ -77,11 +76,11 @@ export default function Hero() {
 
 					<div className='flex justify-center md:justify-start gap-30 font-light md:pr-10'>
 						<div className='flex flex-col'>
-							<span className='text-2xl md:text-4xl font-sans'>10+</span>
+							<span className='text-2xl md:text-4xl'>10+</span>
 							<span className='text-sm'>Years</span>
 						</div>
 						<div className='flex flex-col'>
-							<span className='text-2xl md:text-4xl font-sans'>200+</span>
+							<span className='text-2xl md:text-4xl'>200+</span>
 							<span className='text-sm'>Events Hosted</span>
 						</div>
 					</div>

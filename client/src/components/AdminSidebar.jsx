@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+  Home,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import api from "../utils/api";
@@ -128,7 +129,14 @@ const AdminSidebar = () => {
         </div>
       </div>
 
-      <div className="mt-auto p-4 border-t border-white/8">
+      <div className="mt-auto p-4 border-t border-white/8 flex flex-col gap-2">
+        <Link
+          to="/"
+          className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-[#8BA0B8] hover:text-white hover:bg-[#1A2E42] transition-colors"
+        >
+          <Home size={18} />
+          <span>Home</span>
+        </Link>
         <div className="flex items-center gap-2 bg-[#1A2E42] border-white/8 px-4 py-3 rounded-xl">
           <div className="flex-1 min-w-0">
             <p className="text-[#5A7186] text-[10px] leading-tight">
@@ -145,7 +153,8 @@ const AdminSidebar = () => {
           >
             <LogOut size={15} />
           </button>
-        </div>
+				</div>
+        
       </div>
     </>
   );
