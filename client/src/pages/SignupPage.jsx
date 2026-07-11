@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { committees } from "../data/committeesData";
 import {
   User,
   Mail,
@@ -203,14 +204,9 @@ const SignupPage = () => {
               required
             >
               <option value="">Select Committee</option>
-              <option value="PR">PR</option>
-              <option value="HR">HR</option>
-              <option value="LOGISTICS">LOGISTICS</option>
-              <option value="MARKETING">MARKETING</option>
-              <option value="BRANDING & MEDIA">BRANDING & MEDIA</option>
-              <option value="TECHNICAL">TECHNICAL</option>
-              <option value="NON-TECHNICAL">NON-TECHNICAL</option>
-              <option value="WEBSITE">WEBSITE</option>
+              {committees.map((c) => (
+                <option key={c.id} value={c.label}>{c.label}</option>
+              ))}
             </select>
           </div>
 
