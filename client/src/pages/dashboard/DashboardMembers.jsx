@@ -1,9 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { Search, Filter, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
+import { Filter, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
 import { useSearchMembers } from '../../hooks/dashboard/useSearchMembers';
+import { useAdvancedSearch } from '../../hooks/dashboard/useAdvancedSearch';
 import { useUpdateRole } from '../../hooks/dashboard/useUpdateRole';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
+import AdvancedSearch from '../../components/AdvancedSearch';
 
 export default function DashboardMembers() {
   const { user } = useAuth();
@@ -13,8 +15,6 @@ export default function DashboardMembers() {
     collegeFilters,
     yearFilters,
     roleFilters,
-    search,
-    setSearch,
     activeColleges,
     toggleCollege,
     activeYears,
@@ -24,8 +24,13 @@ export default function DashboardMembers() {
     page,
     setPage,
     totalPages,
-    loading,
+    loading: membersLoading,
   } = useSearchMembers();
+
+  const { keyword, setKeyword, results, isLoading: searchLoading } = useAdvancedSearch();
+  const isSearching = keyword.trim().length >= 2;
+  const displayMembers = isSearching ? results : members;
+  const loading = isSearching ? searchLoading : membersLoading;
 
   const { updatingRole, updateRole } = useUpdateRole();
   const [memberRoles, setMemberRoles] = useState({});
@@ -41,10 +46,10 @@ export default function DashboardMembers() {
   const handleRoleChange = useCallback(
     (memberId, newRole) => {
       const previousRole =
-        memberRoles[memberId] ?? members.find((m) => m.id === memberId)?.role;
+        memberRoles[memberId] ?? displayMembers.find((m) => m.id === memberId)?.role;
       updateRole(memberId, newRole, previousRole, setMemberRoles);
     },
-    [memberRoles, members, updateRole],
+    [memberRoles, displayMembers, updateRole],
   );
 
   const handleExport = useCallback(async () => {
@@ -73,16 +78,13 @@ export default function DashboardMembers() {
       <div className="bg-card-alt rounded-xl shadow-sm p-4 mb-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-center gap-5">
           <div className="flex-1 flex flex-col md:flex-row gap-5 w-full">
-            <div className="my-auto w-full md:max-w-xs self-start flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card-alt focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent">
-              <Search className="w-4 h-4 text-muted shrink-0" />
-              <input
-                type="text"
-                placeholder="Search for members by name"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 text-sm bg-transparent focus:outline-none border-none p-0"
-              />
-            </div>
+            <AdvancedSearch
+              value={keyword}
+              onChange={setKeyword}
+              isLoading={searchLoading}
+              placeholder="Search members by name or email..."
+              className="w-full md:max-w-xs"
+            />
 
             <div className="flex flex-col gap-3 flex-1">
               <div className='flex flex-wrap items-center gap-1'>
@@ -175,18 +177,18 @@ export default function DashboardMembers() {
                   <input
                     type="checkbox"
                     checked={
-                      members.length > 0 &&
-                      members.every((m) => selectedIds.includes(m.id))
+                      displayMembers.length > 0 &&
+                      displayMembers.every((m) => selectedIds.includes(m.id))
                     }
                     onChange={() =>
-                      members.every((m) => selectedIds.includes(m.id))
+                      displayMembers.every((m) => selectedIds.includes(m.id))
                         ? setSelectedIds((prev) =>
                             prev.filter(
-                              (id) => !members.some((m) => m.id === id),
+                              (id) => !displayMembers.some((m) => m.id === id),
                             ),
                           )
                         : setSelectedIds((prev) => [
-                            ...new Set([...prev, ...members.map((m) => m.id)]),
+                            ...new Set([...prev, ...displayMembers.map((m) => m.id)]),
                           ])
                     }
                     className="ml-3 w-4 h-4 accent-primary cursor-pointer"
@@ -209,21 +211,23 @@ export default function DashboardMembers() {
                   >
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 size={18} className="animate-spin" />
-                      Loading members...
+                      {isSearching ? "Searching..." : "Loading members..."}
                     </div>
                   </td>
                 </tr>
-              ) : members.length === 0 ? (
+              ) : displayMembers.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
                     className="text-sm text-muted py-16 text-center"
                   >
-                    No members match your filters.
+                    {isSearching
+                      ? `No results found for "${keyword}"`
+                      : "No members match your filters."}
                   </td>
                 </tr>
               ) : (
-                members.map((member) => (
+                displayMembers.map((member) => (
                   <tr
                     key={member.id}
                     className="last:border-0 hover:bg-muted/5 transition-colors"
@@ -310,29 +314,31 @@ export default function DashboardMembers() {
           </table>
         </div>
 
-        <div className="flex items-center justify-between px-6 py-4">
-          <span className="text-sm text-muted">
-            Showing {members.length} of {totalCount} members
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              disabled={page === 1 || totalPages === 0}
-              onClick={() => setPage(page - 1)}
-              className="flex items-center gap-1 px-4 py-2 text-sm rounded-lg hover:bg-muted/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </button>
-            <button
-              disabled={page === totalPages || totalPages === 0}
-              onClick={() => setPage(page + 1)}
-              className="flex items-center gap-1 px-4 py-2 text-sm bg-primary text-white border border-primary rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </button>
+        {!isSearching && (
+          <div className="flex items-center justify-between px-6 py-4">
+            <span className="text-sm text-muted">
+              Showing {members.length} of {totalCount} members
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page === 1 || totalPages === 0}
+                onClick={() => setPage(page - 1)}
+                className="flex items-center gap-1 px-4 py-2 text-sm rounded-lg hover:bg-muted/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </button>
+              <button
+                disabled={page === totalPages || totalPages === 0}
+                onClick={() => setPage(page + 1)}
+                className="flex items-center gap-1 px-4 py-2 text-sm bg-primary text-white border border-primary rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
