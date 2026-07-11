@@ -98,6 +98,7 @@ const getActivities = catchAsync(async (req, res) => {
         endDate: activity.endDate,
         createdAt: activity.createdAt,
         coverImage: activity.coverImage || "",
+        registrationEnabled: activity.registrationEnabled,
         status: form ? form.status : "No Form Found",
         formID: form ? form._id : null
       };
