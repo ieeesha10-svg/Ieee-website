@@ -125,9 +125,8 @@ export default function BulkMailer() {
 
   // Derived state for what to show in the list
   const activeMembersToDisplay = React.useMemo(() => {
-    if (recipientMode === "api") return members;
+    let filtered = recipientMode === "api" ? members : excelMembers;
 
-    let filtered = excelMembers;
     if (search) {
       const s = search.toLowerCase();
       filtered = filtered.filter((m) =>
@@ -135,12 +134,14 @@ export default function BulkMailer() {
       );
     }
 
-    // Dynamic Role filter for Excel if a 'Role' column exists
-    const roleHeader = excelHeaders.find(
-      (h) => String(h).toLowerCase() === "role",
-    );
-    if (roleHeader && activeRoles.length > 0) {
-      filtered = filtered.filter((m) => activeRoles.includes(m[roleHeader]));
+    if (recipientMode === "excel") {
+      // Dynamic Role filter for Excel if a 'Role' column exists
+      const roleHeader = excelHeaders.find(
+        (h) => String(h).toLowerCase() === "role",
+      );
+      if (roleHeader && activeRoles.length > 0) {
+        filtered = filtered.filter((m) => activeRoles.includes(m[roleHeader]));
+      }
     }
 
     return filtered;

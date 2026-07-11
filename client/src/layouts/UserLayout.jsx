@@ -14,6 +14,15 @@ import {
   WifiOff,
 } from "lucide-react";
 
+const getYearText = (year) => {
+  if (!year) return "";
+  const num = parseInt(year, 10);
+  if (num === 1) return "1st Year";
+  if (num === 2) return "2nd Year";
+  if (num === 3) return "3rd Year";
+  return `${num}th Year`;
+};
+
 export default function UserLayout() {
   const location = useLocation();
 
@@ -31,6 +40,8 @@ export default function UserLayout() {
     college: "",
     committee: "",
     aboutMe: "",
+    yearOfStudy: "",
+    createdAt: "",
   });
 
   // ─── Online/Offline detection ───────────────────────────────────────────────
@@ -63,6 +74,8 @@ export default function UserLayout() {
         college: user.college || "",
         committee: user.committee || "",
         aboutMe: user.optionalData?.aboutMe || "",
+        yearOfStudy: user.yearOfStudy || "",
+        createdAt: user.createdAt || "",
       });
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -119,7 +132,7 @@ export default function UserLayout() {
       )}
 
       <div className="max-w-[1304px] mx-auto px-4 md:px-8 py-6 md:py-8 lg:py-12 space-y-6 md:space-y-8 lg:space-y-10">
-        {/* ─── Profile Banner (ثابت في كل صفحة) ────────────────────────── */}
+        {/* ─── Profile Banner ────────────────────────── */}
         <div className="rounded-[24px] md:rounded-[28px] pt-[24px] md:pt-[36px] px-[20px] md:px-[40px] pb-6 md:pb-[36px] flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 relative overflow-hidden text-white transition-all duration-300 bg-[linear-gradient(135deg,#0077CC_0%,#0096FF_55%,#33B5FF_100%)] shadow-[0px_12px_48px_rgba(0,100,220,0.18)] dark:bg-[linear-gradient(135deg,#001A40_0%,#002F6B_35%,#0066BB_70%,#0088EE_100%)] dark:shadow-[0px_20px_60px_rgba(0,0,0,0.7),0px_0px_0px_1px_rgba(0,150,255,0.2),inset_0px_1px_0px_rgba(255,255,255,0.08)]">
           {/* Avatar */}
           <div className="relative flex-shrink-0 z-10">
@@ -144,24 +157,28 @@ export default function UserLayout() {
               IEEE EGYPT • EL SHOROUK ACADEMY STUDENT BRANCH
             </p>
             <h1 className="font-gotham font-medium text-[28px] md:text-[40px] leading-[37px] tracking-[-1.008px] text-white mb-3 transition-all duration-300">
-              {userData.fullName || "Ahmed Mostafa"}
+              {userData.fullName}
             </h1>
+
             <div className="flex flex-wrap justify-left md:justify-start gap-2 md:gap-[10px]">
-              <ProfileBadge
-                text={
-                  userData.committee
-                    ? `${userData.committee} Committee`
-                    : "Technical Committee"
-                }
-              />
-              <ProfileBadge
-                text={
-                  userData.college
-                    ? `3rd Year • ${userData.college}`
-                    : "3rd Year • Engineering"
-                }
-              />
-              <ProfileBadge text="Member since 2022" />
+              {/* Badge 1: Technical Committee */}
+              {userData.committee && (
+                <ProfileBadge text={`${userData.committee} Committee`} />
+              )}
+
+              {/* Badge 2: 3rd Year • Engineering */}
+              {(userData.yearOfStudy || userData.college) && (
+                <ProfileBadge
+                  text={`${getYearText(userData.yearOfStudy)}${userData.yearOfStudy && userData.college ? " • " : ""}${userData.college}`}
+                />
+              )}
+
+              {/* Badge 3: Member since 2022 */}
+              {userData.createdAt && (
+                <ProfileBadge
+                  text={`Member since ${new Date(userData.createdAt).getFullYear()}`}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -209,7 +226,6 @@ export default function UserLayout() {
             </SidebarSection>
           </div>
 
-          {/* Page Content (المحتوى المتغير) */}
           <div className="flex-1 min-w-0">
             <Outlet context={{ userData, setUserData, isOffline }} />
           </div>
