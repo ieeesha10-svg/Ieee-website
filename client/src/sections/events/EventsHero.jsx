@@ -34,7 +34,7 @@ export default function EventsHero({ featuredEvent, loading }) {
 				<div className='*:text-lg *:lg:text-xl flex flex-col lg:flex-row gap-4 lg:mx-0 w-[80%] mx-auto justify-center md:justify-start mt-5'>
 					<a href='#upcoming-events'>
 						<button
-							className='px-6 py-3 lg:px-12 lg:py-6 w-full rounded-xl font-light text-primary hover:bg-white/40 hover:text-primary-dark dark:text-white hover:dark:text-white dark:bg-[#2563EB] hover:dark:bg-[#2563EB]/60 transition duration-300'
+							className='px-6 py-3 lg:px-12 lg:py-6 w-full whitespace-nowrap rounded-xl font-light text-primary hover:bg-white/40 hover:text-primary-dark dark:text-white hover:dark:text-white dark:bg-[#2563EB] hover:dark:bg-[#2563EB]/60 transition duration-300'
 							style={{ boxShadow: '0px 0px 12px #00C0E8B2, 0px 10px 15px #0000001A, 0px 4px 6px #0000001A' }}
 						>
 							Explore Events
@@ -43,7 +43,7 @@ export default function EventsHero({ featuredEvent, loading }) {
 					{
 						!user && (
 							<Link to='/signup'>
-								<Button className='w-full rounded-xl px-6 py-3 lg:px-12 lg:py-6 bg-linear-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary transition text-white dark:hover:bg-white/10 hover:text-white dark:bg-main dark:from-transparent dark:to-transparent hover:dark:from-transparent hover:dark:to-transparent dark:border dark:border-border'>
+								<Button className='w-full whitespace-nowrap rounded-xl px-6 py-3 lg:px-12 lg:py-6 bg-linear-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary transition text-white dark:hover:bg-white/10 hover:text-white dark:bg-main dark:from-transparent dark:to-transparent hover:dark:from-transparent hover:dark:to-transparent dark:border dark:border-border'>
 											Become a Member
 								</Button>
 							</Link>
