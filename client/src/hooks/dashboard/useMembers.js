@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import api from "../../utils/api";
-
-const ORDINAL = { 1: "1st", 2: "2nd", 3: "3rd", 4: "4th" };
+import { formatAcademicYear } from "../../utils/formatAcademicYear";
 
 const AVATAR_COLORS = [
   "bg-blue-500", "bg-teal-500", "bg-orange-500", "bg-purple-500",
@@ -12,13 +11,6 @@ const AVATAR_COLORS = [
 function pickColor(id) {
   const hash = String(id).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
-}
-
-function formatYear(year) {
-  if (year == null) return "N/A";
-  const num = Number(year);
-  if (num === 0) return "Prep";
-  return `${ORDINAL[num] || num} Year`;
 }
 
 function mapUser(u) {
@@ -36,7 +28,7 @@ function mapUser(u) {
     college: u.college
       ? u.college.charAt(0).toUpperCase() + u.college.slice(1)
       : "N/A",
-    year: formatYear(u.yearOfStudy),
+    year: formatAcademicYear(u.yearOfStudy),
     yearOfStudy: u.yearOfStudy,
     attendance: 0,
     maxAttendance: 1,
@@ -118,11 +110,11 @@ export function useMembers() {
         // Derive filter options from full dataset
         const colleges = [...new Set(
           users.map((u) => u.college ? u.college.charAt(0).toUpperCase() + u.college.slice(1) : "N/A")
-        )].sort();
+        )].filter((c) => c !== "N/A").sort();
         setCollegeFilters(colleges);
 
         const yearOrder = { Prep: 0, "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4 };
-        const years = [...new Set(users.map((u) => formatYear(u.yearOfStudy)))].sort(
+        const years = [...new Set(users.map((u) => formatAcademicYear(u.yearOfStudy)))].filter((y) => y !== "N/A").sort(
           (a, b) => (yearOrder[a] ?? 99) - (yearOrder[b] ?? 99)
         );
         setYearFilters(years);
