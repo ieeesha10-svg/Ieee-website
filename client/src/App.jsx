@@ -33,6 +33,7 @@ import DashboardHome from "./pages/dashboard/DashboardHome";
 import DashboardMembers from "./pages/dashboard/DashboardMembers";
 import DashboardEvents from "./pages/dashboard/events/DashboardEvents";
 import CreateEvent from "./pages/dashboard/events/CreateEvent";
+import DashboardCrew from "./pages/dashboard/DashboardCrew";
 import EmailLogsPage from "./pages/dashboard/EmailLogsPage";
 import DashboardForms from "./pages/dashboard/forms/DashboardForms";
 import CreateForm from "./pages/dashboard/forms/CreateForm";
@@ -114,6 +115,7 @@ function App() {
             path="/dashboard/events/create-event"
             element={<CreateEvent />}
           />
+          <Route path="/dashboard/crew" element={<DashboardCrew />} />
           <Route path="/dashboard/email-logs" element={<EmailLogsPage />} />
           <Route path="/dashboard/forms" element={<DashboardForms />} />
           <Route path="/dashboard/forms/create-form" element={<CreateForm />} />
