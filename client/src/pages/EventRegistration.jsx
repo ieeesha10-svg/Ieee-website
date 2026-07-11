@@ -7,17 +7,17 @@ import { ChevronDown } from 'lucide-react';
 
 import Button from "../components/Button";
 import Input from "../components/Input";
-import RegistrationImage from '../assets/images/events/registration.jpg';
 
 export default function EventRegistration() {
   const { id } = useParams();
   const location = useLocation();
 	const { user } = useAuth();
 	
-  const eventImage = location.state?.image || RegistrationImage;
+  const eventImage = location.state?.image || "";
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState(null);
+  const [registrationOpen, setRegistrationOpen] = useState(true);
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
@@ -38,6 +38,8 @@ export default function EventRegistration() {
           setFetchError("no_form");
           return;
         }
+
+        setRegistrationOpen(activity.registrationEnabled !== false);
 
         const startDate = form?.startDate || null;
         const endDate = form?.endDate || null;
@@ -271,6 +273,17 @@ export default function EventRegistration() {
   }
 
   if (!formData) return null;
+
+  if (!registrationOpen) {
+    return (
+      <section className="py-24">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold text-foreground mb-4">Registration Closed</h2>
+          <p className="text-muted text-lg">Registration for this event is no longer accepting responses.</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="event-registration">
