@@ -96,5 +96,21 @@ const formSchema = new mongoose.Schema({
   requiresLogin: { type: Boolean, default: false }, // <--- The feature you asked for: If true, users must be logged in to submit the form. If false, anyone can submit.
 }, { timestamps: true });
 
+
+formSchema.pre('save', function() {
+  if (this.isModified('fields')) {
+    this.fields.forEach(field => {
+      if (field.label) {
+        field.id = field.label
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, '_')
+          .replace(/[^\w-]+/g, '');
+        }
+      });
+    }
+  }
+);
+
 const Form = mongoose.model('Form', formSchema);
 module.exports = Form;

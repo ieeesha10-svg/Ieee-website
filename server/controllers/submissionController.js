@@ -42,7 +42,7 @@ const submitForm = catchAsync(async (req, res,) => {
   // 4. Prevent duplicate submissions
   const existingSubmission = await Submission.findOne({
     formId,
-    userId: req.user._id
+    userId: userid
   });
   
   if (existingSubmission) {
@@ -50,29 +50,33 @@ const submitForm = catchAsync(async (req, res,) => {
   }
   
   // 5. Generate Ticket (If it's an Event)
-  ticketCode = `${formId}-${form.type}-${req.user._id}-${nanoid(6)}`;
+  ticketCode = `${formId}-${userid}-${nanoid(6)}`;
   qrImage = await QRCode.toDataURL(ticketCode);
 
   // 6. Save Submission
   const newSubmission = new Submission({
     formId,
-    userId: req.user._id,
+    userId: userid,
     registrantEmail: req.user.email,
     answers,
     ticketCode,
     qrImage
   });
+
+  // console.log("Answers from Request:", req.body.answers);
+  // console.log("Form Fields from DB:", form.fields);
+
   try {
     await newSubmission.save();
   } catch (error) {
     // pre-hook validation errors will be caught here
     if (error.name === 'ValidationError') {
-      throw new AppError(error.message, 400);
+      throw new AppError(`Submission failed validation: ${error.message}`, 400);
     }
     if (error.code === 11000) {
       throw new AppError('You already submitted this form', 400);
     }
-    throw new AppError(error.message, 500);
+    throw new AppError(`Submission failed: ${error.message}`, 500);
   }
 
   // 7. Send Email (Async)

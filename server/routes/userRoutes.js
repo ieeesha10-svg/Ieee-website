@@ -20,6 +20,7 @@ const {
   resetPassword,
   getEventsForMember,
   exportSpecificUsersToExcel,
+  searchMembers
 } = require("../controllers/userController");
 
 const { protect, authorize } = require("../middleware/authMiddleware");
@@ -94,6 +95,14 @@ userRouter.post(
   protect,
   authorize("xcom", "board"),
   exportSpecificUsersToExcel,
+);
+
+userRouter.get(
+  // /search?keyword=anything
+  "/search",
+  protect,
+  authorize("xcom", "board"),
+  searchMembers,
 );
 
 module.exports = userRouter;
