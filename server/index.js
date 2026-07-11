@@ -1,3 +1,4 @@
+require("dotenv").config({quiet: true});
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -5,11 +6,14 @@ const path = require("path");
 const connectDB = require("./config/db");
 const cookieParser = require('cookie-parser');
 const { routersHandler } = require("./utils/routesHandler");
-require("dotenv").config({quiet: true});
 const app = express();
 connectDB();
 
-const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:3000,https://www.ieeesha.org")
+if(process.env.NODE_ENV === "development") {
+  process.env.CORS_ORIGINS = "http://localhost:5173,http://localhost:5000,http://localhost:3000,https://www.ieeesha.org";
+}
+
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN)
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -17,11 +21,13 @@ const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || "
 app.use(helmet());
 app.use(cors({
   origin: (origin, callback) => {
+    // console.log("-> Incoming Origin:", origin); 
+    // console.log("-> Allowed Origins Array:", allowedOrigins);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
       return;
     }
-
+    // console.error("CORS Blocked Origin:", origin);
     callback(new Error("Not allowed by CORS"));
   },
   credentials: true
