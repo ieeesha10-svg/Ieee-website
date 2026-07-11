@@ -1,32 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../utils/api";
-import imgAiLaptop from "../assets/images/events/ai-laptop.jpg";
-import imgEventsHero from "../assets/images/events/events-hero.jpg";
-import imgMeeting from "../assets/images/events/meeting.png";
-import imgRegistration from "../assets/images/events/registration.jpg";
-import imgTable from "../assets/images/events/table.jpg";
-import imgTeam from "../assets/images/events/team.jpg";
-import imgWorkplace from "../assets/images/events/workplace.jpg";
-
-const EVENT_IMAGES = [
-  imgAiLaptop,
-  imgEventsHero,
-  imgMeeting,
-  imgRegistration,
-  imgTable,
-  imgTeam,
-  imgWorkplace,
-];
-
-function pickImageForActivity(id) {
-  let hash = 0;
-  const str = String(id);
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return EVENT_IMAGES[Math.abs(hash) % EVENT_IMAGES.length];
-}
 
 function formatEventDate(dateStr) {
   if (!dateStr) return null;
@@ -72,7 +45,7 @@ function mapActivity(activity, form) {
     content: activity.content,
     location: activity.location,
     speakers: activity.speakers || [],
-    image: activity.image || pickImageForActivity(activity._id),
+    image: activity.coverImage || "",
     date: dateRange,
     dateTime: { day: dateRange, time: timeRange },
     status: isPast ? "Completed" : isActive ? "Active" : "Completed",

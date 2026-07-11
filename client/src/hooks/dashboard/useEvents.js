@@ -46,7 +46,8 @@ function mapActivity(activity, form) {
     speakers: activity.speakers || [],
     date: dateRange,
     status: activity.registrationEnabled !== false ? "Active" : "Completed",
-    registrationEnabled: activity.registrationEnabled !== false,
+    registrationEnabled: activity.registrationEnabled ?? true,
+    coverImage: activity.coverImage || "",
     attendees: 0,
     maxAttendees: form?.maxSubmissions || 0,
     formId: form?._id || null,
@@ -87,13 +88,16 @@ export function useEvents() {
   const [filter, setFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ totalItems: 0, totalPages: 1, currentPage: 1, itemsPerPage: 10 });
+  const limit = 9;
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (pageNum = 1) => {
     setLoading(true);
     setError(null);
     try {
       const [activitiesRes, formsRes] = await Promise.all([
-        api.get("/activities"),
+        api.get("/activities", { params: { page: pageNum, limit } }),
         api.get("/form").catch(() => ({ data: [] })),
       ]);
 
@@ -108,6 +112,7 @@ export function useEvents() {
       const mapped = activities.map((a) => mapActivity(a, formMap[a._id]));
       setAllEvents(mapped);
       setEvents(mapped);
+      setPagination(activitiesRes.data.pagination || { totalItems: 0, totalPages: 1, currentPage: pageNum, itemsPerPage: limit });
     } catch (err) {
       setError(err.response?.data?.message || err.message || "Failed to load events");
     } finally {
@@ -116,8 +121,8 @@ export function useEvents() {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchData(page);
+  }, [fetchData, page]);
 
   useEffect(() => {
     if (filter === "All") {
@@ -133,17 +138,39 @@ export function useEvents() {
     Completed: allEvents.filter((e) => e.status === "Completed").length,
   };
 
-  const createEvent = async (payload) => {
+  const createEvent = async (payload, coverImageFile) => {
     const body = buildPayload(payload);
     if (body.fields) body.status = "Active";
     const res = await api.post("/activities", body);
+    const activityId = res.data.activity?._id || res.data.activity?.id;
+    if (activityId) {
+      const patches = {};
+      if (body.registrationEnabled === false) patches.registrationEnabled = false;
+      if (coverImageFile) {
+        const formData = new FormData();
+        formData.append("coverImage", coverImageFile);
+        Object.entries(patches).forEach(([k, v]) => formData.append(k, v));
+        await api.put(`/activities/${activityId}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      } else if (Object.keys(patches).length) {
+        await api.put(`/activities/${activityId}`, patches);
+      }
+    }
     await fetchData();
     return res.data;
   };
 
-  const updateEvent = async (id, payload) => {
+  const updateEvent = async (id, payload, coverImageFile) => {
     const body = buildPayload(payload);
     const res = await api.put(`/activities/${id}`, body);
+    if (coverImageFile) {
+      const formData = new FormData();
+      formData.append("coverImage", coverImageFile);
+      await api.put(`/activities/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    }
     await fetchData();
     return res.data;
   };
@@ -167,6 +194,9 @@ export function useEvents() {
     totalCount: allEvents.length,
     loading,
     error,
+    page,
+    setPage,
+    pagination,
     refetch: fetchData,
     createEvent,
     updateEvent,
