@@ -79,6 +79,11 @@ const getUserProfile = async (req, res) => {
     throw new AppError('User not found', 404);
   }
 
+  const allSubmissions = await Submission.find({ userId: user._id });
+
+  const attendedActs = allSubmissions.filter(sub => sub.attended === true);
+  const notAttendedActs = allSubmissions.filter(sub => sub.attended === false);
+
   res.json({
     success: true,
     user: {
@@ -94,7 +99,8 @@ const getUserProfile = async (req, res) => {
       yearOfStudy: user.yearOfStudy,
       interests: user.interests,
       optionalData: user.optionalData,
-      createdAt: user.createdAt
+      createdAt: user.createdAt,
+      submissions: {attended : attendedActs, notAttended : notAttendedActs}  
     }
   });
 };
@@ -790,6 +796,28 @@ const getEventsForMember = catchAsync(async (req, res, next) => {
   });
 })
 
+const searchMembers = catchAsync(async (req, res, next) => {
+  const { keyword } = req.query;
+  if (!keyword) {
+    return next(new AppError("Search query is required", 400));
+  }
+  const searchRegex = { $regex: keyword, $options: 'i' };
+  const members = await User.find({
+    $or: [
+      { name: searchRegex },
+      { email: searchRegex }
+    ]
+  });
+  if (!members || members.length === 0) {
+    return next(new AppError("No members found matching the search query", 400));
+  }
+  res.status(200).json({
+    status: 'success',
+    dataLength: members.length,
+    data: members
+  });
+});
+
 module.exports = {
   loginUser,
   logoutUser,
@@ -809,5 +837,6 @@ module.exports = {
   forgetPassword,
   resetPassword,
   getEventsForMember,
+  searchMembers,
   exportSpecificUsersToExcel
 };
