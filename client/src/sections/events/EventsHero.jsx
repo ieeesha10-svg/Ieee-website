@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 
 import Button from '../../components/Button';
 import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
-import HeroImage from '../../assets/images/events/events-hero.jpg';
 import { useAuth } from '../../context/AuthContext';
 
 export default function EventsHero({ featuredEvent, loading }) {
@@ -12,12 +11,13 @@ export default function EventsHero({ featuredEvent, loading }) {
 
   const title = featuredEvent?.title || "No Upcoming Events";
   const description = featuredEvent?.content || "Stay tuned, we're cooking up something exciting. Check back soon for our next event!";
-  const eventImage = featuredEvent?.image || HeroImage;
+  const eventImage = featuredEvent?.image || "";
+  const initials = (title || "").split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "E";
 
-	return <section id="events-hero" className="py-10 min-h-[calc(100vh-var(--navbar-height))] grid place-items-center gap-20 grid-cols-1 lg:grid-cols-2 text-center md:text-left max-w-7xl mx-auto">
+	return <section id="events-hero" className="py-10 min-h-[calc(100vh-var(--navbar-height))] grid place-items-center gap-20 grid-cols-1 lg:grid-cols-2  max-w-7xl mx-auto px-4">
 
 			{/* Left Section */}
-			<div className='flex flex-col gap-3 md:gap-5'>
+			<div className='flex flex-col gap-3 md:gap-5 text-center md:text-left'>
 				<h2 className='text-4xl md:text-7xl font-gotham text-ceter md:text-left uppercase *:block'>
 					<span>Empowering</span>
 					<div>
@@ -31,7 +31,7 @@ export default function EventsHero({ featuredEvent, loading }) {
 				</p>
 
 				{/* Call-To-Action Buttons*/}
-				<div className='*:text-lg *:lg:text-xl flex flex-col lg:flex-row gap-4 lg:mx-0 justify-center md:justify-start mt-5'>
+				<div className='*:text-lg *:lg:text-xl flex flex-col lg:flex-row gap-4 lg:mx-0 w-[80%] mx-auto justify-center md:justify-start mt-5'>
 					<a href='#upcoming-events'>
 						<button
 							className='px-6 py-3 lg:px-12 lg:py-6 w-full rounded-xl font-light text-primary hover:bg-white/40 hover:text-primary-dark dark:text-white hover:dark:text-white dark:bg-[#2563EB] hover:dark:bg-[#2563EB]/60 transition duration-300'
@@ -54,7 +54,7 @@ export default function EventsHero({ featuredEvent, loading }) {
 			</div>
 
 			{/* Right Section - images & card */}
-			<div className='mx-10 md:mx-0 rounded-2xl shadow-[0px_10px_30px_0px_#2563EB1F] dark:shadow-[0px_0px_40px_0px_#2563EB33]rounded-3xl dark:bg-[#0F172ACC] border border-[#E2E8F0]/8 overflow-hidden'>
+			<div className='w-full mx-10 md:mx-0 rounded-2xl shadow-[0px_10px_30px_0px_#2563EB1F] dark:shadow-[0px_0px_40px_0px_#2563EB33]rounded-3xl dark:bg-[#0F172ACC] border border-[#E2E8F0]/8 overflow-hidden'>
 				{loading && !featuredEvent ? (
 					<div className="animate-pulse">
 						<div className="h-64 md:h-80 bg-white/10" />
@@ -68,12 +68,18 @@ export default function EventsHero({ featuredEvent, loading }) {
 				) : (
 					<>
 						<div className='relative h-64 md:h-80'>
-							{!imgLoaded && <ImageSkeleton />}
-							<img
-							  src={eventImage}
-								onLoad={() => setImgLoaded(true)}
-							  className="w-full h-full object-cover"
-							/>
+							{eventImage && !imgLoaded && <ImageSkeleton />}
+							{eventImage ? (
+								<img
+									src={eventImage}
+									onLoad={() => setImgLoaded(true)}
+									className="w-full h-full object-cover"
+								/>
+							) : (
+								<div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+									<span className="text-6xl font-bold text-primary/30">{initials}</span>
+								</div>
+							)}
 						</div>
 						<div className='flex flex-col gap-6 py-7 px-5'>
 							<div className='text-[10px] lg:text-sm text-[#2563EB] bg-[#2563EB]/20 dark:text-primary-light dark:bg-primary-light/20 rounded-full w-fit px-3.5 py-2'>
@@ -82,7 +88,7 @@ export default function EventsHero({ featuredEvent, loading }) {
 							<h3 className='font-gotham text-xl lg:text-3xl'>
 								{title}
 							</h3>
-							<p className='text-muted text-xs lg:text-base'>
+							<p className='text-muted text-xs lg:text-base line-clamp-3'>
 								{description}
 							</p>
 						</div>

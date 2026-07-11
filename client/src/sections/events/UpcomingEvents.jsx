@@ -8,7 +8,7 @@ function pad(n) {
   return String(n).padStart(2, "0");
 }
 
-export default function UpcomingEvents({ events = [], loading }) {
+export default function UpcomingEvents({ events = [], loading, page = 1, totalPages = 1, onPageChange }) {
   const nearest = useMemo(() => {
     if (events.length === 0) return null;
     const now = Date.now();
@@ -91,11 +91,43 @@ export default function UpcomingEvents({ events = [], loading }) {
 					)}
 				</div>
 
+    		{totalPages > 1 && !loading && (
+          <div className="flex items-center justify-center gap-1.5 mt-10">
+            <button
+              onClick={() => onPageChange(page - 1)}
+              disabled={page <= 1}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-white/20 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Prev
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => onPageChange(p)}
+                className={`w-8 h-8 text-xs font-medium rounded-lg border transition-colors ${
+                  page === p
+                    ? "bg-white text-primary border-white"
+                    : "border-white/20 text-white hover:bg-white/10"
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              onClick={() => onPageChange(page + 1)}
+              disabled={page >= totalPages}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-white/20 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
+				
         {nearest && (
           <div className='mt-10 lg:mt-20 flex flex-col lg:flex-row gap-10 lg:gap-0 items-center justify-between rounded-2xl px-3.5 lg:px-7 py-4 lg:py-6 bg-primary-linear font-gotham shadow-2xl'>
             <div className='text-white text-center lg:text-left'>
               <p className='font-gotham-thin text-lg lg:text-[30px]'>{nearest.title}</p>
-              <p className='text-3xl lg:text-[50px]'>counting time.....</p>
+              <p className='text-3xl lg:text-[50px] capitalize'>counting time....</p>
             </div>
 
             <div className='flex items-center *:flex *:flex-col *:gap-3 font-gotham text-white'>
