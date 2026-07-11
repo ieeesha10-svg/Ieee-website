@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../../utils/api";
-
-const ORDINAL = { 1: "1st", 2: "2nd", 3: "3rd", 4: "4th" };
+import { formatAcademicYear } from "../../utils/formatAcademicYear";
 
 const CHART_COLORS = ["#00629B", "#0EA5E9", "#6366F1", "#22D3EE", "#F59E0B", "#EF4444"];
 
@@ -16,13 +15,6 @@ const AVATAR_COLORS = [
 function pickColor(id) {
   const hash = String(id).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
-}
-
-function formatYear(year) {
-  if (year == null) return "N/A";
-  const num = Number(year);
-  if (num === 0) return "Prep";
-  return `${ORDINAL[num] || num} Year`;
 }
 
 function timeAgo(dateStr) {
@@ -88,7 +80,7 @@ export function useDashboard() {
   const academicYearData = (stats.yearSplit || [])
     .filter((y) => y.yearOfStudy != null)
     .map((y) => ({
-      year: formatYear(y.yearOfStudy),
+      year: formatAcademicYear(y.yearOfStudy),
       students: y.count,
     }));
 
