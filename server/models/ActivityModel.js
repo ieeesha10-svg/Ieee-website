@@ -45,11 +45,11 @@ const activitySchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-
-    // NOT DONE
     coverImage: {
+      type: String
+    },
+    coverImagePublicId: { 
       type: String,
-      // default: ""
     }
   },
   { timestamps: true }

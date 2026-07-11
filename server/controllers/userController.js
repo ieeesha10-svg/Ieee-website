@@ -93,7 +93,8 @@ const getUserProfile = async (req, res) => {
       college: user.college,
       yearOfStudy: user.yearOfStudy,
       interests: user.interests,
-      optionalData: user.optionalData
+      optionalData: user.optionalData,
+      createdAt: user.createdAt
     }
   });
 };
