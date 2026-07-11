@@ -62,6 +62,12 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
   return <Outlet />;
 };
 
+const GuestRoute = () => {
+  const { user } = useAuth();
+  if (user) return <Navigate to="/profile" replace />;
+  return <Outlet />;
+};
+
 const PublicLayout = () => {
   const location = useLocation();
 
@@ -90,8 +96,10 @@ function App() {
           <Route path="/events/:id" element={<EventRegistration />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+          <Route element={<GuestRoute />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+          </Route>
           <Route path="/verify" element={<VerifyEmailPage />} />
           <Route path="/crew" element={<CrewPage />} />
           <Route path="/committees" element={<CommitteesPage />} />
