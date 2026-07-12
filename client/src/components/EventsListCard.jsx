@@ -17,11 +17,17 @@ export default function EventsListCard({ type = "upcoming", id, image, badge, ti
             Registered
           </div>
         )}
-				<img
-          src={image}
-          alt={title}
-          className="w-full h-full object-cover"
-        />
+        {image ? (
+          <img
+            src={image}
+            alt={title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+            <span className="text-4xl font-bold text-primary/30">{title?.charAt(0) || "E"}</span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 p-6 flex-1">

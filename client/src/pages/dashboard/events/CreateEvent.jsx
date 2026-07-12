@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, X, Loader2, Check, GripVertical, Trash2, CheckCircle2,
+  ArrowLeft, X, Loader2, Check, GripVertical, Trash2, CheckCircle2, Upload,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useEvents } from "../../../hooks/dashboard/useEvents";
@@ -37,6 +37,8 @@ export default function CreateEvent() {
   const [newFieldLabel, setNewFieldLabel] = useState("");
   const [newFieldType, setNewFieldType] = useState("TextInput");
   const [saving, setSaving] = useState(false);
+  const [coverImageFile, setCoverImageFile] = useState(null);
+  const [coverImagePreview, setCoverImagePreview] = useState(null);
 
   const set = (key, value) => setForm((p) => ({ ...p, [key]: value }));
 
@@ -90,6 +92,26 @@ export default function CreateEvent() {
     }
   };
 
+  const coverImageInputRef = React.useRef(null);
+
+  const handleCoverImageSelect = (file) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    setCoverImageFile(file);
+    setCoverImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleCoverImageDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    handleCoverImageSelect(file);
+  };
+
+  const handleCoverImageRemove = () => {
+    if (coverImagePreview) URL.revokeObjectURL(coverImagePreview);
+    setCoverImageFile(null);
+    setCoverImagePreview(null);
+  };
+
   const addSpeaker = () => {
     if (!speakerName.trim()) return;
     set("speakers", [...form.speakers, {
@@ -114,7 +136,7 @@ export default function CreateEvent() {
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      await createEvent({ ...form, fields: fieldsList });
+      await createEvent({ ...form, fields: fieldsList }, coverImageFile);
       toast.success("Activity created successfully!");
       navigate("/dashboard/events");
     } catch (err) {
@@ -165,6 +187,41 @@ export default function CreateEvent() {
           <div>
             <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Description <RequiredAsterisk /></label>
             <textarea value={form.content} onChange={(e) => set("content", e.target.value)} rows={3} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none" placeholder="Event description" />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Cover Image</label>
+            {coverImagePreview ? (
+              <div className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-[#222936]">
+                <img src={coverImagePreview} alt="Cover preview" className="w-full h-48 object-cover" />
+                <button
+                  type="button"
+                  onClick={handleCoverImageRemove}
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+                  aria-label="Remove cover image"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleCoverImageDrop}
+                onClick={() => coverImageInputRef.current?.click()}
+                className="flex flex-col items-center justify-center gap-2 py-8 rounded-lg border-2 border-dashed border-gray-200 dark:border-[#222936] bg-gray-50 dark:bg-gray-800/30 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer"
+              >
+                <Upload size={20} className="text-muted" />
+                <span className="text-sm text-muted font-medium">Upload Cover Image</span>
+                <span className="text-[11px] text-muted/60">Click or drag & drop (image/*)</span>
+              </div>
+            )}
+            <input
+              ref={coverImageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleCoverImageSelect(e.target.files[0])}
+            />
           </div>
         </div>
       </SectionCard>

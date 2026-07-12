@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   User as UserIcon,
   LogOut as LogOutIcon,
@@ -19,6 +20,7 @@ import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import toast, { Toaster } from "react-hot-toast";
+import ConfirmModal from "./ConfirmModal";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
@@ -33,6 +35,8 @@ const NAV_LINKS = [
 const PublicNavbar = () => {
   // 1. Add state to control the mobile menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const navigate = useNavigate();
   // Check if someone is logged in by looking at LocalStorage
   const { user } = useAuth();
@@ -41,11 +45,10 @@ const PublicNavbar = () => {
   const isHome = location.pathname === "/";
 
   const handleLogout = async () => {
+    setLoggingOut(true);
     try {
-      const { message } = await api.post("/users/logout");
-
+      await api.post("/users/logout");
       toast.success("Logged out successfully!");
-
       setTimeout(() => {
         window.location.reload();
         navigate("/");
@@ -53,6 +56,8 @@ const PublicNavbar = () => {
     } catch (error) {
       const msg = error.response?.data?.message || "Logout failed";
       toast.error(msg);
+      setLoggingOut(false);
+      setShowLogoutModal(false);
     }
   };
 
@@ -116,7 +121,7 @@ const PublicNavbar = () => {
                 </Link>
               )}
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutModal(true)}
                 className="text-red-500 hover:text-red-700 transition flex items-center gap-1 font-medium"
               >
                 <LogOutIcon size={18} />
@@ -273,6 +278,21 @@ const PublicNavbar = () => {
           )}
         </div>
       </div>
+
+      {createPortal(
+        <ConfirmModal
+          isOpen={showLogoutModal}
+          title="Log out"
+          message="Are you sure you want to log out?"
+          confirmLabel="Log out"
+          cancelLabel="Cancel"
+          variant="danger"
+          isLoading={loggingOut}
+          onConfirm={handleLogout}
+          onCancel={() => { setShowLogoutModal(false); setLoggingOut(false); }}
+        />,
+        document.body
+      )}
     </nav>
   );
 };

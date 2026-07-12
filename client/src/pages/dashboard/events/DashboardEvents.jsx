@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   Calendar, MapPin, Eye, Plus, X, Loader2,
   Trash2, Edit, CheckCircle2, FileText,
-  Check, GripVertical,
+  Check, GripVertical, Upload,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -62,7 +62,7 @@ function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }) {
 }
 
 /* ─── Event Form (shared by Create + Edit) ──────────────────────── */
-function EventForm({ initial, onSubmit, submitLabel, loading, formId }) {
+function EventForm({ initial, onSubmit, submitLabel, loading, formId, coverImageUrl }) {
   const [form, setForm] = useState(initial);
   const [speakerName, setSpeakerName] = useState("");
   const [speakerTitle, setSpeakerTitle] = useState("");
@@ -73,6 +73,8 @@ function EventForm({ initial, onSubmit, submitLabel, loading, formId }) {
   const [dragIndex, setDragIndex] = useState(null);
   const [newFieldLabel, setNewFieldLabel] = useState("");
   const [newFieldType, setNewFieldType] = useState("TextInput");
+  const [coverImageFile, setCoverImageFile] = useState(null);
+  const [coverImagePreview, setCoverImagePreview] = useState(coverImageUrl || null);
 
   const set = (key, value) => setForm((p) => ({ ...p, [key]: value }));
 
@@ -126,6 +128,26 @@ function EventForm({ initial, onSubmit, submitLabel, loading, formId }) {
     }
   };
 
+  const coverImageInputRef = React.useRef(null);
+
+  const handleCoverImageSelect = (file) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    setCoverImageFile(file);
+    setCoverImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleCoverImageDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    handleCoverImageSelect(file);
+  };
+
+  const handleCoverImageRemove = () => {
+    if (coverImagePreview && coverImagePreview.startsWith("blob:")) URL.revokeObjectURL(coverImagePreview);
+    setCoverImageFile(null);
+    setCoverImagePreview(null);
+  };
+
   const addSpeaker = () => {
     if (!speakerName.trim()) return;
     set("speakers", [...form.speakers, {
@@ -171,6 +193,41 @@ function EventForm({ initial, onSubmit, submitLabel, loading, formId }) {
       <div>
         <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Description</label>
         <textarea value={form.content} onChange={(e) => set("content", e.target.value)} rows={3} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none" placeholder="Event description" />
+      </div>
+
+      <div>
+        <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Cover Image</label>
+        {coverImagePreview ? (
+          <div className="relative rounded-lg overflow-hidden border border-gray-200 dark:border-[#222936]">
+            <img src={coverImagePreview} alt="Cover preview" className="w-full h-40 object-cover" />
+            <button
+              type="button"
+              onClick={handleCoverImageRemove}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+              aria-label="Remove cover image"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleCoverImageDrop}
+            onClick={() => coverImageInputRef.current?.click()}
+            className="flex flex-col items-center justify-center gap-2 py-6 rounded-lg border-2 border-dashed border-gray-200 dark:border-[#222936] bg-gray-50 dark:bg-gray-800/30 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer"
+          >
+            <Upload size={18} className="text-muted" />
+            <span className="text-sm text-muted font-medium">Upload Cover Image</span>
+            <span className="text-[11px] text-muted/60">Click or drag & drop (image/*)</span>
+          </div>
+        )}
+        <input
+          ref={coverImageInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleCoverImageSelect(e.target.files[0])}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -403,7 +460,7 @@ function EventForm({ initial, onSubmit, submitLabel, loading, formId }) {
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={() => onSubmit({ ...form, fields: fieldsList })} disabled={loading || !form.title || !form.location || !form.content || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+        <button type="button" onClick={() => onSubmit({ ...form, fields: fieldsList }, coverImageFile)} disabled={loading || !form.title || !form.location || !form.content || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
           {loading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
           {submitLabel}
         </button>
@@ -434,6 +491,9 @@ function ViewModal({ open, onClose, eventId, getEventById }) {
         <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-primary" /></div>
       ) : activity ? (
         <div className="space-y-5">
+          {activity.coverImage && (
+            <img src={activity.coverImage} alt={activity.title} className="w-full h-48 object-cover rounded-lg" />
+          )}
           <div>
             <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Title</span>
             <p className="text-sm text-foreground mt-1">{activity.title}</p>
@@ -511,16 +571,23 @@ function ViewModal({ open, onClose, eventId, getEventById }) {
 
 function EventCard({ event, onView, onEdit, onDelete }) {
   const typeStyle = TYPE_COLORS[event.typeColor] || TYPE_COLORS.blue;
-  const statusStyle = STATUS_STYLES[event.status] || STATUS_STYLES.Completed;
+	const statusStyle = STATUS_STYLES[event.registrationEnabled ? "Active" : "Completed"];
 
   return (
     <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20 transition-all duration-200 p-5 flex flex-col justify-between">
       <div>
+        {event.coverImage ? (
+          <img src={event.coverImage} alt={event.title} className="w-full h-40 object-cover rounded-lg mb-3" />
+        ) : (
+          <div className="w-full h-40 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mb-3">
+            <span className="text-3xl font-bold text-primary/20">{(event.title || "E").split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase()}</span>
+          </div>
+        )}
         <div className="flex items-start justify-between mb-3">
           <span className={`text-[11px] font-bold px-2.5 py-1 rounded-md border ${typeStyle.bg} ${typeStyle.text} ${typeStyle.border}`}>{EVENT_TYPE_LABELS[event.type] || event.type}</span>
           <span className={`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-md ${statusStyle.bg} ${statusStyle.text}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
-            {event.status}
+            {event.registrationEnabled ? "Active" : "Completed"}
           </span>
         </div>
         <h3 className="text-foreground font-semibold text-[15px] leading-snug mb-3">{event.title}</h3>
@@ -547,19 +614,30 @@ function EventCard({ event, onView, onEdit, onDelete }) {
 
 /* ─── Main Component ─────────────────────────────────────────────── */
 export default function DashboardEvents() {
-  const { events, filter, setFilter, loading, error, createEvent, updateEvent, deleteEvent, getEventById } = useEvents();
+  const { events, filter, setFilter, loading, error, page, setPage, pagination, createEvent, updateEvent, deleteEvent, getEventById } = useEvents();
 
 	const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [editEvent, setEditEvent] = useState(null);
+  const [editFullActivity, setEditFullActivity] = useState(null);
   const [viewEventId, setViewEventId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
-  const handleCreate = async (form) => {
+  useEffect(() => {
+    if (!editEvent) { setEditFullActivity(null); return; }
+    setEditLoading(true);
+    api.get(`/activities/${editEvent.id}`)
+      .then((res) => setEditFullActivity(res.data.activity || null))
+      .catch(() => setEditFullActivity(null))
+      .finally(() => setEditLoading(false));
+  }, [editEvent]);
+
+  const handleCreate = async (form, coverImageFile) => {
     setSaving(true);
     try {
-      await createEvent(form);
+      await createEvent(form, coverImageFile);
       toast.success("Activity created successfully!");
       setShowCreate(false);
     } catch (err) {
@@ -570,13 +648,13 @@ export default function DashboardEvents() {
     }
   };
 
-  const handleEdit = async (form) => {
+  const handleEdit = async (form, coverImageFile) => {
     setSaving(true);
     try {
-      await updateEvent(editEvent.id, form);
-      if (editEvent.formId && form.registrationEnabled !== editEvent.registrationEnabled) {
+      if (editEvent.formId && form.registrationEnabled !== (editFullActivity?.registrationEnabled ?? true)) {
         await api.put(`/form/${editEvent.formId}/toggle`);
       }
+      await updateEvent(editEvent.id, form, coverImageFile);
       toast.success("Activity updated successfully!");
       setEditEvent(null);
     } catch (err) {
@@ -626,7 +704,7 @@ export default function DashboardEvents() {
               {f}
             </button>
           ))}
-          <span className="text-xs text-muted font-medium ml-1">{events.length} results</span>
+          <span className="text-xs text-muted font-medium ml-1">{pagination.totalItems} results</span>
         </div>
         <button onClick={() => navigate("/dashboard/events/create-event")} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
           <Plus size={16} /> Create New Event
@@ -651,6 +729,36 @@ export default function DashboardEvents() {
         </div>
       )}
 
+      <div className="flex items-center justify-center gap-1.5 pt-2">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-[#222936] text-muted hover:text-foreground hover:border-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Prev
+          </button>
+          {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPage(p)}
+              className={`w-8 h-8 text-xs font-medium rounded-lg border transition-colors ${
+                page === p
+                  ? "bg-primary text-white border-primary"
+                  : "border-gray-200 dark:border-[#222936] text-muted hover:text-foreground hover:border-primary"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+          <button
+            onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+            disabled={page >= pagination.totalPages}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-[#222936] text-muted hover:text-foreground hover:border-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
+
       {/* Create Modal */}
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Create New Event">
 				<EventForm
@@ -665,24 +773,29 @@ export default function DashboardEvents() {
       {/* Edit Modal */}
       <Modal open={!!editEvent} onClose={() => setEditEvent(null)} title="Edit Event">
         {editEvent && (
-          <EventForm
-            initial={{
-              title: editEvent.title,
-              content: editEvent.content,
-              type: editEvent.type,
-              location: editEvent.location,
-              speakers: (editEvent.speakers || []).map((s) => ({ ...s, imageFile: null, imagePreview: null })),
-              startDate: editEvent.form?.startDate ? toLocalDatetimeString(editEvent.form.startDate) : "",
-              endDate: editEvent.form?.endDate ? toLocalDatetimeString(editEvent.form.endDate) : "",
-              maxSubmissions: editEvent.form?.maxSubmissions || "",
-              registrationEnabled: editEvent.registrationEnabled,
-              fields: editEvent.form?.fields || [],
-            }}
-            formId={editEvent.formId}
-            onSubmit={handleEdit}
-            submitLabel="Save Changes"
-            loading={saving}
-          />
+          editEvent.formId && editLoading ? (
+            <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-primary" /></div>
+          ) : (
+            <EventForm
+              initial={{
+                title: editEvent.title,
+                content: editEvent.content,
+                type: editEvent.type,
+                location: editEvent.location,
+                speakers: (editEvent.speakers || []).map((s) => ({ ...s, imageFile: null, imagePreview: null })),
+                startDate: editEvent.form?.startDate ? toLocalDatetimeString(editEvent.form.startDate) : "",
+                endDate: editEvent.form?.endDate ? toLocalDatetimeString(editEvent.form.endDate) : "",
+                maxSubmissions: editEvent.form?.maxSubmissions || "",
+                registrationEnabled: editFullActivity?.registrationEnabled ?? editEvent.registrationEnabled,
+                fields: editEvent.form?.fields || [],
+              }}
+              coverImageUrl={editEvent.coverImage || ""}
+              formId={editEvent.formId}
+              onSubmit={handleEdit}
+              submitLabel="Save Changes"
+              loading={saving}
+            />
+          )
         )}
       </Modal>
 
