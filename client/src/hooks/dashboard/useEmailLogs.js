@@ -25,7 +25,7 @@ export function useEmailLogs() {
     const fetchEmailLogs = async () => {
       setLoading(true);
       try {
-        let url = `/emails/logs?page=${page}&limit=${pagination.limit}`;
+        let url = `/emails?page=${page}&limit=${pagination.limit}`;
 
         if (search) {
           url += `&search=${search}`;
