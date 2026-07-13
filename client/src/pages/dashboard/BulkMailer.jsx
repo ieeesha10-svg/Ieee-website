@@ -240,8 +240,6 @@ export default function BulkMailer() {
       return;
     }
 
-    let excelFile;
-
     if (selectedEmails.size === 0) {
       setStatusMsg({
         type: "error",
@@ -250,50 +248,52 @@ export default function BulkMailer() {
       return;
     }
 
-    setStatusMsg({ type: "info", text: "Generating recipient list..." });
-
-    let selectedRows = [];
-    if (recipientMode === "api") {
-      selectedRows = members.filter((m) => selectedEmails.has(m.email));
-      const excelBlob = buildFinalExcelBlob(selectedRows, "email");
-      excelFile = new File([excelBlob], "recipients.xlsx", {
-        type: excelBlob.type,
-      });
-    } else {
-      if (!recipientExcel || excelMembers.length === 0) {
-        setStatusMsg({
-          type: "error",
-          text: "Please upload an Excel file containing recipients.",
-        });
-        return;
-      }
-      selectedRows = excelMembers.filter((m) =>
-        selectedEmails.has(m[emailColumn]),
-      );
-      const excelBlob = buildFinalExcelBlob(selectedRows, emailColumn);
-      excelFile = new File([excelBlob], "recipients.xlsx", {
-        type: excelBlob.type,
-      });
-    }
-
     setIsSending(true);
     setSendResults([]);
     setStatusMsg({ type: "info", text: "Sending broadcast..." });
 
     try {
-      // Assemble FormData exactly as the API expects
       const formData = new FormData();
       formData.append("subject", subject);
-      formData.append("email", body);
-      formData.append("excelFile", excelFile);
+      formData.append("messageBody", body);
 
       // Email Attachments
       attachments.forEach((file) => {
         formData.append("emailAttachments", file);
       });
 
+      let endpoint;
+      let selectedRows = [];
+
+      if (recipientMode === "api") {
+        // Use bulk-send-db for database members
+        endpoint = "/emails/bulk-send-db";
+        selectedRows = members.filter((m) => selectedEmails.has(m.email));
+        const userIds = selectedRows.map((m) => m.id);
+        formData.append("userIds", JSON.stringify(userIds));
+      } else {
+        // Use bulk-send for Excel upload
+        endpoint = "/emails/bulk-send";
+        if (!recipientExcel || excelMembers.length === 0) {
+          setStatusMsg({
+            type: "error",
+            text: "Please upload an Excel file containing recipients.",
+          });
+          setIsSending(false);
+          return;
+        }
+        selectedRows = excelMembers.filter((m) =>
+          selectedEmails.has(m[emailColumn]),
+        );
+        const excelBlob = buildFinalExcelBlob(selectedRows, emailColumn);
+        const excelFile = new File([excelBlob], "recipients.xlsx", {
+          type: excelBlob.type,
+        });
+        formData.append("excelFile", excelFile);
+      }
+
       // Send the request
-      const response = await api.post("/emails/bulk-send", formData, {
+      const response = await api.post(endpoint, formData, {
         headers: { "Content-Type": "multipart/form-data" },
         // Timeout based on an estimated number of emails if known, else large
         timeout: Math.max(selectedEmails.size * 2000, 30000),
@@ -435,8 +435,8 @@ export default function BulkMailer() {
                     <Paperclip size={14} />
                   </button>
                   <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1"></div>
-                  {(recipientMode === "api" 
-                    ? ["Name", "Email", "Role"] 
+                  {(recipientMode === "api"
+                    ? ["Name", "Email", "Role"]
                     : excelHeaders
                   ).map((header) => (
                     <button
@@ -460,8 +460,12 @@ export default function BulkMailer() {
               </div>
               <div className="flex items-center justify-between mt-1">
                 <p className="text-[11px] text-muted">
-                  You can use plain text or HTML tags. Footer is added
-                  automatically.
+                  Use{" "}
+                  <span className="font-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">
+                    {"{{variable}}"}
+                  </span>{" "}
+                  for dynamic variables from Excel. HTML tags supported. Footer
+                  added automatically.
                 </p>
                 <span className="text-[11px] text-muted shrink-0 ml-2">
                   {body.length} chars

@@ -101,7 +101,7 @@ export default function EmailLogsPage() {
         params.set("status", backendStatus);
       }
 
-      const res = await api.get(`/emails/logs?${params.toString()}`);
+      const res = await api.get(`/emails?${params.toString()}`);
       const dataToExport = res.data.data || [];
 
       const headers = [

@@ -95,18 +95,19 @@ export default function AttendedEvents() {
       setError(null);
       try {
         const response = await api.get(`/users/${userData._id}/events`);
-        const data = Array.isArray(response.data)
-          ? response.data
+        const data = Array.isArray(response.data?.data)
+          ? response.data.data
           : response.data?.events || [];
 
         const mappedEvents = data.map((item, index) => {
-          const evt = item.event || item;
+          // Fallback to item.formId if the backend populates it, otherwise item.event or item
+          const evt = item.formId || item.event || item;
           // Alternate colors for the date box to match the design variation
           const themes = ["blue", "purple", "green"];
 
           return {
             title: evt.title || evt.name || "Untitled Event",
-            dateObj: evt.date ? new Date(evt.date) : new Date(),
+            dateObj: evt.startDate ? new Date(evt.startDate) : (evt.date ? new Date(evt.date) : new Date(item.createdAt || new Date())),
             time: evt.time || "Time N/A",
             location: evt.location || "Location N/A",
             type: evt.type || "Technical",
