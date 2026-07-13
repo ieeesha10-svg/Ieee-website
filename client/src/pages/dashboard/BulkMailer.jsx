@@ -255,25 +255,24 @@ export default function BulkMailer() {
     try {
       const formData = new FormData();
       formData.append("subject", subject);
-      formData.append("messageBody", body);
+      formData.append("email", body);
 
       // Email Attachments
       attachments.forEach((file) => {
-        formData.append("emailAttachments", file);
+        formData.append("attachments", file);
       });
 
-      let endpoint;
+      let endpoint = "/emails/bulk-send";
       let selectedRows = [];
 
       if (recipientMode === "api") {
-        // Use bulk-send-db for database members
-        endpoint = "/emails/bulk-send-db";
         selectedRows = members.filter((m) => selectedEmails.has(m.email));
-        const userIds = selectedRows.map((m) => m.id);
-        formData.append("userIds", JSON.stringify(userIds));
+        const excelBlob = buildFinalExcelBlob(selectedRows, "email");
+        const excelFile = new File([excelBlob], "recipients.xlsx", {
+          type: excelBlob.type,
+        });
+        formData.append("excelFile", excelFile);
       } else {
-        // Use bulk-send for Excel upload
-        endpoint = "/emails/bulk-send";
         if (!recipientExcel || excelMembers.length === 0) {
           setStatusMsg({
             type: "error",
