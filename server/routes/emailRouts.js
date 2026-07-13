@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 const {
   sendBulkEmails,
+  sendBulkEmailsFromDB,
   updateEmailSettings,
   getEmailLogs,
   getPaginatedEmails,
@@ -45,6 +46,16 @@ emailRouter.post(
     { name: 'attachments' }
   ]),
   sendBulkEmails,
+);
+
+emailRouter.post(
+  "/bulk-send-db",
+  protect,
+  authorize("xcom", "board"),
+  upload.fields([
+    { name: 'attachments' }
+  ]),
+  sendBulkEmailsFromDB,
 );
 
 // 2. Settings
