@@ -1,57 +1,78 @@
-const express = require('express');
+const express = require("express");
 const emailRouter = express.Router();
-const multer = require('multer');
+const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
-const { sendBulkEmails, updateEmailSettings, getEmailLogs, getPaginatedEmails} = require('../controllers/emailController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const {
+  sendBulkEmails,
+  sendBulkEmailsFromDB,
+  updateEmailSettings,
+  getEmailLogs,
+  getPaginatedEmails,
+} = require("../controllers/emailController");
+const { protect, authorize } = require("../middleware/authMiddleware");
 
 // Configure Multer (Temp Storage)
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = path.join(__dirname, "../uploads");
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, "../uploads");
 
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
-        cb(null, uploadDir);
-    },
-
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + "-" + file.originalname);
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
+
+    cb(null, uploadDir);
+  },
+
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
 });
 
 const upload = multer({
   storage,
   limits: {
-    fileSize: 10 * 1024 * 1024
-  }
+    fileSize: 10 * 1024 * 1024,
+  },
 });
 
-// Update this part:
-/*
-router.post('/bulk-send', 
-  protect, 
-  authorize('xcom', 'board'), 
-  upload.fields([
-    { name: 'excelFile', maxCount: 1 }, 
-    { name: 'emailAttachments', maxCount: 5 } // Allow up to 5 attachments
-  ]), 
-  sendBulkEmails
-);
-*/
-
 // 1. Send Bulk
-emailRouter.post('/bulk-send', protect, authorize('xcom', 'board'), upload.single('excelFile'), sendBulkEmails);
+emailRouter.post(
+  "/bulk-send",
+  protect,
+  authorize("xcom", "board"),
+  upload.fields([
+    { name: 'excelFile', maxCount: 1 },
+    { name: 'attachments' }
+  ]),
+  sendBulkEmails,
+);
+
+emailRouter.post(
+  "/bulk-send-db",
+  protect,
+  authorize("xcom", "board"),
+  upload.fields([
+    { name: 'attachments' }
+  ]),
+  sendBulkEmailsFromDB,
+);
 
 // 2. Settings
-emailRouter.put('/settings', protect, authorize('xcom','board'), updateEmailSettings);
+emailRouter.put(
+  "/settings",
+  protect,
+  authorize("xcom", "board"),
+  updateEmailSettings,
+);
 
 // 3. Logs
 // emailRouter.get('/logs', protect, authorize('xcom', 'board'), getEmailLogs);
-emailRouter.get('/logs', protect, authorize('xcom', 'board'), getPaginatedEmails);
-
+emailRouter.get(
+  "/logs",
+  protect,
+  authorize("xcom", "board"),
+  getPaginatedEmails,
+);
 
 module.exports = emailRouter;

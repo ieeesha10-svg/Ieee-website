@@ -2,7 +2,7 @@ const { catchAsync, AppError } = require('../middleware/errorsMiddleware.js');
 const Activity = require('../models/ActivityModel.js');
 const Form = require('../models/FormModel.js');
 const Submission = require('../models/SubmissionModel.js');
-
+const cloudinary = require('../config/cloudinary.js');
 /**
  >> each activity has a form associated with it. <<
 
@@ -13,6 +13,19 @@ const Submission = require('../models/SubmissionModel.js');
  * DELETE  /api/activities/:id --> delete activity by id  (deleteActivity)
 */
 
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'activities' }, 
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(buffer);
+  });
+};
+
 const createActivity = catchAsync(async (req, res) => {
   let { title, content, type, speakers, location, registrationEnabled, fields, startDate, endDate, maxSubmissions } = req.body;
   if(!title || !content || !location) {
@@ -21,6 +34,14 @@ const createActivity = catchAsync(async (req, res) => {
   const activitySpeakers = speakers || [];
   if (!startDate) startDate = new Date();
   if (!endDate) endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  coverImageUrl = "";
+  let coverImagePublicId = "";
+  if (req.file) {
+    // console.log("TESTING : req.file:", req.file);
+    const result = await uploadToCloudinary(req.file.buffer);
+    coverImageUrl = result.secure_url;
+    coverImagePublicId = result.public_id;
+  }
   const activity = await Activity.create({
     title,
     content,
@@ -29,6 +50,8 @@ const createActivity = catchAsync(async (req, res) => {
     location,
     startDate,
     endDate,
+    coverImage: coverImageUrl || "",
+    coverImagePublicId: coverImagePublicId || ""
   });
 
   if (!fields) {
@@ -74,7 +97,10 @@ const getActivities = catchAsync(async (req, res) => {
         startDate: activity.startDate,
         endDate: activity.endDate,
         createdAt: activity.createdAt,
-        status: form ? form.status : "No Form Found" 
+        coverImage: activity.coverImage || "",
+        registrationEnabled: activity.registrationEnabled,
+        status: form ? form.status : "No Form Found",
+        formID: form ? form._id : null
       };
     })
   );
@@ -100,26 +126,33 @@ const getActivityById = catchAsync(async (req, res) => {
 });
 
 const updateActivity = catchAsync(async (req, res) => {
+  const existingActivity = await Activity.findById(req.params.id);
+  if (!existingActivity) {
+    throw new AppError("Activity not found", 404);
+  }
+
+  let updateData = { ...req.body };
+  if(updateData.startDate && updateData.endDate && new Date(updateData.startDate) > new Date(updateData.endDate)) {
+    throw new AppError("Start date cannot be after end date", 400);
+  }
+  if (req.file) {
+    if (existingActivity.coverImagePublicId) {
+      await cloudinary.uploader.destroy(existingActivity.coverImagePublicId);
+      // console.log(`Deleted old image: ${existingActivity.coverImagePublicId}`);
+    }
+    const result = await uploadToCloudinary(req.file.buffer);
+    updateData.coverImage = result.secure_url;
+    updateData.coverImagePublicId = result.public_id; 
+  }
+
   const activity = await Activity.findByIdAndUpdate(
     req.params.id,
-    req.body,
-    { new: true }
+    updateData,
+    { 
+      returnDocument: 'after', 
+      runValidators: true 
+    }
   );
-  if (!activity) throw new AppError("Activity not found", 404);
-
-  if (req.body.fields || req.body.startDate || req.body.endDate || req.body.maxSubmissions) {
-    const formUpdates = {};
-    if (req.body.fields) formUpdates.fields = req.body.fields;
-    if (req.body.startDate) formUpdates.startDate = req.body.startDate;
-    if (req.body.endDate) formUpdates.endDate = req.body.endDate;
-    if (req.body.maxSubmissions !== undefined) formUpdates.maxSubmissions = req.body.maxSubmissions;
-
-    await Form.findOneAndUpdate(
-      { activityID: activity._id },
-      formUpdates,
-      { new: true }
-    );
-  }
 
   res.json({ success: true, activity });
 });
