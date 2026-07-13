@@ -5,6 +5,7 @@ const EmailLog = require("../models/EmailLog.js");
 const mongoose = require("mongoose");
 const Activity = require("../models/ActivityModel.js");
 const Submission = require("../models/SubmissionModel.js");
+const Form = require("../models/FormModel.js")
 const { catchAsync } = require("../middleware/errorsMiddleware.js");
 
 // GET /api/stats/dashboard
@@ -14,10 +15,9 @@ dashboardRouter.get(
     // Total Members
     const totalMembers = await User.countDocuments();
 
-    // Active Activities
-    const activeActivities = await Activity.countDocuments({
-      status: "published",
-      registrationEnabled: true,
+    // Active Forms Activities
+    const activeActivities = await Form.countDocuments({
+      status: "Active"
     });
 
     // New Registrations (Last 7 Days)

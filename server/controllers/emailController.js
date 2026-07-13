@@ -6,6 +6,7 @@ const EmailLog = require('../models/EmailLog');
 const SystemSettings = require('../models/SystemSettings');
 const { getEmailFooter } = require('../utils/emailTemplates');
 const validator = require('validator');
+const { Resend } = require('resend');
 
 // Helper: Sleep to avoid spam blocks
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -13,13 +14,18 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // @desc    Upload Excel & Send Bulk Emails
 // @route   POST /api/emails/bulk-send
 // @access  Private (XCom/Board)
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 const sendBulkEmails = async (req, res) => {
   try {
     const userId = req.user._id;
     if(!userId) {
       return res.status(401).json({ error: 'Unauthorized user' });
     }
-    const file = req.file;
+    
+    const file = req.files && req.files['excelFile'] ? req.files['excelFile'][0] : req.file;
+    const attachmentFiles = req.files && req.files['attachments'] ? req.files['attachments'] : [];
     const { email: bodyMessage, subject } = req.body;
 
     if (!file || !bodyMessage) {
@@ -34,6 +40,7 @@ const sendBulkEmails = async (req, res) => {
     const workbook = xlsx.readFile(file.path);
     const firstSheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheetName];
+    // header: 1 returns an array of arrays
     const data = xlsx.utils.sheet_to_json(worksheet, { header: 1 });
 
     // Delete the temporary file after reading
@@ -42,64 +49,110 @@ const sendBulkEmails = async (req, res) => {
     }
 
     const validEmails = [];
+    const mailAttachments = [];
+    
+    for (const att of attachmentFiles) {
+        try {
+            const fileBuffer = await fs.readFile(att.path);
+            mailAttachments.push({
+                filename: att.originalname,
+                content: fileBuffer 
+            });
+        } catch (err) {
+            console.error("Error reading attachment:", err);
+        }
+    }
 
-    for (let i = 0; i < data.length; i++) {
-        const emailCell = data[i][0];
+    if (data.length > 0) {
+        // Extract titles from the first line (ignore extra spaces)
+        const headers = data[0].map(h => h ? String(h).trim() : '');
 
-        if (emailCell) {
-            const emailStr = String(emailCell).trim();
-            
-            if (validator.isEmail(emailStr)) {
-                validEmails.push(emailStr);
-            } else {
-                // for invalid 
-                await EmailLog.create({
-                    sendBy: userId,
-                    email: emailStr,
-                    status: 'Not email',
-                    messageBody: bodyMessage
-                });
-                const responseChunk = { email: emailStr, status: 'Not email' };
-                res.write(JSON.stringify(responseChunk) + '\n');
+        // The loop starts at 1 so we can skip the first row (the header row).
+        for (let i = 1; i < data.length; i++) {
+            const row = data[i];
+            const emailCell = row[0]; // The first column is always the email address
+
+            if (emailCell) {
+                const emailStr = String(emailCell).trim();
+
+                if (validator.isEmail(emailStr)) {
+                    // Collect the rest of the row data and link it to the headers
+                    const rowData = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        if (headers[j]) {
+                            rowData[headers[j]] = row[j] !== undefined ? String(row[j]).trim() : '';
+                        }
+                    }
+                    validEmails.push({ email: emailStr, data: rowData });
+                } else {
+                    // for invalid email
+                    await EmailLog.create({
+                        sendBy: userId,
+                        email: emailStr,
+                        subject: subject || 'Notification',
+                        status: 'Not email',
+                        messageBody: bodyMessage
+                    });
+                    const responseChunk = { email: emailStr, status: 'Not email' };
+                    res.write(JSON.stringify(responseChunk) + '\n');
+                }
             }
         }
     }
 
-    // send emails to validEmails
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER, 
-        pass: process.env.EMAIL_PASS
-      }
-    });
+    for (const recipient of validEmails) {
+        const { email, data: rowData } = recipient;
 
+        // Replace the [variable] placeholders with their corresponding values from Excel
+        const personalizedHtmlMessage = bodyMessage.replace(/\[(.*?)\]/g, (match, placeholder) => {
+            // Search for a column name without distinguishing between uppercase and lowercase letters (case-insensitive)
+            const headerKey = Object.keys(rowData).find(
+                key => key.toLowerCase() === placeholder.toLowerCase()
+            );
 
-    for (const email of validEmails) {
+            // If the column exists and has a value, replace the word with that value... If it doesn't exist, leave it as is
+            if (headerKey !== undefined && rowData[headerKey] !== '') {
+                return rowData[headerKey];
+            }
+            return match; // Leave it as is, like [name] or [phone]
+        });
+
         try {
-            await transporter.sendMail({
-                from: `"IEEE" <${process.env.EMAIL_USER}>`,
+            const SENDER_EMAIL = 'IEEE SHA Student Branch <noreply@ieeesha.org>';
+            const { data: resendData, error: resendError } = await resend.emails.send({
+                from: SENDER_EMAIL,
                 to: email,
                 subject: subject || 'Notification',
-                html: bodyMessage
+                html: personalizedHtmlMessage,
+                attachments: mailAttachments
             });
+
+            if (resendError) {
+                throw new Error(resendError.message);
+            }
+
             // Log the successful email send to the database
             await EmailLog.create({
                 sendBy: userId,
                 email: email,
+                subject: subject || 'Notification',
                 status: 'Done',
-                messageBody: bodyMessage
+                messageBody: personalizedHtmlMessage
             });
+            
             // for successful email
             const successChunk = { email: email, status: 'Done' };
             res.write(JSON.stringify(successChunk) + '\n');
         } catch (err) {
+            console.error(`Resend Error for ${email}:`, err.message);
+            
             // for failed email
             await EmailLog.create({
                 sendBy: userId,
                 email: email,
+                subject: subject || 'Notification',
                 status: 'Rejected',
-                messageBody: bodyMessage
+                messageBody: personalizedHtmlMessage
             });
             const failChunk = { email: email, status: 'Rejected' };
             res.write(JSON.stringify(failChunk) + '\n');
@@ -107,6 +160,12 @@ const sendBulkEmails = async (req, res) => {
 
         // Wait for 1 second before sending the next email to avoid spam filters
         await sleep(1000);
+    }
+
+    for (const att of attachmentFiles) {
+        if (att.path) {
+            await fs.unlink(att.path).catch(e => console.error("Error deleting attachment:", e));
+        }
     }
 
     res.write(JSON.stringify({ message: "Process Completed" }) + '\n');
@@ -126,19 +185,25 @@ const getPaginatedEmails = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
     
     const skip = (page - 1) * limit;
 
-    const emails = await EmailLog.find()
+    const filterQuery = {};
+    if (status) {
+      filterQuery.status = { $regex: new RegExp(`^${status}$`, 'i') };
+    }
+
+    const emails = await EmailLog.find(filterQuery)
       .sort({ sentAt: -1 }) // sort by most recent first
       .skip(skip)
       .limit(limit);
 
-    // Get total count for pagination
-    const totalEmails = await EmailLog.countDocuments();
-    const totalPages = Math.ceil(totalEmails / limit);
+    const totalFilteredEmails = await EmailLog.countDocuments(filterQuery);
+    const totalPages = Math.ceil(totalFilteredEmails / limit);
 
-    const totalDone = await EmailLog.countDocuments({ status: 'Done' });
+    const totalEmails = await EmailLog.countDocuments(); 
+    const totalDone = await EmailLog.countDocuments({ status: 'Done'});
     const totalRejected = await EmailLog.countDocuments({ status: 'Rejected' });
     const totalNotEmail = await EmailLog.countDocuments({ status: 'Not email' });
 
@@ -146,12 +211,13 @@ const getPaginatedEmails = async (req, res) => {
       success: true,
       data: emails,
       pagination: {
-        totalItems: totalEmails,
+        totalItems: totalFilteredEmails, 
         totalPages: totalPages,
         currentPage: page,
         itemsPerPage: limit
       },
       stats: {
+        totalAll: totalEmails,
         totalDone: totalDone,
         totalRejected: totalRejected,
         totalNotEmail: totalNotEmail
