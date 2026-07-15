@@ -104,7 +104,7 @@ export function useCreateForm() {
       );
       const emptyDropdown = fieldsList.some(
         (f) =>
-          f.type === "Dropdown" &&
+          (f.type === "Dropdown" || f.type === "Checkbox") &&
           (!f.options ||
             f.options.length === 0 ||
             f.options.every((o) => !o.trim()))
@@ -130,10 +130,10 @@ export function useCreateForm() {
         );
       } else if (emptyDropdown) {
         newErrors.fields =
-          "Each Dropdown field must have at least one option";
+          "Each Dropdown/Checkbox field must have at least one option";
         const flagged = fieldsList.filter(
           (f) =>
-            f.type === "Dropdown" &&
+            (f.type === "Dropdown" || f.type === "Checkbox") &&
             (!f.options ||
               f.options.length === 0 ||
               f.options.every((o) => !o.trim()))
@@ -201,7 +201,7 @@ export function useCreateForm() {
         };
 
         if (
-          f.type === "Dropdown" &&
+          (f.type === "Dropdown" || f.type === "Checkbox") &&
           f.options &&
           f.options.length > 0
         ) {
