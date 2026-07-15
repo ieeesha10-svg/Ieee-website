@@ -23,6 +23,8 @@ import EventRegistration from "./pages/EventRegistration";
 import CrewPage from "./pages/CrewPage";
 import CommitteesPage from "./pages/CommitteesPage";
 import DevTeam from "./pages/DevTeam";
+import ApplicationsPage from "./pages/FormApplicationsPage";
+import FormSubmissionPage from "./pages/FormSubmissionPage";
 import NotFoundPage from "./pages/NotFoundPage";
 // Auth Pages
 import LoginPage from "./pages/LoginPage";
@@ -79,7 +81,7 @@ const PublicLayout = () => {
           <Outlet />
         </div>
       </main>
-      {!["/login", "/signup", "/verify", "/dev-team"].includes(
+      {!["/login", "/signup", "/verify", "/dev-team", '/applications', '/applications/:id'].includes(
         location.pathname,
       ) && <Footer />}
     </div>
@@ -104,6 +106,8 @@ function App() {
           <Route path="/crew" element={<CrewPage />} />
           <Route path="/committees" element={<CommitteesPage />} />
           <Route path="/dev-team" element={<DevTeam />} />
+          <Route path="/applications" element={<ApplicationsPage />} />
+          <Route path="/applications/:id" element={<FormSubmissionPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/profile" element={<UserLayout />}>
               <Route index element={<UserProfile />} />

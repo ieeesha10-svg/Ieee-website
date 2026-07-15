@@ -11,7 +11,8 @@ import {
   Calendar,
 	Mail,
 	Braces,
-  Briefcase,
+	Briefcase,
+  FileText,
   ChevronRight,
   Sparkles,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const NAV_LINKS = [
   { label: "About", href: "/about", icon: Info },
   { label: "Chapters", href: "#chapters", icon: MapPin },
   { label: "Events", href: "/events", icon: Calendar, badge: "50+" },
+  { label: "Forms", href: "/applications", icon: FileText },
   { label: "Committees", href: "/committees", icon: Briefcase },
   { label: "Dev Team", href: "/dev-team", icon: Braces },
   { label: "Contact", href: "/contact", icon: Mail },
