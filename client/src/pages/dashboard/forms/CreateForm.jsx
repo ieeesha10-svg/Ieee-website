@@ -3,19 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { X, GripVertical, Check, Trash2, Loader2, ArrowLeft } from "lucide-react";
 import { useCreateForm } from "../../../hooks/dashboard/useCreateForm";
 import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
+import { FORM_TYPE_OPTIONS } from "../../../data/formTypes";
 import SectionCard from "../../../components/SectionCard";
 import RequiredAsterisk from "../../../components/RequiredAsterisk";
 
-const FORM_TYPE_OPTIONS = [
-  { value: "", label: "Select a form type" },
-  { value: "registration", label: "Registration" },
-  { value: "survey", label: "Survey" },
-  { value: "feedback", label: "Feedback" },
-  { value: "custom", label: "Custom" },
-];
-
 function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDragIndex, moveField }) {
-  const isDropdown = field.type === "Dropdown";
+  const hasOptions = field.type === "Dropdown" || field.type === "Checkbox";
   const isDragging = dragIndex === index;
 
   const handleTypeChange = (newType) => {
@@ -64,7 +57,7 @@ function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDr
             className="w-full rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-3 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
           />
 
-          {isDropdown && (
+          {hasOptions && (
             <div className="mt-2 space-y-1.5">
               {(field.options || []).map((opt, oi) => (
                 <div key={oi} className="flex items-center gap-1.5">

@@ -2,6 +2,7 @@ import React from "react";
 import { FiGithub, FiLinkedin, FiGlobe } from "react-icons/fi";
 import { SiBehance } from "react-icons/si";
 import { stats, tracks } from "../data/teamData";
+import FooterAlt from "../components/FooterAlt";
 
 export default function DevTeam() {
   return (
@@ -129,12 +130,7 @@ export default function DevTeam() {
         ))}
       </div>
 
-      <div className="font-barlow max-w-5xl mx-auto mt-20 pt-6 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-        <span className="text-xs text-muted">© 2026 IEEE Student Branch · SHA</span>
-        <span className="text-xs tracking-widest text-primary/60 uppercase">
-       		Built with passion
-        </span>
-      </div>
+      <FooterAlt />
     </div>
   );
 }
