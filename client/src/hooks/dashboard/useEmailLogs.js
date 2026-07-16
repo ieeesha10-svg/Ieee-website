@@ -25,7 +25,7 @@ export function useEmailLogs() {
     const fetchEmailLogs = async () => {
       setLoading(true);
       try {
-        let url = `/emails?page=${page}&limit=${pagination.limit}`;
+        let url = `/emails/logs?page=${page}&limit=${pagination.limit}`;
 
         if (search) {
           url += `&search=${search}`;
@@ -36,7 +36,7 @@ export function useEmailLogs() {
             statusFilter === "delivered"
               ? "Done"
               : statusFilter === "failed"
-                ? "Failed"
+                ? "(Rejected|Not email)"
                 : statusFilter;
           url += `&status=${backendStatus}`;
         }
@@ -48,7 +48,7 @@ export function useEmailLogs() {
           let uiStatus = "pending";
           if (log.status === "Done" || log.status === "delivered")
             uiStatus = "delivered";
-          else if (log.status === "Failed" || log.status === "failed")
+          else if (log.status === "Failed" || log.status === "failed" || log.status === "Rejected" || log.status === "Not email")
             uiStatus = "failed";
 
           return {

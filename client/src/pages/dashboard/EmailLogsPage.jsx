@@ -96,12 +96,12 @@ export default function EmailLogsPage() {
           statusFilter === "delivered"
             ? "Done"
             : statusFilter === "failed"
-              ? "Failed"
+              ? "(Rejected|Not email)"
               : statusFilter;
         params.set("status", backendStatus);
       }
 
-      const res = await api.get(`/emails?${params.toString()}`);
+      const res = await api.get(`/emails/logs?${params.toString()}`);
       const dataToExport = res.data.data || [];
 
       const headers = [
