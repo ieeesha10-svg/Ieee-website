@@ -1,26 +1,17 @@
-import React from "react";
-import EventCard from "../../components/EventCard";
-
-const eventsData = [
-  {
-    id: 0,
-    badge: "Flagship Program",
-    title: "WORKSHOPS",
-    image: "/images/ieee-day.png",
-    description:
-      "A season-long learning journey across Technical, Non-Technical, and PES tracks, blending hands-on projects with industry mentorship and a final competition showcasing participants' work.",
-  },
-  {
-    id: 1,
-    badge: "2-Day Event",
-    title: "ELECTROVISION X",
-    image: "/images/hackathon.png",
-    description:
-      "An immersive two-day experience in Electrical Power Engineering, pairing expert-led technical talks with hands-on training on KNX, PLC, lighting, and PV systems.",
-  },
-];
+import React, { useMemo } from "react";
+import { usePublicEvents } from "../../hooks/usePublicEvents";
+import EventCard from "../../components/HomeEventCard";
 
 export default function FlagshipEvents() {
+  const { upcoming, previous, loading } = usePublicEvents();
+
+  const featuredEvents = useMemo(() => {
+    const pool = upcoming.length > 0 ? upcoming : previous;
+    return pool.slice(0, 2);
+  }, [upcoming, previous]);
+
+  if (loading || featuredEvents.length === 0) return null;
+
   return (
     <section
       id="flagship-events"
@@ -39,7 +30,7 @@ export default function FlagshipEvents() {
         </div>
 
         <div className="flex flex-col lg:flex-row items-start justify-center gap-10 lg:gap-8">
-          {eventsData.map((event) => (
+          {featuredEvents.map((event) => (
             <EventCard
               key={event.id}
               badge={event.badge}
