@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { FileText, Clipboard, Calendar, Eye, Plus, Trash2, X, Check, ChevronDown } from "lucide-react";
-import { useForms } from "../../../hooks/dashboard/useGetForms";
+import { useForms } from "../../../hooks/dashboard/forms/useForms";
+import { useDeleteForm } from "../../../hooks/dashboard/forms/useDeleteForm";
+import { useToggleForm } from "../../../hooks/dashboard/forms/useToggleForm";
 import DeleteModal from "../../../components/DeleteModal";
 import DashFormsSkeleton from "../../../components/skeletons/DashFormsSkeleton";
 import { Link } from "react-router-dom";
@@ -135,7 +137,7 @@ function FormRow({ form, onToggle, onDelete, onViewFields }) {
           >
             {form.isOpen ? "Open" : "Closed"}
           </span>
-          <Toggle checked={form.isOpen} onChange={() => onToggle(form.id)} />
+          <Toggle checked={form.isOpen} onChange={() => onToggle(form.id, form.title, !form.isOpen)} />
         </div>
         {form.responses > 0 ? (
           <Link
@@ -178,8 +180,10 @@ function FormRow({ form, onToggle, onDelete, onViewFields }) {
 
 /* ─── Main Component ───────────────────────────────────────────── */
 export default function DashboardForms() {
-  const { forms, isLoading, toggleFormStatus, deleteForm, openCount, closedCount, totalResponses } =
+  const { forms, isLoading, openCount, closedCount, totalResponses, refetch } =
     useForms();
+  const { deleteForm } = useDeleteForm(refetch);
+  const { toggleFormStatus } = useToggleForm(refetch);
   const [deletingId, setDeletingId] = useState(null);
   const [fieldsModalForm, setFieldsModalForm] = useState(null);
   const [filter, setFilter] = useState("all");
@@ -277,7 +281,7 @@ export default function DashboardForms() {
             : "Are you sure you want to delete this form? This action cannot be undone."
         }
         onConfirm={() => {
-          if (deletingId) deleteForm(deletingId);
+          if (deletingId) deleteForm(deletingId, formToDelete?.title);
           setDeletingId(null);
         }}
         onCancel={() => setDeletingId(null)}
