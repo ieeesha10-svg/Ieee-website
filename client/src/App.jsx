@@ -20,6 +20,7 @@ import Events from "./pages/Events";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import EventRegistration from "./pages/EventRegistration";
+import EventDetails from "./pages/EventDetails";
 import CrewPage from "./pages/CrewPage";
 import CommitteesPage from "./pages/CommitteesPage";
 import DevTeam from "./pages/DevTeam";
@@ -96,13 +97,14 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/:id" element={<EventRegistration />} />
+          <Route path="/events/:id/details" element={<EventDetails />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route element={<GuestRoute />}>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/verify" element={<VerifyEmailPage />} />
           </Route>
-          <Route path="/verify" element={<VerifyEmailPage />} />
           <Route path="/crew" element={<CrewPage />} />
           <Route path="/committees" element={<CommitteesPage />} />
           <Route path="/dev-team" element={<DevTeam />} />
