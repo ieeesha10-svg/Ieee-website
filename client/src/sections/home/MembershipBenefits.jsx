@@ -107,18 +107,7 @@ export default function MembershipBenefits() {
           ))}
 				</div>
         
-        <div className="flex justify-center my-20">
-          <a
-          href={`https://www.ieee.org/profile/public/createwebaccount/showCreateAccount.html?url=https%3A%2F%2Fwww.ieee.org%2F&ShowMGAMarkeatbilityOptIn=true`}
-          target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-white dark:bg-[#1A1F2E] text-primary-dark dark:text-primary-light font-bold rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 text-lg"
-          >
-            Become an IEEE Member
-          </a>
-				</div>
-        
-        <div className="text-center mb-16 space-y-6">
+        <div className="text-center my-16 space-y-6">
           <h2 className="font-black font-bold text-4xl lg:text-5xl text-white uppercase">
             <span className="text-primary-light">M</span>embership{" "}
             <span className="text-primary-light">B</span>enefits
@@ -153,7 +142,18 @@ export default function MembershipBenefits() {
               </div>
             </div>
           ))}
-        </div>
+				</div>
+				
+				<div className="flex justify-center mt-12">
+          <a
+          href={`https://www.ieee.org/profile/public/createwebaccount/showCreateAccount.html?url=https%3A%2F%2Fwww.ieee.org%2F&ShowMGAMarkeatbilityOptIn=true`}
+          target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white font-bold rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 text-lg"
+          >
+            Become an IEEE Member
+          </a>
+				</div>
       </div>
     </section>
   );
