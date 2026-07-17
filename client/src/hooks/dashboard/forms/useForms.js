@@ -81,6 +81,7 @@ export function useForms() {
 
   return {
     forms,
+    setForms,
     isLoading,
     openCount,
     closedCount,

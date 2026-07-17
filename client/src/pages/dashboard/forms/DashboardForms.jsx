@@ -180,10 +180,10 @@ function FormRow({ form, onToggle, onDelete, onViewFields }) {
 
 /* ─── Main Component ───────────────────────────────────────────── */
 export default function DashboardForms() {
-  const { forms, isLoading, openCount, closedCount, totalResponses, refetch } =
+  const { forms, setForms, isLoading, openCount, closedCount, totalResponses, refetch } =
     useForms();
   const { deleteForm } = useDeleteForm(refetch);
-  const { toggleFormStatus } = useToggleForm(refetch);
+  const { toggleFormStatus } = useToggleForm();
   const [deletingId, setDeletingId] = useState(null);
   const [fieldsModalForm, setFieldsModalForm] = useState(null);
   const [filter, setFilter] = useState("all");
@@ -198,6 +198,11 @@ export default function DashboardForms() {
   });
 
   const formToDelete = forms.find((f) => f.id === deletingId);
+
+  const handleToggle = (id, title, becomingOpen) => {
+    setForms((prev) => prev.map((f) => (f.id === id ? { ...f, isOpen: becomingOpen } : f)));
+    toggleFormStatus(id, title, becomingOpen);
+  };
 
   const pill = (key, label, dotColor, count) => (
     <button
@@ -247,7 +252,7 @@ export default function DashboardForms() {
             <FormRow
               key={form.id}
               form={form}
-              onToggle={toggleFormStatus}
+              onToggle={handleToggle}
               onDelete={setDeletingId}
               onViewFields={setFieldsModalForm}
             />
