@@ -342,7 +342,7 @@ export default function EventRegistration() {
             </div>
           ) : (
             <div className="col-span-1 lg:col-span-2 flex flex-col h-full relative">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground capitalize">{formData.type} Registration</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground capitalize font-black">{formData.type} Registration</h2>
               <p className="text-muted mt-1 mb-8">
                 Fill this before attending.
               </p>
@@ -402,7 +402,7 @@ export default function EventRegistration() {
 
           <div className="col-span-1 flex flex-col h-full gap-8">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground">Event Details</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground font-black">Event Details</h2>
             </div>
 
             <div className="flex flex-col gap-6">
