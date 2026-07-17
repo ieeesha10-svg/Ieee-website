@@ -292,6 +292,18 @@ const getUsers = async (req, res) => {
       queryObj.role = { $in: roles };
     }
 
+    // --- C2. COLLEGE LOGIC (Multi-select) ---
+    if (req.query.college) {
+      const colleges = req.query.college.split(',');
+      queryObj.college = { $in: colleges };
+    }
+
+    // --- C3. YEAR LOGIC (Multi-select) ---
+    if (req.query.yearOfStudy) {
+      const years = req.query.yearOfStudy.split(',').map(Number).filter(n => !isNaN(n));
+      queryObj.yearOfStudy = { $in: years };
+    }
+
     // --- BUILD QUERY ---
     let query = User.find(queryObj);
 
