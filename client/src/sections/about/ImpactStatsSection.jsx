@@ -4,7 +4,7 @@ import Badge from '../../components/Badge'
 import { committees } from '../../data/committeesData'
 
 const stats = [
-  { icon: Users, value: '150+', label: 'Active Members' },
+  { icon: Users, value: '150+', label: 'Active Volunteers' },
   { icon: Calendar, value: '50+', label: 'Events Hosted' },
   { icon: FileText, value: '23+', label: 'Workshops' },
   { icon: LayoutGrid, value: committees.length, label: 'Committees' },

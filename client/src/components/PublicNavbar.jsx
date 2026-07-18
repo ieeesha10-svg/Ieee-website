@@ -16,7 +16,7 @@ import {
   ChevronRight,
   Sparkles,
 } from "lucide-react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
@@ -26,10 +26,10 @@ import ConfirmModal from "./ConfirmModal";
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
   { label: "About", href: "/about", icon: Info },
-  { label: "Chapters", href: "#chapters", icon: MapPin },
   { label: "Events", href: "/events", icon: Calendar, badge: "50+" },
   { label: "Forms", href: "/applications", icon: FileText },
   { label: "Committees", href: "/committees", icon: Briefcase },
+  { label: "Crew", href: "/crew", icon: MapPin },
   { label: "Dev Team", href: "/dev-team", icon: Braces },
   { label: "Contact", href: "/contact", icon: Mail },
 ];
@@ -40,11 +40,7 @@ const PublicNavbar = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const navigate = useNavigate();
-  // Check if someone is logged in by looking at LocalStorage
   const { user } = useAuth();
-
-  const location = useLocation();
-  const isHome = location.pathname === "/";
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -78,23 +74,13 @@ const PublicNavbar = () => {
 				<div className="hidden md:flex items-center gap-6">
 	        {NAV_LINKS.map((nav_link, index) => {
 						return (
-							nav_link.href.startsWith("#") && isHome ? (
-								<a className="text-lg text-white hover:text-primary-light transition flex items-center" href={`${nav_link.href}`}>
-									{nav_link.label}
-								</a>
-							): (
-	              <Link
-	                key={index}
-	                to={
-	                  nav_link.href.startsWith("#") && !isHome
-	                    ? `/${nav_link.href}`
-	                    : nav_link.href
-	                }
-	                className="text-lg text-white hover:text-primary-light transition flex items-center"
-	              >
-	                {nav_link.label}
-	              </Link>
-							)
+              <Link
+                key={index}
+                to={nav_link.href}
+                className="text-lg text-white hover:text-primary-light transition flex items-center"
+              >
+                {nav_link.label}
+              </Link>
 	          );
 					})}
 				</div>
@@ -185,35 +171,10 @@ const PublicNavbar = () => {
         <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-2">
           {NAV_LINKS.map((link, index) => {
             const Icon = link.icon;
-            return link.href.startsWith("#") && isHome ? (
-              <a
-                key={index}
-                href={link.href}
-                onClick={closeMenu}
-                className="flex items-center gap-3 rounded-xl p-4 transition bg-white/10 dark:bg-[#222936]/20"
-              >
-                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary-light/50 dark:bg-border shrink-0">
-                  <Icon size={22} />
-                </span>
-                <span className="flex-1 font-medium">{link.label}</span>
-                {link.badge && (
-                  <span className="text-xs font-semibold bg-white/10 px-2 py-0.5 rounded-full">
-                    {link.badge}
-                  </span>
-                )}
-                <ChevronRight
-                  size={16}
-                  className="text-primary-light transition"
-                />
-              </a>
-            ) : (
+            return (
               <Link
                 key={index}
-                to={
-                  link.href.startsWith("#") && !isHome
-                    ? "/" + link.href
-                    : link.href
-                }
+                to={link.href}
                 onClick={closeMenu}
                 className="flex items-center gap-3 rounded-xl p-4 transition bg-white/10 dark:bg-[#222936]/20"
               >

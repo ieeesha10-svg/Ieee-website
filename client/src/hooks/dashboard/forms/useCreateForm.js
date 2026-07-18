@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../utils/api";
-import { useAuth } from "../../context/AuthContext";
-import { ALLOWED_TYPES } from "../../data/fieldTypes";
+import api from "../../../utils/api";
+import { useAuth } from "../../../context/AuthContext";
+import { ALLOWED_TYPES } from "../../../data/fieldTypes";
 
 const INITIAL_FORM_DATA = {
   title: "",

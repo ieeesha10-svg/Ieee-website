@@ -4,7 +4,7 @@ import { twMerge } from "tailwind-merge";
 
 const variants = {
   default: "bg-white text-primary-dark hover:bg-white/70 hover:text-primary px-6 py-3",
-  outline: "bg-transparent text-white border border-white hover:bg-white/10 px-6 py-3",
+  outline: "bg-primary/10 text-white hover:bg-primary/50 border border-primary/10 px-6 py-3",
   link: "bg-transparent text-primary-dark hover:underline",
 };
 

@@ -25,6 +25,8 @@ export default function DashboardMembers() {
     setPage,
     totalPages,
     loading: membersLoading,
+    resetFilters,
+    hasActiveFilters,
   } = useSearchMembers();
 
   const { keyword, setKeyword, results, isLoading: searchLoading } = useAdvancedSearch();
@@ -152,19 +154,32 @@ export default function DashboardMembers() {
             </div>
           </div>
 
-          <button
-            onClick={handleExport}
-            disabled={exporting || selectedIds.length === 0}
-            title={selectedIds.length === 0 ? "Select members to export" : ""}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 w-full lg:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {exporting ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Download size={16} />
-            )}
-            Export as Excel ({selectedIds.length})
-          </button>
+					<div className="flex flex-col gap-1 lg:gap-2">
+			      <button
+	            onClick={handleExport}
+	            disabled={exporting || selectedIds.length === 0}
+	            title={selectedIds.length === 0 ? "Select members to export" : ""}
+	            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 w-full lg:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
+	          >
+	            {exporting ? (
+	              <Loader2 size={16} className="animate-spin" />
+	            ) : (
+	              <Download size={16} />
+	            )}
+	            Export as Excel ({selectedIds.length})
+						</button>
+						{/* hasActiveFilters*/}
+						
+	          <button
+							onClick={resetFilters}
+							disabled={!hasActiveFilters}
+							className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-muted bg-card-alt border border-border rounded-lg
+													${hasActiveFilters ? "hover:text-foreground hover:border-primary/30" : "opacity-80 cursor-not-allowed"}	transition-colors shrink-0 w-full lg:w-auto`}
+	          >
+	            Reset Filters
+	          </button>
+					</div>
+          
         </div>
       </div>
 

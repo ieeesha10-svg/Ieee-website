@@ -1,16 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft, X, Loader2, Check, GripVertical, Trash2, CheckCircle2, Upload,
-} from "lucide-react";
 import toast from "react-hot-toast";
-import { useEvents } from "../../../hooks/dashboard/useEvents";
+import {
+  ArrowLeft, X, Loader2, Check, GripVertical, Trash2, CheckCircle2, Upload } from "lucide-react";
+import { useCreateEvent } from "../../../hooks/dashboard/events/useCreateEvent";
 import { toLocalDatetimeString } from "../../../utils/dateUtils";
 import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
+import { EVENT_TYPES } from "../../../data/eventsData";
 import SectionCard from "../../../components/SectionCard";
 import RequiredAsterisk from "../../../components/RequiredAsterisk";
 
-const EVENT_TYPES = ["general", "event", "workshop", "webinar"];
 const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Workshop", webinar: "Webinar" };
 
 const EMPTY_FORM = {
@@ -26,12 +25,13 @@ const EMPTY_FORM = {
 
 export default function CreateEvent() {
   const navigate = useNavigate();
-  const { createEvent } = useEvents();
+  const { createEvent } = useCreateEvent();
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [speakerName, setSpeakerName] = useState("");
   const [speakerTitle, setSpeakerTitle] = useState("");
   const [speakerBio, setSpeakerBio] = useState("");
+  const [speakerImage, setSpeakerImage] = useState("");
   const [fieldsList, setFieldsList] = useState(EMPTY_FORM.fields);
   const [dragIndex, setDragIndex] = useState(null);
   const [newFieldLabel, setNewFieldLabel] = useState("");
@@ -118,13 +118,12 @@ export default function CreateEvent() {
       name: speakerName.trim(),
       title: speakerTitle.trim(),
       bio: speakerBio.trim(),
-      imageFile: null,
-      imagePreview: null,
-      image: null,
+      image: speakerImage.trim(),
     }]);
     setSpeakerName("");
     setSpeakerTitle("");
     setSpeakerBio("");
+    setSpeakerImage("");
   };
 
   const removeSpeaker = (idx) => {
@@ -264,6 +263,7 @@ export default function CreateEvent() {
         <div className="space-y-2">
           <input value={speakerName} onChange={(e) => setSpeakerName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker name" />
           <input value={speakerTitle} onChange={(e) => setSpeakerTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker title (e.g. Senior Engineer)" />
+          <input value={speakerImage} onChange={(e) => setSpeakerImage(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker image URL (optional)" />
           <textarea value={speakerBio} onChange={(e) => setSpeakerBio(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none" placeholder="Speaker bio" />
           <button type="button" onClick={addSpeaker} disabled={!speakerName.trim()} className="px-3 py-2 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Add Speaker</button>
         </div>
@@ -271,7 +271,11 @@ export default function CreateEvent() {
           <div className="space-y-1.5 mt-3">
             {form.speakers.map((s, i) => (
               <div key={i} className="flex items-center gap-3 px-3 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-muted shrink-0">{s.name[0]}</div>
+                {s.image ? (
+                  <img src={s.image} alt={s.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-muted shrink-0">{s.name[0]}</div>
+                )}
                 <div className="flex-1 min-w-0">
                   <span className="text-sm text-foreground font-medium">{s.name}</span>
                   {s.title && <span className="text-xs text-muted ml-2">— {s.title}</span>}

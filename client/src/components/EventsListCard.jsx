@@ -41,21 +41,25 @@ export default function EventsListCard({ type = "upcoming", id, image, badge, ti
           </span>
         )}
 
-        <h3 className="font-bold text-xl text-foreground">{title}</h3>
+        <h3 className="font-bold text-xl text-foreground capitalize font-black">{title}</h3>
 
-        {isUpcoming ? (
+        {isUpcoming && (
           <span className="text-sm text-muted">{formattedDate}</span>
-        ) : (
-          <span className="text-sm text-muted">{attendees} Attendees</span>
         )}
 
         <p className={`text-sm text-muted flex-1 line-clamp-3 ${isUpcoming && "mb-4"}`}>{description}</p>
 
-        {isUpcoming && (
+        {isUpcoming ? (
           <Link to={`/events/${id}`} state={{ image, title, description }} className='mt-auto'>
 	          <Button variant="default" className="bg-primary-dark text-white w-full">
 	          	{isRegistered ? 'View Details' : 'Join Now'}
 	          </Button>
+          </Link>
+        ) : (
+          <Link to={`/events/${id}/details`} state={{ image, title, description }} className='mt-auto'>
+            <Button variant="outline" className="w-full">
+              View Details
+            </Button>
           </Link>
         )}
       </div>

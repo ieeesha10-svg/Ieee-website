@@ -88,3 +88,5 @@ export const eventsData = [
     maxAttendees: 43,
   },
 ];
+
+export const EVENT_TYPES = ["general", "event", "workshop", "webinar"];

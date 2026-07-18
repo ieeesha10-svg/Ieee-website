@@ -67,12 +67,10 @@ export function useSearchMembers({ pageSize = 12, initialRole, initialRoles } = 
       params.set("limit", String(pageSize));
       params.set("page", String(pageNum));
       if (searchTerm) params.set("search", searchTerm);
+      const yearMap = { "Prep": 0, "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4, "5th Year": 5 };
       if (selectedRoles.length > 0) params.set("role", selectedRoles.join(","));
-      if (colleges.length === 1) params.set("college", colleges[0]);
-      if (years.length === 1) {
-        const yearMap = { "Prep": 0, "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4, "5th Year": 5 };
-        params.set("yearOfStudy", String(yearMap[years[0]] ?? years[0]));
-      }
+      if (colleges.length > 0) params.set("college", colleges.join(","));
+      if (years.length > 0) params.set("yearOfStudy", years.map((y) => yearMap[y] ?? y).join(","));
 
       const res = await api.get(`/users/all?${params.toString()}`, {
         signal: controller.signal,
@@ -155,6 +153,15 @@ export function useSearchMembers({ pageSize = 12, initialRole, initialRoles } = 
     );
   };
 
+  const resetFilters = useCallback(() => {
+    setActiveColleges([]);
+    setActiveYears([]);
+    setRoles(initialRoles || []);
+    setPage(1);
+  }, [initialRoles]);
+
+  const hasActiveFilters = activeColleges.length > 0 || activeYears.length > 0 || roles.length > 0;
+
   return {
     members,
     totalCount,
@@ -173,5 +180,7 @@ export function useSearchMembers({ pageSize = 12, initialRole, initialRoles } = 
     page,
     setPage,
     loading,
+    resetFilters,
+    hasActiveFilters,
   };
 }
