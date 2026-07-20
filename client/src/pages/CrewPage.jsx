@@ -20,7 +20,7 @@ export default function CrewPage() {
 
         {/* Subtitle */}
         <p className="text-[#4A5565] dark:text-[#9CA3AF] text-sm lg:text-lg font-lakes text-center max-w-2xl mb-16">
-          Get to know the dedicated individuals who make IEEE HSB a thriving
+          Get to know the dedicated individuals who make IEEE SHA SB a thriving
           community
         </p>
 
