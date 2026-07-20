@@ -10,7 +10,7 @@ import MissionVisionSection from "../sections/home/MissionVisionSection";
 function Home() {
   return (
     <div className="*:px-4 md:*:px-8">
-			<Hero />
+      <Hero />
       <MissionVisionSection />
       <MembershipBenefits />
       <FlagshipEvents />

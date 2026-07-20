@@ -41,10 +41,12 @@ export default function EventRegistration() {
 
         setRegistrationOpen(activity.registrationEnabled !== false);
 
-        const startDate = form?.startDate || null;
-        const endDate = form?.endDate || null;
+        const startDate = form?.startDate || activity?.startDate || null;
+        const endDate = form?.endDate || activity?.endDate || null;
 
-        const dateStr = startDate
+        const dateStr = startDate && endDate
+          ? `from ${new Date(startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} to ${new Date(endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
+          : startDate
           ? new Date(startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
           : "";
         const startTime = startDate
