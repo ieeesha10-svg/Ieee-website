@@ -22,7 +22,7 @@ function mapActivity(activity, form) {
     startFmt && endFmt
       ? startFmt === endFmt
         ? startFmt
-        : `${startFmt} – ${endFmt}`
+        : `From ${startFmt} To ${endFmt}`
       : startFmt || endFmt || "";
 
   const startTime = formatTime(start);
@@ -41,7 +41,9 @@ function mapActivity(activity, form) {
     id: activity._id,
     title: activity.title,
     type: activity.type,
-    badge: activity.type?.charAt(0).toUpperCase() + activity.type?.slice(1) || "Event",
+    badge:
+      activity.type?.charAt(0).toUpperCase() + activity.type?.slice(1) ||
+      "Event",
     content: activity.content,
     location: activity.location,
     speakers: activity.speakers || [],
@@ -88,7 +90,7 @@ export function usePublicEvents() {
       setPrevious(mapped.filter((e) => e.status === "Completed"));
     } catch (err) {
       setError(
-        err.response?.data?.message || err.message || "Failed to load events"
+        err.response?.data?.message || err.message || "Failed to load events",
       );
     } finally {
       setLoading(false);

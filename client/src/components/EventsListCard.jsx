@@ -1,13 +1,23 @@
-import React from 'react'
-import { Link } from 'react-router-dom';
-import Button from './Button'
+import React from "react";
+import { Link } from "react-router-dom";
+import Button from "./Button";
 
-export default function EventsListCard({ type = "upcoming", id, image, badge, title, dateTime, attendees, description, isRegistered }) {
-  const isUpcoming = type === "upcoming"
+export default function EventsListCard({
+  type = "upcoming",
+  id,
+  image,
+  badge,
+  title,
+  dateTime,
+  description,
+  isRegistered,
+}) {
+  const isUpcoming = type === "upcoming";
 
-  const formattedDate = dateTime && typeof dateTime === "object"
-    ? `${dateTime.day} \u00b7 ${dateTime.time}`
-    : dateTime
+  const formattedDate =
+    dateTime && typeof dateTime === "object"
+      ? `${dateTime.day} \u00b7 ${dateTime.time}`
+      : dateTime;
 
   return (
     <div className="flex flex-col bg-card dark:bg-[#0F172A] border border-border rounded-3xl overflow-hidden h-full">
@@ -18,14 +28,12 @@ export default function EventsListCard({ type = "upcoming", id, image, badge, ti
           </div>
         )}
         {image ? (
-          <img
-            src={image}
-            alt={title}
-            className="w-full h-full object-cover"
-          />
+          <img src={image} alt={title} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-            <span className="text-4xl font-bold text-primary/30">{title?.charAt(0) || "E"}</span>
+            <span className="text-4xl font-bold text-primary/30">
+              {title?.charAt(0) || "E"}
+            </span>
           </div>
         )}
       </div>
@@ -41,22 +49,37 @@ export default function EventsListCard({ type = "upcoming", id, image, badge, ti
           </span>
         )}
 
-        <h3 className="font-bold text-xl text-foreground capitalize font-black">{title}</h3>
+        <h3 className="font-bold text-xl text-foreground capitalize font-black">
+          {title}
+        </h3>
 
-        {isUpcoming && (
-          <span className="text-sm text-muted">{formattedDate}</span>
-        )}
+        <span className="text-sm text-muted">{formattedDate}</span>
 
-        <p className={`text-sm text-muted flex-1 line-clamp-3 ${isUpcoming && "mb-4"}`}>{description}</p>
+        <p
+          className={`text-sm text-muted flex-1 line-clamp-3 ${isUpcoming && "mb-4"}`}
+        >
+          {description}
+        </p>
 
         {isUpcoming ? (
-          <Link to={`/events/${id}`} state={{ image, title, description }} className='mt-auto'>
-	          <Button variant="default" className="bg-primary-dark text-white w-full">
-	          	{isRegistered ? 'View Details' : 'Join Now'}
-	          </Button>
+          <Link
+            to={`/events/${id}`}
+            state={{ image, title, description }}
+            className="mt-auto"
+          >
+            <Button
+              variant="default"
+              className="bg-primary-dark text-white w-full"
+            >
+              {isRegistered ? "View Details" : "Join Now"}
+            </Button>
           </Link>
         ) : (
-          <Link to={`/events/${id}/details`} state={{ image, title, description }} className='mt-auto'>
+          <Link
+            to={`/events/${id}/details`}
+            state={{ image, title, description }}
+            className="mt-auto"
+          >
             <Button variant="outline" className="w-full">
               View Details
             </Button>
@@ -64,5 +87,5 @@ export default function EventsListCard({ type = "upcoming", id, image, badge, ti
         )}
       </div>
     </div>
-  )
+  );
 }
