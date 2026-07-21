@@ -82,9 +82,9 @@ const PublicLayout = () => {
           <Outlet />
         </div>
       </main>
-      {!["/login", "/signup", "/verify", "/dev-team", '/applications', '/applications/:id'].includes(
+      {!["/login", "/signup", "/verify", "/dev-team", '/applications'].includes(
         location.pathname,
-      ) && <Footer />}
+      ) && !location.pathname.startsWith('/applications/') && <Footer />}
     </div>
   );
 };
@@ -109,8 +109,8 @@ function App() {
           <Route path="/committees" element={<CommitteesPage />} />
           <Route path="/dev-team" element={<DevTeam />} />
           <Route path="/applications" element={<ApplicationsPage />} />
-          <Route path="/applications/:id" element={<FormSubmissionPage />} />
           <Route element={<ProtectedRoute />}>
+            <Route path="/applications/:id" element={<FormSubmissionPage />} />
             <Route path="/profile" element={<UserLayout />}>
               <Route index element={<UserProfile />} />
               <Route path="password" element={<ChangePassword />} />
