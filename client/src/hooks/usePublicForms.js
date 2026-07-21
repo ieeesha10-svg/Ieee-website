@@ -10,7 +10,7 @@ const FORM_TYPE_TO_CATEGORY = {
 
 const CTA_LABEL_MAP = {
   Registration: "Apply Now →",
-  Survey: "Take Surve →",
+  Survey: "Take Survey →",
   Feedback: "Share Feedback →",
   Custom: "Open Form →",
 };
