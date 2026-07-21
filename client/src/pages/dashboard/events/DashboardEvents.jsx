@@ -221,13 +221,13 @@ export default function DashboardEvents() {
 
   // No handleCreate needed — create button navigates to /dashboard/events/create-event
 
-  const handleEdit = async (form, coverImageFile) => {
+  const handleEdit = async (form, coverImageFile, coverImageRemoved) => {
     setSaving(true);
     try {
       if (editEvent.formId && form.registrationEnabled !== (editFullActivity?.registrationEnabled ?? true)) {
         await api.put(`/form/${editEvent.formId}/toggle`);
       }
-      await updateEvent(editEvent.id, { ...form, formId: editEvent.formId }, coverImageFile);
+      await updateEvent(editEvent.id, { ...form, formId: editEvent.formId }, coverImageFile, coverImageRemoved);
       toast.success("Activity updated successfully!");
       setEditEvent(null);
     } catch (err) {
