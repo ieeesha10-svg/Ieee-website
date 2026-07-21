@@ -119,6 +119,7 @@ const scanTicket = catchAsync(async (req, res) => {
 
     // Mark as Attended
     submission.attended = true;
+    submission.status = "attended";
     submission.attendedAt = Date.now();
     await submission.save();
 
