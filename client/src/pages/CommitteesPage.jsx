@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
-import { Lock, Unlock } from 'lucide-react';
+// import { Lock, Unlock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { committees } from '../data/committeesData';
 
-function RecruitmentPill({ open }) {
-  if (open) {
-    return (
-      <span className="inline-flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border text-green-600 dark:text-green-400 border-green-200 dark:border-green-400/20 bg-green-50 dark:bg-green-400/5">
-        <Unlock className="w-3.5 h-3.5" />
-        Recruitment Is Open
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border text-muted dark:text-gray-400 border-gray-200 dark:border-white/10">
-      <Lock className="w-3.5 h-3.5" />
-      Recruitment Is Closed
-    </span>
-  );
-}
+/* FUTURE FEATURE FOR THE UPCOMING SEASONS */
+// function RecruitmentPill({ open }) {
+//   if (open) {
+//     return (
+//       <span className="inline-flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border text-green-600 dark:text-green-400 border-green-200 dark:border-green-400/20 bg-green-50 dark:bg-green-400/5">
+//         <Unlock className="w-3.5 h-3.5" />
+//         Recruitment Is Open
+//       </span>
+//     );
+//   }
+//   return (
+//     <span className="inline-flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border text-muted dark:text-gray-400 border-gray-200 dark:border-white/10">
+//       <Lock className="w-3.5 h-3.5" />
+//       Recruitment Is Closed
+//     </span>
+//   );
+// }
 
 export default function CommitteesPage() {
   const [activeId, setActiveId] = useState(committees[0].id);
@@ -89,7 +91,10 @@ export default function CommitteesPage() {
             ))}
           </ul>
           <div className="mt-6">
-            <RecruitmentPill open={activeCommittee.recruitmentOpen} />
+						{/* <RecruitmentPill open={activeCommittee.recruitmentOpen} />*/}
+						<Link to="/applications" className='inline-flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border text-primary dark:text-primary-light border-primary/70 dark:border-primary-light/70 bg-primary/10 dark:bg-primary-light/10 hover:bg-primary/20 dark:hover:bg-primary-light/20 transition-colors duration-300'>
+							View Open Positions
+						</Link>
           </div>
         </div>
       </div>
