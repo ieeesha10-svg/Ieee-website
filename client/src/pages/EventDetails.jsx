@@ -20,10 +20,12 @@ export default function EventDetails() {
         const activity = data.activity;
         const form = data.form;
 
-        const startDate = form?.startDate || null;
-        const endDate = form?.endDate || null;
+        const startDate = form?.startDate || activity?.startDate || null;
+        const endDate = form?.endDate || activity?.endDate || null;
 
-        const dateStr = startDate
+        const dateStr = startDate && endDate
+          ? `from ${new Date(startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} to ${new Date(endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
+          : startDate
           ? new Date(startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
           : "";
         const startTime = startDate
@@ -127,24 +129,10 @@ export default function EventDetails() {
                   <p className="text-xs text-foreground font-gotham font-medium mt-1">{formData.date}</p>
                 </div>
               )}
-              {formData.time && (
-                <div className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
-                  <span className="font-semibold tracking-wider text-primary dark:text-primary-light">Time</span>
-                  <p className="text-xs text-foreground font-gotham font-medium mt-1">{formData.time}</p>
-                </div>
-              )}
               {formData.location && (
                 <div className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
                   <span className="font-semibold tracking-wider text-primary dark:text-primary-light">Location</span>
                   <p className="text-xs text-foreground font-gotham font-medium mt-1">{formData.location}</p>
-                </div>
-              )}
-              {formData.maxSubmissions > 0 && (
-                <div className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
-                  <span className="font-semibold tracking-wider text-primary dark:text-primary-light">Seats</span>
-                  <p className="text-xs text-foreground font-gotham font-medium mt-1">
-                    {formData.maxSubmissions >= 9007199254740991 ? "200+" : formData.maxSubmissions} Available
-                  </p>
                 </div>
               )}
             </div>
@@ -154,14 +142,23 @@ export default function EventDetails() {
                 <h3 className="text-lg lg:text-xl font-bold text-foreground mb-4 font-black">Speakers</h3>
                 <div className="flex flex-col gap-4">
                   {formData.speakers.map((speaker, index) => (
-                    <div key={index} className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
-                      <span className="font-semibold tracking-wider text-primary dark:text-primary-light">{speaker.name}</span>
-                      {speaker.title && (
-                        <p className="text-xs text-foreground font-gotham font-light mt-1">{speaker.title}</p>
+                    <div key={index} className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827] flex items-center gap-4'>
+                      {speaker.image && (
+                        <img 
+                          src={speaker.image} 
+                          alt={speaker.name} 
+                          className="w-12 h-12 rounded-full object-cover shrink-0 border border-border" 
+                        />
                       )}
-                      {speaker.bio && (
-                        <p className="text-xs text-muted mt-1">{speaker.bio}</p>
-                      )}
+                      <div className="flex flex-col">
+                        <span className="font-semibold tracking-wider text-primary dark:text-primary-light">{speaker.name}</span>
+                        {speaker.title && (
+                          <p className="text-xs text-foreground font-gotham font-light mt-1">{speaker.title}</p>
+                        )}
+                        {speaker.bio && (
+                          <p className="text-xs text-muted mt-1">{speaker.bio}</p>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
