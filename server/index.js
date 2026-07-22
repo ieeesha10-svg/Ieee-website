@@ -9,6 +9,12 @@ const { routersHandler } = require("./utils/routesHandler");
 const app = express();
 connectDB();
 
+const mongoose = require("mongoose");
+mongoose.connection.once("open", async () => {
+  const Form = require("./models/FormModel");
+  await Form.syncIndexes();
+});
+
 if(process.env.NODE_ENV === "development") {
   process.env.CORS_ORIGINS = "http://localhost:5173,http://localhost:5000,http://localhost:3000,https://www.ieeesha.org";
 }

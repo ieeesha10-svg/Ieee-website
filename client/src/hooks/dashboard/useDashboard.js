@@ -64,7 +64,7 @@ export function useDashboard() {
 
   const statsCards = [
     { id: 1, icon: "Users", label: "Total Members", value: String(stats.totalMembers ?? 0), sub: "Registered students" },
-    { id: 2, icon: "Calendar", label: "Active Events", value: String(stats.activeActivities ?? 0), sub: "Forms currently open" },
+    { id: 2, icon: "Calendar", label: "Active Events", value: String(stats.activeActivities ?? 0), sub: "Currently open" },
     { id: 3, icon: "TrendingUp", label: "New Registrations", value: String(stats.newRegistrations ?? 0), sub: "Last 7 days" },
     { id: 4, icon: "Mail", label: "Emails Sent", value: String(stats.emailsSent ?? 0), sub: "Bulk dispatches total" },
   ];

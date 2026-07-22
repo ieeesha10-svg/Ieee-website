@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronDown, Upload } from "lucide-react";
+import { ChevronDown, Upload, CheckCircle } from "lucide-react";
 import { usePublicForm } from "../hooks/usePublicFormById";
 import { useSubmitForm } from "../hooks/useSubmitForm";
-import FormSubmissionSuccessModal from "../components/dashboard/FormSubmissionSuccessModal";
+import FormSubmissionSuccessModal from "../components/forms/FormSubmissionSuccessModal";
 import RequiredAsterisk from "../components/RequiredAsterisk";
+import FooterAlt from "../components/FooterAlt";
+import { useAuth } from "../context/AuthContext";
+import api from "../utils/api";
 
 const SURVEY_COLOR = "#5DD9B0";
 const FEEDBACK_COLOR = "#B08FFF";
@@ -57,12 +60,27 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function FormSubmissionPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { form, isLoading, error: fetchError } = usePublicForm(id);
-  const { submit, loading: submitting, error: submitError } = useSubmitForm();
+  const { submit, loading: submitting, error: submitError, alreadySubmitted: alreadySubmittedViaSubmit } = useSubmitForm();
 
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [checkingSubmission, setCheckingSubmission] = useState(true);
+
+  useEffect(() => {
+    if (!user?._id || !id) {
+      setCheckingSubmission(false);
+      return;
+    }
+    api
+      .get(`/submissions/${user._id}/${id}`)
+      .then(() => setAlreadySubmitted(true))
+      .catch(() => {})
+      .finally(() => setCheckingSubmission(false));
+  }, [user?._id, id]);
 
   const badgeInfo = useMemo(
     () => (form ? getBadgeInfo(form.type) : null),
@@ -347,11 +365,36 @@ export default function FormSubmissionPage() {
 
   if (!form) return null;
 
+  const hasSubmitted = alreadySubmitted || alreadySubmittedViaSubmit;
+
   return (
     <section className="py-20 px-4">
       <div className="max-w-lg mx-auto">
         <div className="bg-card-alt border border-border rounded-xl p-8">
-          {/* Badge */}
+          {checkingSubmission ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            </div>
+          ) : hasSubmitted ? (
+            <div className="flex flex-col items-center text-center py-6">
+              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-5">
+                <CheckCircle size={32} className="text-green-600 dark:text-green-400" />
+              </div>
+              <h2 className="text-xl font-bold text-foreground mb-2">Already Submitted</h2>
+              <p className="text-sm text-muted max-w-sm">
+                You have already submitted <strong>{form.title}</strong>. If you need to make changes, please contact the branch committee.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/applications")}
+                className="mt-6 px-5 py-2 text-sm font-medium text-primary border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors"
+              >
+                ← Back to Forms
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Badge */}
           {badgeInfo && (
             <span
               className={`inline-block text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full mb-4 ${badgeInfo.badge}`}
@@ -408,12 +451,16 @@ export default function FormSubmissionPage() {
             </button>
 
           </form>
+            </>
+          )}
         </div>
         {/* Footer microcopy */}
         <p className="text-[11px] mt-3 text-muted/60 text-center leading-relaxed">
           Your data is handled in accordance with IEEE privacy policy.
-        </p>
-      </div>
+				</p>
+			</div>
+      
+      <FooterAlt tagline="Forms are reviewed within 5–7 business days" />
 
       {/* Success Modal */}
       <FormSubmissionSuccessModal

@@ -135,10 +135,14 @@ const updateActivity = catchAsync(async (req, res) => {
   if(updateData.startDate && updateData.endDate && new Date(updateData.startDate) > new Date(updateData.endDate)) {
     throw new AppError("Start date cannot be after end date", 400);
   }
+  if (req.body.coverImage === "" && existingActivity.coverImagePublicId) {
+    await cloudinary.uploader.destroy(existingActivity.coverImagePublicId);
+    updateData.coverImage = "";
+    updateData.coverImagePublicId = "";
+  }
   if (req.file) {
     if (existingActivity.coverImagePublicId) {
       await cloudinary.uploader.destroy(existingActivity.coverImagePublicId);
-      // console.log(`Deleted old image: ${existingActivity.coverImagePublicId}`);
     }
     const result = await uploadToCloudinary(req.file.buffer);
     updateData.coverImage = result.secure_url;

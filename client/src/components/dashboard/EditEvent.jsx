@@ -17,6 +17,7 @@ export default function EditEvent({ initial, onSubmit, submitLabel, loading, for
   const [newFieldType, setNewFieldType] = useState("TextInput");
   const [coverImageFile, setCoverImageFile] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState(coverImageUrl || null);
+  const [coverImageRemoved, setCoverImageRemoved] = useState(false);
 
   const set = (key, value) => setForm((p) => ({ ...p, [key]: value }));
 
@@ -76,6 +77,7 @@ export default function EditEvent({ initial, onSubmit, submitLabel, loading, for
     if (!file || !file.type.startsWith("image/")) return;
     setCoverImageFile(file);
     setCoverImagePreview(URL.createObjectURL(file));
+    setCoverImageRemoved(false);
   };
 
   const handleCoverImageDrop = (e) => {
@@ -88,6 +90,7 @@ export default function EditEvent({ initial, onSubmit, submitLabel, loading, for
     if (coverImagePreview && coverImagePreview.startsWith("blob:")) URL.revokeObjectURL(coverImagePreview);
     setCoverImageFile(null);
     setCoverImagePreview(null);
+    setCoverImageRemoved(true);
   };
 
   const addSpeaker = () => {
@@ -193,7 +196,7 @@ export default function EditEvent({ initial, onSubmit, submitLabel, loading, for
           <button
             type="button"
             onClick={() => set("registrationEnabled", !form.registrationEnabled)}
-            className={`mt-1 w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${form.registrationEnabled ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-[#222936] text-muted"}`}
+            className={`mt-1 w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${form.registrationEnabled ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-red-100 dark:bg-red-800/30 border-red-300 dark:border-red-500 text-muted"}`}
           >
             {form.registrationEnabled ? "Accepting Registrations" : "Closing Registration"}
           </button>
@@ -399,7 +402,7 @@ export default function EditEvent({ initial, onSubmit, submitLabel, loading, for
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={() => onSubmit({ ...form, fields: fieldsList }, coverImageFile)} disabled={loading || !form.title || !form.location || !form.content || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+        <button type="button" onClick={() => onSubmit({ ...form, fields: fieldsList }, coverImageFile, coverImageRemoved)} disabled={loading || !form.title || !form.location || !form.content || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
           {loading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
           {submitLabel}
         </button>

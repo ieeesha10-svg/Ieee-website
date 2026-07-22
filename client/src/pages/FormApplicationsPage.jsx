@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { usePublicForms } from "../hooks/usePublicForms";
-import FormCard from "../components/dashboard/FormCard";
+import FormCard from "../components/forms/FormCard";
 import Badge from "../components/Badge";
 import FooterAlt from "../components/FooterAlt";
 

@@ -49,9 +49,6 @@ const formSchema = new mongoose.Schema({
   activityID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Activity",
-    // required: true,
-    unique: true,
-    sparse: true
   },
   status: { 
     type: String,
