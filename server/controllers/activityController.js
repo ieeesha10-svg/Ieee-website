@@ -1,9 +1,12 @@
+const mongoose = require('mongoose');
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware.js');
 const Activity = require('../models/ActivityModel.js');
+const FeaturedActivities = require('../models/FeaturedActivitiesModel.js');
 const Form = require('../models/FormModel.js');
 const Submission = require('../models/SubmissionModel.js');
 const cloudinary = require('../config/cloudinary.js');
 const sanitizeHtml = require('sanitize-html');
+
 /**
  >> each activity has a form associated with it. <<
 
@@ -189,10 +192,85 @@ const deleteActivity = catchAsync(async (req, res) => {
   res.json({ success: true, message: "Activity + related form + submissions deleted" });
 });
 
+const addFeaturedActivity = async (req, res) => {
+  try {
+    const activityId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(activityId)) {
+      return res.status(400).json({ message: "Invalid Activity ID format" });
+    }
+
+    let featuredDoc = await FeaturedActivities.findOne();
+
+    // create new doc if it doesn't exist
+    if (!featuredDoc) {
+      featuredDoc = new FeaturedActivities({ activities: [] });
+    }
+
+    // ensure we don't have more than 2 activities
+    if (featuredDoc.activities.length >= 2) {
+      return res.status(400).json({ 
+        message: "You can only display up to 2 activities. Please remove one first." 
+      });
+    }
+
+    // avoid adding the same activity twice
+    if (featuredDoc.activities.includes(activityId)) {
+      return res.status(400).json({ message: "This activity is already featured." });
+    }
+
+    // add the activity to the list
+    featuredDoc.activities.push(activityId);
+    await featuredDoc.save();
+
+    res.status(200).json({
+      message: "Activity added to featured list successfully",
+      data: featuredDoc.activities
+    });
+
+  } catch (error) {
+    console.error("Error adding featured activity:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const removeFeaturedActivity = async (req, res) => {
+  try {
+    const activityId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(activityId)) {
+      throw new AppError("Invalid Activity ID format", 400);
+    }
+
+    // we use findOneAndUpdate to update the doc atomically
+    const updatedDoc = await FeaturedActivities.findOneAndUpdate(
+      {}, // we don't need to match anything
+      { $pull: { activities: activityId } }, // remove the activity from the list
+      { new: true } // return the updated doc
+    );
+
+    // if no doc was found, return an error
+    if (!updatedDoc) {
+      throw new AppError("No featured activities list found.", 404);
+    }
+
+    res.status(200).json({
+      message: "Activity removed from featured list successfully",
+      data: updatedDoc.activities
+    });
+
+  } catch (error) {
+    // console.error("Error removing featured activity:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   createActivity,
   getActivities,
   getActivityById,
   updateActivity,
-  deleteActivity
+  deleteActivity,
+  addFeaturedActivity,
+  removeFeaturedActivity
 };

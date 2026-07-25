@@ -5,7 +5,8 @@ const {
   getForm, 
   getForms, 
   deleteForm, 
-  toggleFormStatus 
+  toggleFormStatus,
+  updateFormSettings
 } = require('../controllers/formController');
 
 // Import Middleware
@@ -24,5 +25,7 @@ formRouter.route('/')
 formRouter.route('/:id').delete(deleteForm); // Delete
 
 formRouter.put('/:id/toggle', toggleFormStatus); // Open/Close
+
+formRouter.put('/:id/settings', updateFormSettings); // Update settings
 
 module.exports = formRouter;
