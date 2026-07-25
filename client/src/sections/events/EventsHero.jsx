@@ -10,7 +10,7 @@ export default function EventsHero({ featuredEvent, loading }) {
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const title = featuredEvent?.title || "No Upcoming Events";
-  const description = featuredEvent?.content || "Stay tuned, we're cooking up something exciting. Check back soon for our next event!";
+  const description = featuredEvent?.description || "Stay tuned, we're cooking up something exciting. Check back soon for our next event!";
   const eventImage = featuredEvent?.image || "";
   const initials = (title || "").split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "E";
 
@@ -88,9 +88,9 @@ export default function EventsHero({ featuredEvent, loading }) {
 							<h3 className='font-gotham text-xl lg:text-3xl'>
 								{title}
 							</h3>
-							<p className='text-muted text-xs lg:text-base line-clamp-3'>
-								{description}
-							</p>
+						<p className='text-muted text-xs lg:text-base line-clamp-3'>
+							{description}
+						</p>
 						</div>
 					</>
 				)}

@@ -68,9 +68,9 @@ export default function Hero() {
 							</Button>
 						</Link>
 						<Link to="/about">
-							<Button variant='outline'>
+							<button className='px-6 py-3 text-white rounded-lg border border-white hover:bg-white/15 transition-colors duration-300'>
 								Learn More
-							</Button>
+							</button>
 						</Link>
 					</div>
 

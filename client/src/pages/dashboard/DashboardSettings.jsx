@@ -640,7 +640,6 @@ function AddAdminModal({ onClose, onAdded }) {
   const {
     members, loading,
     search, setSearch,
-    page, setPage, totalPages,
   } = useSearchMembers({ initialRoles: ["member", "user", "scanner"] });
 
   const nonAdminMembers = members.filter((m) => !ADMIN_ROLES.includes(m.role));

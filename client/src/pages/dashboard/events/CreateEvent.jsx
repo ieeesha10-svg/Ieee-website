@@ -9,11 +9,17 @@ import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
 import { EVENT_TYPES } from "../../../data/eventsData";
 import SectionCard from "../../../components/SectionCard";
 import RequiredAsterisk from "../../../components/RequiredAsterisk";
+import RichTextEditor from "../../../components/dashboard/RichTextEditor";
+
+function isHtmlContentEmpty(html) {
+  if (!html) return true;
+  return html.replace(/<[^>]*>/g, "").trim().length === 0;
+}
 
 const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Workshop", webinar: "Webinar" };
 
 const EMPTY_FORM = {
-  title: "", content: "", type: "event", location: "", speakers: [],
+  title: "", content: "", description: "", type: "event", location: "", speakers: [],
   startDate: toLocalDatetimeString(new Date()),
   endDate: toLocalDatetimeString(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
   maxSubmissions: "", registrationEnabled: true,
@@ -185,7 +191,21 @@ export default function CreateEvent() {
 
           <div>
             <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Description <RequiredAsterisk /></label>
-            <textarea value={form.content} onChange={(e) => set("content", e.target.value)} rows={3} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none" placeholder="Event description" />
+            <input
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+              placeholder="Short text summary that will be shown on the event card"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Content <RequiredAsterisk /></label>
+            <RichTextEditor
+              value={form.content}
+              onChange={(html) => set("content", html)}
+              placeholder="Event description"
+            />
           </div>
 
           <div>
@@ -467,7 +487,7 @@ export default function CreateEvent() {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={saving || !form.title || !form.location || !form.content || datesInvalid}
+          disabled={saving || !form.title || !form.location || isHtmlContentEmpty(form.content) || datesInvalid}
           className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}

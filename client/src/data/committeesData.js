@@ -81,7 +81,7 @@ export const committees = [
     subtitle: "Software & engineering",
     points: [
       "Organizing technical workshops, hackathons, and coding challenges.",
-      "Mentoring members on software, hardware, and engineering skills.",
+      "Mentoring volunteers on software, hardware, and engineering skills.",
       "Facilitating industry-relevant projects and IEEE technical programs.",
     ],
     recruitmentOpen: false,
@@ -94,7 +94,7 @@ export const committees = [
     subtitle: "Soft skills & growth",
     points: [
       "Hosting soft-skill sessions, leadership talks, and personal growth events.",
-      "Curating cultural, social, and recreational activities for members.",
+      "Curating cultural, social, and recreational activities for volunteers.",
       "Bridging the gap between engineering and interpersonal development.",
     ],
     recruitmentOpen: false,

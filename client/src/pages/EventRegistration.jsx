@@ -7,6 +7,7 @@ import { ChevronDown } from 'lucide-react';
 
 import Button from "../components/Button";
 import Input from "../components/Input";
+import HtmlContent from "../components/HtmlContent";
 
 export default function EventRegistration() {
   const { id } = useParams();
@@ -60,8 +61,9 @@ export default function EventRegistration() {
         setFormData({
           formId: form?._id,
           title: activity.title,
-          type: activity.type,
-          description: activity.content,
+					type: activity.type,
+          content: activity.content,
+          description: activity.description,
           location: activity.location,
           date: dateStr,
           time: timeStr,
@@ -298,25 +300,14 @@ export default function EventRegistration() {
         <div className="relative z-10 container mx-auto px-4">
           <h1 className="text-white text-4xl md:text-5xl lg:text-6xl font-black capitalize leading-tight">
             {formData.title}
-          </h1>
+					</h1>
         </div>
       </div>
 
-      {formData.description && (
+      {formData.content && (
         <div className="w-full bg-[#F8FAFC] dark:bg-[#111827] border-y border-border">
           <div className="max-w-7xl mx-auto px-4 py-12">
-            <div className="prose prose-lg dark:prose-invert max-w-none leading-relaxed text-justify">
-              {formData.description}
-            </div>
-            {formData.location && (
-              <div className="mt-6 flex items-center gap-2 text-muted">
-                <svg className="w-5 h-5 shrink-0 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>{formData.location}</span>
-              </div>
-            )}
+            <HtmlContent html={formData.content} className="prose-lg leading-relaxed text-justify" />
           </div>
         </div>
       )}

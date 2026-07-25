@@ -1,9 +1,9 @@
 import React from 'react'
 
 import SectionHeader from "../../components/SectionHeader";
-import EventsListCard from "../../components/EventsListCard";
+import EventsListCard from "../../components/events/EventsListCard";
 import SectionBackground from '../../assets/backgrounds/tech-circuit-pattern.png'
-// import EventCountdown from '../../components/EventCountdown';
+// import EventCountdown from '../../components/events/EventCountdown';
 
 export default function UpcomingEvents({ events = [], loading, page = 1, totalPages = 1, onPageChange }) {
 	return (
@@ -22,7 +22,7 @@ export default function UpcomingEvents({ events = [], loading, page = 1, totalPa
 						variant="dark"
 						line="white"
 					/>
-					<p className="text-white text-center text-3xl mt-4">
+					<p className="text-white text-center text-xl md:text-2xl mt-4">
 						Register now for upcoming IEEE activities and workshops.
 					</p>
 				</div>
@@ -37,9 +37,13 @@ export default function UpcomingEvents({ events = [], loading, page = 1, totalPa
 							<EventsListCard key={event.id} {...event} type="upcoming" />
 						))
 					) : (
-						<p className="col-span-full text-white/60 text-center text-lg py-10">
-							No upcoming events at the moment. Check back soon!
-						</p>
+					<div className="col-span-full flex flex-col items-center gap-3 py-10">
+						<div className="p-3 rounded-full bg-white/10 flex items-center justify-center text-2xl">
+							<img src="/logo.png" className="w-20 h-20 object-contain" />
+						</div>
+						<p className="text-white/80 text-center text-lg uppercase font-gotham">Something exciting is brewing...</p>
+						<p className="text-white/50 text-center">No upcoming events yet — but stay tuned, we're just getting started!</p>
+					</div>
 					)}
 				</div>
 
