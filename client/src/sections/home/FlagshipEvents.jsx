@@ -1,9 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { usePublicEvents } from "../../hooks/usePublicEvents";
-import EventCard from "../../components/HomeEventCard";
+import EventCard from "../../components/events/HomeEventCard";
+import EventDetailModal from "../../components/events/EventDetailModal";
 
 export default function FlagshipEvents() {
   const { upcoming, previous, loading } = usePublicEvents();
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   const featuredEvents = useMemo(() => {
     const pool = upcoming.length > 0 ? upcoming : previous;
@@ -37,10 +39,19 @@ export default function FlagshipEvents() {
               title={event.title}
               image={event.image}
               description={event.description}
+              onClick={() => setSelectedEvent(event)}
             />
           ))}
         </div>
       </div>
+
+      {selectedEvent && (
+        <EventDetailModal
+          key={selectedEvent.id}
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+        />
+      )}
     </section>
   );
 }
