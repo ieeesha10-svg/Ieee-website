@@ -29,6 +29,10 @@ const activitySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    description: {
+      type: String,
+      default: "",
+    },
     speakers: [
       {
         name: String,

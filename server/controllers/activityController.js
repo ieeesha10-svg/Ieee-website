@@ -3,6 +3,7 @@ const Activity = require('../models/ActivityModel.js');
 const Form = require('../models/FormModel.js');
 const Submission = require('../models/SubmissionModel.js');
 const cloudinary = require('../config/cloudinary.js');
+const sanitizeHtml = require('sanitize-html');
 /**
  >> each activity has a form associated with it. <<
 
@@ -26,11 +27,20 @@ const uploadToCloudinary = (buffer) => {
   });
 };
 
+const sanitizeHtmlOptions = {
+  allowedTags: ["h1","h2","h3","p","b","i","em","strong","u","s","del","mark","ul","ol","li","a","br","hr","blockquote","code","pre","span"],
+  allowedAttributes: {
+    a: ["href","target","rel"],
+    "*": ["class","style"],
+  },
+};
+
 const createActivity = catchAsync(async (req, res) => {
-  let { title, content, type, speakers, location, registrationEnabled, fields, startDate, endDate, maxSubmissions } = req.body;
+  let { title, content, description, type, speakers, location, registrationEnabled, fields, startDate, endDate, maxSubmissions } = req.body;
   if(!title || !content || !location) {
     throw new AppError("Title, content, and location are required", 400);
   }
+  content = sanitizeHtml(content, sanitizeHtmlOptions);
   const activitySpeakers = speakers || [];
   if (!startDate) startDate = new Date();
   if (!endDate) endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -45,6 +55,7 @@ const createActivity = catchAsync(async (req, res) => {
   const activity = await Activity.create({
     title,
     content,
+    description: description || "",
     type,
     speakers: activitySpeakers,
     location,
@@ -91,6 +102,7 @@ const getActivities = catchAsync(async (req, res) => {
         _id: activity._id,
         title: activity.title,
         content: activity.content,
+        description: activity.description,
         type: activity.type,
         speakers: activity.speakers,
         location: activity.location,
@@ -132,6 +144,9 @@ const updateActivity = catchAsync(async (req, res) => {
   }
 
   let updateData = { ...req.body };
+  if (updateData.content) {
+    updateData.content = sanitizeHtml(updateData.content, sanitizeHtmlOptions);
+  }
   if(updateData.startDate && updateData.endDate && new Date(updateData.startDate) > new Date(updateData.endDate)) {
     throw new AppError("Start date cannot be after end date", 400);
   }
