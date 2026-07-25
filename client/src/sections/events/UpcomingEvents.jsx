@@ -1,9 +1,9 @@
 import React from 'react'
 
 import SectionHeader from "../../components/SectionHeader";
-import EventsListCard from "../../components/EventsListCard";
+import EventsListCard from "../../components/events/EventsListCard";
 import SectionBackground from '../../assets/backgrounds/tech-circuit-pattern.png'
-// import EventCountdown from '../../components/EventCountdown';
+// import EventCountdown from '../../components/events/EventCountdown';
 
 export default function UpcomingEvents({ events = [], loading, page = 1, totalPages = 1, onPageChange }) {
 	return (
