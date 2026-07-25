@@ -14,6 +14,7 @@ import { toLocalDatetimeString } from "../../../utils/dateUtils";
 import EditEvent from "../../../components/dashboard/EditEvent";
 import DeleteModal from "../../../components/DeleteModal"
 import Skeleton from "../../../components/skeletons/DashEventsSkeleton"
+import HtmlContent from "../../../components/HtmlContent"
 
 const TYPE_COLORS = {
   teal: { bg: "bg-teal-50 dark:bg-teal-900/25", text: "text-teal-700 dark:text-teal-300", border: "border-teal-200 dark:border-teal-700/40" },
@@ -93,7 +94,11 @@ function ViewModal({ open, onClose, eventId, getEventById }) {
           </div>
           <div>
             <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Description</span>
-            <p className="text-sm text-foreground mt-1 whitespace-pre-line">{activity.content}</p>
+            <p className="text-sm text-foreground mt-1">{activity.description}</p>
+          </div>
+          <div>
+            <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Content</span>
+            <div className="mt-1"><HtmlContent html={activity.content} /></div>
           </div>
           {activity.speakers?.length > 0 && (
             <div>
@@ -342,6 +347,7 @@ export default function DashboardEvents() {
               initial={{
                 title: editEvent.title,
                 content: editEvent.content,
+                description: editEvent.description || "",
                 type: editEvent.type,
                 location: editEvent.location,
                 speakers: (editEvent.speakers || []).map((s) => ({ ...s })),

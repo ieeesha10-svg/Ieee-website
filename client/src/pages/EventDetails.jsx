@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+import HtmlContent from '../components/HtmlContent';
 
 export default function EventDetails() {
   const { id } = useParams();
@@ -39,7 +40,8 @@ export default function EventDetails() {
         setFormData({
           title: activity.title,
           type: activity.type,
-          description: activity.content,
+          content: activity.content,
+          description: activity.description || "",
           location: activity.location,
           date: dateStr,
           time: timeStr,
@@ -89,7 +91,7 @@ export default function EventDetails() {
               <img
                 src={eventImage}
                 alt={formData.title}
-                className="w-full max-w-2xl h-auto rounded-3xl object-cover shadow-lg"
+                className="w-full max-w-[90%] rounded-3xl object-cover shadow-lg"
               />
             )}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-foreground capitalize leading-tight">
@@ -112,9 +114,7 @@ export default function EventDetails() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="col-span-1 lg:col-span-2 flex flex-col h-full">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground capitalize mb-2 font-black">{formData.type} Description</h2>
-            <p className="text-muted mt-1 prose prose-lg dark:prose-invert leading-relaxed text-justify">
-              {formData.description}
-            </p>
+            <HtmlContent html={formData.content} className="mt-1 prose-lg leading-relaxed text-justify" />
           </div>
 
           <div className="col-span-1 flex flex-col h-full gap-8">
