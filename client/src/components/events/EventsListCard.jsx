@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Button from "./Button";
+import Button from "../Button";
 
 export default function EventsListCard({
   type = "upcoming",
@@ -16,7 +16,7 @@ export default function EventsListCard({
 
   const formattedDate =
     dateTime && typeof dateTime === "object"
-      ? `${dateTime.day} \u00b7 ${dateTime.time}`
+      ? dateTime.day
       : dateTime;
 
   return (

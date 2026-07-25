@@ -1,8 +1,8 @@
 import React from "react";
 
-export default function EventCard({ badge, title, image, description }) {
+export default function EventCard({ badge, title, image, description, onClick }) {
   return (
-    <div className="w-full lg:max-w-[620px] flex flex-col">
+    <div className="w-full lg:max-w-[620px] flex flex-col cursor-pointer" onClick={onClick}>
       <div className="hover:scale-104 transition-transform relative h-[250px] md:h-[300px] lg:h-[384px] rounded-[16px] lg:rounded-[24px] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]">
         {image ? (
           <img
@@ -33,9 +33,9 @@ export default function EventCard({ badge, title, image, description }) {
         </div>
       </div>
 
-      <p className="mt-4 lg:mt-6 font-lakes text-[14px] leading-[24px] lg:text-[20px] lg:leading-[40px] text-muted transition-colors duration-300">
+      <div className="mt-4 lg:mt-6 font-lakes text-[14px] leading-6 lg:text-[20px] lg:leading-10 text-muted transition-colors duration-300 line-clamp-5">
         {description}
-      </p>
+      </div>
     </div>
   );
 }
