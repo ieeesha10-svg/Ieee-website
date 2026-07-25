@@ -2,6 +2,12 @@ import React, { useState } from "react";
 import { X, Loader2, Check, GripVertical, Trash2, CheckCircle2, Upload, Edit } from "lucide-react";
 import { FIELD_TYPE_OPTIONS } from "../../data/fieldTypes";
 import { EVENT_TYPES } from "../../data/eventsData";
+import RichTextEditor from "./RichTextEditor";
+
+function isHtmlContentEmpty(html) {
+  if (!html) return true;
+  return html.replace(/<[^>]*>/g, "").trim().length === 0;
+}
 
 const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Workshop", webinar: "Webinar" };
 
@@ -134,8 +140,23 @@ export default function EditEvent({ initial, onSubmit, submitLabel, loading, for
 
       <div>
         <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Description</label>
-        <textarea value={form.content} onChange={(e) => set("content", e.target.value)} rows={3} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none" placeholder="Event description" />
+        <input
+          value={form.description || ""}
+          onChange={(e) => set("description", e.target.value)}
+          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+          placeholder="Short text summary that will be shown on the event card"
+        />
+			</div>
+      
+      <div>
+        <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Content</label>
+        <RichTextEditor
+          value={form.content}
+          onChange={(html) => set("content", html)}
+          placeholder="Event content"
+        />
       </div>
+
 
       <div>
         <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Cover Image</label>
@@ -402,7 +423,7 @@ export default function EditEvent({ initial, onSubmit, submitLabel, loading, for
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={() => onSubmit({ ...form, fields: fieldsList }, coverImageFile, coverImageRemoved)} disabled={loading || !form.title || !form.location || !form.content || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+        <button type="button" onClick={() => onSubmit({ ...form, fields: fieldsList }, coverImageFile, coverImageRemoved)} disabled={loading || !form.title || !form.location || isHtmlContentEmpty(form.content) || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
           {loading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
           {submitLabel}
         </button>
