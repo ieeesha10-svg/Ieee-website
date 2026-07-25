@@ -51,7 +51,7 @@ function mapActivity(activity, form) {
     date: dateRange,
     dateTime: { day: dateRange, time: timeRange },
     status: isPast ? "Completed" : isActive ? "Active" : "Completed",
-    description: activity.content,
+    description: activity.description,
     attendees: 0,
     maxAttendees: form?.maxSubmissions || 0,
     formId: form?._id || null,

@@ -42,6 +42,7 @@ export function mapActivity(activity, form) {
     type: activity.type,
     typeColor: getTypeColor(activity.type),
     content: activity.content,
+    description: activity.description,
     location: activity.location,
     speakers: activity.speakers || [],
     date: dateRange,
@@ -66,6 +67,7 @@ export function buildPayload(payload) {
   const body = {
     title: payload.title || "",
     content: payload.content || "",
+    description: payload.description || "",
     type: payload.type || "event",
     location: payload.location || "",
     registrationEnabled: payload.registrationEnabled ?? true,
