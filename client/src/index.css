@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@100;200;300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* -----------------------------------------------
@@ -238,6 +239,18 @@
     background: var(--color-primary);
     border-radius: 3px;
   }
+}
+
+@layer utilities {
+  .tiptap p {
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+  }
+}
+
+.tiptap p {
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
 }
 
 /* 
