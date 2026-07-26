@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 const variants = {
-  default: "bg-white text-primary-dark hover:bg-white/80 px-6 py-3",
+  default: "bg-primary dark:bg-primary-dark text-white hover:bg-primary/80 hover:dark:bg-primary-dark/80 px-6 py-3",
   outline: "bg-primary/10 text-primary dark:text-white hover:text-white hover:bg-primary border border-primary/10 px-6 py-3",
   link: "bg-transparent text-primary-dark hover:underline",
 };

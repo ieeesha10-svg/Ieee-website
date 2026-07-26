@@ -63,7 +63,7 @@ export default function Hero() {
 					{/* Call-To-Action Buttons*/}
 					<div className='flex gap-3 justify-center md:justify-start'>
 						<Link to="/committees">
-							<Button>
+							<Button className='bg-white text-primary hover:bg-white/80 dark:text-white'>
 								Get Started
 							</Button>
 						</Link>
