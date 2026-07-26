@@ -131,7 +131,7 @@ function App() {
             element={<CreateEvent />}
           />
           <Route
-            path="/dashboard/events/featured"
+            path="/dashboard/events/flagship"
             element={<FeaturedEvents />}
           />
           <Route path="/dashboard/crew" element={<DashboardCrew />} />
