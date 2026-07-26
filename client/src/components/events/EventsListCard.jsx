@@ -69,7 +69,7 @@ export default function EventsListCard({
           >
             <Button
               variant="default"
-              className="bg-primary-dark text-white w-full"
+              className="w-full"
             >
               {isRegistered ? "View Details" : "Join Now"}
             </Button>
