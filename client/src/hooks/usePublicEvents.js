@@ -69,12 +69,19 @@ export function usePublicEvents() {
     setLoading(true);
     setError(null);
     try {
-      const [activitiesRes, formsRes] = await Promise.all([
-        api.get("/activities"),
+      const [firstPageRes, formsRes] = await Promise.all([
+        api.get("/activities?page=1&limit=10"),
         api.get("/form").catch(() => ({ data: [] })),
       ]);
 
-      const activities = activitiesRes.data.activities || [];
+      const { totalPages } = firstPageRes.data.pagination;
+      let allActivities = firstPageRes.data.activities || [];
+
+      for (let p = 2; p <= totalPages; p++) {
+        const res = await api.get(`/activities?page=${p}&limit=10`);
+        allActivities = [...allActivities, ...(res.data.activities || [])];
+      }
+
       const forms = Array.isArray(formsRes.data)
         ? formsRes.data
         : formsRes.data?.forms || [];
@@ -84,7 +91,7 @@ export function usePublicEvents() {
         if (f.activityID) formMap[f.activityID] = f;
       });
 
-      const mapped = activities.map((a) => mapActivity(a, formMap[a._id]));
+      const mapped = allActivities.map((a) => mapActivity(a, formMap[a._id]));
 
       setUpcoming(mapped.filter((e) => e.status === "Active"));
       setPrevious(mapped.filter((e) => e.status === "Completed"));
