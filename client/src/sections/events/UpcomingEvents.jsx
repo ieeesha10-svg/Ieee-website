@@ -2,6 +2,7 @@ import React from 'react'
 
 import SectionHeader from "../../components/SectionHeader";
 import EventsListCard from "../../components/events/EventsListCard";
+import Pagination from "../../components/events/Pagination";
 import SectionBackground from '../../assets/backgrounds/tech-circuit-pattern.png'
 // import EventCountdown from '../../components/events/EventCountdown';
 
@@ -47,38 +48,7 @@ export default function UpcomingEvents({ events = [], loading, page = 1, totalPa
 					)}
 				</div>
 
-    		{totalPages > 1 && !loading && (
-          <div className="flex items-center justify-center gap-1.5 mt-10">
-            <button
-              onClick={() => onPageChange(page - 1)}
-              disabled={page <= 1}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-white/20 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              Prev
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => onPageChange(p)}
-                className={`w-8 h-8 text-xs font-medium rounded-lg border transition-colors ${
-                  page === p
-                    ? "bg-white text-primary border-white"
-                    : "border-white/20 text-white hover:bg-white/10"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-            <button
-              onClick={() => onPageChange(page + 1)}
-              disabled={page >= totalPages}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-white/20 text-white hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        )}
-				
+				{!loading && <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} variant="dark" />}
       	{/* <EventCountdown events={events} />*/}
 			</div>
 		</section>

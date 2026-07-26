@@ -1,16 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import api from "../utils/api";
+import api from "../../../utils/api";
 
 function formatEventDate(dateStr) {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function formatTime(dateStr) {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
-  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return new Date(dateStr).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
 function mapActivity(activity, form) {
@@ -41,17 +39,15 @@ function mapActivity(activity, form) {
     id: activity._id,
     title: activity.title,
     type: activity.type,
-    badge:
-      activity.type?.charAt(0).toUpperCase() + activity.type?.slice(1) ||
-      "Event",
+    badge: activity.type?.charAt(0).toUpperCase() + activity.type?.slice(1) || "Event",
     content: activity.content,
+    description: activity.description,
     location: activity.location,
     speakers: activity.speakers || [],
     image: activity.coverImage || "",
     date: dateRange,
     dateTime: { day: dateRange, time: timeRange },
     status: isPast ? "Completed" : isActive ? "Active" : "Completed",
-    description: activity.description,
     attendees: 0,
     maxAttendees: form?.maxSubmissions || 0,
     formId: form?._id || null,
@@ -59,9 +55,8 @@ function mapActivity(activity, form) {
   };
 }
 
-export function usePublicEvents() {
-  const [upcoming, setUpcoming] = useState([]);
-  const [previous, setPrevious] = useState([]);
+export function useFeaturedEvents() {
+  const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -69,19 +64,12 @@ export function usePublicEvents() {
     setLoading(true);
     setError(null);
     try {
-      const [firstPageRes, formsRes] = await Promise.all([
-        api.get("/activities?page=1&limit=10"),
+      const [featuredRes, formsRes] = await Promise.all([
+        api.get("/activities/featured"),
         api.get("/form").catch(() => ({ data: [] })),
       ]);
 
-      const { totalPages } = firstPageRes.data.pagination;
-      let allActivities = firstPageRes.data.activities || [];
-
-      for (let p = 2; p <= totalPages; p++) {
-        const res = await api.get(`/activities?page=${p}&limit=10`);
-        allActivities = [...allActivities, ...(res.data.activities || [])];
-      }
-
+      const activities = featuredRes.data.activities || [];
       const forms = Array.isArray(formsRes.data)
         ? formsRes.data
         : formsRes.data?.forms || [];
@@ -91,14 +79,9 @@ export function usePublicEvents() {
         if (f.activityID) formMap[f.activityID] = f;
       });
 
-      const mapped = allActivities.map((a) => mapActivity(a, formMap[a._id]));
-
-      setUpcoming(mapped.filter((e) => e.status === "Active"));
-      setPrevious(mapped.filter((e) => e.status === "Completed"));
+      setFeatured(activities.map((a) => mapActivity(a, formMap[a._id])));
     } catch (err) {
-      setError(
-        err.response?.data?.message || err.message || "Failed to load events",
-      );
+      setError(err.response?.data?.message || err.message || "Failed to load featured events");
     } finally {
       setLoading(false);
     }
@@ -108,5 +91,47 @@ export function usePublicEvents() {
     fetchData();
   }, [fetchData]);
 
-  return { upcoming, previous, loading, error, refetch: fetchData };
+  return { featured, loading, error, refetch: fetchData };
+}
+
+export function useAddFeatured(refetch) {
+  const addFeatured = async (activityId) => {
+    try {
+      const res = await api.post(`/activities/${activityId}/add-featured`);
+      if (refetch) await refetch();
+      return res.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  return { addFeatured };
+}
+
+export function useRemoveFeatured(refetch) {
+  const removeFeatured = async (activityId) => {
+    try {
+      const res = await api.delete(`/activities/${activityId}/remove-featured`);
+      if (refetch) await refetch();
+      return res.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  return { removeFeatured };
+}
+
+export function useSwapFeatured(refetch) {
+  const swapFeatured = async () => {
+    try {
+      const res = await api.post("/activities/swap-featured");
+      if (refetch) await refetch();
+      return res.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  return { swapFeatured };
 }

@@ -54,7 +54,7 @@ const DashboardLayout = () => {
       api
         .get("/activities")
         .then((res) => {
-          const count = res.data.activities?.length ?? 0;
+          const count = res.data.pagination?.totalItems ?? res.data.activities?.length ?? 0;
           setEventCount(count);
         })
         .catch(() => setEventCount(0));

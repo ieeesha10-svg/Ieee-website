@@ -33,7 +33,7 @@ export default function EventCard({ badge, title, image, description, onClick })
         </div>
       </div>
 
-      <div className="mt-4 lg:mt-6 font-lakes text-[14px] leading-6 lg:text-[20px] lg:leading-10 text-muted transition-colors duration-300 line-clamp-5">
+      <div className="mt-4 lg:mt-6 font-lakes text-[14px] leading-6 lg:text-[20px] lg:leading-10 text-muted transition-colors duration-300 line-clamp-3">
         {description}
       </div>
     </div>

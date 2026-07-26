@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { X, Loader2, Check, GripVertical, Trash2, CheckCircle2, Upload, Edit } from "lucide-react";
 import { FIELD_TYPE_OPTIONS } from "../../data/fieldTypes";
-import { EVENT_TYPES } from "../../data/eventsData";
+import { EVENT_TYPES } from "../../data/eventTypes";
 import RichTextEditor from "./RichTextEditor";
+import { useUpdateForm } from "../../hooks/dashboard/forms/useUpdateForm";
 
 function isHtmlContentEmpty(html) {
   if (!html) return true;
@@ -11,7 +12,7 @@ function isHtmlContentEmpty(html) {
 
 const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Workshop", webinar: "Webinar" };
 
-export default function EditEvent({ initial, onSubmit, submitLabel, loading, formId, coverImageUrl }) {
+export default function EditEvent({ initial, onSubmit, loading, formId, coverImageUrl }) {
   const [form, setForm] = useState(initial);
   const [speakerName, setSpeakerName] = useState("");
   const [speakerTitle, setSpeakerTitle] = useState("");
@@ -25,8 +26,10 @@ export default function EditEvent({ initial, onSubmit, submitLabel, loading, for
   const [coverImagePreview, setCoverImagePreview] = useState(coverImageUrl || null);
   const [coverImageRemoved, setCoverImageRemoved] = useState(false);
 
-  const set = (key, value) => setForm((p) => ({ ...p, [key]: value }));
+  const { updateForm } = useUpdateForm();
 
+  const set = (key, value) => setForm((p) => ({ ...p, [key]: value }));
+  
   const moveField = (from, to) => {
     setFieldsList((prev) => {
       const updated = [...prev];
@@ -118,6 +121,7 @@ export default function EditEvent({ initial, onSubmit, submitLabel, loading, for
   };
 
   const datesInvalid = form.startDate && form.endDate && new Date(form.startDate) > new Date(form.endDate);
+  const endDatePassed = form.endDate && new Date(form.endDate) < new Date();
 
   return (
     <div className="space-y-4">
@@ -216,10 +220,11 @@ export default function EditEvent({ initial, onSubmit, submitLabel, loading, for
           <label className="block text-[10px] font-bold text-muted uppercase tracking-wide mb-1.5">Registration</label>
           <button
             type="button"
+            disabled={endDatePassed}
             onClick={() => set("registrationEnabled", !form.registrationEnabled)}
-            className={`mt-1 w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${form.registrationEnabled ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-red-100 dark:bg-red-800/30 border-red-300 dark:border-red-500 text-muted"}`}
+            className={`mt-1 w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${endDatePassed ? "bg-red-100 dark:bg-red-800/30 border-red-300 dark:border-red-500 text-muted cursor-not-allowed opacity-60" : form.registrationEnabled ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-red-100 dark:bg-red-800/30 border-red-300 dark:border-red-500 text-muted"}`}
           >
-            {form.registrationEnabled ? "Accepting Registrations" : "Closing Registration"}
+            {endDatePassed ? "Closing Registration" : form.registrationEnabled ? "Accepting Registrations" : "Closing Registration"}
           </button>
         </div>
       </div>
@@ -423,9 +428,24 @@ export default function EditEvent({ initial, onSubmit, submitLabel, loading, for
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={() => onSubmit({ ...form, fields: fieldsList }, coverImageFile, coverImageRemoved)} disabled={loading || !form.title || !form.location || isHtmlContentEmpty(form.content) || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+        <button type="button" onClick={async () => {
+          if (formId) {
+            const formChanged =
+              form.startDate !== initial.startDate ||
+              form.endDate !== initial.endDate ||
+              String(form.maxSubmissions) !== String(initial.maxSubmissions);
+            if (formChanged) {
+              await updateForm(formId, {
+                startDate: form.startDate,
+                endDate: form.endDate,
+                maxSubmissions: form.maxSubmissions,
+              });
+            }
+          }
+          onSubmit({ ...form, fields: fieldsList }, coverImageFile, coverImageRemoved);
+        }} disabled={loading || !form.title || !form.location || isHtmlContentEmpty(form.content) || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
           {loading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-          {submitLabel}
+          Save Changes
         </button>
       </div>
     </div>

@@ -1,18 +1,24 @@
-import React, { useMemo, useState } from "react";
+import React, { useState, useMemo } from "react";
+import { useFeaturedEvents } from "../../hooks/dashboard/events/useFeaturedEvents";
 import { usePublicEvents } from "../../hooks/usePublicEvents";
 import EventCard from "../../components/events/HomeEventCard";
 import EventDetailModal from "../../components/events/EventDetailModal";
+import FlagshipSkeleton from "../../components/skeletons/FlagshipSkeleton";
 
 export default function FlagshipEvents() {
-  const { upcoming, previous, loading } = usePublicEvents();
+  const { featured, loading: featuredLoading } = useFeaturedEvents();
+  const { upcoming, previous, loading: eventsLoading } = usePublicEvents();
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  const featuredEvents = useMemo(() => {
+  const loading = featuredLoading || eventsLoading;
+
+  const displayEvents = useMemo(() => {
+    if (featured.length > 0) return featured;
     const pool = upcoming.length > 0 ? upcoming : previous;
     return pool.slice(0, 2);
-  }, [upcoming, previous]);
+  }, [featured, upcoming, previous]);
 
-  if (loading || featuredEvents.length === 0) return null;
+  if (!loading && displayEvents.length === 0) return null;
 
   return (
     <section
@@ -32,16 +38,18 @@ export default function FlagshipEvents() {
         </div>
 
         <div className="flex flex-col lg:flex-row items-start justify-center gap-10 lg:gap-8">
-          {featuredEvents.map((event) => (
-            <EventCard
-              key={event.id}
-              badge={event.badge}
-              title={event.title}
-              image={event.image}
-              description={event.description}
-              onClick={() => setSelectedEvent(event)}
-            />
-          ))}
+          {loading
+            ? Array.from({ length: 2 }).map((_, i) => <FlagshipSkeleton key={i} />)
+            : displayEvents.map((event) => (
+                <EventCard
+                  key={event.id}
+                  badge={event.badge}
+                  title={event.title}
+                  image={event.image}
+                  description={event.description}
+                  onClick={() => setSelectedEvent(event)}
+                />
+              ))}
         </div>
       </div>
 

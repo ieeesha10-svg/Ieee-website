@@ -46,7 +46,11 @@ export function mapActivity(activity, form) {
     location: activity.location,
     speakers: activity.speakers || [],
     date: dateRange,
-    status: activity.registrationEnabled !== false ? "Active" : "Completed",
+    status: (() => {
+      if (activity.registrationEnabled === false) return "Completed";
+      if (end && new Date(end) < new Date()) return "Completed";
+      return "Active";
+    })(),
     registrationEnabled: activity.registrationEnabled ?? true,
     coverImage: activity.coverImage || "",
     attendees: 0,

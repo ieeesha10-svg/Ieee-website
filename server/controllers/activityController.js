@@ -101,6 +101,10 @@ const getActivities = catchAsync(async (req, res) => {
   const formattedActivities = await Promise.all(
     paginatedActivities.map(async (activity) => {
       const form = await Form.findOne({ activityID: activity._id });
+      const endDatePassed = form?.endDate && new Date(form.endDate) < new Date();
+      const computedStatus = form
+        ? (endDatePassed || form.status === "Closed" ? "Closed" : form.status)
+        : "No Form Found";
       return {
         _id: activity._id,
         title: activity.title,
@@ -114,7 +118,7 @@ const getActivities = catchAsync(async (req, res) => {
         createdAt: activity.createdAt,
         coverImage: activity.coverImage || "",
         registrationEnabled: activity.registrationEnabled,
-        status: form ? form.status : "No Form Found",
+        status: computedStatus,
         formID: form ? form._id : null
       };
     })
@@ -265,6 +269,52 @@ const removeFeaturedActivity = async (req, res) => {
   }
 };
 
+const getFeaturedActivities = catchAsync(async (req, res) => {
+  const featuredDoc = await FeaturedActivities.findOne().populate('activities');
+  const activities = featuredDoc?.activities || [];
+
+  const formatted = await Promise.all(
+    activities.map(async (activity) => {
+      const form = await Form.findOne({ activityID: activity._id });
+      return {
+        _id: activity._id,
+        title: activity.title,
+        content: activity.content,
+        description: activity.description,
+        type: activity.type,
+        speakers: activity.speakers,
+        location: activity.location,
+        startDate: activity.startDate,
+        endDate: activity.endDate,
+        createdAt: activity.createdAt,
+        coverImage: activity.coverImage || "",
+        registrationEnabled: activity.registrationEnabled,
+        status: form ? form.status : "No Form Found",
+        formID: form ? form._id : null,
+      };
+    })
+  );
+
+  res.json({ success: true, activities: formatted });
+});
+
+const swapFeaturedActivities = async (req, res) => {
+  try {
+    const featuredDoc = await FeaturedActivities.findOne();
+    if (!featuredDoc || featuredDoc.activities.length < 2) {
+      return res.status(400).json({ message: "Need exactly 2 featured activities to swap." });
+    }
+    featuredDoc.activities.reverse();
+    await featuredDoc.save();
+    res.status(200).json({
+      message: "Featured activities swapped successfully",
+      data: featuredDoc.activities
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   createActivity,
   getActivities,
@@ -272,5 +322,7 @@ module.exports = {
   updateActivity,
   deleteActivity,
   addFeaturedActivity,
-  removeFeaturedActivity
+  removeFeaturedActivity,
+  getFeaturedActivities,
+  swapFeaturedActivities,
 };
