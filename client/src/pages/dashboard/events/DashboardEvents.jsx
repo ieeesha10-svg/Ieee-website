@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from "react";
 import {
-  Calendar, MapPin, Eye, Plus, X, Loader2,
-  Trash2, Edit, FileText,
+  Calendar, MapPin, Eye, Plus, Loader2,
+  Trash2, Edit, Star,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import api from "../../../utils/api";
 import toast from "react-hot-toast";
+import Skeleton from "../../../components/skeletons/DashEventsSkeleton"
+import { toLocalDatetimeString } from "../../../utils/dateUtils";
 import { useEvents } from "../../../hooks/dashboard/events/useEvents";
 import { useUpdateEvent } from "../../../hooks/dashboard/events/useUpdateEvent";
 import { useDeleteEvent } from "../../../hooks/dashboard/events/useDeleteEvent";
 import { useGetEvent } from "../../../hooks/dashboard/events/useGetEvent";
-import api from "../../../utils/api";
-import { toLocalDatetimeString } from "../../../utils/dateUtils";
-import EditEvent from "../../../components/dashboard/EditEvent";
+import EventEditModal from "../../../components/dashboard/EventEditModal";
+import Modal from "../../../components/Modal"
 import DeleteModal from "../../../components/DeleteModal"
-import Skeleton from "../../../components/skeletons/DashEventsSkeleton"
-import HtmlContent from "../../../components/HtmlContent"
+import EventViewModal from "../../../components/dashboard/EventViewModal"
 
 const TYPE_COLORS = {
   teal: { bg: "bg-teal-50 dark:bg-teal-900/25", text: "text-teal-700 dark:text-teal-300", border: "border-teal-200 dark:border-teal-700/40" },
@@ -33,129 +34,6 @@ const STATUS_STYLES = {
 const FILTERS = ["All", "Active", "Completed"];
 
 const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Workshop", webinar: "Webinar" };
-
-/* ─── Modal Wrapper ─────────────────────────────────────────────── */
-function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 dark:bg-black/70" onClick={onClose} />
-      <div className={`relative bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-xl w-full ${maxWidth} max-h-[90vh] overflow-y-auto`}>
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-[#222936]">
-          <h2 className="text-base font-bold text-foreground">{title}</h2>
-          <button onClick={onClose} className="p-1.5 text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="p-5">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── View Modal ─────────────────────────────────────────────────── */
-function ViewModal({ open, onClose, eventId, getEventById }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (open && eventId) {
-      setLoading(true);
-      getEventById(eventId).then((res) => setData(res)).finally(() => setLoading(false));
-    }
-    if (!open) setData(null);
-  }, [open, eventId, getEventById]);
-
-  const activity = data?.activity;
-  const form = data?.form;
-
-  return (
-    <Modal open={open} onClose={onClose} title="Activity Details" maxWidth="max-w-xl">
-      {loading ? (
-        <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-primary" /></div>
-      ) : activity ? (
-        <div className="space-y-5">
-          {activity.coverImage && (
-            <img src={activity.coverImage} alt={activity.title} className="w-full h-48 object-cover rounded-lg" />
-          )}
-          <div>
-            <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Title</span>
-            <p className="text-sm text-foreground mt-1">{activity.title}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Type</span>
-              <p className="text-sm text-foreground mt-1 capitalize">{activity.type}</p>
-            </div>
-            <div>
-              <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Location</span>
-              <p className="text-sm text-foreground mt-1">{activity.location}</p>
-            </div>
-          </div>
-          <div>
-            <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Description</span>
-            <p className="text-sm text-foreground mt-1">{activity.description}</p>
-          </div>
-          <div>
-            <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Content</span>
-            <div className="mt-1"><HtmlContent html={activity.content} /></div>
-          </div>
-          {activity.speakers?.length > 0 && (
-            <div>
-              <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Speakers</span>
-              <div className="space-y-3 mt-2">
-                {activity.speakers.map((s, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                    {s.image ? (
-                      <img src={s.image} alt={s.name} className="w-11 h-11 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-                        {s.name?.[0] || "?"}
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{s.name}</p>
-                      {s.title && <p className="text-xs text-primary font-medium mt-0.5">{s.title}</p>}
-                      {s.bio && <p className="text-xs text-muted mt-1 leading-relaxed">{s.bio}</p>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {form && (
-            <div className="pt-3 border-t border-gray-100 dark:border-[#222936]">
-              <div className="flex items-center gap-2 mb-3">
-                <FileText size={14} className="text-muted" />
-                <span className="text-xs font-bold text-muted uppercase tracking-wide">Form Details</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-muted text-xs">Registration</span>
-                  <p className={`font-medium ${activity.registrationEnabled !== false ? "text-green-600 dark:text-green-400" : "text-muted"}`}>
-                    {activity.registrationEnabled !== false ? "Open" : "Closed"}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted text-xs">Max Submissions</span>
-                  <p className="text-foreground font-medium">{form.maxSubmissions ? form.maxSubmissions.toLocaleString() : "Unlimited"}</p>
-                </div>
-                <div>
-                  <span className="text-muted text-xs">Registration Opens</span>
-                  <p className="text-foreground font-medium">{form.startDate ? new Date(form.startDate).toLocaleString() : "N/A"}</p>
-                </div>
-                <div>
-                  <span className="text-muted text-xs">Registration Closes</span>
-                  <p className="text-foreground font-medium">{form.endDate ? new Date(form.endDate).toLocaleString() : "N/A"}</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : null}
-    </Modal>
-  );
-}
 
 function EventCard({ event, onView, onEdit, onDelete }) {
   const typeStyle = TYPE_COLORS[event.typeColor] || TYPE_COLORS.blue;
@@ -202,13 +80,13 @@ function EventCard({ event, onView, onEdit, onDelete }) {
 
 /* ─── Main Component ─────────────────────────────────────────────── */
 export default function DashboardEvents() {
-  const { events, filter, setFilter, loading, error, page, setPage, pagination, refetch } = useEvents();
+  const { events, filter, setFilter, counts, loading, error, page, setPage, pagination, refetch } = useEvents();
   const { updateEvent } = useUpdateEvent(refetch);
   const { deleteEvent } = useDeleteEvent(refetch);
   const { getEventById } = useGetEvent();
 
 	const navigate = useNavigate();
-  const [editEvent, setEditEvent] = useState(null);
+  const [editEvent, setEventEditModal] = useState(null);
   const [editFullActivity, setEditFullActivity] = useState(null);
   const [viewEventId, setViewEventId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -234,7 +112,7 @@ export default function DashboardEvents() {
       }
       await updateEvent(editEvent.id, { ...form, formId: editEvent.formId }, coverImageFile, coverImageRemoved);
       toast.success("Activity updated successfully!");
-      setEditEvent(null);
+      setEventEditModal(null);
     } catch (err) {
       const msg = err.response?.data?.message || err.response?.data?.error || err.message || "Failed to update activity";
       toast.error(msg);
@@ -278,21 +156,26 @@ export default function DashboardEvents() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex flex-wrap items-center gap-2">
           {FILTERS.map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`text-xs font-medium px-4 py-2 rounded-full border transition-all duration-200 ${filter === f ? "bg-primary text-white border-primary shadow-sm" : "bg-white dark:bg-[#1a1f2e] text-muted border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary"}`}>
-              {f}
+            <button key={f} onClick={() => setFilter(f)} className={`font-medium px-4 py-2 rounded-full border transition-all duration-200 ${filter === f ? "bg-primary text-white border-primary shadow-sm" : "bg-white dark:bg-[#1a1f2e] text-muted border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary"}`}>
+              {f} <span className={`ml-1 text-[10px] ${filter === f ? "text-white/80" : "text-muted/60"}`}>({counts[f]})</span>
             </button>
           ))}
-          <span className="text-xs text-muted font-medium ml-1">{pagination.totalItems} results</span>
+				</div>
+        
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button onClick={() => navigate("/dashboard/events/flagship")} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/10 transition-colors shadow-sm flex-1 sm:flex-auto">
+            <Star size={16} /> Flagship Events
+          </button>
+          <button onClick={() => navigate("/dashboard/events/create-event")} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm flex-1 sm:flex-auto">
+            <Plus size={16} /> Create New Event
+          </button>
         </div>
-        <button onClick={() => navigate("/dashboard/events/create-event")} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
-          <Plus size={16} /> Create New Event
-        </button>
       </div>
 
       {events.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {events.map((event) => (
-            <EventCard key={event.id} event={event} onView={setViewEventId} onEdit={setEditEvent} onDelete={setDeleteTarget} />
+            <EventCard key={event.id} event={event} onView={setViewEventId} onEdit={setEventEditModal} onDelete={setDeleteTarget} />
           ))}
         </div>
       ) : (
@@ -338,12 +221,12 @@ export default function DashboardEvents() {
         </div>
 
       {/* Edit Modal */}
-      <Modal open={!!editEvent} onClose={() => setEditEvent(null)} title="Edit Event">
+      <Modal open={!!editEvent} onClose={() => setEventEditModal(null)} title="Edit Event">
         {editEvent && (
           editEvent.formId && editLoading ? (
             <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-primary" /></div>
           ) : (
-            <EditEvent
+            <EventEditModal
               initial={{
                 title: editEvent.title,
                 content: editEvent.content,
@@ -360,7 +243,6 @@ export default function DashboardEvents() {
               coverImageUrl={editEvent.coverImage || ""}
               formId={editEvent.formId}
               onSubmit={handleEdit}
-              submitLabel="Save Changes"
               loading={saving}
             />
           )
@@ -368,7 +250,7 @@ export default function DashboardEvents() {
       </Modal>
 
       {/* View Modal */}
-      <ViewModal open={!!viewEventId} onClose={() => setViewEventId(null)} eventId={viewEventId} getEventById={getEventById} />
+      <EventViewModal open={!!viewEventId} onClose={() => setViewEventId(null)} eventId={viewEventId} getEventById={getEventById} />
 
       {/* Delete Confirmation */}
       <DeleteModal

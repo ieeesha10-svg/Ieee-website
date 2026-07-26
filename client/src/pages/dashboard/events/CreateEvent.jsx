@@ -6,7 +6,7 @@ import {
 import { useCreateEvent } from "../../../hooks/dashboard/events/useCreateEvent";
 import { toLocalDatetimeString } from "../../../utils/dateUtils";
 import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
-import { EVENT_TYPES } from "../../../data/eventsData";
+import { EVENT_TYPES } from "../../../data/eventTypes";
 import SectionCard from "../../../components/SectionCard";
 import RequiredAsterisk from "../../../components/RequiredAsterisk";
 import RichTextEditor from "../../../components/dashboard/RichTextEditor";
@@ -137,6 +137,7 @@ export default function CreateEvent() {
   };
 
   const datesInvalid = form.startDate && form.endDate && new Date(form.startDate) > new Date(form.endDate);
+  const endDatePassed = form.endDate && new Date(form.endDate) < new Date();
 
   const handleSubmit = async () => {
     setSaving(true);
@@ -268,10 +269,11 @@ export default function CreateEvent() {
             <label className="block text-[10px] font-bold text-muted uppercase tracking-wide mb-1.5">Registration</label>
             <button
               type="button"
+              disabled={endDatePassed}
               onClick={() => set("registrationEnabled", !form.registrationEnabled)}
-              className={`mt-1 w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${form.registrationEnabled ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-[#222936] text-muted"}`}
+              className={`mt-1 w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${endDatePassed ? "bg-red-100 dark:bg-red-800/30 border-red-300 dark:border-red-500 text-muted cursor-not-allowed opacity-60" : form.registrationEnabled ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-[#222936] text-muted"}`}
             >
-              {form.registrationEnabled ? "Accepting Registrations" : "Closing Registration"}
+              {endDatePassed ? "Closing Registration" : form.registrationEnabled ? "Accepting Registrations" : "Closing Registration"}
             </button>
           </div>
         </div>
