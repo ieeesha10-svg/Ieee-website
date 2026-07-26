@@ -5,7 +5,9 @@ const {
   getActivities,
   getActivityById,
   updateActivity,
-  deleteActivity
+  deleteActivity,
+  addFeaturedActivity,
+  removeFeaturedActivity
 } = require('../controllers/activityController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
@@ -17,5 +19,7 @@ activityRouter.use(protect, authorize('xcom','board'));
 activityRouter.post('/', upload.single('coverImage'), createActivity);
 activityRouter.put('/:id', upload.single('coverImage'), updateActivity);
 activityRouter.delete('/:id', deleteActivity);
+activityRouter.post('/:id/add-featured', addFeaturedActivity);
+activityRouter.delete('/:id/remove-featured', removeFeaturedActivity);
 
 module.exports = activityRouter;

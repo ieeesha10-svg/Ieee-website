@@ -14,16 +14,19 @@ const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 // @desc    Submit a form & Get Ticket
 // @route   POST /api/submissions
 // @access  Private
-const submitForm = catchAsync(async (req, res,) => {
+const submitForm = catchAsync(async (req, res) => {
   const userid = req.user._id;
   const user = await User.findById(userid);
-  if(!userid || !user) {
+  
+  if (!userid || !user) {
     throw new AppError('User not found', 404);
   }
+  
   const { formId, answers } = req.body;
   if (!formId || !answers) {
     throw new AppError('Form ID and answers are required', 400);
   }
+
   // 1. Validate Form
   const form = await Form.findById(formId);
   if (!form) throw new AppError('Form not found', 404);
@@ -32,9 +35,9 @@ const submitForm = catchAsync(async (req, res,) => {
   if (form.status !== "Active" || form.endDate < new Date()) {
     throw new AppError('This form is currently closed', 400);
   }
+  
   // 3. Check max submissions
   const submissionsCount = await Submission.countDocuments({ formId });
-  
   if (submissionsCount >= form.maxSubmissions) {
     throw new AppError('Maximum submissions reached', 400);
   }
@@ -49,27 +52,29 @@ const submitForm = catchAsync(async (req, res,) => {
     throw new AppError('You already submitted this form', 400);
   }
   
-  // 5. Generate Ticket (If it's an Event)
-  ticketCode = `${formId}-${userid}-${nanoid(6)}`;
-  qrImage = await QRCode.toDataURL(ticketCode);
-
+  // 5. Generate Ticket (ONLY if it's a registration form)
+  let ticketCode;
+  let qrImage;
+  
+  if (form.type === "registration") {
+    ticketCode = `${formId}-${userid}-${nanoid(6)}`;
+    qrImage = await QRCode.toDataURL(ticketCode);
+  }
+  
   // 6. Save Submission
+  // use spread operator to add ticketCode and qrImage to the newSubmission object if form type is registration
   const newSubmission = new Submission({
     formId,
     userId: userid,
     registrantEmail: req.user.email,
     answers,
-    ticketCode,
-    qrImage
+    ...(ticketCode && { ticketCode }),
+    ...(qrImage && { qrImage })
   });
-
-  // console.log("Answers from Request:", req.body.answers);
-  // console.log("Form Fields from DB:", form.fields);
 
   try {
     await newSubmission.save();
   } catch (error) {
-    // pre-hook validation errors will be caught here
     if (error.name === 'ValidationError') {
       throw new AppError(`Submission failed validation: ${error.message}`, 400);
     }
@@ -79,9 +84,8 @@ const submitForm = catchAsync(async (req, res,) => {
     throw new AppError(`Submission failed: ${error.message}`, 500);
   }
 
-  // 7. Send Email (Async)
-  if (ticketCode && qrImage) {
-    //email sending handle in utils/sendEmail//
+  // 7. Send Email (Async) - ensure we only send emails for registration forms
+  if (form.type === "registration" && ticketCode && qrImage) {
     sendTicketEmail(
       req.user.email,
       req.user.name,
@@ -91,10 +95,11 @@ const submitForm = catchAsync(async (req, res,) => {
     ).catch(err => console.error("Email Error:", err));
   }
 
+  // 8. Send Response
   res.status(201).json({ 
     status: 'success', 
     message: 'Submitted successfully', 
-    ticketCode,
+    ...(ticketCode && { ticketCode }), // returned only if form type is registration
     data: newSubmission 
   });
 });

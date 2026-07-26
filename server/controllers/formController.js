@@ -126,12 +126,56 @@ const toggleFormStatus = catchAsync(async (req, res) => {
     res.json({ message: `Form is now ${form.status}` });
 });
 
+const updateFormSettings = catchAsync(async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate, maxSubmissions } = req.body;
+
+    const updateFields = {};
+    if (startDate) updateFields.startDate = startDate;
+    if (endDate) updateFields.endDate = endDate;
+    if (maxSubmissions !== undefined) updateFields.maxSubmissions = maxSubmissions;
+
+    if (updateFields.startDate && updateFields.endDate) {
+      if (new Date(updateFields.startDate) > new Date(updateFields.endDate)) {
+        return res.status(400).json({ message: "startDate must be before endDate" });
+      }
+    }
+
+    const updatedForm = await Form.findByIdAndUpdate(
+      id,
+      { $set: updateFields },
+      { 
+        new: true,
+        runValidators: true 
+      }
+    );
+
+    if (!updatedForm) {
+      throw new AppError("Form not found", 404);
+    }
+
+    res.status(200).json({
+      message: "Form settings updated successfully",
+      form: updatedForm
+    });
+
+  } catch (error) {
+    // console.error("Error updating form settings:", error);
+    res.status(500).json({ 
+      message: "Internal server error", 
+      error: error.message 
+    });
+  }
+});
+
 module.exports = { 
   createForm, 
   getForm, 
   getForms, 
   deleteForm,
-  toggleFormStatus 
+  toggleFormStatus,
+  updateFormSettings
 };
 
 /*
