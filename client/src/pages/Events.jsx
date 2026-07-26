@@ -3,7 +3,7 @@ import { usePublicEvents } from '../hooks/usePublicEvents'
 import { useAuth } from '../context/AuthContext'
 import api from '../utils/api'
 
-import EventsHero from '../sections/events/EventsHero'
+import HeroEvents from '../sections/events/HeroEvents'
 import UpcomingEvents from '../sections/events/UpcomingEvents'
 import PreviousEvents from '../sections/events/PreviousEvents'
 
@@ -54,7 +54,7 @@ const Events = () => {
 
   return (
     <main>
-      <EventsHero featuredEvent={upcoming[0]} loading={loading} />
+      <HeroEvents featuredEvent={upcoming[0]} loading={loading} />
       <UpcomingEvents
         events={paginatedUpcoming}
         loading={loading}
