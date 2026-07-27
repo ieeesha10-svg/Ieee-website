@@ -16,6 +16,7 @@ import EventEditModal from "../../../components/dashboard/EventEditModal";
 import Modal from "../../../components/Modal"
 import DeleteModal from "../../../components/DeleteModal"
 import EventViewModal from "../../../components/dashboard/EventViewModal"
+import Pagination from "../../../components/events/Pagination"
 
 const TYPE_COLORS = {
   teal: { bg: "bg-teal-50 dark:bg-teal-900/25", text: "text-teal-700 dark:text-teal-300", border: "border-teal-200 dark:border-teal-700/40" },
@@ -125,7 +126,9 @@ export default function DashboardEvents() {
     setSaving(true);
     try {
       await deleteEvent(deleteTarget.id);
-      toast.success("Activity deleted successfully!");
+      toast("Activity deleted successfully!", {
+        icon: <Trash2 size={16} className="text-red-500" />,
+      });
       setDeleteTarget(null);
     } catch (err) {
       const msg = err.response?.data?.message || err.response?.data?.error || err.message || "Failed to delete activity";
@@ -154,15 +157,18 @@ export default function DashboardEvents() {
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-2">
+
+				{/* Events filter */}
+				<div className="flex flex-wrap items-center gap-2">
           {FILTERS.map((f) => (
             <button key={f} onClick={() => setFilter(f)} className={`font-medium px-4 py-2 rounded-full border transition-all duration-200 ${filter === f ? "bg-primary text-white border-primary shadow-sm" : "bg-white dark:bg-[#1a1f2e] text-muted border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary"}`}>
               {f} <span className={`ml-1 text-[10px] ${filter === f ? "text-white/80" : "text-muted/60"}`}>({counts[f]})</span>
             </button>
           ))}
 				</div>
-        
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+
+				{/* CTA Buttons */}
+				<div className="flex items-center gap-2 w-full sm:w-auto">
           <button onClick={() => navigate("/dashboard/events/flagship")} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/10 transition-colors shadow-sm flex-1 sm:flex-auto">
             <Star size={16} /> Flagship Events
           </button>
@@ -172,6 +178,7 @@ export default function DashboardEvents() {
         </div>
       </div>
 
+      {/* Events Cards */}
       {events.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {events.map((event) => (
@@ -189,36 +196,9 @@ export default function DashboardEvents() {
           </p>
         </div>
       )}
-
-      <div className="flex items-center justify-center gap-1.5 pt-2">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-[#222936] text-muted hover:text-foreground hover:border-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Prev
-          </button>
-          {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={`w-8 h-8 text-xs font-medium rounded-lg border transition-colors ${
-                page === p
-                  ? "bg-primary text-white border-primary"
-                  : "border-gray-200 dark:border-[#222936] text-muted hover:text-foreground hover:border-primary"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-          <button
-            onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-            disabled={page >= pagination.totalPages}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-[#222936] text-muted hover:text-foreground hover:border-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Next
-          </button>
-        </div>
+      
+      {/* Pagination Component */}
+      <Pagination page={page} totalPages={pagination.totalPages} onPageChange={setPage} />
 
       {/* Edit Modal */}
       <Modal open={!!editEvent} onClose={() => setEventEditModal(null)} title="Edit Event">
@@ -250,7 +230,11 @@ export default function DashboardEvents() {
       </Modal>
 
       {/* View Modal */}
-      <EventViewModal open={!!viewEventId} onClose={() => setViewEventId(null)} eventId={viewEventId} getEventById={getEventById} />
+			<EventViewModal
+				open={!!viewEventId} onClose={() => setViewEventId(null)}
+				eventId={viewEventId}
+				getEventById={getEventById}
+			/>
 
       {/* Delete Confirmation */}
       <DeleteModal

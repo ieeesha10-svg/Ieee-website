@@ -111,7 +111,9 @@ export default function DashboardCrew() {
     if (!window.confirm("Are you sure you want to delete this member?")) return;
     try {
       await api.delete(`/crew/${id}`);
-      toast.success("Crew member deleted successfully");
+      toast("Crew member deleted successfully", {
+        icon: <Trash2 size={16} className="text-red-500" />,
+      });
       fetchCrew();
     } catch (err) {
       toast.error(
