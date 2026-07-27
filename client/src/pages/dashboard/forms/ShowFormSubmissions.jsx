@@ -1,9 +1,42 @@
 import React, { useState } from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
-import { ArrowLeft, FileText, Loader2, ChevronDown, ChevronUp, Download } from "lucide-react";
-import { useFormSubmissions } from "../../../hooks/dashboard/useGetSubmissions";
-import api from "../../../utils/api";
+import { ArrowLeft, FileText, Loader2, ChevronDown, ChevronUp, Download, ExternalLink } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../../../utils/api";
+import { useFormSubmissions } from "../../../hooks/dashboard/useGetSubmissions";
+
+function isFileUrl(value) {
+  if (typeof value !== "string") return false;
+  return (
+    value.startsWith("http") &&
+    (value.includes("cloudinary") || /\.(pdf|jpe?g|png|gif|webp|docx?|xlsx?)$/i.test(value))
+  );
+}
+
+function isImageUrl(value) {
+  if (typeof value !== "string") return false;
+  return /\.(jpe?g|png|gif|webp)$/i.test(value);
+}
+
+function getFileNameFromUrl(url) {
+  try {
+    const parts = url.split("/");
+    const last = parts[parts.length - 1].split("?")[0];
+    return decodeURIComponent(last) || "Download";
+  } catch {
+    return "Download";
+  }
+}
+
+function getAttachmentUrl(url) {
+  if (url.includes("/raw/upload/")) {
+    return url.replace("/raw/upload/", "/raw/upload/fl_attachment/");
+  }
+  if (url.includes("/image/upload/")) {
+    return url.replace("/image/upload/", "/image/upload/fl_attachment/");
+  }
+  return url;
+}
 
 function SubmissionRow({ submission, index, fieldLabelMap }) {
   const [expanded, setExpanded] = useState(false);
@@ -85,7 +118,43 @@ function SubmissionRow({ submission, index, fieldLabelMap }) {
                       {fieldLabelMap[key] || key}
                     </span>
                     <span className="text-foreground">
-                      {Array.isArray(value) ? value.join(", ") : String(value)}
+                      {(() => {
+                        if (Array.isArray(value)) return value.join(", ");
+                        if (isFileUrl(value)) {
+                          if (isImageUrl(value)) {
+                            return (
+                              <a
+                                href={value}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex flex-col items-start gap-1 group"
+                              >
+                                <img
+                                  src={value}
+                                  alt={getFileNameFromUrl(value)}
+                                  className="max-h-32 rounded-md border border-border object-cover"
+                                />
+                                <span className="inline-flex items-center gap-1 text-xs text-primary group-hover:underline">
+                                  <ExternalLink size={12} />
+                                  {getFileNameFromUrl(value)}
+                                </span>
+                              </a>
+                            );
+                          }
+                          return (
+                            <a
+                              href={getAttachmentUrl(value)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-primary hover:underline"
+                            >
+                              <Download size={14} className="shrink-0" />
+                              {getFileNameFromUrl(value)}
+                            </a>
+                          );
+                        }
+                        return String(value);
+                      })()}
                     </span>
                   </div>
                 ))}
