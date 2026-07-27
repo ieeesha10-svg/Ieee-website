@@ -20,7 +20,7 @@ const fieldSchema = new mongoose.Schema({
   type: { 
     type: String, 
     required: true, 
-    enum: ['TextInput', 'TextArea', 'Dropdown', 'Checkbox'] 
+    enum: ['TextInput', 'TextArea', 'Dropdown', 'Checkbox', 'FileUpload'],
   },
   required: { 
     type: Boolean, 

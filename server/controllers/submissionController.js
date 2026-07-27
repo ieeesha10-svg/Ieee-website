@@ -6,6 +6,7 @@ const ExcelJS = require('exceljs');
 const {sendTicketEmail}=require('../utils/sendEmail');
 const { nanoid } = require('nanoid');
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
+const uploadToCloudinary = require('../utils/uploadToCloudinary');
 
 // ==========================================
 // 1. STUDENT ACTIONS
@@ -17,32 +18,43 @@ const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 const submitForm = catchAsync(async (req, res) => {
   const userid = req.user._id;
   const user = await User.findById(userid);
+  const { formId } = req.body;
+  let answers = req.body.answers;
   
   if (!userid || !user) {
     throw new AppError('User not found', 404);
   }
   
-  const { formId, answers } = req.body;
   if (!formId || !answers) {
     throw new AppError('Form ID and answers are required', 400);
   }
+  // 1. extract answers from the request body
+  // console.log(JSON.parse(answers));
 
-  // 1. Validate Form
+  if (typeof answers === 'string') {
+    try {
+      answers = JSON.parse(answers);
+    } catch (err) {
+      throw new AppError('Invalid answers format, must be valid JSON', 400);
+    }
+  }
+
+  // 2. Validate Form
   const form = await Form.findById(formId);
   if (!form) throw new AppError('Form not found', 404);
   
-  // 2. Check Expiry
+  // 3. Check Expiry
   if (form.status !== "Active" || form.endDate < new Date()) {
     throw new AppError('This form is currently closed', 400);
   }
   
-  // 3. Check max submissions
+  // 4. Check max submissions
   const submissionsCount = await Submission.countDocuments({ formId });
   if (submissionsCount >= form.maxSubmissions) {
     throw new AppError('Maximum submissions reached', 400);
   }
   
-  // 4. Prevent duplicate submissions
+  // 5. Prevent duplicate submissions
   const existingSubmission = await Submission.findOne({
     formId,
     userId: userid
@@ -51,8 +63,18 @@ const submitForm = catchAsync(async (req, res) => {
   if (existingSubmission) {
     throw new AppError('You already submitted this form', 400);
   }
-  
-  // 5. Generate Ticket (ONLY if it's a registration form)
+
+  // 6. upload files to cloudinary
+  if (req.files && req.files.length > 0) {
+    for (const file of req.files) {
+      const folderPath = `submissions/${formId}`;
+      const fileUrl = await uploadToCloudinary(file.buffer, folderPath);
+      
+      answers[file.fieldname] = fileUrl;
+    }
+  }
+
+  // 7. Generate Ticket (ONLY if it's a registration form)
   let ticketCode;
   let qrImage;
   
@@ -61,13 +83,13 @@ const submitForm = catchAsync(async (req, res) => {
     qrImage = await QRCode.toDataURL(ticketCode);
   }
   
-  // 6. Save Submission
-  // use spread operator to add ticketCode and qrImage to the newSubmission object if form type is registration
+  // 8. Save Submission
   const newSubmission = new Submission({
     formId,
     userId: userid,
     registrantEmail: req.user.email,
     answers,
+    // use spread operator to add ticketCode and qrImage to the newSubmission object if form type is registration
     ...(ticketCode && { ticketCode }),
     ...(qrImage && { qrImage })
   });
@@ -84,7 +106,7 @@ const submitForm = catchAsync(async (req, res) => {
     throw new AppError(`Submission failed: ${error.message}`, 500);
   }
 
-  // 7. Send Email (Async) - ensure we only send emails for registration forms
+  // 9. Send Email (Async)
   if (form.type === "registration" && ticketCode && qrImage) {
     sendTicketEmail(
       req.user.email,
@@ -95,11 +117,11 @@ const submitForm = catchAsync(async (req, res) => {
     ).catch(err => console.error("Email Error:", err));
   }
 
-  // 8. Send Response
+  // 10. Send Response
   res.status(201).json({ 
     status: 'success', 
     message: 'Submitted successfully', 
-    ...(ticketCode && { ticketCode }), // returned only if form type is registration
+    ...(ticketCode && { ticketCode }),
     data: newSubmission 
   });
 });

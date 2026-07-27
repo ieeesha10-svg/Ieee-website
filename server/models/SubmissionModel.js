@@ -90,7 +90,11 @@ submissionSchema.pre('save', async function(next) {
           validationErrors.push(`Field '${field.label}' must be text.`);
         }
       }
-
+      else if (field.type === 'FileUpload') {
+        if (typeof answer !== 'string' || !answer.startsWith('http')) {
+          validationErrors.push(`Field '${field.label}' must be a valid uploaded file URL.`);
+        }
+      }
       cleanAnswers[field.id] = answer;
     }
   }
