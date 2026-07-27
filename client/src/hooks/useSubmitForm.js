@@ -16,7 +16,7 @@ import { useState, useCallback } from "react";
  *   const { submit, loading, error, alreadySubmitted, ticketCode, reset } = useSubmitForm();
  *
  *   const handleSubmit = async () => {
- *     const result = await submit(formId, answers);
+ *     const result = await submit(formId, answers, files);
  *     if (result) {
  *       // result.ticketCode is available here too, in addition to hook state
  *     }
@@ -35,20 +35,24 @@ export function useSubmitForm() {
     setTicketCode(null);
   }, []);
 
-  const submit = useCallback(async (formId, answers) => {
+  const submit = useCallback(async (formId, answers, files = {}) => {
     setLoading(true);
     setError(null);
     setAlreadySubmitted(false);
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "";
+      const formData = new FormData();
+      formData.append("formId", formId);
+      formData.append("answers", JSON.stringify(answers));
+      Object.entries(files).forEach(([fieldId, file]) => {
+        formData.append(fieldId, file);
+      });
+
       const response = await fetch(`${apiUrl}/submissions`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         credentials: "include",
-        body: JSON.stringify({ formId, answers }),
+        body: formData,
       });
 
       const data = await response.json();

@@ -3,7 +3,8 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { useSubmitForm } from '../hooks/useSubmitForm';
-import { ChevronDown } from 'lucide-react';
+import { ACCEPTED_FILE_EXTENSIONS, useFileUpload } from '../utils/fileUploadUtils';
+import { ChevronDown, Upload, X } from 'lucide-react';
 
 import Button from "../components/Button";
 import Input from "../components/Input";
@@ -21,9 +22,13 @@ export default function EventRegistration() {
   const [registrationOpen, setRegistrationOpen] = useState(true);
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
+  const [files, setFiles] = useState({});
+  const fileInputRefs = React.useRef({});
+  const submittingRef = React.useRef(false);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [checkingRegistration, setCheckingRegistration] = useState(true);
+  const [showSuccess, setShowSuccess] = useState(false);
   const { submit, loading: submitLoading, error: submitError, alreadySubmitted, ticketCode, setAlreadySubmitted } = useSubmitForm();
 
   useEffect(() => {
@@ -40,13 +45,16 @@ export default function EventRegistration() {
           return;
         }
 
-        setRegistrationOpen(activity.registrationEnabled !== false);
-
         const startDate = form?.startDate || activity?.startDate || null;
         const endDate = form?.endDate || activity?.endDate || null;
 
+        setRegistrationOpen(
+          (activity.registrationEnabled !== false) &&
+          !(endDate && new Date(endDate) < new Date())
+        );
+
         const dateStr = startDate && endDate
-          ? `from ${new Date(startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} to ${new Date(endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
+          ? `From ${new Date(startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} To ${new Date(endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
           : startDate
           ? new Date(startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
           : "";
@@ -70,6 +78,7 @@ export default function EventRegistration() {
           speakers: activity.speakers || [],
           fields: form.fields || [],
           maxSubmissions: form?.maxSubmissions || 0,
+          endDate: endDate,
           settings: { requiresLogin: false },
         });
 
@@ -117,11 +126,15 @@ export default function EventRegistration() {
     setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
+  const { handleFileSelect, handleFileDrop, handleFileRemove } = useFileUpload(setFiles, setErrors);
+
   const validate = () => {
     const errs = {};
     formData.fields?.forEach(f => {
       if (f.required) {
-        if (f.type === 'Checkbox') {
+        if (f.type === 'FileUpload') {
+          if (!files[f.id]) errs[f.id] = `${f.label} is required`;
+        } else if (f.type === 'Checkbox') {
           if (!answers[f.id] || answers[f.id].length === 0) {
             errs[f.id] = `${f.label} is required`;
           }
@@ -135,13 +148,18 @@ export default function EventRegistration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     const errs = validate();
     if (Object.keys(errs).length) {
       setErrors(errs);
       return;
     }
-    if (submitLoading) return;
-    await submit(formData.formId, answers);
+    submittingRef.current = true;
+    const result = await submit(formData.formId, answers, files);
+    submittingRef.current = false;
+    if (result) {
+      setShowSuccess(true);
+    }
   };
 
   const renderField = (field) => {
@@ -233,6 +251,64 @@ export default function EventRegistration() {
             {errors[field.id] && <span className="text-xs text-red-500">{errors[field.id]}</span>}
           </div>
         );
+      case 'FileUpload': {
+        const selectedFile = files[field.id];
+        return (
+          <div className="flex flex-col gap-1.5">
+            {field.label && (
+              <label className="text-sm md:text-base lg:text-xl xl:text-2xl font-bold text-[#334155] dark:text-white">
+                {field.label}
+              </label>
+            )}
+            {selectedFile ? (
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-input px-4 py-3">
+                <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                  <Upload size={14} className="text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground font-medium truncate">
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleFileRemove(field.id)}
+                  className="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-muted hover:text-red-500 transition-colors"
+                  aria-label="Remove file"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleFileDrop(field.id, e)}
+                onClick={() => fileInputRefs.current[field.id]?.click()}
+                className="flex flex-col items-center justify-center gap-2 py-6 rounded-lg border-2 border-dashed border-border bg-input hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer"
+              >
+                <Upload size={18} className="text-muted" />
+                <span className="text-sm text-muted font-medium">
+                  Drop your file here
+                </span>
+                <span className="text-[11px] text-muted/60">
+                  PDF, Images, Docs · Max 10 MB
+                </span>
+              </div>
+            )}
+            <input
+              ref={(el) => { fileInputRefs.current[field.id] = el; }}
+              type="file"
+              accept={ACCEPTED_FILE_EXTENSIONS}
+              className="hidden"
+              onChange={(e) => handleFileSelect(field.id, e.target.files[0])}
+            />
+            {errors[field.id] && <span className="text-xs text-red-500">{errors[field.id]}</span>}
+          </div>
+        );
+      }
       default:
         return <Input {...common} type="text" />;
     }
@@ -279,11 +355,16 @@ export default function EventRegistration() {
   if (!formData) return null;
 
   if (!registrationOpen) {
+    const isExpired = formData.endDate && new Date(formData.endDate) < new Date();
     return (
       <section className="py-24">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-foreground mb-4">Registration Closed</h2>
-          <p className="text-muted text-lg">Registration for this event is no longer accepting responses.</p>
+          <p className="text-muted text-lg">
+            {isExpired
+              ? "This form is currently closed. The registration period has ended."
+              : "Registration for this event is no longer accepting responses."}
+          </p>
         </div>
       </section>
     );
@@ -341,7 +422,7 @@ export default function EventRegistration() {
               </p>
 
               <form className="flex flex-col flex-1 gap-5" onSubmit={handleSubmit}>
-                {ticketCode && (
+                {showSuccess && (
                   <div className="flex flex-col items-center justify-center text-center py-8">
                     <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6">
                       <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -350,7 +431,9 @@ export default function EventRegistration() {
                     </div>
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">You're Registered!</h2>
                     <p className="text-muted max-w-md">
-                      Check your email for the QR code to use at the event.
+                      {ticketCode
+                        ? "Check your email for the QR code to use at the event."
+                        : "Your submission has been received successfully."}
                     </p>
                   </div>
                 )}
@@ -361,7 +444,7 @@ export default function EventRegistration() {
                   </div>
                 )}
 
-                {!ticketCode && (
+                {!showSuccess && (
                   <>
                     {formData.settings?.requiresLogin && !user && (
                       <div className="rounded-xl border border-amber-400/30 bg-amber-50 dark:bg-amber-900/20 p-4">
@@ -373,7 +456,7 @@ export default function EventRegistration() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {formData.fields?.map(field => (
-                        <div key={field.id} className={field.type === 'TextArea' || field.type === 'Checkbox' ? 'md:col-span-2' : ''}>
+                        <div key={field.id} className={field.type === 'TextArea' || field.type === 'Checkbox' || field.type === 'FileUpload' ? 'md:col-span-2' : ''}>
                           {renderField(field)}
                         </div>
                       ))}

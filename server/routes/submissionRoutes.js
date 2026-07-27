@@ -7,7 +7,8 @@ const {
   getSubmissions,
   getSubmissionsForForm,
   editSubmission, 
-  exportSubmissionsToExcel 
+  exportSubmissionsToExcel,
+  downloadFile
 } = require('../controllers/submissionController');
 const upload = require('../middleware/uploadMiddleware');
 
@@ -22,6 +23,7 @@ submissionRouter.post('/scan', authorize('xcom', 'scanner', 'board'), scanTicket
 // 3. View & Export (Admins Only)
 submissionRouter.get('/export/:formId', authorize('xcom', 'board'), exportSubmissionsToExcel);
 submissionRouter.get('/form/:formId', authorize('xcom', 'board'), getSubmissionsForForm);
+submissionRouter.get('/download', authorize('xcom', 'board'), downloadFile);
 submissionRouter.get('/:userid/:formid', protect, getUserSubmission);
 submissionRouter.get('/', authorize('xcom', 'board'), getSubmissions);
 // submissionRouter.put('/:userid/:formid', authorize('xcom', 'board'), editSubmission);
