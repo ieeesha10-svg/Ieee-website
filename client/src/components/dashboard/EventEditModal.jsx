@@ -436,8 +436,8 @@ export default function EditEvent({ initial, onSubmit, loading, formId, coverIma
               String(form.maxSubmissions) !== String(initial.maxSubmissions);
             if (formChanged) {
               await updateForm(formId, {
-                startDate: form.startDate,
-                endDate: form.endDate,
+                startDate: new Date(form.startDate).toISOString(),
+                endDate: new Date(form.endDate).toISOString(),
                 maxSubmissions: form.maxSubmissions,
               });
             }
