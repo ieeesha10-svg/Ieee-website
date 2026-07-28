@@ -31,7 +31,7 @@ const NAV_LINKS = [
   { label: "Committees", href: "/committees", icon: Briefcase },
   { label: "Crew", href: "/crew", icon: MapPin },
   { label: "Dev Team", href: "/dev-team", icon: Braces },
-  // { label: "Contact", href: "/contact", icon: Mail },
+  { label: "Contact", href: "/contact", icon: Mail },
 ];
 
 const PublicNavbar = () => {
@@ -199,19 +199,30 @@ const PublicNavbar = () => {
         {/* Sheet Footer */}
         <div className="px-4 pb-8 pt-4 border-t border-[#FFFFFF33] dark:border-border">
           {user ? (
-            <Link
-              to="/profile"
-              onClick={closeMenu}
-              className="flex items-center gap-3 rounded-xl p-3 bg-border/50 hover:bg-border transition"
-            >
-              <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white font-bold text-sm shrink-0">
-                {user.name?.charAt(0)?.toUpperCase() || "U"}
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold truncate">{user.name}</p>
-                <p className="text-xs text-white/50 truncate">{user.email}</p>
-              </div>
-            </Link>
+            <>
+              <Link
+                to="/profile"
+                onClick={closeMenu}
+                className="flex items-center gap-3 rounded-xl p-3 bg-card hover:bg-card/80 transition"
+              >
+                <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white font-bold text-sm shrink-0">
+                  {user.name?.charAt(0)?.toUpperCase() || "U"}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{user.name}</p>
+                  <p className="text-xs text-muted truncate">{user.email}</p>
+                </div>
+              </Link>
+              {["admin", "board", "xcom"].includes(user.role?.toLowerCase()) && (
+                <Link
+                  to="/dashboard"
+                  onClick={closeMenu}
+                  className="flex items-center justify-center rounded-xl p-3 bg-primary dark:bg-primary/10 text-white dark:text-primary font-semibold text-sm transition mt-2"
+                >
+                  Dashboard
+                </Link>
+              )}
+            </>
           ) : (
             <div
               className="relative backdrop-blur-2xl text-center overflow-hidden rounded-xl p-4
