@@ -43,6 +43,13 @@ export function useForms() {
             title: form.activityID ? "'" + title + "' Event Form" : title,
             responses,
             fields: form.fields || [],
+            startDate: form.startDate,
+            endDate: form.endDate,
+            maxSubmissions: form.maxSubmissions,
+            description: form.description,
+            formType: form.type,
+            createdAtRaw: form.createdAt,
+            updatedAt: form.updatedAt,
             createdAt: form.createdAt
               ? new Date(form.createdAt).toLocaleDateString("en-US", {
                   month: "short",
@@ -55,6 +62,19 @@ export function useForms() {
         })
       );
       setForms(formsData);
+
+      // Auto-close forms whose endDate has passed
+      const expired = formsData.filter(f => f.isOpen && f.endDate && new Date(f.endDate) < new Date());
+      if (expired.length > 0) {
+        await Promise.allSettled(
+          expired.map(f =>
+            api.put(`/form/${f.id}/toggle`).catch(() => {})
+          )
+        );
+        setForms(prev => prev.map(f =>
+          expired.some(e => e.id === f.id) ? { ...f, isOpen: false } : f
+        ));
+      }
     } catch (error) {
       console.error("Error fetching forms:", error);
     } finally {

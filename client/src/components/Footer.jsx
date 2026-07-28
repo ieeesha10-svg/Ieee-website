@@ -8,7 +8,7 @@ const QUICK_LINKS = [
   { label: "Our Crew", to: "/crew" },
   { label: "Dev Team", to: "/dev-team" },
   { label: "Committees", to: "/committees" },
-  // { label: "Contact", to: "/contact" },
+  { label: "Contact", to: "/contact" },
 ];
 
 export default function Footer() {

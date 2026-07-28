@@ -78,8 +78,8 @@ export function buildPayload(payload) {
     speakers,
   };
 
-  if (payload.startDate) body.startDate = payload.startDate;
-  if (payload.endDate) body.endDate = payload.endDate;
+  if (payload.startDate) body.startDate = new Date(payload.startDate).toISOString();
+  if (payload.endDate) body.endDate = new Date(payload.endDate + (payload.endDate.includes("T") ? "" : "T23:59:59.999Z")).toISOString();
   if (payload.maxSubmissions !== "" && payload.maxSubmissions != null) {
     body.maxSubmissions = Number(payload.maxSubmissions);
   }

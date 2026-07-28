@@ -51,11 +51,11 @@ export default function JoinUs() {
           </Link>
 
           {/* Secondary Outline Button */}
-          {/* <Link to="/contact" className="flex justify-center items-center w-[100px] h-[38px] lg:w-[200px] lg:h-[76px] border border-[#F2F2F2] lg:border-2 rounded-[4px] lg:rounded-[8px] hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] transition-all duration-300">
+          <Link to="/contact" className="flex justify-center items-center w-[100px] h-[38px] lg:w-[200px] lg:h-[76px] border border-[#F2F2F2] lg:border-2 rounded-[4px] lg:rounded-[8px] hover:bg-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] transition-all duration-300">
             <span className="font-lakes font-normal text-[#F2F2F2] text-[10px] lg:text-[20px] leading-[14px] lg:leading-[28px]">
               Contact Us
             </span>
-          </Link>*/}
+          </Link>
         </div>
       </div>
     </section>

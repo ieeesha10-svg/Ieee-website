@@ -34,7 +34,7 @@ export default function FormSubmissionSuccessModal({
 
         <p className="text-sm text-muted leading-relaxed mb-6">
           Thank you for applying{formTitle ? ` to the ${formTitle}` : ""}. Our
-          committee will review your application within 5–7 business days.
+          committee will review your application. Keep an eye on your email for updates.
         </p>
 
         <div className="border-t border-border mb-6" />

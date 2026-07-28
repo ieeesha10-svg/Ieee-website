@@ -44,7 +44,18 @@ export default function ApplicationsPage() {
 
         {/* Filter Tabs */}
         <div className="mt-8 flex justify-center">
-          <div className="inline-flex gap-2 p-1 rounded-full">
+          {/* Mobile dropdown */}
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value)}
+            className="md:hidden w-full max-w-xs px-4 py-2.5 rounded-lg border border-border bg-card text-sm text-foreground focus:outline-none focus:border-primary"
+          >
+            {TABS.map((tab) => (
+              <option key={tab} value={tab}>{tab}</option>
+            ))}
+          </select>
+          {/* Desktop tabs */}
+          <div className="hidden md:inline-flex gap-2 p-1 rounded-full">
             {TABS.map((tab) => {
               const isActive = activeTab === tab;
               return (
@@ -104,7 +115,7 @@ export default function ApplicationsPage() {
           )}
 				</div>
 
-				<FooterAlt tagline="Forms are reviewed within 5–7 business days" />
+				<FooterAlt />
 			</div>
     </section>
   );

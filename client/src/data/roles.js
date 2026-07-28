@@ -22,7 +22,7 @@
 export const ALL_ROLES = ["user", "member", "scanner", "board", "xcom"];
 
 // Can view dashboard, all users, export
-export const ADMIN_ROLES = ["board", "xcom"];
+export const ADMIN_ROLES = ["board", "xcom", "board"];
 
 // Has full control + can create other admin users
 export const SUPER_ADMIN_ROLES = ["xcom"];
