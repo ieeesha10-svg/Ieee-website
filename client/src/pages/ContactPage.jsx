@@ -55,7 +55,8 @@ function SocialCard({ Icon, href, title, subtitle, linkLabel }) {
         <span className="text-sm text-muted">{subtitle}</span>
       </div>
       <a
-        href={href}
+				href={href}
+				target="_blank"
         className="flex items-center gap-1.5 text-sm font-gotham font-medium text-primary transition-all duration-300 hover:gap-2.5 hover:text-primary-light mt-auto"
         aria-label={`${linkLabel} – ${title}`}
       >
@@ -71,7 +72,7 @@ export default function ContactPage() {
     <main className="bg-main">
       {/* SECTION 1 – Contact Hero */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
+        <div className="flex items-center justify-center">
           {/* Left column: badge + heading + paragraph + info cards */}
           <div className="flex flex-col items-center text-center gap-8">
 						<div className="flex flex-col gap-3 items-center">
@@ -94,81 +95,6 @@ export default function ContactPage() {
           </div>
 
           {/* Right column: form card */}
-          <div className="bg-card rounded-2xl p-6 md:p-8 shadow-xl">
-            <h2 className="text-xl font-bold text-foreground">
-              Send Us a Message
-            </h2>
-            <p className="text-sm text-muted mt-1 mb-4">
-              Fill out the form and our team will get back to you shortly.
-            </p>
-
-            <div className="grid gap-4">
-              {/* Name + Email row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium tracking-wide uppercase text-muted">
-                    FULL NAME <RequiredAsterisk />
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Your full name"
-                    className="bg-input border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted outline-none focus:border-primary transition-colors"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium tracking-wide uppercase text-muted">
-                    EMAIL ADDRESS <RequiredAsterisk />
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="you@example.com"
-                    className="bg-input border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted outline-none focus:border-primary transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* Subject */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium tracking-wide uppercase text-muted">
-                  SUBJECT <RequiredAsterisk />
-                </label>
-                <input
-                  type="text"
-                  placeholder="What's this about?"
-                  className="bg-input border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted outline-none focus:border-primary transition-colors"
-                />
-              </div>
-
-              {/* Message */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium tracking-wide uppercase text-muted">
-                  MESSAGE <RequiredAsterisk />
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Tell us more..."
-                  className="bg-input border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted outline-none focus:border-primary transition-colors resize-none"
-                />
-              </div>
-
-              {/* Submit */}
-              <button
-                type="button"
-                className="flex items-center justify-center gap-2 w-full bg-brand-linear text-white font-semibold rounded-full py-3 transition-all duration-300 hover:opacity-90 hover:shadow-lg hover:shadow-primary/30 hover:scale-[1.02]"
-              >
-                Send Message
-                <Send size={16} aria-hidden="true" />
-              </button>
-
-              {/* Privacy note */}
-              <div className="flex items-center justify-center gap-1.5 text-xs text-muted">
-                <Lock size={12} aria-hidden="true" />
-                <span>
-                  Your information is kept private and never shared.
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 

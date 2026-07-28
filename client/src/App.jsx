@@ -18,7 +18,7 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import AboutPage from "./pages/AboutPage";
-// import ContactPage from "./pages/ContactPage";
+import ContactPage from "./pages/ContactPage";
 import EventRegistration from "./pages/EventRegistration";
 import EventDetails from "./pages/EventDetails";
 import CrewPage from "./pages/CrewPage";
@@ -99,7 +99,7 @@ function App() {
           <Route path="/events" element={<Events />} />
           <Route path="/events/:id" element={<EventRegistration />} />
           <Route path="/events/:id/details" element={<EventDetails />} />
-          {/* <Route path="/contact" element={<ContactPage />} />*/}
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route element={<GuestRoute />}>
             <Route path="/login" element={<LoginPage />} />
