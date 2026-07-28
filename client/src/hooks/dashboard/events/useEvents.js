@@ -50,6 +50,7 @@ export function useEvents() {
 
       const activities = activitiesRes.data.activities || [];
       const forms = Array.isArray(formsRes.data) ? formsRes.data : formsRes.data?.forms || [];
+      const newPagination = activitiesRes.data.pagination || { totalItems: 0, totalPages: 1, currentPage: pageNum, itemsPerPage: limit };
 
       const formMap = {};
       forms.forEach((f) => {
@@ -59,7 +60,12 @@ export function useEvents() {
       const mapped = activities.map((a) => mapActivity(a, formMap[a._id]));
       setAllEvents(mapped);
       setEvents(mapped);
-      setPagination(activitiesRes.data.pagination || { totalItems: 0, totalPages: 1, currentPage: pageNum, itemsPerPage: limit });
+      setPagination(newPagination);
+
+      if (pageNum > 1 && newPagination.totalPages < pageNum) {
+        setPage(newPagination.totalPages || 1);
+        return;
+      }
     } catch (err) {
       setError(err.response?.data?.message || err.message || "Failed to load events");
     } finally {
@@ -93,6 +99,6 @@ export function useEvents() {
     page,
     setPage,
     pagination,
-    refetch: fetchData,
+    refetch: () => fetchData(page),
   };
 }

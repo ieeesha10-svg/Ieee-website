@@ -44,7 +44,7 @@ export default function FormSubmissionSuccessModal({
           onClick={onBackToHome}
           className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors duration-200"
         >
-          Back to Home
+          Back to Appliactions Page
         </button>
       </div>
     </div>

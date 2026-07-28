@@ -31,7 +31,7 @@ const NAV_LINKS = [
   { label: "Committees", href: "/committees", icon: Briefcase },
   { label: "Crew", href: "/crew", icon: MapPin },
   { label: "Dev Team", href: "/dev-team", icon: Braces },
-  { label: "Contact", href: "/contact", icon: Mail },
+  // { label: "Contact", href: "/contact", icon: Mail },
 ];
 
 const PublicNavbar = () => {

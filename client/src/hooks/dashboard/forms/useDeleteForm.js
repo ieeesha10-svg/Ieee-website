@@ -1,11 +1,15 @@
+import React from "react";
 import toast from "react-hot-toast";
+import { Trash2 } from "lucide-react";
 import api from "../../../utils/api";
 
 export function useDeleteForm(refetch) {
   const deleteForm = async (id, title) => {
     try {
       await api.delete(`/form/${id}`);
-      toast.success(`"${title || "Form"}" form is now deleted`);
+      toast(`"${title || "Form"}" form is now deleted`, {
+        icon: React.createElement(Trash2, { size: 16, className: "text-red-500" }),
+      });
       if (refetch) await refetch();
     } catch (error) {
       console.error("Error deleting form:", error);

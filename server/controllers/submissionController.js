@@ -68,7 +68,7 @@ const submitForm = catchAsync(async (req, res) => {
   if (req.files && req.files.length > 0) {
     for (const file of req.files) {
       const folderPath = `submissions/${formId}`;
-      const fileUrl = await uploadToCloudinary(file.buffer, folderPath);
+      const fileUrl = await uploadToCloudinary(file.buffer, folderPath, file.mimetype, file.originalname);
       
       answers[file.fieldname] = fileUrl;
     }
@@ -372,7 +372,28 @@ const getSubmissionsForForm = catchAsync(async (req, res) => {
   res.json({total : submissions.length, submissions});
 });
 
-module.exports = { submitForm, scanTicket, getUserSubmission, getSubmissions, getSubmissionsForForm, editSubmission, exportSubmissionsToExcel };
+const downloadFile = catchAsync(async (req, res) => {
+  const { url } = req.query;
+  if (!url) throw new AppError('URL is required', 400);
+
+  const response = await fetch(decodeURIComponent(url), { redirect: 'follow' });
+  if (!response.ok) throw new AppError('File not found', 404);
+
+  const contentType = response.headers.get('content-type') || 'application/octet-stream';
+  const contentDisp = response.headers.get('content-disposition');
+
+  res.setHeader('Content-Type', contentType);
+  if (contentDisp) {
+    res.setHeader('Content-Disposition', contentDisp);
+  } else {
+    res.setHeader('Content-Disposition', 'attachment');
+  }
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  res.send(buffer);
+});
+
+module.exports = { submitForm, scanTicket, getUserSubmission, getSubmissions, getSubmissionsForForm, editSubmission, exportSubmissionsToExcel, downloadFile };
 
 
 /*

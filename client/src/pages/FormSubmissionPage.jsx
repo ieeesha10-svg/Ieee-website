@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronDown, Upload, CheckCircle } from "lucide-react";
+import { ChevronDown, Upload, CheckCircle, X } from "lucide-react";
 import { usePublicForm } from "../hooks/usePublicFormById";
 import { useSubmitForm } from "../hooks/useSubmitForm";
 import FormSubmissionSuccessModal from "../components/forms/FormSubmissionSuccessModal";
@@ -8,6 +8,7 @@ import RequiredAsterisk from "../components/RequiredAsterisk";
 import FooterAlt from "../components/FooterAlt";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
+import { ACCEPTED_FILE_EXTENSIONS, useFileUpload } from "../utils/fileUploadUtils";
 
 const SURVEY_COLOR = "#5DD9B0";
 const FEEDBACK_COLOR = "#B08FFF";
@@ -66,6 +67,9 @@ export default function FormSubmissionPage() {
 
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
+  const [files, setFiles] = useState({});
+  const fileInputRefs = React.useRef({});
+  const submittingRef = React.useRef(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   const [checkingSubmission, setCheckingSubmission] = useState(true);
@@ -92,11 +96,17 @@ export default function FormSubmissionPage() {
     setErrors((prev) => ({ ...prev, [fieldId]: "" }));
   };
 
+  const { handleFileSelect, handleFileDrop, handleFileRemove } = useFileUpload(setFiles, setErrors);
+
   const validate = () => {
     if (!form?.fields) return {};
     const errs = {};
     for (const field of form.fields) {
       if (!field.required) continue;
+      if (field.type === "FileUpload") {
+        if (!files[field.id]) errs[field.id] = `${field.label} is required`;
+        continue;
+      }
       const val = answers[field.id];
       if (field.type === "Checkbox") {
         if (!val || val.length === 0) errs[field.id] = `${field.label} is required`;
@@ -114,13 +124,15 @@ export default function FormSubmissionPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
     }
-    if (submitting) return;
-    const result = await submit(id, answers);
+    submittingRef.current = true;
+    const result = await submit(id, answers, files);
+    submittingRef.current = false;
     if (result) {
       setShowSuccess(true);
     }
@@ -265,7 +277,8 @@ export default function FormSubmissionPage() {
           </div>
         );
 
-      case "FileUpload":
+      case "FileUpload": {
+        const selectedFile = files[field.id];
         return (
           <div key={field.id} className="flex flex-col gap-1.5">
             <label className="text-[11px] font-bold uppercase tracking-wider text-muted">
@@ -274,21 +287,57 @@ export default function FormSubmissionPage() {
                 <RequiredAsterisk color="text-primary" />
               )}
             </label>
-            <div className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-input px-6 py-8 text-center opacity-60">
-              <Upload size={24} className="text-muted" />
-              <p className="text-sm text-muted font-medium">
-                Drop your CV / Resume here
-              </p>
-              <p className="text-xs text-muted/60">PDF only · Max 5 MB</p>
-              <span className="text-xs text-primary cursor-pointer">
-                browse files
-              </span>
-            </div>
-            <p className="text-xs text-muted/50 italic">
-              File upload coming soon — backend support pending.
-            </p>
+            {selectedFile ? (
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-input px-4 py-3">
+                <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                  <Upload size={14} className="text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground font-medium truncate">
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleFileRemove(field.id)}
+                  className="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-muted hover:text-red-500 transition-colors"
+                  aria-label="Remove file"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => handleFileDrop(field.id, e)}
+                onClick={() => fileInputRefs.current[field.id]?.click()}
+                className="flex flex-col items-center justify-center gap-2 py-6 rounded-lg border-2 border-dashed border-border bg-input hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer"
+              >
+                <Upload size={18} className="text-muted" />
+                <span className="text-sm text-muted font-medium">
+                  Drop your file here
+                </span>
+                <span className="text-[11px] text-muted/60">
+                  PDF, Images, Docs · Max 10 MB
+                </span>
+              </div>
+            )}
+            <input
+              ref={(el) => { fileInputRefs.current[field.id] = el; }}
+              type="file"
+              accept={ACCEPTED_FILE_EXTENSIONS}
+              className="hidden"
+              onChange={(e) => handleFileSelect(field.id, e.target.files[0])}
+            />
+            {showError && (
+              <span className="text-xs text-red-500">{showError}</span>
+            )}
           </div>
         );
+      }
 
       default:
         return (

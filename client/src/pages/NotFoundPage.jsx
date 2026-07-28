@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Home,
   Calendar,
-  Phone,
+  FileText,
   Search,
   Users,
   Flag,
@@ -252,10 +252,10 @@ function HeroBlock() {
           <Calendar size={15} /> Explore Events
         </Link>
         <Link
-          to="/contact"
+          to="/applications"
           className="flex items-center gap-2 border border-border text-foreground font-medium text-sm px-5 py-2.5 rounded-full hover:scale-[1.02] hover:shadow-md transition-all duration-300"
         >
-          <Phone size={15} /> Contact Us
+          <FileText size={15} /> Explore Applications
         </Link>
       </div>
     </div>
