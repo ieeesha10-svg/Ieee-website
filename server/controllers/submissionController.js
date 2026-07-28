@@ -44,7 +44,7 @@ const submitForm = catchAsync(async (req, res) => {
   if (!form) throw new AppError('Form not found', 404);
   
   // 3. Check Expiry
-  if (form.status !== "Active" || form.endDate < new Date()) {
+  if (form.status !== "Active" || new Date(form.endDate).setHours(23,59,59,999) < new Date()) {
     throw new AppError('This form is currently closed', 400);
   }
   
