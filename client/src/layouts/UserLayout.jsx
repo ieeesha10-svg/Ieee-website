@@ -44,7 +44,7 @@ export default function UserLayout() {
     createdAt: "",
   });
 
-  // ─── Online/Offline detection ───────────────────────────────────────────────
+  // Online/Offline detection
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
@@ -56,7 +56,7 @@ export default function UserLayout() {
     };
   }, []);
 
-  // ─── Fetch user data ─────────────────────────────────────────────────────────
+  // Fetch user data
   const fetchUserData = async () => {
     setIsLoading(true);
     setFetchError(null);
@@ -89,7 +89,7 @@ export default function UserLayout() {
     fetchUserData();
   }, []);
 
-  // ─── Loading state ────────────────────────────────────────────────────────────
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-main flex flex-col items-center justify-center gap-4 text-foreground">
@@ -101,7 +101,7 @@ export default function UserLayout() {
     );
   }
 
-  // ─── Error state ──────────────────────────────────────────────────────────────
+  // Error state
   if (fetchError) {
     return (
       <div className="min-h-screen bg-main flex flex-col items-center justify-center gap-4 text-foreground p-4">
@@ -124,7 +124,7 @@ export default function UserLayout() {
 
   return (
     <div className="min-h-screen bg-main text-foreground transition-colors duration-300">
-      {/* ─── Offline Banner ───────────────────────────────────────────────── */}
+      {/* Offline Banner */}
       {isOffline && (
         <div className="bg-red-500 text-white p-3 flex justify-center items-center gap-3 font-lakes text-sm">
           <WifiOff size={18} /> You are currently offline.
@@ -132,7 +132,7 @@ export default function UserLayout() {
       )}
 
       <div className="max-w-[1304px] mx-auto px-4 md:px-8 py-6 md:py-8 lg:py-12 space-y-6 md:space-y-8 lg:space-y-10">
-        {/* ─── Profile Banner ────────────────────────── */}
+        {/* Profile Banner */}
         <div className="rounded-[24px] md:rounded-[28px] pt-[24px] md:pt-[36px] px-[20px] md:px-[40px] pb-6 md:pb-[36px] flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 relative overflow-hidden text-white transition-all duration-300 bg-[linear-gradient(135deg,#0077CC_0%,#0096FF_55%,#33B5FF_100%)] shadow-[0px_12px_48px_rgba(0,100,220,0.18)] dark:bg-[linear-gradient(135deg,#001A40_0%,#002F6B_35%,#0066BB_70%,#0088EE_100%)] dark:shadow-[0px_20px_60px_rgba(0,0,0,0.7),0px_0px_0px_1px_rgba(0,150,255,0.2),inset_0px_1px_0px_rgba(255,255,255,0.08)]">
           {/* Avatar */}
           <div className="relative flex-shrink-0 z-10">
@@ -183,7 +183,7 @@ export default function UserLayout() {
           </div>
         </div>
 
-        {/* ─── Main Grid: Sidebar + Page Content ──────────────────────────── */}
+        {/* Main Grid: Sidebar + Page Content */}
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
           {/* Sidebar */}
           <div className="w-full lg:w-[308px] flex-shrink-0 space-y-8">
