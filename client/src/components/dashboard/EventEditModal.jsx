@@ -1,84 +1,23 @@
 import React, { useState } from "react";
-import { X, Loader2, Check, GripVertical, Trash2, CheckCircle2, Upload, Edit } from "lucide-react";
-import { FIELD_TYPE_OPTIONS } from "../../data/fieldTypes";
-import { EVENT_TYPES } from "../../data/eventTypes";
-import RichTextEditor from "./RichTextEditor";
+import { X, Loader2, CheckCircle2, Upload } from "lucide-react";
+import { EVENT_TYPES, EVENT_TYPE_LABELS } from "../../data/eventTypes";
 import { useUpdateForm } from "../../hooks/dashboard/forms/useUpdateForm";
-
-function isHtmlContentEmpty(html) {
-  if (!html) return true;
-  return html.replace(/<[^>]*>/g, "").trim().length === 0;
-}
-
-const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Workshop", webinar: "Webinar" };
+import { isHtmlContentEmpty } from "../../utils/eventUtils";
+// Components
+import Tooltip from "../Tooltip";
+import RichTextEditor from "./RichTextEditor";
+import SpeakerManager from "../SpeakerManager";
 
 export default function EditEvent({ initial, onSubmit, loading, formId, coverImageUrl }) {
   const [form, setForm] = useState(initial);
-  const [speakerName, setSpeakerName] = useState("");
-  const [speakerTitle, setSpeakerTitle] = useState("");
-  const [speakerBio, setSpeakerBio] = useState("");
-  const [speakerImage, setSpeakerImage] = useState("");
-  const [fieldsList, setFieldsList] = useState(initial.fields || []);
-  const [dragIndex, setDragIndex] = useState(null);
-  const [newFieldLabel, setNewFieldLabel] = useState("");
-  const [newFieldType, setNewFieldType] = useState("TextInput");
   const [coverImageFile, setCoverImageFile] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState(coverImageUrl || null);
   const [coverImageRemoved, setCoverImageRemoved] = useState(false);
+  const [formStatus, setFormStatus] = useState(initial.formStatus || "Active");
 
   const { updateForm } = useUpdateForm();
 
   const set = (key, value) => setForm((p) => ({ ...p, [key]: value }));
-  
-  const moveField = (from, to) => {
-    setFieldsList((prev) => {
-      const updated = [...prev];
-      const [moved] = updated.splice(from, 1);
-      updated.splice(to, 0, moved);
-      return updated;
-    });
-  };
-
-  const addField = () => {
-    setFieldsList((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), label: "", type: "TextInput", required: false, options: [] },
-    ]);
-  };
-
-  const updateFieldAt = (index, patch) => {
-    setFieldsList((prev) => {
-      const updated = [...prev];
-      const field = updated[index];
-      if (patch.type && (patch.type === "Dropdown" || patch.type === "Checkbox") && !field.options) {
-        patch.options = [];
-      }
-      updated[index] = { ...field, ...patch };
-      return updated;
-    });
-  };
-
-  const removeFieldAt = (index) => {
-    setFieldsList((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleConfirmAddField = () => {
-    if (!newFieldLabel.trim()) return;
-    const idx = fieldsList.length;
-    addField();
-    const patch = { label: newFieldLabel.trim(), type: newFieldType };
-    if (newFieldType === "Dropdown" || newFieldType === "Checkbox") patch.options = [];
-    updateFieldAt(idx, patch);
-    setNewFieldLabel("");
-    setNewFieldType("TextInput");
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleConfirmAddField();
-    }
-  };
 
   const coverImageInputRef = React.useRef(null);
 
@@ -102,26 +41,10 @@ export default function EditEvent({ initial, onSubmit, loading, formId, coverIma
     setCoverImageRemoved(true);
   };
 
-  const addSpeaker = () => {
-    if (!speakerName.trim()) return;
-    set("speakers", [...form.speakers, {
-      name: speakerName.trim(),
-      title: speakerTitle.trim(),
-      bio: speakerBio.trim(),
-      image: speakerImage.trim(),
-    }]);
-    setSpeakerName("");
-    setSpeakerTitle("");
-    setSpeakerBio("");
-    setSpeakerImage("");
-  };
-
-  const removeSpeaker = (idx) => {
-    set("speakers", form.speakers.filter((_, i) => i !== idx));
-  };
-
   const datesInvalid = form.startDate && form.endDate && new Date(form.startDate) > new Date(form.endDate);
   const endDatePassed = form.endDate && new Date(form.endDate) < new Date();
+  const effectiveFormStatus = endDatePassed ? "Closed" : formStatus;
+  const effectiveRegistrationEnabled = endDatePassed ? false : form.registrationEnabled;
 
   return (
     <div className="space-y-4">
@@ -151,7 +74,7 @@ export default function EditEvent({ initial, onSubmit, loading, formId, coverIma
           placeholder="Short text summary that will be shown on the event card"
         />
 			</div>
-      
+
       <div>
         <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Content</label>
         <RichTextEditor
@@ -160,7 +83,6 @@ export default function EditEvent({ initial, onSubmit, loading, formId, coverIma
           placeholder="Event content"
         />
       </div>
-
 
       <div>
         <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Cover Image</label>
@@ -217,217 +139,64 @@ export default function EditEvent({ initial, onSubmit, loading, formId, coverIma
           <input type="number" min="0" value={form.maxSubmissions} onChange={(e) => set("maxSubmissions", e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Leave empty for unlimited" />
         </div>
         <div>
-          <label className="block text-[10px] font-bold text-muted uppercase tracking-wide mb-1.5">Registration</label>
-          <button
-            type="button"
-            disabled={endDatePassed}
-            onClick={() => set("registrationEnabled", !form.registrationEnabled)}
-            className={`mt-1 w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${endDatePassed ? "bg-red-100 dark:bg-red-800/30 border-red-300 dark:border-red-500 text-muted cursor-not-allowed opacity-60" : form.registrationEnabled ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-red-100 dark:bg-red-800/30 border-red-300 dark:border-red-500 text-muted"}`}
-          >
-            {endDatePassed ? "Closing Registration" : form.registrationEnabled ? "Accepting Registrations" : "Closing Registration"}
-          </button>
+	        <label className="block text-[11px] font-bold text-muted uppercase tracking-wide">Form Status</label>
+	        <Tooltip text={endDatePassed ? "End date is behind — Cannot accept submissions" : ""}>
+	          <button
+	            type="button"
+	            disabled={endDatePassed}
+							onClick={() => {
+	            const newStatus = formStatus === "Active" ? "Closed" : "Active";
+	            setFormStatus(newStatus);
+	          }}
+	            className={`mt-1 w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${endDatePassed ? "bg-red-100 dark:bg-red-800/30 border-red-300 dark:border-red-500 text-muted cursor-not-allowed opacity-60" : formStatus === "Active" ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-red-100 dark:bg-red-800/30 border-red-300 dark:border-red-500 text-muted"}`}
+	          >
+	            {endDatePassed || formStatus !== "Active" ? "Not Accepting" : "Accepting Submissions"}
+	          </button>
+	        </Tooltip>
         </div>
       </div>
+
+			<div>
+    		      <label className="block text-[10px] font-bold text-muted uppercase tracking-wide mb-1.5">Section</label>
+          <div className="flex rounded-lg border border-gray-200 dark:border-[#222936] overflow-hidden">
+            <button
+              type="button"
+              disabled={endDatePassed}
+              onClick={() => set("registrationEnabled", true)}
+              className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+                endDatePassed
+                  ? "bg-gray-100 dark:bg-gray-800 text-muted cursor-not-allowed opacity-60"
+                  : effectiveRegistrationEnabled
+                    ? "bg-primary/10 text-primary"
+                    : "bg-white dark:bg-[#111827] text-muted hover:bg-gray-50 dark:hover:bg-gray-800"
+              }`}
+            >
+              Upcoming Events
+            </button>
+            <div className="w-px bg-gray-200 dark:border-[#222936]" />
+            <button
+              type="button"
+              disabled={endDatePassed}
+              onClick={() => set("registrationEnabled", false)}
+              className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+                endDatePassed
+                  ? "bg-primary/10 text-primary cursor-not-allowed opacity-60"
+                  : effectiveRegistrationEnabled
+                    ? "bg-white dark:bg-[#111827] text-muted hover:bg-gray-50 dark:hover:bg-gray-800"
+                    : "bg-primary/10 text-primary"
+              }`}
+            >
+              Previous Events
+            </button>
+          </div>
+          </div>
 
       <div>
         <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Speakers</label>
-        <div className="space-y-2 mb-2">
-          <input value={speakerName} onChange={(e) => setSpeakerName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker name" />
-          <input value={speakerTitle} onChange={(e) => setSpeakerTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker title (e.g. Senior Engineer)" />
-          <input value={speakerImage} onChange={(e) => setSpeakerImage(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker image URL (optional)" />
-          <textarea value={speakerBio} onChange={(e) => setSpeakerBio(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none" placeholder="Speaker bio" />
-
-          <button type="button" onClick={addSpeaker} disabled={!speakerName.trim()} className="px-3 py-2 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Add Speaker</button>
-        </div>
-        {form.speakers.length > 0 && (
-          <div className="space-y-1.5">
-            {form.speakers.map((s, i) => (
-              <div key={i} className="flex items-center gap-3 px-3 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                {s.image ? (
-                  <img src={s.image} alt={s.name} className="w-7 h-7 rounded-full object-cover" />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-muted">{s.name[0]}</div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm text-foreground font-medium">{s.name}</span>
-                  {s.title && <span className="text-xs text-muted ml-2">— {s.title}</span>}
-                </div>
-                <button type="button" onClick={() => { setSpeakerName(s.name); setSpeakerTitle(s.title); setSpeakerBio(s.bio); setSpeakerImage(s.image || ""); set("speakers", form.speakers.filter((_, j) => j !== i)); }} className="text-muted hover:text-primary transition-colors"><Edit size={13} /></button>
-                <button type="button" onClick={() => removeSpeaker(i)} className="text-muted hover:text-red-500 transition-colors"><X size={13} /></button>
-              </div>
-            ))}
-          </div>
-        )}
+        <SpeakerManager speakers={form.speakers} onChange={(s) => set("speakers", s)} />
       </div>
 
-      {!formId && (
-        <div>
-          <div className="flex items-center gap-3 mb-3">
-            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide">Form Fields</label>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary-dark/10">
-              {fieldsList.length} {fieldsList.length === 1 ? "field" : "fields"}
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 dark:border-[#222936] overflow-hidden">
-            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-[#222936]">
-              <div className="w-5 shrink-0" />
-              <div className="flex-1">
-                <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Field Label</span>
-              </div>
-              <div className="w-[120px] shrink-0">
-                <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Type</span>
-              </div>
-              <div className="w-[60px] shrink-0 text-center">
-                <span className="text-[10px] font-bold text-muted uppercase tracking-wide">Req</span>
-              </div>
-              <div className="w-7 shrink-0" />
-            </div>
-
-            {fieldsList.map((field, idx) => {
-              const hasOptions = field.type === "Dropdown" || field.type === "Checkbox";
-              const isDragging = dragIndex === idx;
-              return (
-                <div
-                  key={field.id || idx}
-                  draggable
-                  onDragStart={() => setDragIndex(idx)}
-                  onDragOver={(e) => {
-                    if (dragIndex === null || dragIndex === idx) return;
-                    e.preventDefault();
-                    moveField(dragIndex, idx);
-                    setDragIndex(idx);
-                  }}
-                  onDragEnd={() => setDragIndex(null)}
-                  className={`border-b border-gray-100 dark:border-[#222936] last:border-b-0 transition-opacity ${isDragging ? "opacity-40" : ""}`}
-                >
-                  <div className="flex items-start gap-2 px-4 py-2.5">
-                    <div className="pt-1.5 text-muted shrink-0 cursor-grab">
-                      <GripVertical size={14} />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <input
-                        type="text"
-                        value={field.label}
-                        onChange={(e) => updateFieldAt(idx, { label: e.target.value })}
-                        placeholder="Field label"
-                        className="w-full rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
-                      />
-
-                      {hasOptions && (
-                        <div className="mt-1.5 space-y-1">
-                          {(field.options || []).map((opt, oi) => (
-                            <div key={oi} className="flex items-center gap-1">
-                              <input
-                                type="text"
-                                value={opt}
-                                onChange={(e) => {
-                                  const updated = [...(field.options || [])];
-                                  updated[oi] = e.target.value;
-                                  updateFieldAt(idx, { options: updated });
-                                }}
-                                placeholder={`Option ${oi + 1}`}
-                                className="flex-1 rounded-md border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1 text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = field.options.filter((_, i) => i !== oi);
-                                  updateFieldAt(idx, { options: updated });
-                                }}
-                                aria-label={`Remove option ${oi + 1}`}
-                                className="text-muted hover:text-red-500 transition-colors shrink-0"
-                              >
-                                <X size={12} />
-                              </button>
-                            </div>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={() => updateFieldAt(idx, { options: [...(field.options || []), ""] })}
-                            className="text-xs font-medium text-primary hover:text-primary-dark transition-colors"
-                          >
-                            + Add Option
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <select
-                      value={field.type}
-                      onChange={(e) => updateFieldAt(idx, { type: e.target.value })}
-                      aria-label={`Field type for ${field.label || `field ${idx + 1}`}`}
-                      className="w-[120px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-                    >
-                      {FIELD_TYPE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-
-                    <div className="w-[60px] shrink-0 flex justify-center pt-0.5">
-                      <button
-                        type="button"
-                        onClick={() => updateFieldAt(idx, { required: !field.required })}
-                        className={`text-[10px] font-bold px-2 py-1 rounded-full border transition-colors ${
-                          field.required
-                            ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-700/40"
-                            : "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700"
-                        }`}
-                      >
-                        {field.required ? "Yes" : "No"}
-                      </button>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => removeFieldAt(idx)}
-                      aria-label={`Remove ${field.label || `field ${idx + 1}`}`}
-                      className="pt-1.5 text-muted hover:text-red-500 transition-colors shrink-0"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-
-            <div className="flex items-center gap-2 px-4 py-2.5 border-t border-gray-200 dark:border-[#222936]">
-              <input
-                type="text"
-                value={newFieldLabel}
-                onChange={(e) => setNewFieldLabel(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="New field label"
-                className="flex-1 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
-              />
-              <select
-                value={newFieldType}
-                onChange={(e) => setNewFieldType(e.target.value)}
-                aria-label="New field type"
-                className="w-[120px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-              >
-                {FIELD_TYPE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleConfirmAddField}
-                disabled={!newFieldLabel.trim()}
-                aria-label="Confirm add field"
-                className="w-7 h-7 flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-              >
-                <Check size={14} />
-              </button>
-            </div>
-          </div>
-
-          <p className="mt-1.5 text-xs text-muted">Click Required to toggle · Press Enter to confirm a new field</p>
-        </div>
-      )}
-
-      <div className="flex justify-end gap-2 pt-2">
+      <div>
         <button type="button" onClick={async () => {
           if (formId) {
             const formChanged =
@@ -442,7 +211,7 @@ export default function EditEvent({ initial, onSubmit, loading, formId, coverIma
               });
             }
           }
-          onSubmit({ ...form, fields: fieldsList }, coverImageFile, coverImageRemoved);
+          onSubmit({ ...form, formStatus: effectiveFormStatus }, coverImageFile, coverImageRemoved);
         }} disabled={loading || !form.title || !form.location || isHtmlContentEmpty(form.content) || datesInvalid} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
           {loading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
           Save Changes

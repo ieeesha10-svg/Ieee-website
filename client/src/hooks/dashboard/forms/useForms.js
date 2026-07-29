@@ -6,8 +6,6 @@ export function useForms() {
   const { pathname } = useLocation();
   const [forms, setForms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [totalResponses, setTotalResponses] = useState(0);
-
   const fetchForms = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -82,19 +80,9 @@ export function useForms() {
     }
   }, []);
 
-  const fetchTotalResponses = useCallback(async () => {
-    try {
-      const res = await api.get("/submissions");
-      setTotalResponses(res.data.totalCount ?? 0);
-    } catch {
-      // fallback to 0
-    }
-  }, []);
-
   useEffect(() => {
     fetchForms();
-    fetchTotalResponses();
-  }, [pathname, fetchForms, fetchTotalResponses]);
+  }, [pathname, fetchForms]);
 
   const openCount = forms.filter((f) => f.isOpen).length;
   const closedCount = forms.filter((f) => !f.isOpen).length;
@@ -105,7 +93,6 @@ export function useForms() {
     isLoading,
     openCount,
     closedCount,
-    totalResponses,
     totalCount: forms.length,
     refetch: fetchForms,
   };

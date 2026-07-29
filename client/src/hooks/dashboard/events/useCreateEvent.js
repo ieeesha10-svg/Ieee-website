@@ -1,6 +1,6 @@
 import { useState } from "react";
 import api from "../../../utils/api";
-import { buildPayload } from "./eventUtils";
+import { buildPayload } from "../../../utils/eventUtils";
 
 export function useCreateEvent(refetch) {
   const [loading, setLoading] = useState(false);

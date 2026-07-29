@@ -22,6 +22,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import toast, { Toaster } from "react-hot-toast";
 import ConfirmModal from "./ConfirmModal";
+import { ADMIN_ROLES } from "../data/roles";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
@@ -98,14 +99,14 @@ const PublicNavbar = () => {
               >
                 <UserIcon size={18} /> Hi, {user.name.split(" ")[0]}
               </Link>
-              {["admin", "board", "xcom"].includes(
+              {ADMIN_ROLES.includes(
                 user.role?.toLowerCase(),
               ) && (
                 <Link
                   to="/dashboard"
-                  className="text-primary dark:text-sky-400 font-bold hover:underline text-sm"
+                  className="text-primary-light font-bold hover:underline text-sm"
                 >
-                  Go to Admin
+                	Dashboard
                 </Link>
               )}
               <button
@@ -213,7 +214,7 @@ const PublicNavbar = () => {
                   <p className="text-xs text-muted truncate">{user.email}</p>
                 </div>
               </Link>
-              {["admin", "board", "xcom"].includes(user.role?.toLowerCase()) && (
+              {ADMIN_ROLES.includes(user.role?.toLowerCase()) && (
                 <Link
                   to="/dashboard"
                   onClick={closeMenu}

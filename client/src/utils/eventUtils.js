@@ -5,17 +5,22 @@ const TYPE_COLOR_MAP = {
   webinar: "indigo",
 };
 
-export function getTypeColor(type) {
+function getTypeColor(type) {
   return TYPE_COLOR_MAP[type] || "blue";
 }
 
-export function formatDate(dateStr) {
+function formatDate(dateStr) {
   if (!dateStr) return "";
   return new Date(dateStr).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+}
+
+export function isHtmlContentEmpty(html) {
+  if (!html) return true;
+  return html.replace(/<[^>]*>/g, "").trim().length === 0;
 }
 
 export function formatEventDate(dateStr) {
@@ -84,6 +89,7 @@ export function buildPayload(payload) {
     body.maxSubmissions = Number(payload.maxSubmissions);
   }
   if (payload.fields) body.fields = payload.fields;
+  if (payload.formStatus) body.formStatus = payload.formStatus;
 
   return body;
 }

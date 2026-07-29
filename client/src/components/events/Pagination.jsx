@@ -9,7 +9,6 @@ export default function Pagination({ page, totalPages, onPageChange, variant = "
   const btnIdle = isDark
     ? "border-white/20 text-white hover:bg-white/10"
     : "border-gray-200 dark:border-[#222936] text-muted hover:text-foreground hover:border-primary";
-  const btnDisabled = "disabled:opacity-40 disabled:cursor-not-allowed";
 
   const numBase = "w-8 h-8 text-xs font-medium rounded-lg border transition-colors";
   const numIdle = isDark

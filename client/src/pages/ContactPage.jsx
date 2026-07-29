@@ -3,13 +3,11 @@ import {
   Mail,
   MapPin,
   Share2,
-  Send,
-  Lock,
   ArrowRight,
 } from "lucide-react";
 import { EMAIL_ADDRESS, SOCIAL_MEDIA } from '../data/socialMedia';
 import Badge from '../components/Badge'
-import RequiredAsterisk from '../components/RequiredAsterisk'
+import ContactForm from '../components/ContactForm';
 
 function InfoCard({ Icon, label, value, subtext, href }) {
   const content = (
@@ -95,6 +93,7 @@ export default function ContactPage() {
           </div>
 
           {/* Right column: form card */}
+          {/* <ContactForm />*/}
         </div>
       </section>
 

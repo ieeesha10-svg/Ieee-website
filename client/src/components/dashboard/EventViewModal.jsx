@@ -19,7 +19,7 @@ export default function EventViewModal({ open, onClose, eventId, getEventById })
   const form = data?.form;
 
   return (
-    <Modal open={open} onClose={onClose} title="Activity Details" maxWidth="max-w-xl">
+    <Modal open={open} onClose={onClose} title="Event Details" maxWidth="max-w-xl">
       {loading ? (
         <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-primary" /></div>
       ) : activity ? (
@@ -39,6 +39,12 @@ export default function EventViewModal({ open, onClose, eventId, getEventById })
             <div>
               <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Location</span>
               <p className="text-sm text-foreground mt-1">{activity.location}</p>
+            </div>
+            <div>
+              <span className="text-[11px] font-bold text-muted uppercase tracking-wide">Section</span>
+              <p className={`text-sm mt-1 font-medium ${activity.registrationEnabled !== false ? "text-green-600 dark:text-green-400" : "text-muted"}`}>
+                {activity.registrationEnabled !== false ? "Upcoming Events" : "Previous Events"}
+              </p>
             </div>
           </div>
           <div>
@@ -81,8 +87,8 @@ export default function EventViewModal({ open, onClose, eventId, getEventById })
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <span className="text-muted text-xs">Registration</span>
-                  <p className={`font-medium ${activity.registrationEnabled !== false ? "text-green-600 dark:text-green-400" : "text-muted"}`}>
-                    {activity.registrationEnabled !== false ? "Open" : "Closed"}
+                  <p className={`font-medium ${form.status === "Active" ? "text-green-600 dark:text-green-400" : "text-muted"}`}>
+                    {form.status === "Active" ? "Open" : "Closed"}
                   </p>
                 </div>
                 <div>

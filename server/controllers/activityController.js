@@ -39,7 +39,7 @@ const sanitizeHtmlOptions = {
 };
 
 const createActivity = catchAsync(async (req, res) => {
-  let { title, content, description, type, speakers, location, registrationEnabled, fields, startDate, endDate, maxSubmissions } = req.body;
+  let { title, content, description, type, speakers, location, registrationEnabled, fields, startDate, endDate, maxSubmissions, formStatus } = req.body;
   if(!title || !content || !location) {
     throw new AppError("Title, content, and location are required", 400);
   }
@@ -76,13 +76,15 @@ const createActivity = catchAsync(async (req, res) => {
   }
   // Create associated form
   const form = await Form.create({
-    title: `${activity.title} Registration Form`,
+    title: activity.title,
     activityID: activity._id,
     createdBy: req.user._id,
     fields,
     startDate,
     endDate,
-    maxSubmissions
+    maxSubmissions,
+    type: "registration",
+    status: formStatus || "Active"
   });
 
   res.status(201).json({ success: true, message: "Activity created with associated form",  activity, form });

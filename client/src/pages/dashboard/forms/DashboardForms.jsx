@@ -1,17 +1,19 @@
 import React, { useState } from "react";
-import { FileText, Clipboard, Calendar, UserPlus, ClipboardList, MessageSquare, Eye, Plus, Trash2, X, Check, ChevronDown, Pencil } from "lucide-react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { FileText, Clipboard, Calendar, UserPlus, ClipboardList, MessageSquare, Eye, Plus, Trash2, Check, ChevronDown, Pencil, ExternalLink } from "lucide-react";
+// Hooks & data
 import { useForms } from "../../../hooks/dashboard/forms/useForms";
 import { useDeleteForm } from "../../../hooks/dashboard/forms/useDeleteForm";
 import { useToggleForm } from "../../../hooks/dashboard/forms/useToggleForm";
 import { useUpdateForm } from "../../../hooks/dashboard/forms/useUpdateForm";
+import { SURVEY_COLOR, FEEDBACK_COLOR, CUSTOM_COLOR } from "../../../data/formTypes";
+// Components
 import DeleteModal from "../../../components/DeleteModal";
 import DashFormsSkeleton from "../../../components/skeletons/DashFormsSkeleton";
-import { SURVEY_COLOR, FEEDBACK_COLOR, CUSTOM_COLOR } from "../../../data/formTypes";
 import Modal from "../../../components/Modal";
-import { Link } from "react-router-dom";
 
-/* Toggle Switch */
+/*Toggle Switch */
 function Toggle({ checked, onChange }) {
   return (
     <button
@@ -150,7 +152,7 @@ function FieldsModal({ form, onClose }) {
   );
 }
 
-/* Single Form Row */
+/*Single Form Row */
 function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
   const dateExpired = form.endDate && new Date(form.endDate) < new Date();
   return (
@@ -198,7 +200,10 @@ function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
             {form.isOpen ? "Open" : "Closed"}
           </span>
           <div className="relative group">
-            <Toggle checked={form.isOpen} onChange={dateExpired ? undefined : () => onToggle(form.id, form.title, !form.isOpen)} />
+						<Toggle
+							checked={form.isOpen}
+							onChange={dateExpired ? undefined : () => onToggle(form.id, form.title, !form.isOpen)}
+						/>
             {dateExpired && (
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs font-medium text-white bg-gray-800 dark:bg-gray-700 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
                 This form reached its endDate and cannot be opened
@@ -254,9 +259,9 @@ function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
   );
 }
 
-/* ─── Main Component ───────────────────────────────────────────── */
+/* Main Component */
 export default function DashboardForms() {
-  const { forms, setForms, isLoading, openCount, closedCount, totalResponses, refetch } =
+  const { forms, setForms, isLoading, openCount, closedCount, refetch } =
     useForms();
   const { deleteForm } = useDeleteForm(refetch);
   const { toggleFormStatus } = useToggleForm();
@@ -335,21 +340,23 @@ export default function DashboardForms() {
           {pill("open", "Open", "bg-primary", openCount)}
           {pill("closed", "Closed", "bg-gray-400", closedCount)}
           {pill("events", "Event Forms", "bg-blue-500", forms.filter((f) => f.activityID).length)}
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#1a1f2e] opacity-70">
-            <span className="text-primary font-extrabold">
-              {totalResponses}
-            </span>
-            Total Responses
-          </span>
         </div>
 
 				{/* Action Button */}
-        <Link to={'/dashboard/forms/create-form'}>
-	        <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
-	          <Plus size={16} />
-	          New Form
-					</button>
-        </Link>
+				
+        <div className="flex items-center gap-2">
+          <a href="/applications" target="_blank" rel="noopener noreferrer">
+            <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/10 transition-colors shadow-sm w-full sm:w-auto">
+            <ExternalLink size={16} /> View on Site
+            </button>
+          </a>
+          <Link to={'/dashboard/forms/create-form'}>
+            <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
+              <Plus size={16} />
+              New Form
+            </button>
+          </Link>
+        </div>
       </div>
 
       {/* Forms List */}
@@ -386,68 +393,59 @@ export default function DashboardForms() {
       />
 
       {/* Edit Dates Modal */}
-      {editingForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 dark:bg-black/70" onClick={() => !savingDates && setEditingForm(null)} />
-          <div className="relative bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-xl w-full max-w-md p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-foreground">Edit Form</h2>
-              <button onClick={() => setEditingForm(null)} className="p-1.5 text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
-                <X size={16} />
-              </button>
-            </div>
-            <p className="text-muted truncate">{editingForm.title}</p>
-            <div>
-              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Start Date</label>
-              <input
-                type="date"
-                value={editStartDate}
-                onChange={(e) => setEditStartDate(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">End Date</label>
-              <input
-                type="date"
-                value={editEndDate}
-                onChange={(e) => setEditEndDate(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Max Submissions</label>
-              <input
-                type="number"
-                min="0"
-                value={editMaxSubmissions}
-                onChange={(e) => setEditMaxSubmissions(e.target.value)}
-                placeholder="Leave empty for unlimited"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
-              />
-            </div>
-            {editStartDate && editEndDate && new Date(editStartDate) > new Date(editEndDate) && (
-              <p className="text-xs text-red-500 font-medium">Start date cannot be after end date.</p>
-            )}
-            <div className="flex justify-end gap-2 pt-1">
-              <button
-                onClick={() => setEditingForm(null)}
-                disabled={savingDates}
-                className="px-3 py-2 text-sm font-medium text-foreground bg-white dark:bg-[#1a1f2e] border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveDates}
-                disabled={savingDates || !editStartDate || !editEndDate || new Date(editStartDate) > new Date(editEndDate)}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {savingDates ? "Saving..." : "Save"}
-              </button>
-            </div>
+      <Modal open={!!editingForm} onClose={() => !savingDates && setEditingForm(null)} title="Edit Form">
+        <div className="space-y-4">
+          <p className="text-muted truncate">{editingForm?.title}</p>
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Start Date</label>
+            <input
+              type="date"
+              value={editStartDate}
+              onChange={(e) => setEditStartDate(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">End Date</label>
+            <input
+              type="date"
+              value={editEndDate}
+              onChange={(e) => setEditEndDate(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Max Submissions</label>
+            <input
+              type="number"
+              min="0"
+              value={editMaxSubmissions}
+              onChange={(e) => setEditMaxSubmissions(e.target.value)}
+              placeholder="Leave empty for unlimited"
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+            />
+          </div>
+          {editStartDate && editEndDate && new Date(editStartDate) > new Date(editEndDate) && (
+            <p className="text-xs text-red-500 font-medium">Start date cannot be after end date.</p>
+          )}
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              onClick={() => setEditingForm(null)}
+              disabled={savingDates}
+              className="px-3 py-2 text-sm font-medium text-foreground bg-white dark:bg-[#1a1f2e] border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveDates}
+              disabled={savingDates || !editStartDate || !editEndDate || new Date(editStartDate) > new Date(editEndDate)}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {savingDates ? "Saving..." : "Save"}
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
 
       <DeleteModal
         isOpen={!!deletingId}

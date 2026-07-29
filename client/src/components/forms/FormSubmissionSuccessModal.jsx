@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Check } from "lucide-react";
+import Modal from "../Modal";
 
 export default function FormSubmissionSuccessModal({
   isOpen,
@@ -15,15 +16,9 @@ export default function FormSubmissionSuccessModal({
     return () => document.removeEventListener("keydown", handler);
   }, [isOpen, onBackToHome]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onBackToHome}
-      />
-      <div className="relative w-full max-w-sm bg-card-alt rounded-xl border border-border shadow-xl p-8 text-center animate-in fade-in zoom-in-95">
+    <Modal open={isOpen} onClose={onBackToHome} title="">
+      <div className="text-center">
         <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5 border border-green-600 dark:border-green-400">
           <Check size={28} className="text-green-600 dark:text-green-400" />
         </div>
@@ -47,6 +42,6 @@ export default function FormSubmissionSuccessModal({
           Back to Appliactions Page
         </button>
       </div>
-    </div>
+    </Modal>
   );
 }

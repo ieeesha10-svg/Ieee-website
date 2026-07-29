@@ -33,7 +33,6 @@ const SignupPage = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { setUser } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -143,8 +142,6 @@ const SignupPage = () => {
               type="number"
               name="age"
               placeholder="Age"
-              min="15"
-              max="30"
               value={formData.age}
               onChange={handleChange}
               className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
