@@ -1,19 +1,18 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import api from "../../../utils/api";
-import { mapActivity } from "./eventUtils";
+import { mapActivity } from "../../../utils/eventUtils";
 
 export function useEvents() {
-  const [events, setEvents] = useState([]);
   const [allEvents, setAllEvents] = useState([]);
   const [filter, setFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({ totalItems: 0, totalPages: 1, currentPage: 1, itemsPerPage: 10 });
-  const [counts, setCounts] = useState({ All: 0, Active: 0, Completed: 0 });
   const limit = 9;
 
-  const fetchAllForCounts = useCallback(async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const [activitiesRes, formsRes] = await Promise.all([
         api.get("/activities", { params: { page: 1, limit: 1000 } }),
@@ -29,43 +28,7 @@ export function useEvents() {
       });
 
       const mapped = activities.map((a) => mapActivity(a, formMap[a._id]));
-      setCounts({
-        All: mapped.length,
-        Active: mapped.filter((e) => e.status === "Active").length,
-        Completed: mapped.filter((e) => e.status === "Completed").length,
-      });
-    } catch {
-      setCounts({ All: 0, Active: 0, Completed: 0 });
-    }
-  }, []);
-
-  const fetchData = useCallback(async (pageNum = 1) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [activitiesRes, formsRes] = await Promise.all([
-        api.get("/activities", { params: { page: pageNum, limit } }),
-        api.get("/form").catch(() => ({ data: [] })),
-      ]);
-
-      const activities = activitiesRes.data.activities || [];
-      const forms = Array.isArray(formsRes.data) ? formsRes.data : formsRes.data?.forms || [];
-      const newPagination = activitiesRes.data.pagination || { totalItems: 0, totalPages: 1, currentPage: pageNum, itemsPerPage: limit };
-
-      const formMap = {};
-      forms.forEach((f) => {
-        if (f.activityID) formMap[f.activityID] = f;
-      });
-
-      const mapped = activities.map((a) => mapActivity(a, formMap[a._id]));
       setAllEvents(mapped);
-      setEvents(mapped);
-      setPagination(newPagination);
-
-      if (pageNum > 1 && newPagination.totalPages < pageNum) {
-        setPage(newPagination.totalPages || 1);
-        return;
-      }
     } catch (err) {
       setError(err.response?.data?.message || err.message || "Failed to load events");
     } finally {
@@ -74,31 +37,48 @@ export function useEvents() {
   }, []);
 
   useEffect(() => {
-    fetchAllForCounts();
-  }, [fetchAllForCounts]);
+    fetchData();
+  }, [fetchData]);
 
-  useEffect(() => {
-    fetchData(page);
-  }, [fetchData, page]);
+  const filteredEvents = useMemo(
+    () => (filter === "All" ? allEvents : allEvents.filter((e) => e.status === filter)),
+    [allEvents, filter]
+  );
 
-  useEffect(() => {
-    if (filter === "All") {
-      setEvents(allEvents);
-    } else {
-      setEvents(allEvents.filter((e) => e.status === filter));
-    }
-  }, [filter, allEvents]);
+  const totalItems = filteredEvents.length;
+  const totalPages = Math.ceil(totalItems / limit) || 1;
+  const safePage = Math.min(page, totalPages);
+
+  const events = useMemo(
+    () => filteredEvents.slice((safePage - 1) * limit, safePage * limit),
+    [filteredEvents, safePage, limit]
+  );
+
+  const counts = useMemo(
+    () => ({
+      All: allEvents.length,
+      Active: allEvents.filter((e) => e.status === "Active").length,
+      Completed: allEvents.filter((e) => e.status === "Completed").length,
+    }),
+    [allEvents]
+  );
 
   return {
-    events,
-    filter,
-    setFilter,
+    allEvents,
+    paginatedEvents: events,
+    statusFilter: filter,
+    setFilter: (f) => { setFilter(f); setPage(1); },
     counts,
     loading,
     error,
-    page,
-    setPage,
-    pagination,
-    refetch: () => fetchData(page),
+    page: safePage,
+    setPage: (p) => setPage(p),
+    pagination: {
+      totalItems,
+      totalPages,
+      currentPage: safePage,
+      itemsPerPage: limit,
+    },
+    refetch: fetchData,
   };
 }
