@@ -22,13 +22,10 @@
 export const ALL_ROLES = ["user", "member", "scanner", "board", "xcom"];
 
 // Can view dashboard, all users, export
-export const ADMIN_ROLES = ["board", "xcom", "board"];
+export const ADMIN_ROLES = ["board", "xcom"];
 
 // Has full control + can create other admin users
 export const SUPER_ADMIN_ROLES = ["xcom"];
 
 // Can do member CRUD (GET/POST/PATCH/DELETE /api/users/members)
 export const MEMBER_MANAGER_ROLES = ["member", "scanner", "board", "xcom"];
-
-// Can view all users and export
-export const USER_VIEWER_ROLES = ["board", "xcom"];
