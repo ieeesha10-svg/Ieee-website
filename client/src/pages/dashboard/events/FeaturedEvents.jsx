@@ -22,7 +22,7 @@ import EventEditModal from "../../../components/dashboard/EventEditModal";
 import EventViewModal from "../../../components/dashboard/EventViewModal";
 
 function EventPicker({ featuredIds, onSelect, onClose }) {
-  const { events, loading, page, setPage, pagination } = useEvents();
+  const { paginatedEvents: events, loading, page, setPage, pagination } = useEvents();
 
   return (
     <Modal open onClose={onClose} title="Select an Event" maxWidth="max-w-2xl">
@@ -94,7 +94,7 @@ export default function FeaturedEvents() {
   const { removeFeatured } = useRemoveFeatured(refetch);
   const { swapFeatured } = useSwapFeatured(refetch);
   const { getEventById } = useGetEvent();
-  const { updateEvent, loading: updateLoading } = useUpdateEvent(refetch);
+  const { updateEvent } = useUpdateEvent(refetch);
 
   const [showPicker, setShowPicker] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -153,7 +153,7 @@ export default function FeaturedEvents() {
   const handleEdit = async (form, coverImageFile, coverImageRemoved) => {
     setSaving(true);
     try {
-      if (editEvent.formId && form.registrationEnabled !== (editFullActivity?.registrationEnabled ?? true)) {
+      if (editEvent.formId && form.formStatus !== (editEvent.form?.status || "Active")) {
         await api.put(`/form/${editEvent.formId}/toggle`);
       }
       await updateEvent(editEvent.id, { ...form, formId: editEvent.formId }, coverImageFile, coverImageRemoved);
@@ -327,6 +327,7 @@ export default function FeaturedEvents() {
                 maxSubmissions: editEvent.form?.maxSubmissions || "",
                 registrationEnabled: editFullActivity?.registrationEnabled ?? editEvent.registrationEnabled,
                 fields: editEvent.form?.fields || [],
+                formStatus: editEvent.form?.status || "Active",
               }}
               onSubmit={handleEdit}
               submitLabel={saving ? "Saving..." : "Save Changes"}
@@ -346,9 +347,9 @@ export default function FeaturedEvents() {
           <div className="relative w-full min-h-full bg-main shadow-xl">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-[#222936] bg-white dark:bg-[#1a1f2e] sticky top-0 z-10">
 							<div className="flex gap-2 items-center">
-								<h2 className="text-base font-bold text-foreground">Homepage Preview</h2>
+								<h2 className="font-bold text-foreground mr-2">Homepage Preview</h2>
 								<Link to='/'>
-									<Button variant="outline">Go to Homepage</Button>
+									<Button variant="link">Go to Homepage</Button>
 								</Link>
 							</div>
               <button onClick={() => setShowPreview(false)} className="p-1.5 text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
