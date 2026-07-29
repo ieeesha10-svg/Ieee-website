@@ -16,7 +16,7 @@ import toast from "react-hot-toast";
 import { useEmailLogs } from "../../hooks/dashboard/useEmailLogs";
 import api from "../../utils/api";
 
-// ─── Components (StatusBadge & FilterChip) ────────────────────────────────
+// Components (StatusBadge & FilterChip)
 function StatusBadge({ status }) {
   const statusConfig = {
     delivered: {
@@ -68,7 +68,7 @@ function FilterChip({ label, active, onClick }) {
   );
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────
+// Main Component
 export default function EmailLogsPage() {
   const {
     logs,
@@ -84,7 +84,7 @@ export default function EmailLogsPage() {
 
   const [exporting, setExporting] = useState(false);
 
-  // ─── Export CSV (بنفس منطق DashboardMembers) ───────────────────────────
+  // Export CSV (بنفس منطق DashboardMembers)
   const handleExportCSV = async () => {
     setExporting(true);
     try {

@@ -21,12 +21,12 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import api from "../../utils/api";
-import { useSearchMembers } from "../../hooks/dashboard/useSearchMembers";
+import { useMembersList } from "../../hooks/dashboard/useMembersList";
 
-/* ────────────────────────────────────────────────────────────────
+/*
    Helper: Build an .xlsx Blob from selected rows (API or Excel).
    The backend now reads headers. We ensure "Email" is explicit.
-   ──────────────────────────────────────────────────────────────── */
+*/
 function buildFinalExcelBlob(selectedRows, emailColName) {
   if (!selectedRows || selectedRows.length === 0) return null;
 
@@ -63,7 +63,7 @@ function buildFinalExcelBlob(selectedRows, emailColName) {
   });
 }
 
-/* ─── Main Component ───────────────────────────────────────────── */
+/*Main Component */
 export default function BulkMailer() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -95,7 +95,7 @@ export default function BulkMailer() {
     }, 0);
   };
 
-  // ── Recipients State ──
+  // Recipients State
   const [recipientMode, setRecipientMode] = useState("api"); // 'api' | 'excel'
   const [selectedEmails, setSelectedEmails] = useState(new Set());
 
@@ -121,7 +121,7 @@ export default function BulkMailer() {
     toggleYear,
     activeRoles,
     toggleRole,
-  } = useSearchMembers({ pageSize: 2000 });
+  } = useMembersList({ pageSize: 2000 });
 
   // Derived state for what to show in the list
   const activeMembersToDisplay = React.useMemo(() => {
@@ -178,7 +178,7 @@ export default function BulkMailer() {
     setSelectedEmails(newSet);
   };
 
-  /* ── Attachment handlers (Email Attachments) ─────────────────── */
+  /* Attachment handlers (Email Attachments) */
   const handleAttachmentChange = (e) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
@@ -190,7 +190,7 @@ export default function BulkMailer() {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  /* ── Recipient Excel Handler ─────────────────────────────────── */
+  /* Recipient Excel Handler */
   const handleRecipientExcelChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -228,9 +228,9 @@ export default function BulkMailer() {
     e.target.value = "";
   };
 
-  /* ── Send handler ────────────────────────────────────────────── */
+  /* Send handler */
   const handleSend = async () => {
-    // ── Validation ──
+    // Validation
     if (!subject.trim()) {
       setStatusMsg({ type: "error", text: "Subject is required." });
       return;
@@ -358,7 +358,7 @@ export default function BulkMailer() {
   return (
     <div className="min-h-screen p-4 md:p-6">
       <div className="max-w-4xl mx-auto space-y-5">
-        {/* ─── Compose Form ─────────────────────────────── */}
+        {/* Compose Form */}
         <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm p-5 md:p-6">
           <h2 className="text-base font-bold text-foreground mb-5">
             New Broadcast
