@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import api from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../layouts/AuthLayout";
+import { ADMIN_ROLES } from "../data/roles";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -25,7 +26,7 @@ const LoginPage = () => {
       toast.success(`Welcome back, ${data.name.split(" ")[0]}!`);
 
       setTimeout(() => {
-        const isAdmin = ["admin", "board", "xcom"].includes(
+        const isAdmin = ADMIN_ROLES.includes(
           data.role?.toLowerCase(),
         );
         navigate(isAdmin ? "/dashboard" : "/profile");

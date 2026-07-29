@@ -10,7 +10,7 @@ export const ACCEPTED_FILE_TYPES = [
 
 export const ACCEPTED_FILE_EXTENSIONS = ".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx";
 
-export const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export function useFileUpload(setFiles, setErrors) {
   const handleFileSelect = (fieldId, file) => {

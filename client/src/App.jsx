@@ -8,6 +8,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { ADMIN_ROLES } from "./data/roles";
 // Layouts
 import DashboardLayout from "./layouts/DashboardLayout";
 import UserLayout from "./layouts/UserLayout";
@@ -57,7 +58,7 @@ const ProtectedRoute = ({ requireAdmin = false }) => {
   if (!user) return <Navigate to="/login" replace />;
 
   if (requireAdmin) {
-    const isAdmin = ["admin", "board", "xcom"].includes(
+    const isAdmin = ADMIN_ROLES.includes(
       user.role?.toLowerCase(),
     );
     if (!isAdmin) return <Navigate to="/login" replace />;
@@ -121,32 +122,32 @@ function App() {
           </Route>
         </Route>
 
-        {/* <Route element={<ProtectedRoute requireAdmin />}> */}
-        <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<DashboardHome />} />
-          <Route path="/dashboard/users" element={<DashboardMembers />} />
-          <Route path="/dashboard/events" element={<DashboardEvents />} />
-          <Route
-            path="/dashboard/events/create-event"
-            element={<CreateEvent />}
-          />
-          <Route
-            path="/dashboard/events/flagship"
-            element={<FeaturedEvents />}
-          />
-          <Route path="/dashboard/crew" element={<DashboardCrew />} />
-          <Route path="/dashboard/email-logs" element={<EmailLogsPage />} />
-          <Route path="/dashboard/forms" element={<DashboardForms />} />
-          <Route path="/dashboard/forms/create-form" element={<CreateForm />} />
-          <Route
-            path="/dashboard/forms/submissions/:formId"
-            element={<ShowFormSubmissions />}
-          />
-          <Route path="/dashboard/email" element={<BulkMailer />} />
-          <Route path="/dashboard/settings" element={<DashboardSettings />} />
-          <Route path="/dashboard/scan" element={<QRScanner />} />
-        </Route>
-        {/* </Route> */}
+        <Route element={<ProtectedRoute requireAdmin />}> 
+	        <Route element={<DashboardLayout />}>
+	          <Route path="/dashboard" element={<DashboardHome />} />
+	          <Route path="/dashboard/users" element={<DashboardMembers />} />
+	          <Route path="/dashboard/events" element={<DashboardEvents />} />
+	          <Route
+	            path="/dashboard/events/create-event"
+	            element={<CreateEvent />}
+	          />
+	          <Route
+	            path="/dashboard/events/flagship"
+	            element={<FeaturedEvents />}
+	          />
+	          <Route path="/dashboard/crew" element={<DashboardCrew />} />
+	          <Route path="/dashboard/email-logs" element={<EmailLogsPage />} />
+	          <Route path="/dashboard/forms" element={<DashboardForms />} />
+	          <Route path="/dashboard/forms/create-form" element={<CreateForm />} />
+	          <Route
+	            path="/dashboard/forms/submissions/:formId"
+	            element={<ShowFormSubmissions />}
+	          />
+	          <Route path="/dashboard/email" element={<BulkMailer />} />
+	          <Route path="/dashboard/settings" element={<DashboardSettings />} />
+	          <Route path="/dashboard/scan" element={<QRScanner />} />
+	        </Route>
+        </Route> 
 
         <Route
           path="*"
