@@ -467,18 +467,27 @@ export default function EventRegistration() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {formData.fields?.map(field => (
-                        <div key={field.id} className={field.type === 'TextArea' || field.type === 'Checkbox' || field.type === 'FileUpload' ? 'md:col-span-2' : ''}>
-                          {renderField(field)}
-                        </div>
-                      ))}
-                    </div>
+                    {formData.fields?.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {formData.fields.map(field => (
+                          <div key={field.id} className={field.type === 'TextArea' || field.type === 'Checkbox' || field.type === 'FileUpload' ? 'md:col-span-2' : ''}>
+                            {renderField(field)}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-border bg-card p-6 text-center">
+                        <p className="text-muted text-lg font-medium">
+																	No information is required for this event. Feel free to click {" "}
+																	<span className='font-bold'>Complete Registration</span> to register.
+                        </p>
+                      </div>
+                    )}
 
                     <Button
                       type="submit"
                       variant="default"
-                      className="mt-auto w-full bg-primary-dark text-white"
+                      className={`mt-auto w-full bg-primary-dark text-white ${submitLoading ? 'opacity-60' : ''}`}
                       disabled={submitLoading || (formData.settings?.requiresLogin && !user)}
                     >
                       {submitLoading ? 'Submitting...' : 'Complete Registration'}
