@@ -48,7 +48,7 @@ export default function UpcomingEvents({ events = [], loading, page = 1, totalPa
 					)}
 				</div>
 
-				{!loading && <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} variant="dark" />}
+				{!loading && <Pagination page={page} totalPages={totalPages} onPageChange={onPageChange} />}
       	{/* <EventCountdown events={events} />*/}
 			</div>
 		</section>
