@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["student", "professional"]
     },
+    // Professional-specific fields
+    organization: { type: String }, // e.g., "Google", "Siemens"
+    roleInOrganization: { type: String }, // e.g., "Software Engineer", "HR Manager"
+    yearsOfExperience: { type: Number }, // e.g., 3, 5, 10
+    reasonForRegistration: { type: String }, // Optional
     // UPDATED ROLES:
     role: {
       type: String,
@@ -68,9 +73,9 @@ const userSchema = new mongoose.Schema(
       min: [15, "Age must be at least 15"],
       max: [99, "Invalid age"],
     },
-    university: { type: String }, // e.g., "MIT", "Stanford"
-    college: { type: String }, // e.g., "Computer Science", "Electrical Engineering"
-    yearOfStudy: { type: Number }, // e.g., 1, 2, 3, 4,5
+    university: { type: String }, // Student-specific: e.g., "MIT", "Stanford"
+    college: { type: String }, // Student-specific: e.g., "Computer Science", "Electrical Engineering"
+    yearOfStudy: { type: Number }, // Student-specific: e.g., 1, 2, 3, 4,5
     interests: [{ type: String }], // e.g., ["AI", "Robotics", "Web Development"]
     committee: { type: String }, // e.g., "HR", "Technical", "PR"
     optionalData: { type: Object }, //to store any additional data

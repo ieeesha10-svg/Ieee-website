@@ -176,7 +176,7 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
       return res.status(404).json({ message: 'Form not found in database' });
     }
     const submissions = await Submission.find({ formId })
-      .populate('userId', 'name email phone university')
+      .populate('userId', 'name email phone university position organization')
       .sort('-createdAt')
       .lean();
 

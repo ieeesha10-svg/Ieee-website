@@ -24,7 +24,11 @@ const importData = async () => {
         email: 'xcom@ieee.org',
         password: hashedPassword,
         role: 'xcom',
+        position: 'professional',
         phone: '01000000000',
+        organization: 'IEEE',
+        roleInOrganization: 'Chairman',
+        yearsOfExperience: 5,
         university: 'Cairo University',
         committee: 'High Board',
         yearOfStudy: 4
@@ -36,6 +40,7 @@ const importData = async () => {
         email: 'sara@board.ieee.org',
         password: hashedPassword,
         role: 'board',
+        position: 'student',
         phone: '01111111111',
         university: 'Ain Shams University',
         college: 'Engineering',
@@ -50,6 +55,7 @@ const importData = async () => {
         email: 'omar@member.com',
         password: hashedPassword,
         role: 'member',
+        position: 'student',
         phone: '01222222222',
         university: 'Helwan University',
         college: 'Computer Science',
@@ -65,6 +71,7 @@ const importData = async () => {
         email: 'ali@student.edu',
         password: hashedPassword,
         role: 'user',
+        position: 'student',
         phone: '01555555555',
         university: 'Cairo University',
         college: 'Engineering',
@@ -74,12 +81,29 @@ const importData = async () => {
         optionalData: { referral: 'Facebook Ad' }
       },
 
-      // --- 5. THE EVENT SCANNER (For Event Day) ---
+      // --- 5. THE PROFESSIONAL (Standard User) ---
+      {
+        name: 'Khaled Hassan',
+        email: 'khaled@professional.com',
+        password: hashedPassword,
+        role: 'member',
+        position: 'professional',
+        phone: '01666666666',
+        age: 30,
+        organization: 'Vodafone',
+        roleInOrganization: 'Software Engineer',
+        yearsOfExperience: 6,
+        reasonForRegistration: 'Interested in IEEE networking events',
+        interests: ['Networking', 'Cloud']
+      },
+
+      // --- 6. THE EVENT SCANNER (For Event Day) ---
       {
         name: 'Gate Volunteer',
         email: 'scanner@ieee.org',
         password: hashedPassword,
         role: 'scanner',
+        position: 'student',
         phone: '01012341234',
         university: 'Cairo University',
         committee: 'Organization'
@@ -95,6 +119,7 @@ const importData = async () => {
     console.log('👔 Board:   sara@board.ieee.org');
     console.log('⭐ Member:  omar@member.com');
     console.log('🎓 Student: ali@student.edu');
+    console.log('💼 Professional: khaled@professional.com');
     console.log('📱 Scanner: scanner@ieee.org');
     console.log('🔑 Password (All): password123');
     console.log('-----------------------------------');
