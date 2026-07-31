@@ -186,7 +186,7 @@ function RecentScanRow({ scan }) {
    Main Component
    ════════════════════════════════════════════════════════════════ */
 export default function QRScanner() {
-  // ── State ───────────────────────────────────────────────────
+  // State
   const [isScanning, setIsScanning] = useState(false);
   const [recentScans, setRecentScans] = useState([]);
   const [modalResult, setModalResult] = useState(null);
@@ -196,7 +196,7 @@ export default function QRScanner() {
   const scannerDivId = "qr-reader";
   const isProcessingRef = useRef(false); // prevent rapid double-scans
 
-  // ── Handle a scanned code ───────────────────────────────────
+  // Handle a scanned code
   const handleScan = useCallback(async (code) => {
     if (isProcessingRef.current) return;
     isProcessingRef.current = true;
@@ -250,7 +250,7 @@ export default function QRScanner() {
     }
   }, []);
 
-  // ── Start / Stop scanner ────────────────────────────────────
+  // Start / Stop scanner
   const startScanner = useCallback(async () => {
     if (scannerRef.current) return;
 
@@ -308,14 +308,14 @@ export default function QRScanner() {
     };
   }, []);
 
-  // ── Modal handlers ──────────────────────────────────────────
+  // Modal handlers
   const dismissModal = () => setModalResult(null);
   const nextScan = () => {
     setModalResult(null);
     if (!isScanning) startScanner();
   };
 
-  // ── Render ──────────────────────────────────────────────────
+  // Render
   const lastScans = recentScans.slice(0, 5);
 
   return (
@@ -347,7 +347,7 @@ export default function QRScanner() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        {/* ─── Left: Scanner ───────────────────────────────────── */}
+        {/* Left: Scanner */}
         <div className="lg:col-span-3 space-y-5">
           {/* Scanner area */}
           <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm p-5">
@@ -421,7 +421,7 @@ export default function QRScanner() {
           </div>
         </div>
 
-        {/* ─── Right: Session Panel ────────────────────────────── */}
+        {/* Right: Session Panel */}
         <div className="lg:col-span-2 space-y-5">
           {/* Session Stats */}
           <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm p-5">
@@ -532,7 +532,7 @@ export default function QRScanner() {
         </div>
       </div>
 
-      {/* ─── Result Modal ──────────────────────────────────────── */}
+      {/* Result Modal */}
       <ResultModal
         result={modalResult}
         onDismiss={dismissModal}

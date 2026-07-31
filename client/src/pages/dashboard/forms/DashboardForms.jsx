@@ -1,13 +1,19 @@
 import React, { useState } from "react";
-import { FileText, Clipboard, Calendar, Eye, Plus, Trash2, X, Check, ChevronDown } from "lucide-react";
+import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import { FileText, Clipboard, Calendar, UserPlus, ClipboardList, MessageSquare, Eye, Plus, Trash2, Check, ChevronDown, Pencil, ExternalLink } from "lucide-react";
+// Hooks & data
 import { useForms } from "../../../hooks/dashboard/forms/useForms";
 import { useDeleteForm } from "../../../hooks/dashboard/forms/useDeleteForm";
 import { useToggleForm } from "../../../hooks/dashboard/forms/useToggleForm";
+import { useUpdateForm } from "../../../hooks/dashboard/forms/useUpdateForm";
+import { SURVEY_COLOR, FEEDBACK_COLOR, CUSTOM_COLOR } from "../../../data/formTypes";
+// Components
 import DeleteModal from "../../../components/DeleteModal";
 import DashFormsSkeleton from "../../../components/skeletons/DashFormsSkeleton";
-import { Link } from "react-router-dom";
+import Modal from "../../../components/Modal";
 
-/* ─── Toggle Switch ────────────────────────────────────────────── */
+/*Toggle Switch */
 function Toggle({ checked, onChange }) {
   return (
     <button
@@ -27,90 +33,146 @@ function Toggle({ checked, onChange }) {
   );
 }
 
-/* ─── Fields Modal ─────────────────────────────────────────────── */
+/* Fields Modal */
 function FieldsModal({ form, onClose }) {
-  if (!form) return null;
   const fieldTypeLabel = (type) => {
     const map = { TextInput: "Short Text", TextArea: "Paragraph", Dropdown: "Dropdown", Checkbox: "Checkbox" };
     return map[type] || type;
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 dark:bg-black/70" onClick={onClose} />
-      <div className="relative bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-[#222936]">
-          <div className="min-w-0">
-            <h2 className="text-base font-bold text-foreground truncate">{form.title}</h2>
-            <p className="text-xs text-muted">{form.fields?.length ?? 0} field{(form.fields?.length ?? 0) !== 1 ? "s" : ""}</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors shrink-0">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="p-5 space-y-3">
-          {form.fields && form.fields.length > 0 ? (
-            form.fields.map((field, i) => (
-              <div key={field._id || i} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-[#222936]">
-                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-[11px] font-bold text-primary">{i + 1}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-semibold text-foreground truncate">{field.label || "Untitled"}</h4>
-                    {field.required && <span className="text-[10px] font-bold text-red-500 shrink-0">*</span>}
-                  </div>
-                  <p className="text-xs text-muted mt-0.5">
-                    <span className="font-medium">{fieldTypeLabel(field.type)}</span>
-                    {(field.type === "Dropdown" || field.type === "Checkbox") && field.options?.length > 0 && (
-                      <span className="text-muted">
-                        <span className="mx-1.5 text-border">·</span>
-                        {field.options.length} option{field.options.length !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                  </p>
-                  {(field.type === "Dropdown" || field.type === "Checkbox") && field.options?.length > 0 && (
-                    <details className="mt-1.5 group">
-                      <summary className="inline-flex items-center gap-1 text-[11px] font-medium text-primary cursor-pointer hover:underline">
-                        <ChevronDown size={11} className="transition-transform group-open:rotate-180" />
-                        View options
-                      </summary>
-                      <ul className="mt-1.5 space-y-1">
-                        {field.options.map((opt, j) => (
-                          <li key={j} className="flex items-center gap-1.5 text-xs text-muted">
-                            {field.type === "Checkbox" ? (
-                              <Check size={10} className="text-green-500 shrink-0" />
-                            ) : (
-                              <span className="w-1.5 h-1.5 rounded-full bg-muted shrink-0" />
-                            )}
-                            {opt}
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
-                </div>
+    <Modal open={!!form} onClose={onClose} title={form?.title || ""}>
+			{form && !form.activityID && (
+				<>
+					<h3 className="text-xs font-bold text-muted uppercase tracking-wide mb-2">Form Details</h3>
+					<div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4 p-3 rounded-lg bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-[#222936] text-xs">
+						{form.description && (
+              <div className="col-span-2">
+                <span className="font-bold text-muted">Description:</span>
+                <p className="text-foreground mt-0.5">{form.description}</p>
               </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted text-center py-6">This form has no fields.</p>
+            )}
+            <div>
+              <span className="font-bold text-muted">Type:</span>
+              <p className="text-foreground capitalize">{form.formType || "custom"}</p>
+            </div>
+            <div>
+              <span className="font-bold text-muted">Max Submissions:</span>
+              <p className="text-foreground">{form.maxSubmissions ? String(form.maxSubmissions) : "Unlimited"}</p>
+            </div>
+            <div>
+              <span className="font-bold text-muted">Max Submissions:</span>
+              <p className="text-foreground">{form.maxSubmissions ? String(form.maxSubmissions) : "Unlimited"}</p>
+            </div>
+          </div>
+
+          <h3 className="text-xs font-bold text-muted uppercase tracking-wide mb-2">Activity</h3>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4 p-3 rounded-lg bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-[#222936] text-xs">
+            <div>
+              <span className="font-bold text-muted">Created:</span>
+              <p className="text-foreground">{form.createdAt}</p>
+            </div>
+            {form.updatedAt && (
+              <div>
+                <span className="font-bold text-muted">Last Update:</span>
+                <p className="text-foreground">{form.updatedAt && form.createdAtRaw && new Date(form.updatedAt).getTime() === new Date(form.createdAtRaw).getTime() ? "Never updated" : new Date(form.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</p>
+              </div>
+            )}
+          </div>
+
+          {(form.startDate || form.endDate) && (
+            <>
+              <h3 className="text-xs font-bold text-muted uppercase tracking-wide mb-2">Schedule</h3>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4 p-3 rounded-lg bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-[#222936] text-xs">
+                {form.startDate && (
+                  <div>
+                    <span className="font-bold text-muted">Start Date:</span>
+                    <p className="text-foreground">{new Date(form.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                  </div>
+                )}
+                {form.endDate && (
+                  <div>
+                    <span className="font-bold text-muted">End Date:</span>
+                    <p className="text-foreground">{new Date(form.endDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                  </div>
+                )}
+              </div>
+            </>
           )}
-        </div>
-      </div>
-    </div>
+				</>
+      )}
+
+      <h3 className="text-xs font-bold text-muted uppercase tracking-wide mb-2">Form Fields</h3>
+      {form?.fields && form.fields.length > 0 ? (
+        form.fields.map((field, i) => (
+          <div key={field._id || i} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-[#222936]">
+            <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+              <span className="text-[11px] font-bold text-primary">{i + 1}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-foreground truncate">{field.label || "Untitled"}</h4>
+                {field.required && <span className="text-[10px] font-bold text-red-500 shrink-0">*</span>}
+              </div>
+              <p className="text-xs text-muted mt-0.5">
+                <span className="font-medium">{fieldTypeLabel(field.type)}</span>
+                {(field.type === "Dropdown" || field.type === "Checkbox") && field.options?.length > 0 && (
+                  <span className="text-muted">
+                    <span className="mx-1.5 text-border">·</span>
+                    {field.options.length} option{field.options.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </p>
+              {(field.type === "Dropdown" || field.type === "Checkbox") && field.options?.length > 0 && (
+                <details className="mt-1.5 group">
+                  <summary className="inline-flex items-center gap-1 text-[11px] font-medium text-primary cursor-pointer hover:underline">
+                    <ChevronDown size={11} className="transition-transform group-open:rotate-180" />
+                    View options
+                  </summary>
+                  <ul className="mt-1.5 space-y-1">
+                    {field.options.map((opt, j) => (
+                      <li key={j} className="flex items-center gap-1.5 text-xs text-muted">
+                        {field.type === "Checkbox" ? (
+                          <Check size={10} className="text-green-500 shrink-0" />
+                        ) : (
+                          <span className="w-1.5 h-1.5 rounded-full bg-muted shrink-0" />
+                        )}
+                        {opt}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="text-sm text-muted text-center py-6">This form has no fields.</p>
+      )}
+    </Modal>
   );
 }
 
-/* ─── Single Form Row ──────────────────────────────────────────── */
-function FormRow({ form, onToggle, onDelete, onViewFields }) {
+/*Single Form Row */
+function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
+  const dateExpired = form.endDate && new Date(form.endDate) < new Date();
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-5 py-4 border-b border-gray-100 dark:border-[#222936] last:border-b-0 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
       {/* Icon + Info */}
       <button type="button" onClick={() => onViewFields(form)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${form.activityID ? "bg-blue-50 dark:bg-blue-900/20" : "bg-gray-100 dark:bg-gray-700/50"}`}>
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${form.activityID ? "bg-blue-50 dark:bg-blue-900/20" : ""}`}
+          style={form.activityID ? {} : {
+            backgroundColor: form.formType === "survey" ? `${SURVEY_COLOR}33` : form.formType === "feedback" ? `${FEEDBACK_COLOR}33` : form.formType === "registration" ? "#0096ff33" : `${CUSTOM_COLOR}33`
+          }}>
           {form.activityID ? (
             <Calendar size={16} className="text-blue-500 dark:text-blue-400" />
+          ) : form.formType === "registration" ? (
+            <UserPlus size={16} style={{ color: "#0096ff" }} />
+          ) : form.formType === "survey" ? (
+            <ClipboardList size={16} style={{ color: SURVEY_COLOR }} />
+          ) : form.formType === "feedback" ? (
+            <MessageSquare size={16} style={{ color: FEEDBACK_COLOR }} />
           ) : (
-            <Clipboard size={16} className="text-muted" />
+            <Clipboard size={16} style={{ color: CUSTOM_COLOR }} />
           )}
         </div>
         <div className="min-w-0">
@@ -137,7 +199,18 @@ function FormRow({ form, onToggle, onDelete, onViewFields }) {
           >
             {form.isOpen ? "Open" : "Closed"}
           </span>
-          <Toggle checked={form.isOpen} onChange={() => onToggle(form.id, form.title, !form.isOpen)} />
+          <div className="relative group">
+						<Toggle
+							checked={form.isOpen}
+							onChange={dateExpired ? undefined : () => onToggle(form.id, form.title, !form.isOpen)}
+						/>
+            {dateExpired && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs font-medium text-white bg-gray-800 dark:bg-gray-700 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                This form reached its endDate and cannot be opened
+                <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 dark:bg-gray-700 rotate-45" />
+              </div>
+            )}
+          </div>
         </div>
         {form.responses > 0 ? (
           <Link
@@ -173,19 +246,33 @@ function FormRow({ form, onToggle, onDelete, onViewFields }) {
             <Trash2 size={15} />
           </button>
         )}
+        <button
+          type="button"
+          onClick={() => onEdit(form)}
+          aria-label={`Edit dates for ${form.title}`}
+          className="p-1.5 text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+        >
+          <Pencil size={15} />
+        </button>
       </div>
     </div>
   );
 }
 
-/* ─── Main Component ───────────────────────────────────────────── */
+/* Main Component */
 export default function DashboardForms() {
-  const { forms, setForms, isLoading, openCount, closedCount, totalResponses, refetch } =
+  const { forms, setForms, isLoading, openCount, closedCount, refetch } =
     useForms();
   const { deleteForm } = useDeleteForm(refetch);
   const { toggleFormStatus } = useToggleForm();
+  const { updateForm } = useUpdateForm(refetch);
   const [deletingId, setDeletingId] = useState(null);
   const [fieldsModalForm, setFieldsModalForm] = useState(null);
+  const [editingForm, setEditingForm] = useState(null);
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
+  const [editMaxSubmissions, setEditMaxSubmissions] = useState("");
+  const [savingDates, setSavingDates] = useState(false);
   const [filter, setFilter] = useState("all");
 
   if (isLoading) return <DashFormsSkeleton />;
@@ -202,6 +289,31 @@ export default function DashboardForms() {
   const handleToggle = (id, title, becomingOpen) => {
     setForms((prev) => prev.map((f) => (f.id === id ? { ...f, isOpen: becomingOpen } : f)));
     toggleFormStatus(id, title, becomingOpen);
+  };
+
+  const handleOpenEdit = (form) => {
+    setEditingForm(form);
+    setEditStartDate(form.startDate ? form.startDate.split("T")[0] : "");
+    setEditEndDate(form.endDate ? form.endDate.split("T")[0] : "");
+    setEditMaxSubmissions(form.maxSubmissions ?? "");
+  };
+
+  const handleSaveDates = async () => {
+    if (!editingForm) return;
+    setSavingDates(true);
+    try {
+      await updateForm(editingForm.id, {
+        startDate: new Date(editStartDate + "T00:00:00.000Z").toISOString(),
+        endDate: new Date(editEndDate + "T23:59:59.999Z").toISOString(),
+        maxSubmissions: editMaxSubmissions === "" ? undefined : Number(editMaxSubmissions),
+      });
+      toast.success("Form updated successfully");
+      setEditingForm(null);
+    } catch {
+      // error handled by useUpdateForm
+    } finally {
+      setSavingDates(false);
+    }
   };
 
   const pill = (key, label, dotColor, count) => (
@@ -228,21 +340,23 @@ export default function DashboardForms() {
           {pill("open", "Open", "bg-primary", openCount)}
           {pill("closed", "Closed", "bg-gray-400", closedCount)}
           {pill("events", "Event Forms", "bg-blue-500", forms.filter((f) => f.activityID).length)}
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#1a1f2e] opacity-70">
-            <span className="text-primary font-extrabold">
-              {totalResponses}
-            </span>
-            Total Responses
-          </span>
         </div>
 
 				{/* Action Button */}
-        <Link to={'/dashboard/forms/create-form'}>
-	        <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
-	          <Plus size={16} />
-	          New Form
-					</button>
-        </Link>
+				
+        <div className="flex items-center gap-2">
+          <a href="/applications" target="_blank" rel="noopener noreferrer">
+            <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/10 transition-colors shadow-sm w-full sm:w-auto">
+            <ExternalLink size={16} /> View on Site
+            </button>
+          </a>
+          <Link to={'/dashboard/forms/create-form'}>
+            <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
+              <Plus size={16} />
+              New Form
+            </button>
+          </Link>
+        </div>
       </div>
 
       {/* Forms List */}
@@ -255,6 +369,7 @@ export default function DashboardForms() {
               onToggle={handleToggle}
               onDelete={setDeletingId}
               onViewFields={setFieldsModalForm}
+              onEdit={handleOpenEdit}
             />
           ))
         ) : (
@@ -276,6 +391,61 @@ export default function DashboardForms() {
         form={fieldsModalForm}
         onClose={() => setFieldsModalForm(null)}
       />
+
+      {/* Edit Dates Modal */}
+      <Modal open={!!editingForm} onClose={() => !savingDates && setEditingForm(null)} title="Edit Form">
+        <div className="space-y-4">
+          <p className="text-muted truncate">{editingForm?.title}</p>
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Start Date</label>
+            <input
+              type="date"
+              value={editStartDate}
+              onChange={(e) => setEditStartDate(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">End Date</label>
+            <input
+              type="date"
+              value={editEndDate}
+              onChange={(e) => setEditEndDate(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Max Submissions</label>
+            <input
+              type="number"
+              min="0"
+              value={editMaxSubmissions}
+              onChange={(e) => setEditMaxSubmissions(e.target.value)}
+              placeholder="Leave empty for unlimited"
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+            />
+          </div>
+          {editStartDate && editEndDate && new Date(editStartDate) > new Date(editEndDate) && (
+            <p className="text-xs text-red-500 font-medium">Start date cannot be after end date.</p>
+          )}
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              onClick={() => setEditingForm(null)}
+              disabled={savingDates}
+              className="px-3 py-2 text-sm font-medium text-foreground bg-white dark:bg-[#1a1f2e] border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveDates}
+              disabled={savingDates || !editStartDate || !editEndDate || new Date(editStartDate) > new Date(editEndDate)}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {savingDates ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <DeleteModal
         isOpen={!!deletingId}

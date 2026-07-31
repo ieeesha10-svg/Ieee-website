@@ -5,17 +5,22 @@ const TYPE_COLOR_MAP = {
   webinar: "indigo",
 };
 
-export function getTypeColor(type) {
+function getTypeColor(type) {
   return TYPE_COLOR_MAP[type] || "blue";
 }
 
-export function formatDate(dateStr) {
+function formatDate(dateStr) {
   if (!dateStr) return "";
   return new Date(dateStr).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+}
+
+export function isHtmlContentEmpty(html) {
+  if (!html) return true;
+  return html.replace(/<[^>]*>/g, "").trim().length === 0;
 }
 
 export function formatEventDate(dateStr) {
@@ -78,12 +83,13 @@ export function buildPayload(payload) {
     speakers,
   };
 
-  if (payload.startDate) body.startDate = payload.startDate;
-  if (payload.endDate) body.endDate = payload.endDate;
+  if (payload.startDate) body.startDate = new Date(payload.startDate).toISOString();
+  if (payload.endDate) body.endDate = new Date(payload.endDate + (payload.endDate.includes("T") ? "" : "T23:59:59.999Z")).toISOString();
   if (payload.maxSubmissions !== "" && payload.maxSubmissions != null) {
     body.maxSubmissions = Number(payload.maxSubmissions);
   }
   if (payload.fields) body.fields = payload.fields;
+  if (payload.formStatus) body.formStatus = payload.formStatus;
 
   return body;
 }

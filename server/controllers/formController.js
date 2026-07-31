@@ -46,7 +46,7 @@ const getForm = catchAsync(async (req, res) => {
     }
 
     // Check if form is Active
-    if (form.endDate < new Date() || form.status !== "Active") {
+    if (new Date(form.endDate).setHours(23,59,59,999) < new Date() || form.status !== "Active") {
       throw new AppError('This form is currently closed.', 400);
     }
 

@@ -1,11 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { Filter, ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
+import { useMembersList } from '../../hooks/dashboard/useMembersList';
 import { useSearchMembers } from '../../hooks/dashboard/useSearchMembers';
-import { useAdvancedSearch } from '../../hooks/dashboard/useAdvancedSearch';
 import { useUpdateRole } from '../../hooks/dashboard/useUpdateRole';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import AdvancedSearch from '../../components/AdvancedSearch';
+import MemberFilters from '../../components/dashboard/MemberFilters';
+import Button from '../../components/Button';
 
 export default function DashboardMembers() {
   const { user } = useAuth();
@@ -27,9 +29,9 @@ export default function DashboardMembers() {
     loading: membersLoading,
     resetFilters,
     hasActiveFilters,
-  } = useSearchMembers();
+  } = useMembersList();
 
-  const { keyword, setKeyword, results, isLoading: searchLoading } = useAdvancedSearch();
+  const { keyword, setKeyword, results, isLoading: searchLoading } = useSearchMembers();
   const isSearching = keyword.trim().length >= 2;
   const displayMembers = isSearching ? results : members;
   const loading = isSearching ? searchLoading : membersLoading;
@@ -77,6 +79,32 @@ export default function DashboardMembers() {
 
   return (
     <div className="min-h-screen bg-main p-4 md:p-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap bg-card-alt rounded-xl shadow-sm p-4 mb-4">
+        <MemberFilters
+          collegeFilters={collegeFilters}
+          yearFilters={yearFilters}
+          roleFilters={roleFilters}
+          activeColleges={activeColleges}
+          toggleCollege={toggleCollege}
+          activeYears={activeYears}
+          toggleYear={toggleYear}
+          activeRoles={activeRoles}
+          toggleRole={toggleRole}
+        />
+
+        <Button
+          variant='outline'
+          onClick={resetFilters}
+          disabled={!hasActiveFilters}
+          className={`text-muted bg-card-alt text-sm border border-border rounded-lg shrink-0 transition-colors hidden md:inline-flex
+            ${hasActiveFilters ?
+              "hover:text-foreground hover:border-primary/30" :
+              "hover:bg-bg-card-alt opacity-80 cursor-not-allowed"}`}
+        >
+          Reset Filters
+        </Button>
+      </div>
+
       <div className="bg-card-alt rounded-xl shadow-sm p-4 mb-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-center gap-5">
           <div className="flex-1 flex flex-col md:flex-row gap-5 w-full">
@@ -87,99 +115,36 @@ export default function DashboardMembers() {
               placeholder="Search members by name or email..."
               className="w-full md:max-w-xs"
             />
-
-            <div className="flex flex-col gap-3 flex-1">
-              <div className='flex flex-wrap items-center gap-1'>
-                <div className='flex items-center gap-1'>
-                  <Filter className="w-4 h-4 text-muted" />
-                  <span className="text-xs text-muted font-bold">College</span>
-                </div>
-
-                {collegeFilters.map((college) => (
-                  <button
-                    key={college}
-                    onClick={() => toggleCollege(college)}
-                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                      activeColleges.includes(college)
-                        ? "bg-primary text-white border-primary"
-                        : "bg-card-alt text-muted border border-border hover:border-primary hover:text-primary"
-                    }`}
-                  >
-                    {college}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <Filter className="w-4 h-4 text-muted" />
-                  <span className="text-xs text-muted font-bold">Year</span>
-                </div>
-
-                {yearFilters.map((year) => (
-                  <button
-                    key={year}
-                    onClick={() => toggleYear(year)}
-                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                      activeYears.includes(year)
-                        ? "bg-primary text-white border-primary"
-                        : "bg-card-alt text-muted border border-border hover:border-primary hover:text-primary"
-                    }`}
-                  >
-                    {year}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <Filter className="w-4 h-4 text-muted" />
-                  <span className="text-xs text-muted font-bold">Role</span>
-                </div>
-
-                {roleFilters.map((role) => (
-                  <button
-                    key={role}
-                    onClick={() => toggleRole(role)}
-                    className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                      activeRoles.includes(role)
-                        ? "bg-primary text-white border-primary"
-                        : "bg-card-alt text-muted border border-border hover:border-primary hover:text-primary"
-                    }`}
-                  >
-                    {role}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
-					<div className="flex flex-col gap-1 lg:gap-2">
-			      <button
-	            onClick={handleExport}
-	            disabled={exporting || selectedIds.length === 0}
-	            title={selectedIds.length === 0 ? "Select members to export" : ""}
-	            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 w-full lg:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
-	          >
-	            {exporting ? (
-	              <Loader2 size={16} className="animate-spin" />
-	            ) : (
-	              <Download size={16} />
-	            )}
-	            Export as Excel ({selectedIds.length})
+          <div className="flex flex-col gap-1 lg:gap-2">
+            <button
+              onClick={handleExport}
+              disabled={exporting || selectedIds.length === 0}
+              title={selectedIds.length === 0 ? "Select members to export" : ""}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 w-full lg:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {exporting ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Download size={16} />
+              )}
+              Export as Excel ({selectedIds.length})
 						</button>
-						{/* hasActiveFilters*/}
 						
-	          <button
-							onClick={resetFilters}
-							disabled={!hasActiveFilters}
-							className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-muted bg-card-alt border border-border rounded-lg
-													${hasActiveFilters ? "hover:text-foreground hover:border-primary/30" : "opacity-80 cursor-not-allowed"}	transition-colors shrink-0 w-full lg:w-auto`}
-	          >
-	            Reset Filters
-	          </button>
-					</div>
-          
+            <Button
+              variant='outline'
+              onClick={resetFilters}
+              disabled={!hasActiveFilters}
+              className={`text-muted bg-card-alt text-sm border border-border rounded-lg shrink-0 transition-colors md:hidden
+                ${hasActiveFilters ?
+                  "hover:text-foreground hover:border-primary/30" :
+                  "hover:bg-bg-card-alt opacity-80 cursor-not-allowed"}`}
+            >
+              Reset Filters
+            </Button>
+            
+          </div>
         </div>
       </div>
 

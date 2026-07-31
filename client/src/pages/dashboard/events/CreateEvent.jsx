@@ -6,17 +6,13 @@ import {
 import { useCreateEvent } from "../../../hooks/dashboard/events/useCreateEvent";
 import { toLocalDatetimeString } from "../../../utils/dateUtils";
 import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
-import { EVENT_TYPES } from "../../../data/eventTypes";
+import { EVENT_TYPES, EVENT_TYPE_LABELS } from "../../../data/eventTypes";
 import SectionCard from "../../../components/SectionCard";
 import RequiredAsterisk from "../../../components/RequiredAsterisk";
 import RichTextEditor from "../../../components/dashboard/RichTextEditor";
-
-function isHtmlContentEmpty(html) {
-  if (!html) return true;
-  return html.replace(/<[^>]*>/g, "").trim().length === 0;
-}
-
-const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Workshop", webinar: "Webinar" };
+import Tooltip from "../../../components/Tooltip";
+import SpeakerManager from "../../../components/SpeakerManager";
+import { isHtmlContentEmpty } from "../../../utils/eventUtils";
 
 const EMPTY_FORM = {
   title: "", content: "", description: "", type: "event", location: "", speakers: [],
@@ -34,10 +30,6 @@ export default function CreateEvent() {
   const { createEvent } = useCreateEvent();
 
   const [form, setForm] = useState(EMPTY_FORM);
-  const [speakerName, setSpeakerName] = useState("");
-  const [speakerTitle, setSpeakerTitle] = useState("");
-  const [speakerBio, setSpeakerBio] = useState("");
-  const [speakerImage, setSpeakerImage] = useState("");
   const [fieldsList, setFieldsList] = useState(EMPTY_FORM.fields);
   const [dragIndex, setDragIndex] = useState(null);
   const [newFieldLabel, setNewFieldLabel] = useState("");
@@ -45,6 +37,7 @@ export default function CreateEvent() {
   const [saving, setSaving] = useState(false);
   const [coverImageFile, setCoverImageFile] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState(null);
+  const [formStatus, setFormStatus] = useState("Active");
 
   const set = (key, value) => setForm((p) => ({ ...p, [key]: value }));
 
@@ -118,33 +111,17 @@ export default function CreateEvent() {
     setCoverImagePreview(null);
   };
 
-  const addSpeaker = () => {
-    if (!speakerName.trim()) return;
-    set("speakers", [...form.speakers, {
-      name: speakerName.trim(),
-      title: speakerTitle.trim(),
-      bio: speakerBio.trim(),
-      image: speakerImage.trim(),
-    }]);
-    setSpeakerName("");
-    setSpeakerTitle("");
-    setSpeakerBio("");
-    setSpeakerImage("");
-  };
-
-  const removeSpeaker = (idx) => {
-    set("speakers", form.speakers.filter((_, i) => i !== idx));
-  };
-
   const datesInvalid = form.startDate && form.endDate && new Date(form.startDate) > new Date(form.endDate);
   const endDatePassed = form.endDate && new Date(form.endDate) < new Date();
+  const effectiveFormStatus = endDatePassed ? "Closed" : formStatus;
+  const effectiveRegistrationEnabled = endDatePassed ? false : form.registrationEnabled;
 
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      await createEvent({ ...form, fields: fieldsList }, coverImageFile);
+      await createEvent({ ...form, fields: fieldsList, formStatus: effectiveFormStatus }, coverImageFile);
       toast.success("Activity created successfully!");
-      navigate("/dashboard/events");
+      navigate("/dashboard/events", { state: { goToLastPage: true } });
     } catch (err) {
       const msg = err.response?.data?.message || err.response?.data?.error || err.message || "Failed to create activity";
       toast.error(msg);
@@ -170,7 +147,7 @@ export default function CreateEvent() {
 
       {/* Section 1: Event Details */}
       <SectionCard>
-        <h2 className="text-base font-bold text-foreground mb-5">Event Details</h2>
+        <h2 className="font-bold text-foreground mb-5">Event Details</h2>
         <div className="space-y-4">
           <div>
             <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Title <RequiredAsterisk /></label>
@@ -248,7 +225,7 @@ export default function CreateEvent() {
 
       {/* Section 2: Schedule & Registration */}
       <SectionCard>
-        <h2 className="text-base font-bold text-foreground mb-5">Schedule & Registration</h2>
+        <h2 className="font-bold text-foreground mb-5">Schedule & Registration</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Start Date</label>
@@ -266,56 +243,65 @@ export default function CreateEvent() {
             <input type="number" min="0" value={form.maxSubmissions} onChange={(e) => set("maxSubmissions", e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Leave empty for unlimited" />
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-muted uppercase tracking-wide mb-1.5">Registration</label>
-            <button
-              type="button"
-              disabled={endDatePassed}
-              onClick={() => set("registrationEnabled", !form.registrationEnabled)}
-              className={`mt-1 w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${endDatePassed ? "bg-red-100 dark:bg-red-800/30 border-red-300 dark:border-red-500 text-muted cursor-not-allowed opacity-60" : form.registrationEnabled ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-[#222936] text-muted"}`}
-            >
-              {endDatePassed ? "Closing Registration" : form.registrationEnabled ? "Accepting Registrations" : "Closing Registration"}
-            </button>
+            <label className="block text-[10px] font-bold text-muted uppercase tracking-wide mb-1.5">Section</label>
+            <div className="flex rounded-lg border border-gray-200 dark:border-[#222936] overflow-hidden">
+              <button
+                type="button"
+                disabled={endDatePassed}
+                onClick={() => set("registrationEnabled", true)}
+                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+                  endDatePassed
+                    ? "bg-gray-100 dark:bg-gray-800 text-muted cursor-not-allowed opacity-60"
+                    : effectiveRegistrationEnabled
+                      ? "bg-primary/10 text-primary"
+                      : "bg-white dark:bg-[#111827] text-muted hover:bg-gray-50 dark:hover:bg-gray-800"
+                }`}
+              >
+                Upcoming Events
+              </button>
+              <div className="w-px bg-gray-200 dark:border-[#222936]" />
+              <button
+                type="button"
+                disabled={endDatePassed}
+                onClick={() => set("registrationEnabled", false)}
+                className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+                  endDatePassed
+                    ? "bg-primary/10 text-primary cursor-not-allowed opacity-60"
+                    : effectiveRegistrationEnabled
+                      ? "bg-white dark:bg-[#111827] text-muted hover:bg-gray-50 dark:hover:bg-gray-800"
+                      : "bg-primary/10 text-primary"
+                }`}
+              >
+                Previous Events
+              </button>
+            </div>
           </div>
         </div>
       </SectionCard>
 
       {/* Section 3: Speakers */}
       <SectionCard>
-        <h2 className="text-base font-bold text-foreground mb-5">Speakers</h2>
-        <div className="space-y-2">
-          <input value={speakerName} onChange={(e) => setSpeakerName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker name" />
-          <input value={speakerTitle} onChange={(e) => setSpeakerTitle(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker title (e.g. Senior Engineer)" />
-          <input value={speakerImage} onChange={(e) => setSpeakerImage(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors" placeholder="Speaker image URL (optional)" />
-          <textarea value={speakerBio} onChange={(e) => setSpeakerBio(e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none" placeholder="Speaker bio" />
-          <button type="button" onClick={addSpeaker} disabled={!speakerName.trim()} className="px-3 py-2 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Add Speaker</button>
-        </div>
-        {form.speakers.length > 0 && (
-          <div className="space-y-1.5 mt-3">
-            {form.speakers.map((s, i) => (
-              <div key={i} className="flex items-center gap-3 px-3 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                {s.image ? (
-                  <img src={s.image} alt={s.name} className="w-7 h-7 rounded-full object-cover shrink-0" />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-muted shrink-0">{s.name[0]}</div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm text-foreground font-medium">{s.name}</span>
-                  {s.title && <span className="text-xs text-muted ml-2">— {s.title}</span>}
-                </div>
-                <button type="button" onClick={() => removeSpeaker(i)} className="text-muted hover:text-red-500 transition-colors"><X size={13} /></button>
-              </div>
-            ))}
-          </div>
-        )}
+        <h2 className="font-bold text-foreground mb-5">Speakers</h2>
+        <SpeakerManager speakers={form.speakers} onChange={(s) => set("speakers", s)} />
       </SectionCard>
 
       {/* Section 4: Form Fields */}
       <SectionCard>
         <div className="flex items-center gap-3 mb-5">
-          <h2 className="text-base font-bold text-foreground">Form Fields</h2>
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary-dark/10 dark:border-primary-light/10">
+          <h2 className="font-bold text-foreground">Form Fields</h2>
+          <span className="hidden lg:inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary/10 text-primary border border-primary-dark/10 dark:border-primary-light/10">
             {fieldsList.length} {fieldsList.length === 1 ? "field" : "fields"}
           </span>
+          <Tooltip text={endDatePassed ? "End date is behind — Cannot accept submissions" : ""}>
+            <button
+              type="button"
+              disabled={endDatePassed}
+              onClick={() => setFormStatus(p => p === "Active" ? "Closed" : "Active")}
+              className={`ml-auto px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${endDatePassed ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700/40 text-red-600 dark:text-red-400 cursor-not-allowed opacity-60" : formStatus === "Active" ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/40 text-green-700 dark:text-green-300" : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700/40 text-red-600 dark:text-red-400"}`}
+            >
+              {endDatePassed || formStatus !== "Active" ? "Not Accepting" : "Accepting Submissions"}
+            </button>
+          </Tooltip>
         </div>
 
         <div className="rounded-xl border border-gray-200 dark:border-[#222936] overflow-hidden">

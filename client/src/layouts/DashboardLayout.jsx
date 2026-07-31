@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Search, X, Download, Loader2, Mail, GraduationCap, Calendar, Shield } from "lucide-react";
+import { Search, Download, Loader2, Mail, GraduationCap, Calendar, Shield } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import AdminSidebar from "../components/AdminSidebar";
-import Notifications from "../components/Notifications";
+// import Notifications from "../components/Notifications";
+import Modal from "../components/Modal";
 import ThemeToggle from "../components/ThemeToggle";
 import { navItems, toolsItems } from "../data/DashboardNav";
 import DashNavSkeleton from "../components/skeletons/DashNavSkeleton";
-import { useSearchMembers } from "../hooks/dashboard/useSearchMembers";
+import { useMembersList } from "../hooks/dashboard/useMembersList";
 import api from "../utils/api";
 
 const pageMeta = [...navItems, ...toolsItems].reduce((acc, item) => {
@@ -38,7 +39,7 @@ const DashboardLayout = () => {
     loading: searchLoading,
     search: searchTerm,
     setSearch: setSearchTerm,
-  } = useSearchMembers({ pageSize: 5 });
+  } = useMembersList({ pageSize: 5 });
 
   useEffect(() => {
     if (pathname === "/dashboard/forms") {
@@ -108,7 +109,7 @@ const DashboardLayout = () => {
   )?.[1] || { title: "Dashboard", sub: "", buttonText: "" };
 
   if (pathname === "/dashboard/forms" && formStats) {
-    meta.sub = `${formStats.count} ${formStats.count === 1 ? "form" : "forms"} — ${formStats.activeCount} currently open`;
+    meta.sub = `${formStats.count} ${formStats.count === 1 ? "form" : "forms"}`;
   }
 
   if (pathname === "/dashboard/events" && eventCount != null) {
@@ -121,9 +122,9 @@ const DashboardLayout = () => {
 
   const rightSide = (
     <div className="flex items-center gap-4">
-      <Notifications />
+      {/* <Notifications />*/}
       <ThemeToggle />
-      <Link to="/profile">
+      <Link to="/dashboard/settings">
         <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
           {user?.name
             ? user.name
@@ -223,28 +224,21 @@ const DashboardLayout = () => {
       </main>
 
       {/* User Detail Modal */}
-      {selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setSelectedUser(null)} />
-          <div className="relative bg-white dark:bg-[#1A1F2E] rounded-2xl border border-border shadow-2xl w-full max-w-md overflow-hidden">
-            <button
-              onClick={() => setSelectedUser(null)}
-              className="absolute top-4 right-4 p-1 rounded-full hover:bg-muted/10 transition-colors"
-            >
-              <X size={20} className="text-muted" />
-            </button>
-
-            <div className="flex flex-col items-center pt-10 pb-6 px-6 border-b border-border">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white mb-4 ${selectedUser.avatarColor}`}>
-                {selectedUser.initials}
-              </div>
-              <h3 className="text-lg font-bold text-foreground">{selectedUser.name}</h3>
-              <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full mt-2 capitalize">
-                {selectedUser.role}
-              </span>
+      <Modal open={!!selectedUser} onClose={() => setSelectedUser(null)} title={selectedUser?.name || ""}>
+        {selectedUser && (
+          <div className="flex flex-col items-center pb-6 border-b border-border">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white mb-4 ${selectedUser.avatarColor}`}>
+              {selectedUser.initials}
             </div>
+            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full capitalize">
+              {selectedUser.role}
+            </span>
+          </div>
+        )}
 
-            <div className="p-6 flex flex-col gap-4">
+        <div className="pt-4 flex flex-col gap-4">
+          {selectedUser && (
+            <>
               <div className="flex items-center gap-3">
                 <Mail size={16} className="text-muted shrink-0" />
                 <span className="text-sm text-foreground">{selectedUser.email}</span>
@@ -274,10 +268,10 @@ const DashboardLayout = () => {
                 )}
                 Export as Excel
               </button>
-            </div>
-          </div>
+            </>
+          )}
         </div>
-      )}
+      </Modal>
     </div>
   );
 };

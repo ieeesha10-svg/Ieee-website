@@ -3,14 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
-
-const SURVEY_COLOR = '#5DD9B0';
-const FEEDBACK_COLOR = '#B08FFF';
-const CUSTOM_COLOR = '#FF9F43';
+import { SURVEY_COLOR, FEEDBACK_COLOR, CUSTOM_COLOR } from "../../data/formTypes";
 
 const CATEGORY_STYLES = {
   Registration: {
-    badge: "border bg-primary/10 text-primary-light dark:text-primary border-primary-light/20 dark:border-primary/20",
+    badge: "border bg-primary/10 text-primary-light dark:text-primary border-primary-light/10 dark:border-primary/10",
     label: "Registration",
   },
   Survey: {

@@ -1,22 +1,30 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Calendar, MapPin, Eye, Plus, Loader2,
-  Trash2, Edit, Star,
+  Trash2, Edit, ExternalLink, Star, Info, X,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../../utils/api";
 import toast from "react-hot-toast";
+// Components
+import Pagination from "../../../components/events/Pagination"
 import Skeleton from "../../../components/skeletons/DashEventsSkeleton"
+import UpcomingEvents from "../../../sections/events/UpcomingEvents"
+import PreviousEvents from "../../../sections/events/PreviousEvents"
+// Hooks
 import { toLocalDatetimeString } from "../../../utils/dateUtils";
 import { useEvents } from "../../../hooks/dashboard/events/useEvents";
 import { useUpdateEvent } from "../../../hooks/dashboard/events/useUpdateEvent";
 import { useDeleteEvent } from "../../../hooks/dashboard/events/useDeleteEvent";
 import { useGetEvent } from "../../../hooks/dashboard/events/useGetEvent";
+import { EVENT_TYPE_LABELS } from "../../../data/eventTypes";
+
+const EVENTS_PER_PAGE = 6;
+// Modals
 import EventEditModal from "../../../components/dashboard/EventEditModal";
 import Modal from "../../../components/Modal"
 import DeleteModal from "../../../components/DeleteModal"
 import EventViewModal from "../../../components/dashboard/EventViewModal"
-import Pagination from "../../../components/events/Pagination"
 
 const TYPE_COLORS = {
   teal: { bg: "bg-teal-50 dark:bg-teal-900/25", text: "text-teal-700 dark:text-teal-300", border: "border-teal-200 dark:border-teal-700/40" },
@@ -33,8 +41,6 @@ const STATUS_STYLES = {
 };
 
 const FILTERS = ["All", "Active", "Completed"];
-
-const EVENT_TYPE_LABELS = { general: "General", event: "Event", workshop: "Workshop", webinar: "Webinar" };
 
 function EventCard({ event, onView, onEdit, onDelete }) {
   const typeStyle = TYPE_COLORS[event.typeColor] || TYPE_COLORS.blue;
@@ -79,20 +85,51 @@ function EventCard({ event, onView, onEdit, onDelete }) {
   );
 }
 
-/* ─── Main Component ─────────────────────────────────────────────── */
+/* Main Component */
 export default function DashboardEvents() {
-  const { events, filter, setFilter, counts, loading, error, page, setPage, pagination, refetch } = useEvents();
+  const { allEvents, paginatedEvents: events, statusFilter, setFilter, counts, loading, error, page, setPage, pagination, refetch } = useEvents();
   const { updateEvent } = useUpdateEvent(refetch);
   const { deleteEvent } = useDeleteEvent(refetch);
   const { getEventById } = useGetEvent();
 
-	const navigate = useNavigate();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const goToLastPage = useRef(location.state?.goToLastPage);
   const [editEvent, setEventEditModal] = useState(null);
   const [editFullActivity, setEditFullActivity] = useState(null);
   const [viewEventId, setViewEventId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [saving, setSaving] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+  const [showFilterInfo, setShowFilterInfo] = useState(false);
+  const [previewSection, setPreviewSection] = useState(null);
+  const [previewPage, setPreviewPage] = useState(1);
+
+  const previewEvents = useMemo(() => {
+    if (!previewSection) return { events: [], totalPages: 1 };
+    const filtered = allEvents.filter((e) =>
+      previewSection === "upcoming"
+        ? e.registrationEnabled !== false
+        : e.registrationEnabled === false
+    );
+    const total = Math.ceil(filtered.length / EVENTS_PER_PAGE) || 1;
+    const safePage = Math.min(previewPage, total);
+    const start = (safePage - 1) * EVENTS_PER_PAGE;
+    const mapped = filtered.slice(start, start + EVENTS_PER_PAGE).map((e) => ({
+      ...e,
+      image: e.coverImage,
+      badge: e.type?.charAt(0).toUpperCase() + e.type?.slice(1) || "Event",
+      dateTime: { day: e.date, time: "" },
+    }));
+    return { events: mapped, totalPages: total };
+  }, [previewSection, allEvents, previewPage]);
+
+  useEffect(() => {
+    if (!loading && goToLastPage.current) {
+      goToLastPage.current = false;
+      setPage(pagination.totalPages);
+    }
+  }, [loading, pagination.totalPages, setPage]);
 
   useEffect(() => {
     if (!editEvent) { setEditFullActivity(null); return; }
@@ -108,7 +145,7 @@ export default function DashboardEvents() {
   const handleEdit = async (form, coverImageFile, coverImageRemoved) => {
     setSaving(true);
     try {
-      if (editEvent.formId && form.registrationEnabled !== (editFullActivity?.registrationEnabled ?? true)) {
+      if (editEvent.formId && form.formStatus !== (editEvent.form?.status || "Active")) {
         await api.put(`/form/${editEvent.formId}/toggle`);
       }
       await updateEvent(editEvent.id, { ...form, formId: editEvent.formId }, coverImageFile, coverImageRemoved);
@@ -159,21 +196,28 @@ export default function DashboardEvents() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
 				{/* Events filter */}
-				<div className="flex flex-wrap items-center gap-2">
+				<div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
           {FILTERS.map((f) => (
-            <button key={f} onClick={() => setFilter(f)} className={`font-medium px-4 py-2 rounded-full border transition-all duration-200 ${filter === f ? "bg-primary text-white border-primary shadow-sm" : "bg-white dark:bg-[#1a1f2e] text-muted border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary"}`}>
-              {f} <span className={`ml-1 text-[10px] ${filter === f ? "text-white/80" : "text-muted/60"}`}>({counts[f]})</span>
+            <button key={f} onClick={() => setFilter(f)} className={`text-sm font-medium px-4 py-2 rounded-full border transition-all duration-200 ${statusFilter === f ? "bg-primary text-white border-primary shadow-sm" : "bg-white dark:bg-[#1a1f2e] text-muted border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary"}`}>
+              {f} <span className={`ml-1 text-[10px] ${statusFilter === f ? "text-white/80" : "text-muted/60"}`}>({counts[f]})</span>
             </button>
-          ))}
+					))}
+          <button type="button" onClick={() => setShowFilterInfo(true)} className="p-1.5 text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors" aria-label="Filter info">
+            <Info size={18} />
+          </button>
 				</div>
 
 				{/* CTA Buttons */}
 				<div className="flex items-center gap-2 w-full sm:w-auto">
+					
+          <a href="/events" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/10 transition-colors shadow-sm flex-1 sm:flex-auto">
+            <ExternalLink size={16} /> View on Site
+          </a>
           <button onClick={() => navigate("/dashboard/events/flagship")} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/10 transition-colors shadow-sm flex-1 sm:flex-auto">
             <Star size={16} /> Flagship Events
           </button>
           <button onClick={() => navigate("/dashboard/events/create-event")} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm flex-1 sm:flex-auto">
-            <Plus size={16} /> Create New Event
+            <Plus size={16} /> Create Event
           </button>
         </div>
       </div>
@@ -192,7 +236,7 @@ export default function DashboardEvents() {
           </div>
           <h3 className="text-foreground font-semibold text-base mb-1">No events found</h3>
           <p className="text-muted text-sm max-w-[280px] text-center">
-            {filter !== "All" ? `No ${filter.toLowerCase()} events at the moment.` : "Create your first event to get started."}
+            {statusFilter !== "All" ? `No ${statusFilter.toLowerCase()} events at the moment.` : "Create your first event to get started."}
           </p>
         </div>
       )}
@@ -219,6 +263,7 @@ export default function DashboardEvents() {
                 maxSubmissions: editEvent.form?.maxSubmissions || "",
                 registrationEnabled: editFullActivity?.registrationEnabled ?? editEvent.registrationEnabled,
                 fields: editEvent.form?.fields || [],
+                formStatus: editEvent.form?.status || "Active",
               }}
               coverImageUrl={editEvent.coverImage || ""}
               formId={editEvent.formId}
@@ -245,6 +290,75 @@ export default function DashboardEvents() {
         onCancel={() => setDeleteTarget(null)}
         isLoading={saving}
       />
+
+      {/* Filter Info Modal */}
+      <Modal open={showFilterInfo} onClose={() => setShowFilterInfo(false)} title="Event Filters Explained" maxWidth="max-w-md">
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-foreground">Active</span>
+            </div>
+            <p className="text-sm text-muted leading-relaxed">
+              Active events are shown in the <strong>Upcoming Events</strong> section of the <Link to="/events" className="underline">events page</Link>.
+            </p>
+            <button
+              type="button"
+              onClick={() => { setShowFilterInfo(false); setPreviewSection("upcoming"); }}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Preview section →
+            </button>
+          </div>
+          <div className="border-t border-gray-100 dark:border-[#222936]" />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-foreground">Completed</span>
+            </div>
+            <p className="text-sm text-muted leading-relaxed">
+              Completed events are shown in the <strong>Previous Events</strong> section of the <Link to="/events" className="underline">events page</Link>.
+            </p>
+            <button
+              type="button"
+              onClick={() => { setShowFilterInfo(false); setPreviewSection("previous"); }}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Preview section →
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Section Preview Overlay */}
+      {previewSection && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto">
+          <div className="absolute inset-0 bg-black/50 dark:bg-black/70" onClick={() => { setPreviewSection(null); setPreviewPage(1); }} />
+          <div className="relative w-full min-h-full bg-main shadow-xl">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-[#222936] bg-white dark:bg-[#1a1f2e] sticky top-0 z-10">
+              <h2 className="text-base font-bold text-foreground capitalize">{previewSection} Events Section Preview</h2>
+              <button onClick={() => { setPreviewSection(null); setPreviewPage(1); }} className="p-1.5 text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            {previewSection === "upcoming" ? (
+              <UpcomingEvents
+                events={previewEvents.events}
+                loading={loading}
+                page={previewPage}
+                totalPages={previewEvents.totalPages}
+                onPageChange={setPreviewPage}
+              />
+            ) : (
+              <PreviousEvents
+                events={previewEvents.events}
+                loading={loading}
+                page={previewPage}
+                totalPages={previewEvents.totalPages}
+                onPageChange={setPreviewPage}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

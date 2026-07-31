@@ -318,7 +318,7 @@ export default function Dashboard() {
             </span>
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="text-xs font-semibold text-muted uppercase tracking-wide">
