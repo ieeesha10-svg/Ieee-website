@@ -344,10 +344,12 @@ const getUsers = async (req, res) => {
     // EXECUTE
     const users = await query;
     const count = await User.countDocuments(queryObj);
+    const allUsersCount = await User.countDocuments();
 
     res.json({
       users,
       total: count,
+      allUsersCount,
       page,
       pages: Math.ceil(count / limit)
     });

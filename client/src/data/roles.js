@@ -29,6 +29,3 @@ export const SUPER_ADMIN_ROLES = ["xcom"];
 
 // Can do member CRUD (GET/POST/PATCH/DELETE /api/users/members)
 export const MEMBER_MANAGER_ROLES = ["member", "scanner", "board", "xcom"];
-
-// Can view all users and export
-export const USER_VIEWER_ROLES = ["board", "xcom"];

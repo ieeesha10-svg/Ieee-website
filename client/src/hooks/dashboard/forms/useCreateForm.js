@@ -174,7 +174,7 @@ export function useCreateForm() {
     }
 
     if (formData.endDate) {
-      payload.endDate = new Date(formData.endDate).toISOString();
+      payload.endDate = new Date(formData.endDate + "T23:59:59.999Z").toISOString();
     }
 
     if (formData.maxSubmissions && formData.maxSubmissions !== "") {

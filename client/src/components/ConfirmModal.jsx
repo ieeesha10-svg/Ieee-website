@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
-import { AlertTriangle, X } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import Modal from "./Modal";
 
 export default function ConfirmModal({
   isOpen,
@@ -21,38 +22,19 @@ export default function ConfirmModal({
     return () => document.removeEventListener("keydown", handler);
   }, [isOpen, onCancel]);
 
-  if (!isOpen) return null;
-
   const confirmStyle =
     variant === "danger"
       ? "bg-red-600 hover:bg-red-700 text-white"
       : "bg-primary hover:bg-primary-dark text-white";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onCancel}
-      />
-      <div className="relative w-full max-w-sm bg-card-alt rounded-xl border border-border shadow-xl p-6 animate-in fade-in zoom-in-95">
-        <button
-          type="button"
-          onClick={onCancel}
-          aria-label="Close"
-          className="absolute top-3 right-3 text-muted hover:text-foreground transition-colors"
-        >
-          <X size={18} />
-        </button>
-
+    <Modal open={isOpen} onClose={onCancel} title={title}>
+      <div className="flex flex-col items-center">
         {variant === "danger" && (
           <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4 mx-auto">
             <AlertTriangle size={20} className="text-red-600 dark:text-red-400" />
           </div>
         )}
-
-        <h3 className="text-base font-semibold text-foreground text-center mb-2">
-          {title}
-        </h3>
 
         <p className="text-sm text-muted text-center mb-6 leading-relaxed">
           {message}
@@ -98,6 +80,6 @@ export default function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

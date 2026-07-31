@@ -1,7 +1,7 @@
 import React from "react";
 import { ChevronRight } from "lucide-react";
 
-// ─── Section Header ──────────────────────────────────────────────────────────
+// Section Header
 export function SidebarSection({ title, children }) {
   return (
     <div className="space-y-[12px]">
@@ -13,7 +13,7 @@ export function SidebarSection({ title, children }) {
   );
 }
 
-// ─── Nav Item ────────────────────────────────────────────────────────────────
+// Nav Item
 export function NavItem({ icon, title, subtitle, isActive, hasNotification }) {
   return (
     <div

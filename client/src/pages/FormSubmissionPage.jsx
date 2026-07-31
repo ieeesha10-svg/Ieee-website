@@ -9,48 +9,7 @@ import FooterAlt from "../components/FooterAlt";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import { ACCEPTED_FILE_EXTENSIONS, useFileUpload } from "../utils/fileUploadUtils";
-
-const SURVEY_COLOR = "#5DD9B0";
-const FEEDBACK_COLOR = "#B08FFF";
-const CUSTOM_COLOR = "#FF9F43";
-
-const FORM_TYPE_BADGE = {
-  registration: {
-    label: "Registration",
-    badge: "bg-primary/10 text-primary border-primary/20",
-    dotColor: "#0096ff",
-  },
-  survey: {
-    label: "Survey",
-    badge: "border",
-    badgeStyle: {
-      backgroundColor: `${SURVEY_COLOR}1a`,
-      color: SURVEY_COLOR,
-      borderColor: `${SURVEY_COLOR}33`,
-    },
-    dotColor: SURVEY_COLOR,
-  },
-  feedback: {
-    label: "Feedback",
-    badge: "border",
-    badgeStyle: {
-      backgroundColor: `${FEEDBACK_COLOR}1a`,
-      color: FEEDBACK_COLOR,
-      borderColor: `${FEEDBACK_COLOR}33`,
-    },
-    dotColor: FEEDBACK_COLOR,
-  },
-  custom: {
-    label: "General",
-    badge: "border",
-    badgeStyle: {
-      backgroundColor: `${CUSTOM_COLOR}1a`,
-      color: CUSTOM_COLOR,
-      borderColor: `${CUSTOM_COLOR}33`,
-    },
-    dotColor: CUSTOM_COLOR,
-  },
-};
+import { FORM_TYPE_BADGE } from "../data/formTypes";
 
 function getBadgeInfo(formType) {
   return FORM_TYPE_BADGE[formType] || FORM_TYPE_BADGE.custom;
@@ -501,7 +460,15 @@ export default function FormSubmissionPage() {
 
           </form>
             </>
-          )}
+					)}
+          
+          {/* Expiration notice */}
+          {form.endDate && (
+            <p className="mt-3 text-xs md:text-sm text-muted mb-4">
+              This form will not accept responses after {new Date(form.endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.
+            </p>
+					)}
+          
         </div>
         {/* Footer microcopy */}
         <p className="text-[11px] mt-3 text-muted/60 text-center leading-relaxed">
@@ -509,7 +476,7 @@ export default function FormSubmissionPage() {
 				</p>
 			</div>
       
-      <FooterAlt tagline="Forms are reviewed within 5–7 business days" />
+      <FooterAlt tagline="Keep an eye on your email for responses" />
 
       {/* Success Modal */}
       <FormSubmissionSuccessModal

@@ -49,6 +49,7 @@ export default function EventRegistration() {
         const endDate = form?.endDate || activity?.endDate || null;
 
         setRegistrationOpen(
+          form.status === "Active" &&
           (activity.registrationEnabled !== false) &&
           !(endDate && new Date(endDate) < new Date())
         );
@@ -282,7 +283,21 @@ export default function EventRegistration() {
                   <X size={14} />
                 </button>
               </div>
-            ) : (
+          ) : !registrationOpen ? (
+            <div className="col-span-1 lg:col-span-2 flex flex-col items-center justify-center h-full text-center p-12">
+              <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-6">
+                <svg className="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">Registration Closed</h2>
+              <p className="text-muted max-w-md">
+                {formData.endDate && new Date(formData.endDate) < new Date()
+                  ? "This form is currently closed. The registration period has ended."
+                  : "Registration for this event is no longer accepting responses."}
+              </p>
+            </div>
+          ) : (
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleFileDrop(field.id, e)}
@@ -354,22 +369,6 @@ export default function EventRegistration() {
 
   if (!formData) return null;
 
-  if (!registrationOpen) {
-    const isExpired = formData.endDate && new Date(formData.endDate) < new Date();
-    return (
-      <section className="py-24">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-foreground mb-4">Registration Closed</h2>
-          <p className="text-muted text-lg">
-            {isExpired
-              ? "This form is currently closed. The registration period has ended."
-              : "Registration for this event is no longer accepting responses."}
-          </p>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section id="event-registration">
       <div
@@ -406,12 +405,26 @@ export default function EventRegistration() {
             <div className="col-span-1 lg:col-span-2 flex flex-col items-center justify-center h-full text-center p-12">
               <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6">
                 <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">You're Registered!</h2>
               <p className="text-muted max-w-md">
                 You have successfully registered for <strong>{formData.title}</strong>. Check your email for the QR code to use at the event.
+              </p>
+            </div>
+          ) : !registrationOpen ? (
+            <div className="col-span-1 lg:col-span-2 flex flex-col items-center justify-center h-full text-center p-12">
+              <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-6">
+                <svg className="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">Registration Closed</h2>
+              <p className="text-muted max-w-md">
+                {formData.endDate && new Date(formData.endDate) < new Date()
+                  ? "This form is currently closed. The registration period has ended."
+                  : "Registration for this event is no longer accepting responses."}
               </p>
             </div>
           ) : (
@@ -426,7 +439,7 @@ export default function EventRegistration() {
                   <div className="flex flex-col items-center justify-center text-center py-8">
                     <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6">
                       <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </div>
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">You're Registered!</h2>
@@ -454,18 +467,27 @@ export default function EventRegistration() {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {formData.fields?.map(field => (
-                        <div key={field.id} className={field.type === 'TextArea' || field.type === 'Checkbox' || field.type === 'FileUpload' ? 'md:col-span-2' : ''}>
-                          {renderField(field)}
-                        </div>
-                      ))}
-                    </div>
+                    {formData.fields?.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {formData.fields.map(field => (
+                          <div key={field.id} className={field.type === 'TextArea' || field.type === 'Checkbox' || field.type === 'FileUpload' ? 'md:col-span-2' : ''}>
+                            {renderField(field)}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-border bg-card p-6 text-center">
+                        <p className="text-muted text-lg font-medium">
+																	No information is required for this event. Feel free to click {" "}
+																	<span className='font-bold'>Complete Registration</span> to register.
+                        </p>
+                      </div>
+                    )}
 
                     <Button
                       type="submit"
                       variant="default"
-                      className="mt-auto w-full bg-primary-dark text-white"
+                      className={`mt-auto w-full bg-primary-dark text-white ${submitLoading ? 'opacity-60' : ''}`}
                       disabled={submitLoading || (formData.settings?.requiresLogin && !user)}
                     >
                       {submitLoading ? 'Submitting...' : 'Complete Registration'}

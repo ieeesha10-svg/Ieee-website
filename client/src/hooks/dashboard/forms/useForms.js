@@ -6,8 +6,6 @@ export function useForms() {
   const { pathname } = useLocation();
   const [forms, setForms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [totalResponses, setTotalResponses] = useState(0);
-
   const fetchForms = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -43,6 +41,13 @@ export function useForms() {
             title: form.activityID ? "'" + title + "' Event Form" : title,
             responses,
             fields: form.fields || [],
+            startDate: form.startDate,
+            endDate: form.endDate,
+            maxSubmissions: form.maxSubmissions,
+            description: form.description,
+            formType: form.type,
+            createdAtRaw: form.createdAt,
+            updatedAt: form.updatedAt,
             createdAt: form.createdAt
               ? new Date(form.createdAt).toLocaleDateString("en-US", {
                   month: "short",
@@ -55,6 +60,19 @@ export function useForms() {
         })
       );
       setForms(formsData);
+
+      // Auto-close forms whose endDate has passed
+      const expired = formsData.filter(f => f.isOpen && f.endDate && new Date(f.endDate) < new Date());
+      if (expired.length > 0) {
+        await Promise.allSettled(
+          expired.map(f =>
+            api.put(`/form/${f.id}/toggle`).catch(() => {})
+          )
+        );
+        setForms(prev => prev.map(f =>
+          expired.some(e => e.id === f.id) ? { ...f, isOpen: false } : f
+        ));
+      }
     } catch (error) {
       console.error("Error fetching forms:", error);
     } finally {
@@ -62,19 +80,9 @@ export function useForms() {
     }
   }, []);
 
-  const fetchTotalResponses = useCallback(async () => {
-    try {
-      const res = await api.get("/submissions");
-      setTotalResponses(res.data.totalCount ?? 0);
-    } catch {
-      // fallback to 0
-    }
-  }, []);
-
   useEffect(() => {
     fetchForms();
-    fetchTotalResponses();
-  }, [pathname, fetchForms, fetchTotalResponses]);
+  }, [pathname, fetchForms]);
 
   const openCount = forms.filter((f) => f.isOpen).length;
   const closedCount = forms.filter((f) => !f.isOpen).length;
@@ -85,7 +93,6 @@ export function useForms() {
     isLoading,
     openCount,
     closedCount,
-    totalResponses,
     totalCount: forms.length,
     refetch: fetchForms,
   };

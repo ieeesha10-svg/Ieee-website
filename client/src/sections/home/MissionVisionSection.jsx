@@ -38,7 +38,7 @@ export default function MissionVisionSection() {
             </span>
             <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">Our Vision</h3>
             <p className="text-sm text-muted">
-							we aim to be a place where students grow in engineering and technology, develop practical and soft skills, work on exciting projects, and collaborate with each other, while building leadership, creativity, and a passion for technology.
+							We aim to be a place where students grow in engineering and technology, develop practical and soft skills, work on exciting projects, and collaborate with each other, while building leadership, creativity, and a passion for technology.
 						</p>
           </div>
         </div>

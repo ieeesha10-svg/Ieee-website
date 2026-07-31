@@ -19,10 +19,11 @@ import toast from "react-hot-toast";
 // Hooks
 import { useUserUpdate } from "../../hooks/dashboard/useUserUpdate";
 import { useUpdateRole } from "../../hooks/dashboard/useUpdateRole";
-import { useSearchMembers } from "../../hooks/dashboard/useSearchMembers";
+import { useMembersList } from "../../hooks/dashboard/useMembersList";
 import DeleteModal from "../../components/DeleteModal";
 import api from "../../utils/api";
 import { ADMIN_ROLES } from '../../data/roles'
+import { pickColor } from '../../data/avatarColors'
 // Components
 import Skeleton from "../../components/skeletons/DashSettingsSkeleton";
 
@@ -119,17 +120,6 @@ function MessageBanner({ message }) {
   );
 }
 
-const AVATAR_COLORS = [
-  "bg-blue-500", "bg-teal-500", "bg-orange-500", "bg-purple-500",
-  "bg-yellow-500", "bg-green-500", "bg-red-400", "bg-cyan-600",
-];
-
-function pickColor(id) {
-  const hash = String(id).split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
-}
-
-
 function RoleSelect({ value, onChange }) {
   return (
     <select
@@ -201,19 +191,17 @@ export default function DashboardSettings() {
     new: false,
     confirm: false,
   });
-  const [profileMessage, setProfileMessage] = useState({ type: "", text: "" });
+  const [profileMessage] = useState({ type: "", text: "" });
   const [passwordMessage, setPasswordMessage] = useState({ type: "", text: "" });
 
   const [admins, setAdmins] = useState([]);
   const [adminRoles, setAdminRoles] = useState({});
-  const [adminsLoading, setAdminsLoading] = useState(true);
   const { updateRole } = useUpdateRole();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const fetchAdmins = useCallback(async () => {
-    setAdminsLoading(true);
     try {
       const res = await api.get(`/users/all?role=${ADMIN_ROLES.join(",")}&limit=100`);
       const users = (res.data.users || []).map(mapAdmin);
@@ -223,8 +211,6 @@ export default function DashboardSettings() {
       setAdminRoles(rolesMap);
     } catch (err) {
       console.error("Failed to fetch admins:", err);
-    } finally {
-      setAdminsLoading(false);
     }
   }, []);
 
@@ -315,7 +301,7 @@ export default function DashboardSettings() {
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-6 max-w-4xl">
 
-      {/* ─── Section 1: Admin Profile ──────────────────────────── */}
+      {/* Section 1: Admin Profile */}
       <SectionCard>
         <h2 className="text-xl font-bold text-foreground mb-5">
           Admin Profile
@@ -425,7 +411,7 @@ export default function DashboardSettings() {
         </button>
       </SectionCard>
 
-      {/* ─── Section 2: Change Password ────────────────────────── */}
+      {/* Section 2: Change Password */}
       <SectionCard>
         <h2 className="text-xl font-bold text-foreground mb-5">
           Change Password
@@ -531,7 +517,7 @@ export default function DashboardSettings() {
         </button>
       </SectionCard>
 
-      {/* ─── Section 3: User Permissions ───────────────────────── */}
+      {/* Section 3: User Permissions */}
             <SectionCard>
               <div className="flex items-center justify-between mb-5">
                 <div>
@@ -550,7 +536,7 @@ export default function DashboardSettings() {
                   Add Admin
                 </button>
               </div>
-      
+
               {/* Admins Table */}
               <div className="overflow-x-auto -mx-5 md:-mx-6">
                 <table className="w-full min-w-[500px]">
@@ -607,14 +593,14 @@ export default function DashboardSettings() {
                   </tbody>
                 </table>
               </div>
-      
+
               {/* <button className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm mt-5">
                 <Save size={14} />
                 Save Permissions
               </button>*/}
             </SectionCard>
 
-      {/* ─── Delete Admin Modal ──────────────────────────── */}
+      {/* Delete Admin Modal */}
       <DeleteModal
         isOpen={!!deleteTarget}
         title="Remove admin"
@@ -623,7 +609,7 @@ export default function DashboardSettings() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      {/* ─── Add Admin Modal ──────────────────────────── */}
+      {/* Add Admin Modal */}
       {showAddModal && <AddAdminModal
         onClose={() => setShowAddModal(false)}
         onAdded={() => { setShowAddModal(false); fetchAdmins(); }}
@@ -640,7 +626,7 @@ function AddAdminModal({ onClose, onAdded }) {
   const {
     members, loading,
     search, setSearch,
-  } = useSearchMembers({ initialRoles: ["member", "user", "scanner"] });
+  } = useMembersList({ initialRoles: ["member", "user", "scanner"] });
 
   const nonAdminMembers = members.filter((m) => !ADMIN_ROLES.includes(m.role));
   const selectedCount = Object.keys(selected).length;
@@ -662,7 +648,6 @@ function AddAdminModal({ onClose, onAdded }) {
     try {
       const results = await Promise.allSettled(
         users.map((m) => {
-          console.log("Calling PATCH /users/members/" + m.id, { role: "admin" });
           return api.patch(`/users/members/${m.id}`, { role: "board" });
         })
       );
