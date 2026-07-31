@@ -1,13 +1,18 @@
 import React, { useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Download, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Inbox, Loader2 } from 'lucide-react';
+// Hooks & data
+import api from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 import { useMembersList } from '../../hooks/dashboard/useMembersList';
 import { useSearchMembers } from '../../hooks/dashboard/useSearchMembers';
 import { useUpdateRole } from '../../hooks/dashboard/useUpdateRole';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../utils/api';
+import { useCommitteeRequests } from '../../hooks/dashboard/useCommitteeRequests';
+import { useChangeCommittee } from '../../hooks/dashboard/useChangeCommittee';
+import { committees } from '../../data/committeesData';
+// Components
+import Button from '../../components/Button';
 import AdvancedSearch from '../../components/AdvancedSearch';
 import MemberFilters from '../../components/dashboard/MemberFilters';
-import Button from '../../components/Button';
 
 export default function DashboardMembers() {
   const { user } = useAuth();
@@ -38,6 +43,15 @@ export default function DashboardMembers() {
 
   const { updatingRole, updateRole } = useUpdateRole();
   const [memberRoles, setMemberRoles] = useState({});
+  const { updatingCommittee, updateCommittee } = useChangeCommittee();
+  const [memberCommittees, setMemberCommittees] = useState({});
+  const {
+    requests,
+    loading: requestsLoading,
+    totalCount: pendingCount,
+    processRequest,
+    processingId,
+  } = useCommitteeRequests();
   const [selectedIds, setSelectedIds] = useState([]);
   const [exporting, setExporting] = useState(false);
 
@@ -54,6 +68,21 @@ export default function DashboardMembers() {
       updateRole(memberId, newRole, previousRole, setMemberRoles);
     },
     [memberRoles, displayMembers, updateRole],
+  );
+
+  const handleCommitteeChange = useCallback(
+    (memberId, newCommittee) => {
+      const member = displayMembers.find((m) => m.id === memberId);
+      const previousCommittee = memberCommittees[memberId] ?? member?.committee;
+      updateCommittee(
+        memberId,
+        member?.name,
+        newCommittee,
+        previousCommittee,
+        setMemberCommittees,
+      );
+    },
+    [memberCommittees, displayMembers, updateCommittee],
   );
 
   const handleExport = useCallback(async () => {
@@ -98,8 +127,8 @@ export default function DashboardMembers() {
           disabled={!hasActiveFilters}
           className={`text-muted bg-card-alt text-sm border border-border rounded-lg shrink-0 transition-colors hidden md:inline-flex
             ${hasActiveFilters ?
-              "hover:text-foreground hover:border-primary/30" :
-              "hover:bg-bg-card-alt opacity-80 cursor-not-allowed"}`}
+              "hover:text-white dark:hover:text-foreground hover:border-primary/30" :
+              "hover:bg-main dark:hover:bg-card-alt hover:text-foreground opacity-80 cursor-not-allowed"}`}
         >
           Reset Filters
         </Button>
@@ -178,7 +207,7 @@ export default function DashboardMembers() {
                 <th className="px-4 w-[15%]">COLLEGE</th>
                 <th className="px-4 w-[10%]">ROLE</th>
                 <th className="px-4 w-[15%]">ACADEMIC YEAR</th>
-                <th className="px-4 w-[20%]">ATTENDANCE</th>
+                <th className="px-4 w-[20%]">COMMITTEE</th>
                 <th className="px-4 w-[10%]">STATUS</th>
               </tr>
             </thead>
@@ -260,30 +289,32 @@ export default function DashboardMembers() {
                       {member.year}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-1.5 bg-muted/20 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary rounded-full transition-all"
-                            style={{
-                              width: `${(member.attendance / member.maxAttendance) * 100}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium text-foreground w-6 text-right">
-                          {member.attendance}
-                        </span>
-                      </div>
+                      <select
+                        value={memberCommittees[member.id] ?? member.committee}
+                        onChange={(e) =>
+                          handleCommitteeChange(member.id, e.target.value)
+                        }
+                        disabled={updatingCommittee === member.id}
+                        className="text-xs font-medium bg-card-alt border border-border rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <option value="">None</option>
+                        {committees.map((c) => (
+                          <option key={c.id} value={c.label}>
+                            {c.label}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="py-3 px-4">
-                      {member.status === "Active" ? (
+                      {member.status === "Verified" ? (
                         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                          Active
+                          Verified
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted bg-muted/10 px-2.5 py-1 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-muted" />
-                          Inactive
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          Unverified
                         </span>
                       )}
                     </td>
@@ -319,7 +350,67 @@ export default function DashboardMembers() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+			</div>
+
+			<div className="bg-card-alt rounded-xl shadow-sm p-4 mt-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Inbox size={18} className="text-muted" />
+          <h2 className="text-base font-semibold text-foreground">Committee Requests</h2>
+          {pendingCount > 0 && (
+            <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+              {pendingCount} pending
+            </span>
+          )}
+        </div>
+
+        {requestsLoading ? (
+          <div className="flex items-center justify-center gap-2 text-sm text-muted py-8">
+            <Loader2 size={18} className="animate-spin" />
+            Loading requests...
+          </div>
+        ) : requests.length === 0 ? (
+          <p className="text-sm text-muted py-8 text-center">No pending requests</p>
+        ) : (
+          <ul>
+            {requests.map((request) => (
+              <li
+                key={request.id}
+                className="flex flex-col md:flex-row md:items-center gap-3 py-3 border-t border-border/60 first:border-t-0"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {request.user.name}
+                  </p>
+                  <p className="text-xs text-muted truncate">{request.user.email}</p>
+                </div>
+                <span className="inline-flex w-fit items-center text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                  {request.committee}
+                </span>
+                <span className="text-xs text-muted w-fit md:w-28">
+                  {new Date(request.createdAt).toLocaleDateString()}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => processRequest(request.id, "approved")}
+                    disabled={processingId === request.id}
+                    className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    onClick={() => processRequest(request.id, "rejected")}
+                    disabled={processingId === request.id}
+                    className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Reject
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+			</div>
+      
+		</div>
   );
 }

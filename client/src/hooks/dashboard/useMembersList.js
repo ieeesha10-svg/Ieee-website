@@ -19,8 +19,9 @@ function mapUser(u) {
     yearOfStudy: u.yearOfStudy,
     attendance: 0,
     maxAttendance: 1,
-    status: "Active",
+    status: u.isVerified ? "Verified" : "Unverified",
     role: u.role || "member",
+    committee: u.committee || "",
     avatarColor: pickColor(u._id),
   };
 }
