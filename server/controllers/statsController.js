@@ -33,6 +33,12 @@ dashboardRouter.get(
       { $project: { college: "$_id", count: 1, _id: 0 } },
     ]);
 
+    // Position Split
+    const positionSplit = await User.aggregate([
+      { $group: { _id: "$position", count: { $sum: 1 } } },
+      { $project: { position: "$_id", count: 1, _id: 0 } },
+    ]);
+
     // Academic Year Split
     const yearSplit = await User.aggregate([
       { $group: { _id: "$yearOfStudy", count: { $sum: 1 } } },
@@ -99,7 +105,7 @@ dashboardRouter.get(
     const latestSignups = await User.find()
       .sort({ createdAt: -1 })
       .limit(5)
-      .select("name email college yearOfStudy createdAt");
+      .select("name email position college yearOfStudy organization createdAt");
 
     // Activity  Status Summary
     const activityStatusSummary = await Activity.aggregate([
@@ -157,6 +163,7 @@ dashboardRouter.get(
       activeActivities,
       newRegistrations,
       collegeSplit,
+      positionSplit,
       yearSplit,
       emailsSent,
       topActiveMembers,

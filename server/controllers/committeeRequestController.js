@@ -87,7 +87,7 @@ const getAllRequests = catchAsync(async (req, res) => {
 
   const [requests, total] = await Promise.all([
     PendingRequest.find(query)
-      .populate('userId', 'name email committee position yearOfStudy university college')
+      .populate('userId', 'name email committee position yearOfStudy university college organization roleInOrganization yearsOfExperience')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limitNum),
@@ -107,7 +107,8 @@ const getAllRequests = catchAsync(async (req, res) => {
 });
 
 const changeCommitteePosition = catchAsync(async (req, res) => {
-  const { userId, committee_position } = req.body;
+  const { userId } = req.params;
+  const { committee_position } = req.body;
   const user = await User.findById(userId);
 
   if (!user) {

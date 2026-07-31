@@ -50,7 +50,8 @@ const loginUser = catchAsync(async (req, res) => {
     name: user.name,
     email: user.email,
     role: user.role,
-    committee: user.committee
+    committee: user.committee,
+    position: user.position
   });
 });
 
@@ -95,9 +96,14 @@ const getUserProfile = async (req, res) => {
       committee: user.committee,
       phone: user.phone,
       age: user.age,
+      position: user.position,
       university: user.university,
       college: user.college,
       yearOfStudy: user.yearOfStudy,
+      organization: user.organization,
+      roleInOrganization: user.roleInOrganization,
+      yearsOfExperience: user.yearsOfExperience,
+      reasonForRegistration: user.reasonForRegistration,
       interests: user.interests,
       optionalData: user.optionalData,
       createdAt: user.createdAt,
@@ -117,12 +123,30 @@ const registerUser = async (req, res) => {
   try {
     const {
       name, email, password, confirmPassword,
-      phone, age, university, college, yearOfStudy, interests, role,
-      committee
+      phone, age,
+      position,
+      university, college, yearOfStudy, interests, role,
+      committee,
+      organization, roleInOrganization, yearsOfExperience, reasonForRegistration
     } = req.body;
 
     if (password !== confirmPassword) {
       throw new AppError('Passwords do not match', 400);
+    }
+
+    // --- POSITION VALIDATION ---
+    if (!["student", "professional"].includes(position)) {
+      throw new AppError('Position must be either "student" or "professional"', 400);
+    }
+
+    if (position === "student") {
+      if (!university || !college || !yearOfStudy) {
+        throw new AppError('Students must provide university, college, and year of study', 400);
+      }
+    } else if (position === "professional") {
+      if (!organization || !roleInOrganization || !yearsOfExperience) {
+        throw new AppError('Professionals must provide organization, role in organization, and years of experience', 400);
+      }
     }
 
     const userExists = await User.findOne({ email: email.toLowerCase() });
@@ -145,7 +169,7 @@ const registerUser = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
 
-    const user = await User.create({
+    const userData = {
       name,
       email,
       password: hashedPassword,
@@ -153,8 +177,25 @@ const registerUser = async (req, res) => {
       committee: 'no committee',
       otp,
       otpExpires,
-      phone, age, university, college, yearOfStudy, interests
-    });
+      phone,
+      age,
+      position,
+    };
+
+    // Position-specific fields
+    if (position === "student") {
+      userData.university = university;
+      userData.college = college;
+      userData.yearOfStudy = yearOfStudy;
+      userData.interests = interests;
+    } else if (position === "professional") {
+      userData.organization = organization;
+      userData.roleInOrganization = roleInOrganization;
+      userData.yearsOfExperience = yearsOfExperience;
+      userData.reasonForRegistration = reasonForRegistration;
+    }
+
+    const user = await User.create(userData);
 
     if (committee) {
       await PendingRequest.create({
@@ -315,6 +356,12 @@ const getUsers = async (req, res) => {
       queryObj.yearOfStudy = { $in: years };
     }
 
+    // --- C4. POSITION LOGIC (Multi-select) ---
+    if (req.query.position) {
+      const positions = req.query.position.split(',');
+      queryObj.position = { $in: positions };
+    }
+
     // --- BUILD QUERY ---
     let query = User.find(queryObj);
 
@@ -411,9 +458,15 @@ const exportUsersToExcel = async (req, res) => {
       { header: 'Name', key: 'name', width: 25 },
       { header: 'Email', key: 'email', width: 30 },
       { header: 'Role', key: 'role', width: 10 },
+      { header: 'Position', key: 'position', width: 12 },
       { header: 'Phone', key: 'phone', width: 15 },
       { header: 'University', key: 'university', width: 20 },
+      { header: 'College', key: 'college', width: 20 },
       { header: 'Year', key: 'yearOfStudy', width: 10 },
+      { header: 'Organization', key: 'organization', width: 20 },
+      { header: 'Role in Organization', key: 'roleInOrganization', width: 20 },
+      { header: 'Years of Experience', key: 'yearsOfExperience', width: 10 },
+      { header: 'Reason for Registration', key: 'reasonForRegistration', width: 30 },
       { header: 'Committee', key: 'committee', width: 15 }
     ];
 
@@ -431,9 +484,15 @@ const exportUsersToExcel = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        position: user.position || '-',
         phone: user.phone || '-',
         university: user.university || '-',
+        college: user.college || '-',
         yearOfStudy: user.yearOfStudy || '-',
+        organization: user.organization || '-',
+        roleInOrganization: user.roleInOrganization || '-',
+        yearsOfExperience: user.yearsOfExperience || '-',
+        reasonForRegistration: user.reasonForRegistration || '-',
         committee: user.committee || '-'
       });
     });
@@ -495,9 +554,15 @@ const exportSpecificUsersToExcel = async (req, res) => {
       { header: 'Name', key: 'name', width: 25 },
       { header: 'Email', key: 'email', width: 30 },
       { header: 'Role', key: 'role', width: 10 },
+      { header: 'Position', key: 'position', width: 12 },
       { header: 'Phone', key: 'phone', width: 15 },
       { header: 'University', key: 'university', width: 20 },
+      { header: 'College', key: 'college', width: 20 },
       { header: 'Year', key: 'yearOfStudy', width: 10 },
+      { header: 'Organization', key: 'organization', width: 20 },
+      { header: 'Role in Organization', key: 'roleInOrganization', width: 20 },
+      { header: 'Years of Experience', key: 'yearsOfExperience', width: 10 },
+      { header: 'Reason for Registration', key: 'reasonForRegistration', width: 30 },
       { header: 'Committee', key: 'committee', width: 15 }
     ];
 
@@ -515,9 +580,15 @@ const exportSpecificUsersToExcel = async (req, res) => {
         name: user.name || 'Unknown',
         email: user.email || '-',
         role: user.role || '-',
+        position: user.position || '-',
         phone: user.phone || '-',
         university: user.university || '-',
+        college: user.college || '-',
         yearOfStudy: user.yearOfStudy || '-',
+        organization: user.organization || '-',
+        roleInOrganization: user.roleInOrganization || '-',
+        yearsOfExperience: user.yearsOfExperience || '-',
+        reasonForRegistration: user.reasonForRegistration || '-',
         committee: user.committee || '-'
       });
     });
@@ -559,6 +630,7 @@ const updateUserProfile = catchAsync(async (req, res) => {
     "email",
     "password",
     "role",
+    "position",
     "isVerified",
     "otp",
     "otpExpires",
@@ -584,6 +656,10 @@ const updateUserProfile = catchAsync(async (req, res) => {
     "university",
     "college",
     "yearOfStudy",
+    "organization",
+    "roleInOrganization",
+    "yearsOfExperience",
+    "reasonForRegistration",
     "interests",
     "committee",
     "optionalData",
@@ -614,9 +690,14 @@ const updateUserProfile = catchAsync(async (req, res) => {
       role: updatedUser.role,
       phone: updatedUser.phone,
       age: updatedUser.age,
+      position: updatedUser.position,
       university: updatedUser.university,
       college: updatedUser.college,
       yearOfStudy: updatedUser.yearOfStudy,
+      organization: updatedUser.organization,
+      roleInOrganization: updatedUser.roleInOrganization,
+      yearsOfExperience: updatedUser.yearsOfExperience,
+      reasonForRegistration: updatedUser.reasonForRegistration,
       interests: updatedUser.interests,
       committee: updatedUser.committee,
       optionalData: updatedUser.optionalData,
@@ -729,7 +810,7 @@ const getAllMembers = catchAsync(async (req, res, next) => {
 //create member
 const createMember = catchAsync(async (req, res, next) => {
   const allowedRoles = User.schema.path("role").enumValues;
-  const { name, email, password, role, phone, age, university, college, yearOfStudy, interests, committee, optionalData } = req.body;
+  const { name, email, password, role, phone, age, position, university, college, yearOfStudy, interests, organization, roleInOrganization, yearsOfExperience, reasonForRegistration, committee, optionalData } = req.body;
   if (!name || !email || !password || !password || !role) {
     return next(new AppError("Please Provide name, email, role and password", 400));
   }
@@ -747,10 +828,15 @@ const createMember = catchAsync(async (req, res, next) => {
     role: role,
     phone: phone,
     age: age,
+    position: position,
     university: university,
     college: college,
     yearOfStudy: yearOfStudy,
     interests,
+    organization: organization,
+    roleInOrganization: roleInOrganization,
+    yearsOfExperience: yearsOfExperience,
+    reasonForRegistration: reasonForRegistration,
     committee: committee,
     optionalData: optionalData
   });
