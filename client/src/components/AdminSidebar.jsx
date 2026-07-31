@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -14,9 +14,9 @@ import {
   X,
   Home,
 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
-import api from "../utils/api";
+import { Toaster } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
+import { useLogout } from "../hooks/auth/useLogout";
 import { navItems, toolsItems } from "../data/DashboardNav";
 
 const ICON_MAP = {
@@ -31,20 +31,9 @@ const ICON_MAP = {
 
 const AdminSidebar = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { logout } = useLogout();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const logout = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post("/users/logout");
-      toast.success("Logged out successfully!");
-      setTimeout(() => navigate("/"), 1000);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Logout failed");
-    }
-  };
 
   const nav = (onNavClick) => (
     <>
