@@ -6,6 +6,7 @@ const crewRouter = require("../routes/crewRoutes");
 const userRouter = require("../routes/userRoutes") ;
 const formRouter = require("../routes/formRoutes");
 const submissionRouter = require("../routes/submissionRoutes");
+const committeeRequestRouter = require("../routes/committeeRequestRoutes");
 
 const routersHandler = (app) => {
   
@@ -23,6 +24,8 @@ const routersHandler = (app) => {
   app.use('/api/form', formRouter);
 
   app.use('/api/submissions', submissionRouter);
+
+  app.use('/api/committee-requests', committeeRequestRouter);
 
   app.use('/api/emails', require('../routes/emailRouts'));
 
