@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema(
       ],
     },
     phone: { type: String, trim: true},
+    position: {
+      type: String,
+      enum: ["student", "professional"]
+    },
     // UPDATED ROLES:
     role: {
       type: String,

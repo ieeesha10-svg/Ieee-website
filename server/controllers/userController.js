@@ -1,5 +1,6 @@
 const User = require('../models/UserModel');
 const Submission = require('../models/SubmissionModel');
+const PendingRequest = require('../models/PendingRequest');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -116,7 +117,8 @@ const registerUser = async (req, res) => {
   try {
     const {
       name, email, password, confirmPassword,
-      phone, age, university, college, yearOfStudy, interests, role
+      phone, age, university, college, yearOfStudy, interests, role,
+      committee
     } = req.body;
 
     if (password !== confirmPassword) {
@@ -148,10 +150,19 @@ const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       role: finalRole,
+      committee: 'no committee',
       otp,
       otpExpires,
       phone, age, university, college, yearOfStudy, interests
     });
+
+    if (committee) {
+      await PendingRequest.create({
+        userId: user._id,
+        committee_position: committee,
+        request_status: 'pending'
+      });
+    }
 
     const emailSent = await sendOTPEmail(user.email, otp);
 
