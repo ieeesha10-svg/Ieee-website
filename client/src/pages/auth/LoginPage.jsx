@@ -2,25 +2,24 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { LogIn, Mail, Lock } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../utils/api";
-import { useAuth } from "../context/AuthContext";
-import AuthLayout from "../layouts/AuthLayout";
-import { ADMIN_ROLES } from "../data/roles";
+import { useLogin } from "../../hooks/auth/useLogin";
+import { useAuth } from "../../context/AuthContext";
+import AuthLayout from "../../layouts/AuthLayout";
+import { ADMIN_ROLES } from "../../data/roles";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { login, loading } = useLogin();
   const { setUser } = useAuth(); // Global state setter
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
-      const { data } = await api.post("/users/login", { email, password });
+      const data = await login(email, password);
 
       setUser(data); // Instantly update the app state
       toast.success(`Welcome back, ${data.name.split(" ")[0]}!`);
@@ -39,8 +38,6 @@ const LoginPage = () => {
           navigate("/verify", { state: { email } });
         }, 1500);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -86,16 +83,25 @@ const LoginPage = () => {
         </button>
       </form>
 
-      <div className="text-center mt-6">
-        <p className="text-gray-600 dark:text-gray-400 text-sm">
+      <div className="flex flex-col text-center mt-6 text-sm">
+        <p className="text-gray-600 dark:text-gray-400">
           Don't have an account?{" "}
-          <Link
-            to="/signup"
-            className="text-primary dark:text-sky-400 font-bold hover:underline"
-          >
-            Sign up here
-          </Link>
         </p>
+				<div>
+					<Link
+	          to="/signup?user=student"
+	          className="text-primary dark:text-sky-400 font-bold hover:underline"
+	        >
+	          Sign up as a Student
+	        </Link>{" "}
+	        or{" "}
+	        <Link
+	          to="/signup?user=professional"
+	          className="text-primary dark:text-sky-400 font-bold hover:underline"
+	        >
+	          a Professional
+	        </Link>
+				</div>
       </div>
     </AuthLayout>
   );
