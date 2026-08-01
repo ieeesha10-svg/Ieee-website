@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import api from "../../utils/api";
 import { formatAcademicYear } from "../../utils/formatAcademicYear";
+import { YEAR_MAP } from "../../data/ordinalMap";
 import { pickColor } from "../../data/avatarColors";
 import { ALL_ROLES } from "../../data/roles";
 
@@ -54,6 +55,7 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
 
   const debounceRef = useRef(null);
   const abortRef = useRef(null);
+  const lastParamsRef = useRef(null);
 
   const fetchMembers = useCallback(async (searchTerm, colleges, years, selectedRoles, activePosition, pageNum) => {
     if (abortRef.current) abortRef.current.abort();
@@ -66,10 +68,9 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
       params.set("limit", String(pageSize));
       params.set("page", String(pageNum));
       if (searchTerm) params.set("search", searchTerm);
-      const yearMap = { "Alumni": 0, "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4, "5th Year": 5 };
       if (selectedRoles.length > 0) params.set("role", selectedRoles.join(","));
       if (colleges.length > 0) params.set("college", colleges.join(","));
-      if (years.length > 0) params.set("yearOfStudy", years.map((y) => yearMap[y] ?? y).join(","));
+      if (years.length > 0) params.set("yearOfStudy", years.map((y) => YEAR_MAP[y] ?? y).join(","));
       if (activePosition) params.set("position", activePosition);
 
       const res = await api.get(`/users/all?${params.toString()}`, {
@@ -90,37 +91,52 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
   }, [pageSize]);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchAll = async () => {
       setLoading(true);
       try {
         const res = await api.get("/users/all?limit=1000");
         const users = res.data.users || [];
 
-        const colleges = [...new Set(
-          users.map((u) => u.college ? u.college.charAt(0).toUpperCase() + u.college.slice(1) : "N/A")
-        )].filter((c) => c !== "N/A").sort();
-        setCollegeFilters(colleges);
+        if (cancelled) return;
+        setCollegeFilters([
+          ...new Set(
+            users.map((u) => u.college ? u.college.charAt(0).toUpperCase() + u.college.slice(1) : "N/A")
+          ),
+        ].filter((c) => c !== "N/A").sort());
 
-        const yearOrder = { Alumni: 0, "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4 };
-        const years = [...new Set(users.map((u) => formatAcademicYear(u.yearOfStudy)))].filter((y) => y !== "N/A").sort(
-          (a, b) => (yearOrder[a] ?? 99) - (yearOrder[b] ?? 99)
-        );
-        setYearFilters(years);
+        if (cancelled) return;
+        setYearFilters([
+          ...new Set(users.map((u) => formatAcademicYear(u.yearOfStudy))),
+        ].filter((y) => y !== "N/A").sort(
+          (a, b) => (YEAR_MAP[a] ?? 99) - (YEAR_MAP[b] ?? 99)
+        ));
 
+        if (cancelled) return;
         setMembers(users.slice(0, pageSize).map(mapUser));
         setTotalCount(res.data.allUsersCount || users.length);
-        setTotalPages(res.data.pages || Math.ceil(users.length / pageSize));
+        setTotalPages(Math.ceil((res.data.allUsersCount || users.length) / pageSize));
       } catch (err) {
-        console.error("Error fetching members:", err);
+        if (!cancelled) console.error("Error fetching members:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchAll();
+    return () => {
+      cancelled = true;
+    };
   }, [pageSize]);
 
   useEffect(() => {
-    if (collegeFilters.length === 0 && yearFilters.length === 0) return;
+    const current = JSON.stringify([search, activeColleges, activeYears, roles, position, page]);
+
+    if (lastParamsRef.current === null) {
+      lastParamsRef.current = current;
+      return;
+    }
+    if (lastParamsRef.current === current) return;
+    lastParamsRef.current = current;
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -130,7 +146,7 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [search, activeColleges, activeYears, roles, position, page, collegeFilters, yearFilters, fetchMembers]);
+  }, [search, activeColleges, activeYears, roles, position, page, fetchMembers]);
 
   const toggleCollege = (college) => {
     setPage(1);
