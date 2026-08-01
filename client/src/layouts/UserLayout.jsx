@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { SidebarSection, NavItem } from "../components/UserSidebar";
 import ProfileBadge from "../components/ProfileBadge";
 import api from "../utils/api";
+import { formatAcademicYear } from "../utils/formatAcademicYear";
 import {
   User,
   Lock,
@@ -14,14 +15,7 @@ import {
   WifiOff,
 } from "lucide-react";
 
-const getYearText = (year) => {
-  if (!year) return "";
-  const num = parseInt(year, 10);
-  if (num === 1) return "1st Year";
-  if (num === 2) return "2nd Year";
-  if (num === 3) return "3rd Year";
-  return `${num}th Year`;
-};
+const getYearText = (year) => (year ? formatAcademicYear(year) : "");
 
 export default function UserLayout() {
   const location = useLocation();

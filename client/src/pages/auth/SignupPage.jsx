@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { committees } from "../../data/committeesData";
+import { ORDINAL_OPTIONS } from "../../data/ordinalMap";
 import {
   User,
   Mail,
@@ -250,12 +251,11 @@ function SignupPage() {
                 className="w-full bg-transparent py-3 px-3 focus:outline-none dark:text-white *:dark:text-black appearance-none cursor-pointer"
                 required
               >
-                <option value="1">1st Year</option>
-                <option value="2">2nd Year</option>
-                <option value="3">3rd Year</option>
-                <option value="4">4th Year</option>
-                <option value="5">5th Year</option>
-                <option value="0">Alumni / Graduate</option>
+                {ORDINAL_OPTIONS.map(({ label, value }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
