@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -18,6 +19,7 @@ import { Toaster } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { useLogout } from "../hooks/auth/useLogout";
 import { navItems, toolsItems } from "../data/DashboardNav";
+import ConfirmModal from "./ConfirmModal";
 
 const ICON_MAP = {
   LayoutDashboard,
@@ -34,6 +36,13 @@ const AdminSidebar = () => {
   const { logout } = useLogout();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    if (await logout()) setShowLogoutModal(false);
+  };
 
   const nav = (onNavClick) => (
     <>
@@ -136,7 +145,7 @@ const AdminSidebar = () => {
             </p>
           </div>
           <button
-            onClick={logout}
+            onClick={() => setShowLogoutModal(true)}
             aria-label="Log out"
             className="shrink-0 text-muted hover:text-red-400 transition-colors cursor-pointer p-1"
           >
@@ -213,6 +222,21 @@ const AdminSidebar = () => {
         </div>
         {nav()}
       </aside>
+
+      {createPortal(
+        <ConfirmModal
+          isOpen={showLogoutModal}
+          title="Log out"
+          message="Are you sure you want to log out?"
+          confirmLabel="Log out"
+          cancelLabel="Cancel"
+          variant="danger"
+          isLoading={loggingOut}
+          onConfirm={handleLogout}
+          onCancel={() => { setShowLogoutModal(false); setLoggingOut(false); }}
+        />,
+        document.body
+      )}
     </>
   );
 };

@@ -22,10 +22,10 @@ import { Link, useNavigate } from "react-router-dom";
 import useJoinMenu from "../hooks/useJoinMenu";
 import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "../context/AuthContext";
-import api from "../utils/api";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import ConfirmModal from "./ConfirmModal";
 import { ADMIN_ROLES } from "../data/roles";
+import { useLogout } from "../hooks/auth/useLogout";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
@@ -42,8 +42,8 @@ const PublicNavbar = () => {
   // 1. Add state to control the mobile menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const navigate = useNavigate();
+  const { logout, loading: loggingOut } = useLogout();
   const {
     ref: desktopMenuRef,
     open: desktopMenuOpen,
@@ -58,23 +58,6 @@ const PublicNavbar = () => {
     handleNavigate: mobileHandleNavigate,
   } = useJoinMenu(navigate);
   const { user } = useAuth();
-
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    try {
-      await api.post("/users/logout");
-      toast.success("Logged out successfully!");
-      setTimeout(() => {
-        window.location.reload();
-        navigate("/");
-      }, 1000);
-    } catch (error) {
-      const msg = error.response?.data?.message || "Logout failed";
-      toast.error(msg);
-      setLoggingOut(false);
-      setShowLogoutModal(false);
-    }
-  };
 
   // Helper to close menu when a link is clicked
   const closeMenu = () => {
@@ -105,7 +88,7 @@ const PublicNavbar = () => {
 					})}
 				</div>
         
-        {/* --- DESKTOP MENU (Hidden on small screens) --- */}
+        {/* DESKTOP MENU (Hidden on small screens) */}
         <div className="hidden md:flex items-center gap-6 relative">
 
           <ThemeToggle />
@@ -366,8 +349,8 @@ const PublicNavbar = () => {
           cancelLabel="Cancel"
           variant="danger"
           isLoading={loggingOut}
-          onConfirm={handleLogout}
-          onCancel={() => { setShowLogoutModal(false); setLoggingOut(false); }}
+          onConfirm={async () => { if (await logout()) setShowLogoutModal(false); }}
+          onCancel={() => setShowLogoutModal(false)}
         />,
         document.body
       )}

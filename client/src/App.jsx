@@ -93,7 +93,7 @@ const PublicLayout = () => {
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter useTransitions={false}>
       <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
