@@ -17,6 +17,11 @@ function mapUser(u) {
       : "N/A",
     year: formatAcademicYear(u.yearOfStudy),
     yearOfStudy: u.yearOfStudy,
+    position: u.position || "",
+    organization: u.organization || "",
+    roleInOrganization: u.roleInOrganization || "",
+    yearsOfExperience: u.yearsOfExperience,
+    reasonForRegistration: u.reasonForRegistration || "",
     attendance: 0,
     maxAttendance: 1,
     status: u.isVerified ? "Verified" : "Unverified",
@@ -39,6 +44,7 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
     return [];
   });
   const [page, setPage] = useState(1);
+  const [position, setPosition] = useState("");
   const [loading, setLoading] = useState(true);
 
   const [collegeFilters, setCollegeFilters] = useState([]);
@@ -48,7 +54,7 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
   const debounceRef = useRef(null);
   const abortRef = useRef(null);
 
-  const fetchMembers = useCallback(async (searchTerm, colleges, years, selectedRoles, pageNum) => {
+  const fetchMembers = useCallback(async (searchTerm, colleges, years, selectedRoles, activePosition, pageNum) => {
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -59,10 +65,11 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
       params.set("limit", String(pageSize));
       params.set("page", String(pageNum));
       if (searchTerm) params.set("search", searchTerm);
-      const yearMap = { "Prep": 0, "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4, "5th Year": 5 };
+      const yearMap = { "Alumni": 0, "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4, "5th Year": 5 };
       if (selectedRoles.length > 0) params.set("role", selectedRoles.join(","));
       if (colleges.length > 0) params.set("college", colleges.join(","));
       if (years.length > 0) params.set("yearOfStudy", years.map((y) => yearMap[y] ?? y).join(","));
+      if (activePosition) params.set("position", activePosition);
 
       const res = await api.get(`/users/all?${params.toString()}`, {
         signal: controller.signal,
@@ -93,7 +100,7 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
         )].filter((c) => c !== "N/A").sort();
         setCollegeFilters(colleges);
 
-        const yearOrder = { Prep: 0, "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4 };
+        const yearOrder = { Alumni: 0, "1st Year": 1, "2nd Year": 2, "3rd Year": 3, "4th Year": 4 };
         const years = [...new Set(users.map((u) => formatAcademicYear(u.yearOfStudy)))].filter((y) => y !== "N/A").sort(
           (a, b) => (yearOrder[a] ?? 99) - (yearOrder[b] ?? 99)
         );
@@ -116,13 +123,13 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      fetchMembers(search, activeColleges, activeYears, roles, page);
+      fetchMembers(search, activeColleges, activeYears, roles, position, page);
     }, search ? 300 : 0);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [search, activeColleges, activeYears, roles, page, collegeFilters, yearFilters, fetchMembers]);
+  }, [search, activeColleges, activeYears, roles, position, page, collegeFilters, yearFilters, fetchMembers]);
 
   const toggleCollege = (college) => {
     setPage(1);
@@ -145,17 +152,24 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
     );
   };
 
+  const togglePosition = (pos) => {
+    setPage(1);
+    setPosition((prev) => (prev === pos ? "" : pos));
+  };
+
   const resetFilters = useCallback(() => {
     setActiveColleges([]);
     setActiveYears([]);
     setRoles(initialRoles || []);
+    setPosition("");
     setPage(1);
   }, [initialRoles]);
 
-  const hasActiveFilters = activeColleges.length > 0 || activeYears.length > 0 || roles.length > 0;
+  const hasActiveFilters = activeColleges.length > 0 || activeYears.length > 0 || roles.length > 0 || position !== "";
 
   return {
     members,
+    setMembers,
     totalCount,
     totalPages,
     collegeFilters,
@@ -169,6 +183,8 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
     toggleYear,
     activeRoles: roles,
     toggleRole,
+    activePosition: position,
+    togglePosition,
     page,
     setPage,
     loading,

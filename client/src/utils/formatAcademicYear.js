@@ -3,6 +3,6 @@ import ORDINAL from "../data/ordinalMap";
 export function formatAcademicYear(year) {
   if (year == null) return "N/A";
   const num = Number(year);
-  if (num === 0) return "Prep";
+  if (num === 0) return "Alumni";
   return `${ORDINAL[num] || num} Year`;
 }

@@ -28,7 +28,7 @@ import { pickColor } from '../../data/avatarColors'
 import Skeleton from "../../components/skeletons/DashSettingsSkeleton";
 
 const ORDINAL_OPTIONS = [
-  { label: "Prep", value: 0 },
+  { label: "Alumni", value: 0 },
   { label: "1st Year", value: 1 },
   { label: "2nd Year", value: 2 },
   { label: "3rd Year", value: 3 },
