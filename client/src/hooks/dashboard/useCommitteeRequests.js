@@ -25,6 +25,8 @@ export function useCommitteeRequests({ pageSize = 10 } = {}) {
             id: r.userId?._id,
             name: r.userId?.name || "Unknown",
             email: r.userId?.email || "",
+            university: r.userId?.university || "",
+            college: r.userId?.college || "",
           },
           committee: r.committee_position,
           status: r.request_status,

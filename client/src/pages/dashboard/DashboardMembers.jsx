@@ -1,5 +1,5 @@
 import React, { useState, useCallback, Fragment } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Download, Inbox, Loader2, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Download, Eye, Inbox, Loader2, Trash2 } from 'lucide-react';
 // Hooks & data
 import { useAuth } from '../../context/AuthContext';
 import { useMembersList } from '../../hooks/dashboard/useMembersList';
@@ -15,6 +15,7 @@ import Button from '../../components/Button';
 import AdvancedSearch from '../../components/AdvancedSearch';
 import MemberFilters from '../../components/dashboard/MemberFilters';
 import DeleteUserModal from '../../components/dashboard/DeleteUserModal';
+import Modal from '../../components/Modal';
 
 export default function DashboardMembers() {
 	const { user } = useAuth();
@@ -46,6 +47,7 @@ export default function DashboardMembers() {
   const [memberRoles, setMemberRoles] = useState({});
   const [expandedId, setExpandedId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState(null);
 	const [memberCommittees, setMemberCommittees] = useState({});
   
   const { keyword, setKeyword, results, setResults, isLoading: searchLoading } = useSearchMembers();
@@ -155,7 +157,7 @@ export default function DashboardMembers() {
               className="w-full md:max-w-xs"
             />
 
-            <div className="flex items-center gap-1 self-start md:self-center bg-card-alt border border-border rounded-lg p-1">
+            <div className="w-full flex items-center gap-1 self-center bg-card-alt border border-border rounded-lg p-1">
               {[
                 { value: "", label: "All" },
                 { value: "student", label: "Students" },
@@ -164,7 +166,7 @@ export default function DashboardMembers() {
                 <button
                   key={opt.value}
                   onClick={() => togglePosition(opt.value)}
-                  className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap ${
+                  className={`w-full text-xs px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap ${
                     activePosition === opt.value
                       ? "bg-primary text-white"
                       : "text-muted hover:text-foreground"
@@ -388,7 +390,7 @@ export default function DashboardMembers() {
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 text-center">
                       {canDelete(member) && (
                         <button
                           onClick={() => setDeleteTarget(member)}
@@ -495,16 +497,29 @@ export default function DashboardMembers() {
                 <span className="text-xs text-muted w-fit md:w-28">
                   {new Date(request.createdAt).toLocaleDateString()}
                 </span>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center md:justify-start gap-2">
+                  <button
+                    onClick={() => setSelectedRequest(request)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-foreground border border-border rounded-lg hover:bg-muted/5 transition-colors"
+                  >
+                    <Eye size={16} />
+                    View
+                  </button>
                   <Button
-                    onClick={() => processRequest(request.id, "approved")}
+                    onClick={() => {
+                      setSelectedRequest(null);
+                      processRequest(request.id, "approved");
+                    }}
                     disabled={processingId === request.id}
                     className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Approve
                   </Button>
                   <Button
-                    onClick={() => processRequest(request.id, "rejected")}
+                    onClick={() => {
+                      setSelectedRequest(null);
+                      processRequest(request.id, "rejected");
+                    }}
                     disabled={processingId === request.id}
                     className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -525,6 +540,63 @@ export default function DashboardMembers() {
         onConfirm={handleDeleteConfirm}
         loading={deleting}
       />
+
+			<Modal
+        open={!!selectedRequest}
+        onClose={() => setSelectedRequest(null)}
+        title={selectedRequest ? `${selectedRequest.committee} Request` : "Committee Request"}
+      >
+        {selectedRequest && (
+          <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { label: "Name", value: selectedRequest.user.name },
+                { label: "Email", value: selectedRequest.user.email },
+                { label: "University", value: selectedRequest.user.university },
+                { label: "College", value: selectedRequest.user.college },
+                { label: "Requested Committee", value: selectedRequest.committee },
+                {
+                  label: "Requested On",
+                  value: new Date(selectedRequest.createdAt).toLocaleDateString(),
+                },
+              ].map((item) => (
+                <div key={item.label}>
+                  <p className="text-[10px] font-semibold text-muted uppercase tracking-wide mb-1">
+                    {item.label}
+                  </p>
+                  {item.label === "Requested Committee" ? (
+                    <p className="font-bold text-primary">{item.value || "—"}</p>
+                  ) : (
+                    <p className="text-sm text-foreground">{item.value || "—"}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-gray-100 dark:border-[#222936]">
+              <Button
+                onClick={() => {
+                  setSelectedRequest(null);
+                  processRequest(selectedRequest.id, "approved");
+                }}
+                disabled={processingId === selectedRequest.id}
+                className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Approve
+              </Button>
+              <Button
+                onClick={() => {
+                  setSelectedRequest(null);
+                  processRequest(selectedRequest.id, "rejected");
+                }}
+                disabled={processingId === selectedRequest.id}
+                className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Reject
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 		</div>
   );
 }
