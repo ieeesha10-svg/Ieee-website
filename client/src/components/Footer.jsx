@@ -99,11 +99,17 @@ export default function Footer() {
       </div>
 
       {/* Copyright Line */}
-      <div className="max-w-7xl mx-auto mt-12 lg:mt-16 pt-6 lg:pt-8 border-t-[0.5px] border-[#4A5565]/50 dark:border-[#9CA3AF]/50 flex justify-center transition-colors duration-300">
+      <div className="max-w-7xl mx-auto mt-12 lg:mt-16 pt-6 lg:pt-8 border-t-[0.5px] border-[#4A5565]/50 dark:border-[#9CA3AF]/50 flex flex-col items-center justify-center gap-3 transition-colors duration-300">
         <p className="font-lakes text-[#4A5565] dark:text-[#9CA3AF] text-[10px] lg:text-[14px] text-center leading-[1.6] px-4">
           © 2026 IEEE Student Branch. All rights reserved. Advancing Technology
           for Humanity.
-        </p>
+				</p>
+        <p
+          dir="rtl"
+          className="font-lakes text-[#4A5565] dark:text-[#9CA3AF] text-sm lg:text-lg text-center leading-[1.6]"
+        >
+					لِلَّهِ رَبِّ الْعَالَمِينَ
+				</p>
       </div>
     </footer>
   );
