@@ -20,6 +20,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLogout } from "../hooks/auth/useLogout";
 import { navItems, toolsItems } from "../data/DashboardNav";
 import ConfirmModal from "./ConfirmModal";
+import { isAdminRole } from "../utils/roleAccess";
 
 const ICON_MAP = {
   LayoutDashboard,
@@ -39,6 +40,12 @@ const AdminSidebar = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
+  const isAdmin = isAdminRole(user?.role);
+  const visibleNavItems = isAdmin ? navItems : [];
+  const visibleToolsItems = isAdmin
+    ? toolsItems
+    : toolsItems.filter((item) => item.to === "/dashboard/scan");
+
   const handleLogout = async () => {
     setLoggingOut(true);
     if (await logout()) setShowLogoutModal(false);
@@ -47,12 +54,13 @@ const AdminSidebar = () => {
   const nav = (onNavClick) => (
     <>
       <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-4">
-        <div>
-          <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">
-            MAIN
-          </p>
+        {visibleNavItems.length > 0 && (
+          <div>
+            <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">
+              MAIN
+            </p>
           <nav className="flex flex-col gap-0.5">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = ICON_MAP[item.icon];
               return (
                 <NavLink
@@ -89,13 +97,14 @@ const AdminSidebar = () => {
             })}
           </nav>
         </div>
+        )}
 
-        <div className="border-t border-white/7 pt-2">
+        <div className={`pt-2 ${isAdminRole(user?.role) ? "border-t border-white/7" : ""}`}>
           <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">
             TOOLS
           </p>
           <nav className="flex flex-col gap-0.5">
-            {toolsItems.map((item) => {
+            {visibleToolsItems.map((item) => {
               const Icon = ICON_MAP[item.icon];
               return (
                 <NavLink
