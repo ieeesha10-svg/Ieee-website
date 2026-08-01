@@ -86,7 +86,6 @@ userRouter.patch(
 userRouter.delete(
   "/members/:id",
   protect,
-  authorize("xcom", "board", "member", "scanner"),
   deleteMember,
 );
 

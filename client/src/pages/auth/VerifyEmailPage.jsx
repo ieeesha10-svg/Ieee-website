@@ -1,45 +1,50 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Mail, KeyRound } from "lucide-react";
 import toast from "react-hot-toast";
-import api from "../utils/api";
-import AuthLayout from "../layouts/AuthLayout";
-import MailIcon from "../assets/icons/mail.png";
+import AuthLayout from "../../layouts/AuthLayout";
+import MailIcon from "../../assets/icons/mail.png";
+import { useVerifyAccount } from "../../hooks/auth/useVerifyAccount";
+import { useAuth } from "../../context/AuthContext";
+import { ADMIN_ROLES } from "../../data/roles";
 
 const VerifyEmailPage = () => {
-  const [email, setEmail] = useState("");
+  const location = useLocation();
+  const [email, setEmail] = useState(location.state?.email || "");
   const [otp, setOtp] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    if (location.state?.email) {
-      setEmail(location.state.email);
-    }
-  }, [location]);
+  const { verifyAccount, loading } = useVerifyAccount();
+  const { setUser } = useAuth();
 
   const handleVerify = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
-      const { data } = await api.post("/users/verify-email", { email, otp });
+      const data = await verifyAccount(email, otp);
 
-      toast.success(data.message || "Email verified successfully!");
+      if (data?.role) {
+        // Auto-logged in: go straight into the site
+        setUser(data);
+        toast.success("Email verified! Welcome aboard.");
 
-      setTimeout(() => {
-        navigate("/login");
-      }, 1500);
+        setTimeout(() => {
+          const isAdmin = ADMIN_ROLES.includes(data.role?.toLowerCase());
+          navigate(isAdmin ? "/dashboard" : "/profile");
+        }, 1000);
+      } else {
+        toast.success(data.message || "Email verified successfully!");
+
+        setTimeout(() => {
+          navigate("/login");
+        }, 1500);
+      }
     } catch (error) {
       const msg =
         error.response?.data?.error ||
         error.response?.data?.message ||
         "Verification failed";
       toast.error(msg);
-    } finally {
-      setLoading(false);
     }
   };
 

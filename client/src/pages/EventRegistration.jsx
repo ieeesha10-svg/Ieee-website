@@ -88,7 +88,7 @@ export default function EventRegistration() {
           initial[f.id] = f.id === 'email' && user?.email ? user.email : '';
         });
         setAnswers(initial);
-      } catch (_err) {
+      } catch {
         setFetchError("not_found");
       } finally {
         setLoading(false);

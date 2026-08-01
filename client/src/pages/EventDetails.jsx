@@ -52,7 +52,7 @@ export default function EventDetails() {
         if (!location.state?.image) {
           setEventImage(activity.coverImage || "");
         }
-      } catch (_err) {
+      } catch {
         setFetchError("not_found");
       } finally {
         setLoading(false);

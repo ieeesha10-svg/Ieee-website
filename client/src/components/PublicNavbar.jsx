@@ -14,15 +14,18 @@ import {
 	Briefcase,
   FileText,
   ChevronRight,
+  ChevronDown,
   Sparkles,
+  GraduationCap,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import useJoinMenu from "../hooks/useJoinMenu";
 import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "../context/AuthContext";
-import api from "../utils/api";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import ConfirmModal from "./ConfirmModal";
 import { ADMIN_ROLES } from "../data/roles";
+import { useLogout } from "../hooks/auth/useLogout";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
@@ -39,29 +42,28 @@ const PublicNavbar = () => {
   // 1. Add state to control the mobile menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const navigate = useNavigate();
+  const { logout, loading: loggingOut } = useLogout();
+  const {
+    ref: desktopMenuRef,
+    open: desktopMenuOpen,
+    toggle: desktopToggle,
+    handleNavigate: desktopHandleNavigate,
+  } = useJoinMenu(navigate);
+  const {
+    ref: mobileMenuRef,
+    open: mobileMenuOpen,
+    toggle: mobileToggle,
+    close: mobileMenuClose,
+    handleNavigate: mobileHandleNavigate,
+  } = useJoinMenu(navigate);
   const { user } = useAuth();
 
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    try {
-      await api.post("/users/logout");
-      toast.success("Logged out successfully!");
-      setTimeout(() => {
-        window.location.reload();
-        navigate("/");
-      }, 1000);
-    } catch (error) {
-      const msg = error.response?.data?.message || "Logout failed";
-      toast.error(msg);
-      setLoggingOut(false);
-      setShowLogoutModal(false);
-    }
-  };
-
   // Helper to close menu when a link is clicked
-  const closeMenu = () => setIsMobileMenuOpen(false);
+  const closeMenu = () => {
+    setIsMobileMenuOpen(false);
+    mobileMenuClose();
+  };
 
   return (
     <nav className="bg-navbar-background lg:bg-navbar-background/88 dark:lg:bg-navbar-background/60 lg:backdrop-blur-xl shadow-md sticky top-0 z-50 transition-colors duration-300">
@@ -86,8 +88,8 @@ const PublicNavbar = () => {
 					})}
 				</div>
         
-        {/* --- DESKTOP MENU (Hidden on small screens) --- */}
-        <div className="hidden md:flex items-center gap-6">
+        {/* DESKTOP MENU (Hidden on small screens) */}
+        <div className="hidden md:flex items-center gap-6 relative">
 
           <ThemeToggle />
 
@@ -117,14 +119,48 @@ const PublicNavbar = () => {
               </button>
             </>
           ) : (
-            <>
-              <Link
-                to="/signup"
-                className="px-6 py-3 bg-linear-to-r from-primary-dark to-primary-light hover:from-primary-light hover:to-primary-dark text-white rounded-lg transition duration-600 shadow-lg font-light"
+            <div ref={desktopMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={desktopToggle}
+                className="px-6 py-3 bg-linear-to-r from-primary-dark to-primary-light hover:from-primary-light hover:to-primary-dark text-white rounded-lg transition duration-600 shadow-lg font-light flex items-center gap-2"
               >
                 Join Now
-              </Link>
-            </>
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform ${desktopMenuOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {desktopMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-60 rounded-xl overflow-hidden border border-[#FFFFFF33] dark:border-border bg-primary-linear dark:bg-main shadow-2xl">
+                  <button
+                    type="button"
+                    onClick={() => desktopHandleNavigate("/login")}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-white text-sm hover:bg-white/10 transition text-left"
+                  >
+                    <UserIcon size={18} className="text-primary-light shrink-0" />
+                    Login
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => desktopHandleNavigate("/signup?user=student")}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-white text-sm hover:bg-white/10 transition text-left"
+                  >
+                    <GraduationCap size={18} className="text-primary-light shrink-0" />
+                    As a Student
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => desktopHandleNavigate("/signup?user=professional")}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-white text-sm hover:bg-white/10 transition text-left"
+                  >
+                    <Briefcase size={18} className="text-primary-light shrink-0" />
+                    As a Professional
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -242,13 +278,63 @@ const PublicNavbar = () => {
                   </p>
                 </div>
               </div>
-              <Link
-                to="/signup"
-                onClick={closeMenu}
-                className="block w-full rounded-lg bg-main text-primary dark:text-white font-medium text-sm py-2.5 text-center"
-              >
-                Join Now
-              </Link>
+              <div ref={mobileMenuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={mobileToggle}
+                  className="block w-full rounded-lg bg-main text-primary dark:text-white font-medium text-sm py-2.5 text-center flex items-center justify-center gap-2"
+                >
+                  Join Now
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform ${mobileMenuOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {mobileMenuOpen && (
+                  <div className="mt-2 rounded-xl overflow-hidden border border-[#FFFFFF33] dark:border-border bg-white/10 dark:bg-[#222936]/20">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        mobileHandleNavigate("/login");
+                        closeMenu();
+                      }}
+                      className="w-full flex items-center gap-3 rounded-xl p-3 text-white text-sm hover:bg-white/10 transition text-left"
+                    >
+                      <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-light/50 dark:bg-border shrink-0">
+                        <UserIcon size={16} />
+                      </span>
+                      <span className="flex-1 font-medium">Login</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        mobileHandleNavigate("/signup?user=student");
+                        closeMenu();
+                      }}
+                      className="w-full flex items-center gap-3 rounded-xl p-3 text-white text-sm hover:bg-white/10 transition text-left"
+                    >
+                      <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-light/50 dark:bg-border shrink-0">
+                        <GraduationCap size={16} />
+                      </span>
+                      <span className="flex-1 font-medium">As a Student</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        mobileHandleNavigate("/signup?user=professional");
+                        closeMenu();
+                      }}
+                      className="w-full flex items-center gap-3 rounded-xl p-3 text-white text-sm hover:bg-white/10 transition text-left"
+                    >
+                      <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-light/50 dark:bg-border shrink-0">
+                        <Briefcase size={16} />
+                      </span>
+                      <span className="flex-1 font-medium">As a Professional</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -263,8 +349,8 @@ const PublicNavbar = () => {
           cancelLabel="Cancel"
           variant="danger"
           isLoading={loggingOut}
-          onConfirm={handleLogout}
-          onCancel={() => { setShowLogoutModal(false); setLoggingOut(false); }}
+          onConfirm={async () => { if (await logout()) setShowLogoutModal(false); }}
+          onCancel={() => setShowLogoutModal(false)}
         />,
         document.body
       )}

@@ -29,9 +29,9 @@ import ApplicationsPage from "./pages/FormApplicationsPage";
 import FormSubmissionPage from "./pages/FormSubmissionPage";
 import NotFoundPage from "./pages/NotFoundPage";
 // Auth Pages
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import VerifyEmailPage from "./pages/VerifyEmailPage";
+import LoginPage from "./pages/auth/LoginPage";
+import SignupPage from "./pages/auth/SignupPage";
+import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 // Dashboard Pages
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import DashboardMembers from "./pages/dashboard/DashboardMembers";
@@ -93,7 +93,7 @@ const PublicLayout = () => {
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter useTransitions={false}>
       <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />

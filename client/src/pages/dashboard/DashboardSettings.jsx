@@ -24,17 +24,9 @@ import DeleteModal from "../../components/DeleteModal";
 import api from "../../utils/api";
 import { ADMIN_ROLES } from '../../data/roles'
 import { pickColor } from '../../data/avatarColors'
+import { ORDINAL_OPTIONS } from '../../data/ordinalMap'
 // Components
 import Skeleton from "../../components/skeletons/DashSettingsSkeleton";
-
-const ORDINAL_OPTIONS = [
-  { label: "Prep", value: 0 },
-  { label: "1st Year", value: 1 },
-  { label: "2nd Year", value: 2 },
-  { label: "3rd Year", value: 3 },
-  { label: "4th Year", value: 4 },
-  { label: "5th Year", value: 5 },
-];
 
 const COMMITTEE_OPTIONS = [
   { label: "Public Relations", value: "Public Relations" },

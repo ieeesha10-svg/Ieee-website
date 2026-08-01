@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Search, Download, Loader2, Mail, GraduationCap, Calendar, Shield } from "lucide-react";
+import { Search, Download, Loader2, Mail, GraduationCap, Calendar, Shield, Phone } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import AdminSidebar from "../components/AdminSidebar";
 // import Notifications from "../components/Notifications";
@@ -9,6 +9,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import { navItems, toolsItems } from "../data/DashboardNav";
 import DashNavSkeleton from "../components/skeletons/DashNavSkeleton";
 import { useMembersList } from "../hooks/dashboard/useMembersList";
+import { useExportUsers } from "../hooks/dashboard/useExportUsers";
 import api from "../utils/api";
 
 const pageMeta = [...navItems, ...toolsItems].reduce((acc, item) => {
@@ -29,10 +30,11 @@ const DashboardLayout = () => {
   const [eventCount, setEventCount] = useState(null);
   const [userCount, setUserCount] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [exporting, setExporting] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef(null);
   const dropdownRef = useRef(null);
+
+  const { exporting, exportUsers } = useExportUsers();
 
   const {
     members: searchResults,
@@ -81,27 +83,6 @@ const DashboardLayout = () => {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleExportUser = useCallback(async (userId) => {
-    setExporting(true);
-    try {
-      const res = await api.post(
-        "/users/export-specific",
-        { userIds: [userId] },
-        { responseType: "blob" },
-      );
-      const url = URL.createObjectURL(res.data);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `ieee-member-${userId}-${new Date().toISOString().slice(0, 10)}.xlsx`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Export failed:", err);
-    } finally {
-      setExporting(false);
-    }
   }, []);
 
   const meta = Object.entries(pageMeta).find(
@@ -243,6 +224,17 @@ const DashboardLayout = () => {
                 <Mail size={16} className="text-muted shrink-0" />
                 <span className="text-sm text-foreground">{selectedUser.email}</span>
               </div>
+              {selectedUser.phone && (
+                <div className="flex items-center gap-3">
+                  <Phone size={16} className="text-muted shrink-0" />
+                  <span className="text-sm text-foreground">{selectedUser.phone}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <Shield size={16} className="text-muted shrink-0" />
+                <span className="text-sm text-foreground capitalize">{selectedUser.role}</span>
+							</div>
+              
               <div className="flex items-center gap-3">
                 <GraduationCap size={16} className="text-muted shrink-0" />
                 <span className="text-sm text-foreground">{selectedUser.college}</span>
@@ -251,13 +243,9 @@ const DashboardLayout = () => {
                 <Calendar size={16} className="text-muted shrink-0" />
                 <span className="text-sm text-foreground">{selectedUser.year}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <Shield size={16} className="text-muted shrink-0" />
-                <span className="text-sm text-foreground capitalize">{selectedUser.role}</span>
-              </div>
 
               <button
-                onClick={() => handleExportUser(selectedUser.id)}
+                onClick={() => exportUsers(selectedUser.id)}
                 disabled={exporting}
                 className="mt-2 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >

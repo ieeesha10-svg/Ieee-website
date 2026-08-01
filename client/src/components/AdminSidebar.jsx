@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -14,10 +15,11 @@ import {
   X,
   Home,
 } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
-import api from "../utils/api";
+import { Toaster } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
+import { useLogout } from "../hooks/auth/useLogout";
 import { navItems, toolsItems } from "../data/DashboardNav";
+import ConfirmModal from "./ConfirmModal";
 
 const ICON_MAP = {
   LayoutDashboard,
@@ -31,19 +33,15 @@ const ICON_MAP = {
 
 const AdminSidebar = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { logout } = useLogout();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  const logout = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post("/users/logout");
-      toast.success("Logged out successfully!");
-      setTimeout(() => navigate("/"), 1000);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Logout failed");
-    }
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    if (await logout()) setShowLogoutModal(false);
   };
 
   const nav = (onNavClick) => (
@@ -147,7 +145,7 @@ const AdminSidebar = () => {
             </p>
           </div>
           <button
-            onClick={logout}
+            onClick={() => setShowLogoutModal(true)}
             aria-label="Log out"
             className="shrink-0 text-muted hover:text-red-400 transition-colors cursor-pointer p-1"
           >
@@ -224,6 +222,21 @@ const AdminSidebar = () => {
         </div>
         {nav()}
       </aside>
+
+      {createPortal(
+        <ConfirmModal
+          isOpen={showLogoutModal}
+          title="Log out"
+          message="Are you sure you want to log out?"
+          confirmLabel="Log out"
+          cancelLabel="Cancel"
+          variant="danger"
+          isLoading={loggingOut}
+          onConfirm={handleLogout}
+          onCancel={() => { setShowLogoutModal(false); setLoggingOut(false); }}
+        />,
+        document.body
+      )}
     </>
   );
 };
