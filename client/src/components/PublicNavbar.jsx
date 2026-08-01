@@ -24,8 +24,8 @@ import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "../context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import ConfirmModal from "./ConfirmModal";
-import { ADMIN_ROLES } from "../data/roles";
 import { useLogout } from "../hooks/auth/useLogout";
+import { canUseScanPage, dashboardHref, isAdminRole } from "../utils/roleAccess";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
@@ -101,11 +101,9 @@ const PublicNavbar = () => {
               >
                 <UserIcon size={18} /> Hi, {user.name.split(" ")[0]}
               </Link>
-              {ADMIN_ROLES.includes(
-                user.role?.toLowerCase(),
-              ) && (
+              {canUseScanPage(user.role) && (
                 <Link
-                  to="/dashboard"
+                  to={dashboardHref(user.role)}
                   className="text-primary-light font-bold hover:underline text-sm"
                 >
                 	Dashboard
@@ -234,7 +232,7 @@ const PublicNavbar = () => {
         </div>
 
         {/* Sheet Footer */}
-        <div className="px-4 pb-8 pt-4 border-t border-[#FFFFFF33] dark:border-border">
+        <div className={`px-4 pb-8 pt-4 ${isAdminRole(user?.role) ? "border-t border-[#FFFFFF33] dark:border-border" : ""}`}>
           {user ? (
             <>
               <Link
@@ -250,9 +248,9 @@ const PublicNavbar = () => {
                   <p className="text-xs text-muted truncate">{user.email}</p>
                 </div>
               </Link>
-              {ADMIN_ROLES.includes(user.role?.toLowerCase()) && (
+              {canUseScanPage(user.role) && (
                 <Link
-                  to="/dashboard"
+                  to={dashboardHref(user.role)}
                   onClick={closeMenu}
                   className="flex items-center justify-center rounded-xl p-3 bg-primary dark:bg-primary/10 text-white dark:text-primary font-semibold text-sm transition mt-2"
                 >
