@@ -12,6 +12,7 @@ import {
   BookOpen,
   CalendarDays,
   Building2,
+  Briefcase,
   Clock,
   Info,
 } from "lucide-react";
@@ -21,9 +22,17 @@ import AuthLayout from "../../layouts/AuthLayout";
 import Modal from "../../components/Modal";
 
 function SignupPage() {
-  // Position-aware: choose student or professional form via ?user= query param
+  // Preselect a tab via ?user= query param (backward compatible), default to student
   const [searchParams] = useSearchParams();
-  const isStudent = searchParams.get("user") !== "professional";
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get("user") === "professional" ? "professional" : "student"
+  );
+  const isStudent = activeTab === "student";
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setFormData((prev) => ({ ...prev, position: tab }));
+  };
 
   // 1. Updated State to match Backend Schema
   const [formData, setFormData] = useState({
@@ -113,6 +122,31 @@ function SignupPage() {
       }
       maxWidth="max-w-2xl"
     >
+      {/* Account Type Tabs */}
+      <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 dark:bg-gray-700/40 rounded-xl mb-6">
+        <button
+          type="button"
+          onClick={() => handleTabChange("student")}
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-sm transition ${
+            isStudent
+              ? "bg-primary text-white shadow"
+              : "text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-sky-400"
+          }`}
+        >
+          <GraduationCap size={18} /> Student
+        </button>
+        <button
+          type="button"
+          onClick={() => handleTabChange("professional")}
+          className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-sm transition ${
+            !isStudent
+              ? "bg-primary text-white shadow"
+              : "text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-sky-400"
+          }`}
+        >
+          <Briefcase size={18} /> Professional
+        </button>
+      </div>
       <form onSubmit={handleSignup} className="space-y-6">
         {/* SECTION 1: Personal Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
