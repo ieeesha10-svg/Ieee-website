@@ -108,13 +108,12 @@ const submitForm = catchAsync(async (req, res) => {
 
   // 9. Send Email (Async)
   if (form.type === "registration" && ticketCode && qrImage) {
-    sendTicketEmail(
-      req.user.email,
-      req.user.name,
+    sendTicketEmail({
+      email: req.user.email,
+      userName: req.user.name,
       ticketCode,
-      form.title,
-      qrImage
-    ).catch(err => console.error("Email Error:", err));
+      eventTitle: form.title
+    }).catch(err => console.error("Email Error:", err));
   }
 
   // 10. Send Response

@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@getbrevo/brevo": "^6.0.2",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.10.0",
     "cookie-parser": "^1.4.7",
@@ -24,7 +25,6 @@
     "mongoose": "^9.0.1",
     "multer": "^2.0.2",
     "nanoid": "^5.1.6",
-    "nodemailer": "^8.0.5",
     "qrcode": "^1.5.4",
     "resend": "^6.17.1",
     "sanitize-html": "^2.17.6",

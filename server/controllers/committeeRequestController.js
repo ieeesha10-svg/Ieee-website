@@ -1,6 +1,7 @@
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 const PendingRequest = require('../models/PendingRequest');
 const User = require('../models/UserModel');
+const { sendCommitteeDecisionEmail } = require('../utils/sendEmail');
 
 const createCommitteeRequest = catchAsync(async (req, res) => {
   const { committee_position } = req.body;
@@ -55,12 +56,24 @@ const updateRequestStatus = catchAsync(async (req, res) => {
     throw new AppError('User not found', 404);
   }
 
-  if(status === 'approved') {
+  if (status === 'approved') {
     user.committee = request.committee_position;
     await user.save();
     await request.deleteOne();
-  } else if(status === 'rejected') {
+    sendCommitteeDecisionEmail({
+      email: user.email,
+      userName: user.name,
+      committeePosition: request.committee_position,
+      accepted: true
+    });
+  } else if (status === 'rejected') {
     await request.deleteOne();
+    sendCommitteeDecisionEmail({
+      email: user.email,
+      userName: user.name,
+      committeePosition: request.committee_position,
+      accepted: false
+    });
   }
 
   res.json({

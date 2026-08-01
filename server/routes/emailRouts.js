@@ -4,10 +4,8 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const {
-  sendBulkEmails,
+  sendBulkEmailsFromExcel,
   sendBulkEmailsFromDB,
-  updateEmailSettings,
-  getEmailLogs,
   getPaginatedEmails,
 } = require("../controllers/emailController");
 const { protect, authorize } = require("../middleware/authMiddleware");
@@ -45,7 +43,7 @@ emailRouter.post(
     { name: 'excelFile', maxCount: 1 },
     { name: 'attachments' }
   ]),
-  sendBulkEmails,
+  sendBulkEmailsFromExcel,
 );
 
 emailRouter.post(
@@ -58,16 +56,7 @@ emailRouter.post(
   sendBulkEmailsFromDB,
 );
 
-// 2. Settings
-emailRouter.put(
-  "/settings",
-  protect,
-  authorize("xcom", "board"),
-  updateEmailSettings,
-);
-
-// 3. Logs
-// emailRouter.get('/logs', protect, authorize('xcom', 'board'), getEmailLogs);
+// 2. Logs
 emailRouter.get(
   "/logs",
   protect,
