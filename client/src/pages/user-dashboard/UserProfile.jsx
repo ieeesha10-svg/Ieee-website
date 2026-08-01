@@ -44,8 +44,17 @@ export default function UserProfile() {
         name: userData.fullName,
         phone: userData.phone,
         age: Number(userData.age),
-        university: userData.university,
-        college: userData.college,
+        ...(userData.position === "professional"
+          ? {
+              organization: userData.organization,
+              roleInOrganization: userData.roleInOrganization,
+              yearsOfExperience: userData.yearsOfExperience ? Number(userData.yearsOfExperience) : undefined,
+              reasonForRegistration: userData.reasonForRegistration,
+            }
+          : {
+              university: userData.university,
+              college: userData.college,
+            }),
         optionalData: { aboutMe: userData.aboutMe },
       };
 
@@ -169,22 +178,54 @@ export default function UserProfile() {
             type="email"
             placeholder="name@gmail.com"
           />
-          <InputBox
-            label="University"
-            name="university"
-            value={userData.university}
-            isEditing={isEditing}
-            onChange={handleChange}
-            placeholder="shorouk academy"
-          />
-          <InputBox
-            label="College"
-            name="college"
-            value={userData.college}
-            isEditing={isEditing}
-            onChange={handleChange}
-            placeholder="Engineering"
-          />
+          {userData.position === "professional" ? (
+            <>
+              <InputBox
+                label="Organization / Company"
+                name="organization"
+                value={userData.organization}
+                isEditing={isEditing}
+                onChange={handleChange}
+                placeholder="Google"
+              />
+              <InputBox
+                label="Role in Organization"
+                name="roleInOrganization"
+                value={userData.roleInOrganization}
+                isEditing={isEditing}
+                onChange={handleChange}
+                placeholder="Software Engineer"
+              />
+              <InputBox
+                label="Years of Experience"
+                name="yearsOfExperience"
+                value={userData.yearsOfExperience}
+                isEditing={isEditing}
+                onChange={handleChange}
+                type="number"
+                placeholder="2"
+              />
+            </>
+          ) : (
+            <>
+              <InputBox
+                label="University"
+                name="university"
+                value={userData.university}
+                isEditing={isEditing}
+                onChange={handleChange}
+                placeholder="shorouk academy"
+              />
+              <InputBox
+                label="College"
+                name="college"
+                value={userData.college}
+                isEditing={isEditing}
+                onChange={handleChange}
+                placeholder="Engineering"
+              />
+            </>
+          )}
           <InputBox
             label="Age"
             name="age"
@@ -215,11 +256,11 @@ export default function UserProfile() {
           {/* About Me Textarea */}
           <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[16px] md:rounded-[24px] p-[14px] md:p-[18.8px] flex flex-col gap-1 md:gap-[6px] lg:col-span-2 transition-colors">
             <label className="text-[#475569] dark:text-muted font-bold text-[12px] md:text-[13px] tracking-wide">
-              About Me (Optional)
+              {userData.position === "professional" ? "Reason for Registration (Optional)" : "About Me (Optional)"}
             </label>
             <textarea
-              name="aboutMe"
-              value={userData.aboutMe}
+              name={userData.position === "professional" ? "reasonForRegistration" : "aboutMe"}
+              value={userData.position === "professional" ? userData.reasonForRegistration : userData.aboutMe}
               onChange={handleChange}
               disabled={!isEditing}
               className="bg-[#F1F5F9] dark:bg-transparent border-[0.8px] border-[#CBD5E1] dark:border-[#222936] dark:border-transparent rounded-[10px] md:rounded-[12px] p-2 md:p-[12px] text-[#64748B] dark:text-white text-[13px] md:text-[14px] resize-none h-[50px] md:h-[55px] disabled:opacity-80 outline-none focus:border-[#0096FF] focus:ring-1 focus:ring-[#0096FF] dark:focus:border-primary dark:focus:ring-primary transition-colors"
