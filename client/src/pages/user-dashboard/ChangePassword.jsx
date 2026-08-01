@@ -99,6 +99,7 @@ export default function ChangePassword() {
       await api.put(`/users/update-password/${user._id}`, {
         currentPassword: passwords.current,
         newPassword: passwords.new,
+        confirmNewPassword: passwords.confirm,
       });
       setMessage({ type: "success", text: "Password updated successfully!" });
       setPasswords({ current: "", new: "", confirm: "" });
