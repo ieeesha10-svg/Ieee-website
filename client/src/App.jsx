@@ -63,9 +63,7 @@ const ProtectedRoute = ({ requireAdmin = false, roles = null }) => {
   }
 
   if (requireAdmin) {
-    const isAdmin = ADMIN_ROLES.includes(
-      user.role?.toLowerCase(),
-    );
+    const isAdmin = ADMIN_ROLES.includes(user.role?.toLowerCase());
     if (!isAdmin) return <Navigate to="/login" replace />;
   }
 
@@ -89,9 +87,10 @@ const PublicLayout = () => {
           <Outlet />
         </div>
       </main>
-      {!["/login", "/signup", "/verify", "/dev-team", '/applications'].includes(
+      {!["/login", "/signup", "/verify", "/dev-team", "/applications"].includes(
         location.pathname,
-      ) && !location.pathname.startsWith('/applications/') && <Footer />}
+      ) &&
+        !location.pathname.startsWith("/applications/") && <Footer />}
     </div>
   );
 };
@@ -127,37 +126,40 @@ function App() {
           </Route>
         </Route>
 
-        <Route element={<ProtectedRoute requireAdmin />}> 
-	        <Route element={<DashboardLayout />}>
-	          <Route path="/dashboard" element={<DashboardHome />} />
-	          <Route path="/dashboard/users" element={<DashboardMembers />} />
-	          <Route path="/dashboard/events" element={<DashboardEvents />} />
-	          <Route
-	            path="/dashboard/events/create-event"
-	            element={<CreateEvent />}
-	          />
-	          <Route
-	            path="/dashboard/events/flagship"
-	            element={<FeaturedEvents />}
-	          />
-	          <Route path="/dashboard/crew" element={<DashboardCrew />} />
-	          <Route path="/dashboard/email-logs" element={<EmailLogsPage />} />
-	          <Route path="/dashboard/forms" element={<DashboardForms />} />
-	          <Route path="/dashboard/forms/create-form" element={<CreateForm />} />
-	          <Route
-	            path="/dashboard/forms/submissions/:formId"
-	            element={<ShowFormSubmissions />}
-	          />
-	          <Route path="/dashboard/email" element={<BulkMailer />} />
-	          <Route path="/dashboard/settings" element={<DashboardSettings />} />
-	        </Route>
-        </Route> 
+        <Route element={<ProtectedRoute requireAdmin />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<DashboardHome />} />
+            <Route path="/dashboard/users" element={<DashboardMembers />} />
+            <Route path="/dashboard/events" element={<DashboardEvents />} />
+            <Route
+              path="/dashboard/events/create-event"
+              element={<CreateEvent />}
+            />
+            <Route
+              path="/dashboard/events/flagship"
+              element={<FeaturedEvents />}
+            />
+            <Route path="/dashboard/crew" element={<DashboardCrew />} />
+            <Route path="/dashboard/email-logs" element={<EmailLogsPage />} />
+            <Route path="/dashboard/forms" element={<DashboardForms />} />
+            <Route
+              path="/dashboard/forms/create-form"
+              element={<CreateForm />}
+            />
+            <Route
+              path="/dashboard/forms/submissions/:formId"
+              element={<ShowFormSubmissions />}
+            />
+            <Route path="/dashboard/email" element={<BulkMailer />} />
+            <Route path="/dashboard/settings" element={<DashboardSettings />} />
+          </Route>
+        </Route>
 
         <Route element={<ProtectedRoute roles={SCAN_ACCESS_ROLES} />}>
-	        <Route element={<DashboardLayout />}>
-	          <Route path="/dashboard/scan" element={<QRScanner />} />
-	        </Route>
-        </Route> 
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard/scan" element={<QRScanner />} />
+          </Route>
+        </Route>
 
         <Route
           path="*"

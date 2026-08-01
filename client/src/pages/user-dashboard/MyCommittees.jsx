@@ -2,48 +2,9 @@ import React from "react";
 import { useOutletContext } from "react-router-dom";
 import { Users, Check } from "lucide-react";
 
-const COMMITTEES = [
-  {
-    name: "Technical Committee",
-    emoji: "⚙️",
-    description:
-      "Workshops, projects and technical events for engineering students.",
-    members: 34,
-  },
-  {
-    name: "Media & Design",
-    emoji: "🎨",
-    description: "Visual content, social media and branding for the branch.",
-    members: 21,
-  },
-  {
-    name: "Marketing",
-    emoji: "📣",
-    description: "Outreach campaigns and promoting IEEE events across campus.",
-    members: 18,
-  },
-  {
-    name: "Human Resources",
-    emoji: "🤝",
-    description: "Recruiting, onboarding and member well-being initiatives.",
-    members: 14,
-  },
-  {
-    name: "Events & Logistics",
-    emoji: "🎯",
-    description: "Planning and executing all branch events end-to-end.",
-    members: 28,
-  },
-  {
-    name: "Finance",
-    emoji: "💰",
-    description:
-      "Budgeting, sponsorships and financial reporting for the branch.",
-    members: 8,
-  },
-];
+import { committees } from "../../data/committeesData";
 
-function CommitteeCard({ name, emoji, description, members }) {
+function CommitteeCard({ name, icon, emoji, description }) {
   return (
     <div className="relative bg-white dark:bg-[#13161D] rounded-[16px] md:rounded-[20px] border-[0.8px] border-[#0096FF] dark:border-[rgba(0,150,255,0.3)] shadow-[0px_4px_16px_rgba(0,150,255,0.12)] dark:shadow-[0px_4px_16px_rgba(0,150,255,0.08)] p-5 md:p-6 transition-all duration-300 group hover:shadow-[0px_6px_20px_rgba(0,100,220,0.12)]">
       {/* Joined Badge */}
@@ -52,9 +13,9 @@ function CommitteeCard({ name, emoji, description, members }) {
         Joined
       </div>
 
-      {/* Emoji Icon */}
+      {/* Icon */}
       <div className="w-[44px] h-[44px] rounded-[12px] bg-[#F0F7FF] dark:bg-[#1A1F2E] flex items-center justify-center mb-4 text-[22px] transition-transform duration-300 group-hover:scale-105">
-        {emoji}
+        {icon ? <img src={icon} alt={name} className="w-6 h-6 object-contain" /> : emoji}
       </div>
 
       {/* Info */}
@@ -80,10 +41,10 @@ export default function MyCommittees() {
   const { userData } = useOutletContext();
   const userCommittee = userData?.committee || "";
 
-  const myCommittee = COMMITTEES.find(
+  const myCommittee = committees.find(
     (committee) =>
-      committee.name.toLowerCase().includes(userCommittee.toLowerCase()) ||
-      userCommittee.toLowerCase().includes(committee.name.toLowerCase()),
+      committee.label.toLowerCase().trim() === userCommittee.toLowerCase().trim() ||
+      committee.title.toLowerCase().trim() === userCommittee.toLowerCase().trim(),
   );
 
   return (
@@ -103,7 +64,11 @@ export default function MyCommittees() {
 
       {/* Committee Card */}
       {myCommittee ? (
-        <CommitteeCard {...myCommittee} />
+        <CommitteeCard
+          name={myCommittee.title}
+          icon={myCommittee.icon}
+          description={myCommittee.subtitle}
+        />
       ) : (
         <div className="text-center py-12">
           <p className="text-[#7A96B2] dark:text-muted text-[14px]">
