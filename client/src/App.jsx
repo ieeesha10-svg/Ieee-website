@@ -8,7 +8,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-import { ADMIN_ROLES } from "./data/roles";
+import { ADMIN_ROLES, SCAN_ACCESS_ROLES } from "./data/roles";
 // Layouts
 import DashboardLayout from "./layouts/DashboardLayout";
 import UserLayout from "./layouts/UserLayout";
@@ -52,10 +52,15 @@ import ChangePassword from "./pages/user-dashboard/ChangePassword";
 import MyCommittees from "./pages/user-dashboard/MyCommittees";
 import AttendedEvents from "./pages/user-dashboard/AttendedEvents";
 
-const ProtectedRoute = ({ requireAdmin = false }) => {
+const ProtectedRoute = ({ requireAdmin = false, roles = null }) => {
   const { user } = useAuth();
 
   if (!user) return <Navigate to="/login" replace />;
+
+  if (roles) {
+    const allowed = roles.includes(user.role?.toLowerCase());
+    if (!allowed) return <Navigate to="/login" replace />;
+  }
 
   if (requireAdmin) {
     const isAdmin = ADMIN_ROLES.includes(
@@ -145,6 +150,11 @@ function App() {
 	          />
 	          <Route path="/dashboard/email" element={<BulkMailer />} />
 	          <Route path="/dashboard/settings" element={<DashboardSettings />} />
+	        </Route>
+        </Route> 
+
+        <Route element={<ProtectedRoute roles={SCAN_ACCESS_ROLES} />}>
+	        <Route element={<DashboardLayout />}>
 	          <Route path="/dashboard/scan" element={<QRScanner />} />
 	        </Route>
         </Route> 
