@@ -140,11 +140,11 @@ const registerUser = async (req, res) => {
     }
 
     if (position === "student") {
-      if (!university || !college || !yearOfStudy) {
+      if (!university || !college || yearOfStudy === "" || yearOfStudy == null) {
         throw new AppError('Students must provide university, college, and year of study', 400);
       }
     } else if (position === "professional") {
-      if (!organization || !roleInOrganization || !yearsOfExperience) {
+      if (!organization || !roleInOrganization || yearsOfExperience === "" || yearsOfExperience == null) {
         throw new AppError('Professionals must provide organization, role in organization, and years of experience', 400);
       }
     }
@@ -254,7 +254,27 @@ const verifyEmailOTP = async (req, res) => {
     user.otpExpires = undefined;
     await user.save();
 
-    res.status(200).json({ message: "Email verified successfully! You can now login." });
+    // Auto-login: issue the JWT cookie right after verification
+    const token = generateToken(user._id);
+    const isProduction = process.env.NODE_ENV !== 'development';
+
+    res.cookie('jwt', token, {
+      httpOnly: true,
+      secure: isProduction, // MUST be true in production for 'none' to work
+      sameSite: isProduction ? 'none' : 'lax',
+      domain: isProduction ? '.ieeesha.org' : undefined,
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
+    res.status(200).json({
+      message: "Email verified successfully!",
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      committee: user.committee,
+      position: user.position
+    });
 
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -881,13 +901,27 @@ const upgradeMemberRole = catchAsync(async (req, res, next) => {
 
 //delete member 
 const deleteMember = catchAsync(async (req, res, next) => {
+  // Only xcom can delete other users; anyone can delete themselves
+  const isSuperAdmin = req.user?.role === "xcom";
+  const isSelf = String(req.params.id) === String(req.user?._id);
+
+  if (!isSuperAdmin && !isSelf) {
+    return next(new AppError("You can only delete your own account", 403));
+  }
+
   const member = await User.findByIdAndDelete(req.params.id);
   if (!member) {
     return next(new AppError("Member not found", 400));
   }
-  res.status(204).json({
+
+  // Completely remove the user's related data
+  await Submission.deleteMany({ userId: member._id });
+  await PendingRequest.deleteMany({ userId: member._id });
+
+  res.status(200).json({
     status: 'success',
-    message: 'Member deleted successfly'
+    message: 'Member deleted successfully',
+    deletedId: member._id
   });
 });
 
