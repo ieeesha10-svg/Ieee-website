@@ -35,6 +35,11 @@ export default function UserLayout() {
     committee: "",
     aboutMe: "",
     yearOfStudy: "",
+    position: "",
+    organization: "",
+    roleInOrganization: "",
+    yearsOfExperience: "",
+    reasonForRegistration: "",
     createdAt: "",
   });
 
@@ -69,6 +74,11 @@ export default function UserLayout() {
         committee: user.committee || "",
         aboutMe: user.optionalData?.aboutMe || "",
         yearOfStudy: user.yearOfStudy || "",
+        position: user.position || "student",
+        organization: user.organization || "",
+        roleInOrganization: user.roleInOrganization || "",
+        yearsOfExperience: user.yearsOfExperience || "",
+        reasonForRegistration: user.reasonForRegistration || "",
         createdAt: user.createdAt || "",
       });
     } catch (error) {
@@ -156,15 +166,23 @@ export default function UserLayout() {
 
             <div className="flex flex-wrap justify-left md:justify-start gap-2 md:gap-[10px]">
               {/* Badge 1: Technical Committee */}
-              {userData.committee && (
+              {userData.committee && userData.committee !== "no committee" && (
                 <ProfileBadge text={`${userData.committee} Committee`} />
               )}
 
-              {/* Badge 2: 3rd Year • Engineering */}
-              {(userData.yearOfStudy || userData.college) && (
-                <ProfileBadge
-                  text={`${getYearText(userData.yearOfStudy)}${userData.yearOfStudy && userData.college ? " • " : ""}${userData.college}`}
-                />
+              {/* Badge 2: 3rd Year • Engineering OR Organization */}
+              {userData.position === "professional" ? (
+                (userData.organization || userData.roleInOrganization) && (
+                  <ProfileBadge
+                    text={`${userData.roleInOrganization ? userData.roleInOrganization : ""}${userData.roleInOrganization && userData.organization ? " • " : ""}${userData.organization ? userData.organization : ""}`}
+                  />
+                )
+              ) : (
+                (userData.yearOfStudy || userData.college) && (
+                  <ProfileBadge
+                    text={`${getYearText(userData.yearOfStudy)}${userData.yearOfStudy && userData.college ? " • " : ""}${userData.college}`}
+                  />
+                )
               )}
 
               {/* Badge 3: Member since 2022 */}
