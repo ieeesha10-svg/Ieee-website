@@ -323,7 +323,7 @@ export default function Dashboard() {
               <thead>
                 <tr className="text-xs font-semibold text-muted uppercase tracking-wide">
                   <th className="text-left font-semibold pb-2">NAME</th>
-                  <th className="text-left font-semibold pb-2">COLLEGE</th>
+                  <th className="text-left font-semibold pb-2">COLLEGE/ORG</th>
                   <th className="text-right font-semibold pb-2">REGISTERED</th>
                 </tr>
               </thead>
@@ -339,7 +339,7 @@ export default function Dashboard() {
                       {signup.name}
                     </td>
                     <td className="text-sm text-muted whitespace-nowrap">
-                      {signup.college}
+                      {signup.institution}
                     </td>
                     <td className="text-xs text-muted text-right whitespace-nowrap">
                       {signup.time}

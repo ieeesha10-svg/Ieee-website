@@ -86,7 +86,9 @@ export function useDashboard() {
   const latestSignups = (stats.latestSignups || []).slice(0, 5).map((u) => ({
     initials: getInitials(u.name),
     name: u.name,
-    college: capitalize(u.college),
+    institution: capitalize(
+      u.position === "professional" ? u.organization : u.college,
+    ),
     time: timeAgo(u.createdAt),
     avatarColor: pickColor(u._id),
   }));
