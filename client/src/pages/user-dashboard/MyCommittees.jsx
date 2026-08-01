@@ -1,6 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Users, Check } from "lucide-react";
+import { Users, Check, RefreshCw, Loader2 } from "lucide-react";
+import api from "../../utils/api";
+import Modal from "../../components/Modal";
+import Button from "../../components/Button";
 
 import { committees } from "../../data/committeesData";
 
@@ -47,19 +50,64 @@ export default function MyCommittees() {
       committee.title.toLowerCase().trim() === userCommittee.toLowerCase().trim(),
   );
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCommittee, setSelectedCommittee] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState({ type: "", text: "" });
+
+  const handleRequestChange = async () => {
+    if (!selectedCommittee) return;
+    setIsSubmitting(true);
+    setMessage({ type: "", text: "" });
+
+    try {
+      await api.post("/committee-requests", {
+        committee_position: selectedCommittee,
+      });
+      setMessage({
+        type: "success",
+        text: "Your request has been submitted successfully and is pending admin approval.",
+      });
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setMessage({ type: "", text: "" });
+        setIsSubmitting(false);
+      }, 3000);
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: error.response?.data?.message || "Failed to submit request.",
+      });
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-[#13161D] rounded-[32px] p-8 md:p-10 border border-[#F1F5F9] dark:border-[#222936]">
       {/* Header Section */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-[56px] h-[56px] rounded-[20px] bg-[#8B5CF6] flex items-center justify-center text-white">
-          <Users size={24} />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <div className="w-[56px] h-[56px] rounded-[20px] bg-[#8B5CF6] flex items-center justify-center text-white shrink-0">
+            <Users size={24} />
+          </div>
+          <div>
+            <h2 className="text-[24px] font-bold text-[#0A1628] dark:text-white">
+              My Committee
+            </h2>
+            <p className="text-[#64748B] text-[14px]">Your current committee</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-[24px] font-bold text-[#0A1628] dark:text-white">
-            My Committee
-          </h2>
-          <p className="text-[#64748B] text-[14px]">Your current committee</p>
-        </div>
+        <Button
+          onClick={() => {
+            setSelectedCommittee("");
+            setMessage({ type: "", text: "" });
+            setIsModalOpen(true);
+          }}
+          className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors w-fit"
+        >
+          <RefreshCw size={16} />
+          Request Change
+        </Button>
       </div>
 
       {/* Committee Card */}
@@ -76,6 +124,71 @@ export default function MyCommittees() {
           </p>
         </div>
       )}
+
+      {/* Request Change Modal */}
+      <Modal
+        open={isModalOpen}
+        onClose={() => !isSubmitting && setIsModalOpen(false)}
+        title="Request Committee Change"
+      >
+        <div className="flex flex-col gap-4 mt-2">
+          <p className="text-sm text-[#64748B] dark:text-muted">
+            Select the new committee you wish to join. Your request will be reviewed by the board.
+          </p>
+
+          {message.text && (
+            <div
+              className={`p-3 rounded-lg text-sm font-medium ${
+                message.type === "success"
+                  ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                  : "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400"
+              }`}
+            >
+              {message.text}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-[#0A1628] dark:text-white">
+              New Committee
+            </label>
+            <select
+              value={selectedCommittee}
+              onChange={(e) => setSelectedCommittee(e.target.value)}
+              disabled={isSubmitting}
+              className="w-full bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-xl p-3 text-sm text-[#0A1628] dark:text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50"
+            >
+              <option value="" disabled>Select a committee</option>
+              {committees
+                .filter((c) => !myCommittee || c.id !== myCommittee.id)
+                .map((c) => (
+                  <option key={c.id} value={c.label}>
+                    {c.label}
+                  </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-[#222936]">
+            <Button
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+              disabled={isSubmitting}
+              className="px-5 py-2 text-sm text-[#64748B] dark:text-muted border-gray-200 dark:border-[#222936] hover:bg-gray-50 dark:hover:bg-[#1A1F2E] rounded-xl transition-colors"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRequestChange}
+              disabled={isSubmitting || !selectedCommittee}
+              className="bg-primary hover:bg-primary-dark text-white px-5 py-2 text-sm rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
+            >
+              {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+              Submit Request
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
