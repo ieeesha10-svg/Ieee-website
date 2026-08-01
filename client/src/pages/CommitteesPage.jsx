@@ -1,29 +1,44 @@
 import React, { useState } from 'react';
-// import { Lock, Unlock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { committees } from '../data/committeesData';
-
-/* FUTURE FEATURE FOR THE UPCOMING SEASONS */
-// function RecruitmentPill({ open }) {
-//   if (open) {
-//     return (
-//       <span className="inline-flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border text-green-600 dark:text-green-400 border-green-200 dark:border-green-400/20 bg-green-50 dark:bg-green-400/5">
-//         <Unlock className="w-3.5 h-3.5" />
-//         Recruitment Is Open
-//       </span>
-//     );
-//   }
-//   return (
-//     <span className="inline-flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border text-muted dark:text-gray-400 border-gray-200 dark:border-white/10">
-//       <Lock className="w-3.5 h-3.5" />
-//       Recruitment Is Closed
-//     </span>
-//   );
-// }
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
+import toast from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
 
 export default function CommitteesPage() {
   const [activeId, setActiveId] = useState(committees[0].id);
   const activeCommittee = committees.find(c => c.id === activeId) || committees[0];
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [isApplying, setIsApplying] = useState(false);
+
+  const handleApply = async () => {
+    if (!user) {
+      toast.error('Please log in to apply for a committee.');
+      navigate('/login');
+      return;
+    }
+
+    if (user.committee === activeCommittee.id) {
+      toast.error(`You are already in the ${activeCommittee.label} committee.`);
+      return;
+    }
+
+    try {
+      setIsApplying(true);
+      await api.post('/committee-requests', {
+        committee_position: activeCommittee.id
+      });
+      toast.success(`Successfully requested to join ${activeCommittee.label} committee!`);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || 'Failed to submit committee request.'
+      );
+    } finally {
+      setIsApplying(false);
+    }
+  };
 
   return (
     <section className="py-16 px-6 bg-main transition-colors">
@@ -90,11 +105,19 @@ export default function CommitteesPage() {
               </li>
             ))}
           </ul>
-          <div className="mt-6">
-						{/* <RecruitmentPill open={activeCommittee.recruitmentOpen} />*/}
-						<Link to="/applications" className='inline-flex items-center gap-2 text-xs font-medium px-4 py-2 rounded-full border text-primary dark:text-primary-light border-primary/70 dark:border-primary-light/70 bg-primary/10 dark:bg-primary-light/10 hover:bg-primary/20 dark:hover:bg-primary-light/20 transition-colors duration-300'>
-							View Open Positions
-						</Link>
+          <div className="mt-8 flex items-center gap-4 flex-wrap">
+            <button 
+              onClick={handleApply}
+              disabled={isApplying}
+              className='inline-flex items-center gap-2 text-sm font-medium px-6 py-2.5 rounded-full border text-white dark:text-white border-primary bg-primary hover:bg-primary/90 dark:border-primary-light dark:bg-primary-light dark:hover:bg-primary-light/90 transition-colors duration-300 disabled:opacity-70 disabled:cursor-not-allowed'
+            >
+              {isApplying && <Loader2 className="w-4 h-4 animate-spin" />}
+              {!isApplying && (user?.committee === activeCommittee.id ? 'Current Committee' : 'Apply to this committee')}
+            </button>
+
+            <Link to="/applications" className='inline-flex items-center gap-2 text-sm font-medium px-6 py-2.5 rounded-full border text-primary dark:text-primary-light border-primary/70 dark:border-primary-light/70 bg-primary/10 dark:bg-primary-light/10 hover:bg-primary/20 dark:hover:bg-primary-light/20 transition-colors duration-300'>
+              View All Open Positions
+            </Link>
           </div>
         </div>
       </div>
