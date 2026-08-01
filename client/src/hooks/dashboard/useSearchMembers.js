@@ -16,6 +16,11 @@ function mapUser(u) {
       : "N/A",
     year: formatAcademicYear(u.yearOfStudy),
     yearOfStudy: u.yearOfStudy,
+    position: u.position || "",
+    organization: u.organization || "",
+    roleInOrganization: u.roleInOrganization || "",
+    yearsOfExperience: u.yearsOfExperience,
+    reasonForRegistration: u.reasonForRegistration || "",
     attendance: 0,
     maxAttendance: 1,
     status: u.isVerified ? "Verified" : "Unverified",
@@ -71,5 +76,5 @@ export function useSearchMembers() {
     };
   }, [keyword]);
 
-  return { keyword, setKeyword, results, isLoading, error };
+  return { keyword, setKeyword, results, setResults, isLoading, error };
 }

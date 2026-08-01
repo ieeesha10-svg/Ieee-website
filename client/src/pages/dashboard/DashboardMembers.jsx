@@ -1,23 +1,27 @@
-import React, { useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Download, Inbox, Loader2 } from 'lucide-react';
+import React, { useState, useCallback, Fragment } from 'react';
+import { ChevronDown, ChevronLeft, ChevronRight, Download, Inbox, Loader2, Trash2 } from 'lucide-react';
 // Hooks & data
-import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
 import { useMembersList } from '../../hooks/dashboard/useMembersList';
 import { useSearchMembers } from '../../hooks/dashboard/useSearchMembers';
+import { useExportUsers } from '../../hooks/dashboard/useExportUsers';
 import { useUpdateRole } from '../../hooks/dashboard/useUpdateRole';
 import { useCommitteeRequests } from '../../hooks/dashboard/useCommitteeRequests';
 import { useChangeCommittee } from '../../hooks/dashboard/useChangeCommittee';
+import { useDeleteMember } from '../../hooks/auth/useDeleteMember';
 import { committees } from '../../data/committeesData';
 // Components
 import Button from '../../components/Button';
 import AdvancedSearch from '../../components/AdvancedSearch';
 import MemberFilters from '../../components/dashboard/MemberFilters';
+import DeleteUserModal from '../../components/dashboard/DeleteUserModal';
 
 export default function DashboardMembers() {
-  const { user } = useAuth();
+	const { user } = useAuth();
+  
   const {
     members,
+    setMembers,
     totalCount,
     collegeFilters,
     yearFilters,
@@ -28,6 +32,8 @@ export default function DashboardMembers() {
     toggleYear,
     activeRoles,
     toggleRole,
+    activePosition,
+    togglePosition,
     page,
     setPage,
     totalPages,
@@ -36,15 +42,23 @@ export default function DashboardMembers() {
     hasActiveFilters,
   } = useMembersList();
 
-  const { keyword, setKeyword, results, isLoading: searchLoading } = useSearchMembers();
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [memberRoles, setMemberRoles] = useState({});
+  const [expandedId, setExpandedId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+	const [memberCommittees, setMemberCommittees] = useState({});
+  
+  const { keyword, setKeyword, results, setResults, isLoading: searchLoading } = useSearchMembers();
   const isSearching = keyword.trim().length >= 2;
-  const displayMembers = isSearching ? results : members;
+  const displayMembers = isSearching
+    ? results.filter((m) => !activePosition || m.position === activePosition)
+    : members;
   const loading = isSearching ? searchLoading : membersLoading;
 
-  const { updatingRole, updateRole } = useUpdateRole();
-  const [memberRoles, setMemberRoles] = useState({});
-  const { updatingCommittee, updateCommittee } = useChangeCommittee();
-  const [memberCommittees, setMemberCommittees] = useState({});
+	const { updatingRole, updateRole } = useUpdateRole();
+  
+	const { updatingCommittee, updateCommittee } = useChangeCommittee();
+  
   const {
     requests,
     loading: requestsLoading,
@@ -52,8 +66,25 @@ export default function DashboardMembers() {
     processRequest,
     processingId,
   } = useCommitteeRequests();
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [exporting, setExporting] = useState(false);
+	const { deleteMember, deleting } = useDeleteMember();
+  
+  const { exporting, exportUsers } = useExportUsers();
+
+  const canDelete = (member) =>
+    user?.role === "xcom" || member.id === user?._id;
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteTarget) return;
+    const deletedId = await deleteMember(deleteTarget);
+    if (!deletedId) return;
+    setMembers((prev) => prev.filter((m) => m.id !== deletedId));
+    setResults((prev) => prev.filter((m) => m.id !== deletedId));
+    if (deletedId === user?._id) {
+      window.location.href = "/login";
+      return;
+    }
+    setDeleteTarget(null);
+  }, [deleteTarget, user, deleteMember, setMembers, setResults]);
 
   const toggleSelect = (id) => {
     setSelectedIds((prev) =>
@@ -84,27 +115,6 @@ export default function DashboardMembers() {
     },
     [memberCommittees, displayMembers, updateCommittee],
   );
-
-  const handleExport = useCallback(async () => {
-    setExporting(true);
-    try {
-      const res = await api.post(
-        "/users/export-specific",
-        { userIds: selectedIds },
-        { responseType: "blob" },
-      );
-      const url = URL.createObjectURL(res.data);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `ieee-members-${new Date().toISOString().slice(0, 10)}.xlsx`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Export failed:", err);
-    } finally {
-      setExporting(false);
-    }
-  }, [selectedIds]);
 
   return (
     <div className="min-h-screen bg-main p-4 md:p-6">
@@ -144,11 +154,31 @@ export default function DashboardMembers() {
               placeholder="Search members by name or email..."
               className="w-full md:max-w-xs"
             />
+
+            <div className="flex items-center gap-1 self-start md:self-center bg-card-alt border border-border rounded-lg p-1">
+              {[
+                { value: "", label: "All" },
+                { value: "student", label: "Students" },
+                { value: "professional", label: "Professionals" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => togglePosition(opt.value)}
+                  className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap ${
+                    activePosition === opt.value
+                      ? "bg-primary text-white"
+                      : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex flex-col gap-1 lg:gap-2">
             <button
-              onClick={handleExport}
+              onClick={() => exportUsers(selectedIds)}
               disabled={exporting || selectedIds.length === 0}
               title={selectedIds.length === 0 ? "Select members to export" : ""}
               className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 w-full lg:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
@@ -204,18 +234,19 @@ export default function DashboardMembers() {
                   />
                 </th>
                 <th className="px-6 w-[30%]">MEMBER</th>
-                <th className="px-4 w-[15%]">COLLEGE</th>
+                <th className="px-4 w-[15%]">COLLEGE/ORG</th>
                 <th className="px-4 w-[10%]">ROLE</th>
-                <th className="px-4 w-[15%]">ACADEMIC YEAR</th>
+                <th className="px-4 w-[15%]">YEAR/EXP</th>
                 <th className="px-4 w-[20%]">COMMITTEE</th>
                 <th className="px-4 w-[10%]">STATUS</th>
+                <th className="px-4 w-[5%]">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="text-sm text-muted py-16 text-center"
                   >
                     <div className="flex items-center justify-center gap-2">
@@ -227,7 +258,7 @@ export default function DashboardMembers() {
               ) : displayMembers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="text-sm text-muted py-16 text-center"
                   >
                     {isSearching
@@ -237,8 +268,8 @@ export default function DashboardMembers() {
                 </tr>
               ) : (
                 displayMembers.map((member) => (
+                  <Fragment key={member.id}>
                   <tr
-                    key={member.id}
                     className="last:border-0 hover:bg-muted/5 transition-colors"
                   >
                     <td className="py-3 px-2">
@@ -256,18 +287,53 @@ export default function DashboardMembers() {
                         >
                           {member.initials}
                         </div>
-                        <span className="text-sm font-medium text-foreground">
-                          {member.name}
-                          {member.id === user?._id && (
-                            <span className="ml-1.5 text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
-                              You
-                            </span>
-                          )}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium text-foreground">
+                            {member.name}
+                            {member.id === user?._id && (
+                              <span className="ml-1.5 text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                                You
+                              </span>
+                            )}
+                            {member.position === "professional" ? (
+                              <span className="ml-1.5 text-[10px] font-semibold text-violet-700 bg-violet-50 dark:text-violet-300 dark:bg-violet-500/10 px-1.5 py-0.5 rounded-full">
+                                Professional
+                              </span>
+                            ) : member.position === "student" ? (
+                              <span className="ml-1.5 text-[10px] font-semibold text-teal-700 bg-teal-50 dark:text-teal-300 dark:bg-teal-500/10 px-1.5 py-0.5 rounded-full">
+                                Student
+                              </span>
+                            ) : null}
+                          </span>
+                        </div>
+                        {member.position === "professional" && (
+                          <button
+                            onClick={() =>
+                              setExpandedId(
+                                expandedId === member.id ? null : member.id,
+                              )
+                            }
+                            className="shrink-0 p-1 text-muted hover:text-primary rounded-lg transition-colors"
+                            title={
+                              expandedId === member.id
+                                ? "Hide details"
+                                : "Show details"
+                            }
+                          >
+                            <ChevronDown
+                              size={16}
+                              className={`transition-transform ${
+                                expandedId === member.id ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="py-3 px-4 text-sm text-muted">
-                      {member.college}
+                      {member.position === "professional"
+                        ? member.organization || "N/A"
+                        : member.college}
                     </td>
                     <td className="py-3 px-4">
                       <select
@@ -286,7 +352,11 @@ export default function DashboardMembers() {
                       </select>
                     </td>
                     <td className="py-3 px-4 text-sm text-muted">
-                      {member.year}
+                      {member.position === "professional"
+                        ? member.yearsOfExperience != null
+                          ? `${member.yearsOfExperience} yr`
+                          : "N/A"
+                        : member.year}
                     </td>
                     <td className="py-3 px-4">
                       <select
@@ -318,7 +388,43 @@ export default function DashboardMembers() {
                         </span>
                       )}
                     </td>
+                    <td className="py-3 px-4">
+                      {canDelete(member) && (
+                        <button
+                          onClick={() => setDeleteTarget(member)}
+                          title="Delete user"
+                          className="p-2 text-muted hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </td>
                   </tr>
+                  {expandedId === member.id && member.position === "professional" && (
+                    <tr className="bg-muted/5 border-b border-border/60">
+                      <td colSpan={8} className="px-6 py-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {[
+                            { label: "Organization", value: member.organization },
+                            { label: "Role in Organization", value: member.roleInOrganization },
+                            {
+                              label: "Years of Experience",
+                              value: member.yearsOfExperience != null ? String(member.yearsOfExperience) : "",
+                            },
+                            { label: "Reason for Registration", value: member.reasonForRegistration },
+                          ].map((item) => (
+                            <div key={item.label}>
+                              <p className="text-[10px] font-semibold text-muted uppercase tracking-wide mb-1">
+                                {item.label}
+                              </p>
+                              <p className="text-sm text-foreground">{item.value || "—"}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 ))
               )}
             </tbody>
@@ -411,6 +517,14 @@ export default function DashboardMembers() {
         )}
 			</div>
       
+			<DeleteUserModal
+        key={deleteTarget?.id ?? "closed"}
+        open={!!deleteTarget}
+        user={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+        loading={deleting}
+      />
 		</div>
   );
 }

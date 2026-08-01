@@ -9,6 +9,7 @@ function mapUser(u) {
     id: u._id,
     name: u.name,
     email: u.email,
+    phone: u.phone || "",
     initials: u.name
       ? u.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
       : "??",
