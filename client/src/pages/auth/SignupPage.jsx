@@ -12,10 +12,12 @@ import {
   CalendarDays,
   Building2,
   Clock,
+  Info,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRegister } from "../../hooks/auth/useRegister";
 import AuthLayout from "../../layouts/AuthLayout";
+import Modal from "../../components/Modal";
 
 function SignupPage() {
   // Position-aware: choose student or professional form via ?user= query param
@@ -42,6 +44,7 @@ function SignupPage() {
   });
   const navigate = useNavigate();
   const { register, loading: registering } = useRegister();
+  const [showCommitteeInfo, setShowCommitteeInfo] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -99,7 +102,8 @@ function SignupPage() {
   };
 
   return (
-    <AuthLayout
+    <>
+      <AuthLayout
       title="Join IEEE SHA"
       subtitle={
         isStudent
@@ -109,7 +113,7 @@ function SignupPage() {
       maxWidth="max-w-2xl"
     >
       <form onSubmit={handleSignup} className="space-y-6">
-        {/* --- SECTION 1: Personal Info --- */}
+        {/* SECTION 1: Personal Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Full Name */}
           <div className="relative md:col-span-2">
@@ -173,7 +177,7 @@ function SignupPage() {
 
         <hr className="border-gray-200 dark:border-gray-700" />
 
-        {/* --- SECTION 2: Academic / Professional Info --- */}
+        {/* SECTION 2: Academic / Professional Info */}
         {isStudent ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* University */}
@@ -212,9 +216,6 @@ function SignupPage() {
 
             {/* Committee */}
             <div className="relative flex items-center bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-sky-500 transition-all">
-              <span className="pl-3 pr-2 text-gray-500 dark:text-gray-400 text-sm font-medium border-r border-gray-200 dark:border-gray-600">
-                Committee
-              </span>
               <select
                 name="committee"
                 value={formData.committee}
@@ -227,6 +228,14 @@ function SignupPage() {
                   <option key={c.id} value={c.label}>{c.label}</option>
                 ))}
               </select>
+              <button
+                type="button"
+                onClick={() => setShowCommitteeInfo(true)}
+                className="shrink-0 mr-2 p-1.5 text-gray-400 hover:text-primary rounded-lg transition-colors"
+                aria-label="Committee info"
+              >
+                <Info size={18} />
+              </button>
             </div>
 
             {/* Year of Study (Converted to a clean Select dropdown) */}
@@ -316,7 +325,7 @@ function SignupPage() {
 
         <hr className="border-gray-200 dark:border-gray-700" />
 
-        {/* --- SECTION 3: Security --- */}
+        {/* SECTION 3: Password */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="relative">
             <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
@@ -374,7 +383,38 @@ function SignupPage() {
           </Link>
         </p>
       </div>
-    </AuthLayout>
+      </AuthLayout>
+
+      <Modal
+	      open={showCommitteeInfo}
+	      onClose={() => setShowCommitteeInfo(false)}
+	      title="How Committee Selection Works"
+	      maxWidth="max-w-md"
+	    >
+	      <div className="space-y-6">
+        <div className="space-y-2">
+          <span className="text-sm font-semibold text-foreground">1. Choose a committee</span>
+          <p className="text-sm text-muted leading-relaxed">
+            Pick the one that fits you best. You can change it later from your profile.
+          </p>
+        </div>
+        <div className="border-t border-gray-100 dark:border-[#222936]" />
+        <div className="space-y-2">
+          <span className="text-sm font-semibold text-foreground">2. Your request is sent to our team</span>
+          <p className="text-sm text-muted leading-relaxed">
+            Once you register, we'll get notified of your choice.
+          </p>
+        </div>
+        <div className="border-t border-gray-100 dark:border-[#222936]" />
+        <div className="space-y-2">
+          <span className="text-sm font-semibold text-foreground">3. Our team reviews it</span>
+          <p className="text-sm text-muted leading-relaxed">
+            A team member will approve your request and welcome you into the committee. You'll know when it's confirmed.
+          </p>
+        </div>
+	      </div>
+	    </Modal>
+    </>
   );
 };
 
