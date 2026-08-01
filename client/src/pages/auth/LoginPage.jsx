@@ -86,22 +86,13 @@ const LoginPage = () => {
       <div className="flex flex-col text-center mt-6 text-sm">
         <p className="text-gray-600 dark:text-gray-400">
           Don't have an account?{" "}
+          <Link
+            to="/registration"
+            className="text-primary dark:text-sky-400 font-bold hover:underline"
+          >
+            Sign up here
+          </Link>
         </p>
-				<div>
-					<Link
-	          to="/signup?user=student"
-	          className="text-primary dark:text-sky-400 font-bold hover:underline"
-	        >
-	          Sign up as a Student
-	        </Link>{" "}
-	        or{" "}
-	        <Link
-	          to="/signup?user=professional"
-	          className="text-primary dark:text-sky-400 font-bold hover:underline"
-	        >
-	          a Professional
-	        </Link>
-				</div>
       </div>
     </AuthLayout>
   );

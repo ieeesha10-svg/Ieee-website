@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import api from "../utils/api";
 
 /**
  * useSubmitForm
@@ -41,7 +42,10 @@ export function useSubmitForm() {
     setAlreadySubmitted(false);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "";
+      // Use the same base URL as the rest of the app (falls back to the local
+      // backend in dev), otherwise the fetch hits the front-end origin and gets
+      // an empty/HTML response instead of the API.
+      const baseUrl = api.defaults.baseURL || "";
       const formData = new FormData();
       formData.append("formId", formId);
       formData.append("answers", JSON.stringify(answers));
@@ -49,13 +53,23 @@ export function useSubmitForm() {
         formData.append(fieldId, file);
       });
 
-      const response = await fetch(`${apiUrl}/submissions`, {
+      const response = await fetch(`${baseUrl}/submissions`, {
         method: "POST",
         credentials: "include",
         body: formData,
       });
 
-      const data = await response.json();
+      // Some error responses can be empty or non-JSON — guard against
+      // "Unexpected end of JSON input" by reading text and parsing defensively.
+      const text = await response.text();
+      let data = {};
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = {};
+        }
+      }
 
       if (!response.ok) {
         // Fragile: relies on exact string match of the backend's message.

@@ -89,7 +89,7 @@ const PublicLayout = () => {
           <Outlet />
         </div>
       </main>
-      {!["/login", "/signup", "/verify", "/dev-team", '/applications'].includes(
+      {!["/login", "/signup", "/registration", "/verify", "/dev-team", '/applications'].includes(
         location.pathname,
       ) && !location.pathname.startsWith('/applications/') && <Footer />}
     </div>
@@ -109,7 +109,7 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route element={<GuestRoute />}>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/registration" element={<SignupPage />} />
             <Route path="/verify" element={<VerifyEmailPage />} />
           </Route>
           <Route path="/crew" element={<CrewPage />} />
