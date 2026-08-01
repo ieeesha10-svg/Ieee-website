@@ -5,7 +5,6 @@ import Button from '../../components/Button.jsx'
 import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 // Images
 import HeroBackground from '../../assets/backgrounds/hero-bg.jpg';
-import IEEEFamilyPic from '../../assets/images/home/ieee-family.jpg';
 import RocketIcon from '../../assets/icons/rocket.png'
 
 export default function Hero() {
@@ -91,7 +90,7 @@ export default function Hero() {
 				<div className='relative p-0.5 rounded-3xl'>
 					{!imgLoaded && <ImageSkeleton />}
 					<img
-					  src={IEEEFamilyPic}
+					  src="https://res.cloudinary.com/xcdyzvmc/image/upload/v1785588049/ieee-family.jpg_ezqw29.jpg"
 						className="w-full rounded-3xl shadow-2xl border-2 border-white/50"
 						onLoad={() => setImgLoaded(true)}
 					 />

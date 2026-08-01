@@ -16,7 +16,7 @@ import {
   ChevronRight,
   ChevronDown,
   Sparkles,
-  GraduationCap,
+  UserPlus,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import useJoinMenu from "../hooks/useJoinMenu";
@@ -142,19 +142,11 @@ const PublicNavbar = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => desktopHandleNavigate("/signup?user=student")}
+                    onClick={() => desktopHandleNavigate("/registration")}
                     className="w-full flex items-center gap-3 px-4 py-3 text-white text-sm hover:bg-white/10 transition text-left"
                   >
-                    <GraduationCap size={18} className="text-primary-light shrink-0" />
-                    As a Student
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => desktopHandleNavigate("/signup?user=professional")}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-white text-sm hover:bg-white/10 transition text-left"
-                  >
-                    <Briefcase size={18} className="text-primary-light shrink-0" />
-                    As a Professional
+                    <UserPlus size={18} className="text-primary-light shrink-0" />
+                    Registration
                   </button>
                 </div>
               )}
@@ -307,28 +299,15 @@ const PublicNavbar = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        mobileHandleNavigate("/signup?user=student");
+                        mobileHandleNavigate("/registration");
                         closeMenu();
                       }}
                       className="w-full flex items-center gap-3 rounded-xl p-3 text-white text-sm hover:bg-white/10 transition text-left"
                     >
                       <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-light/50 dark:bg-border shrink-0">
-                        <GraduationCap size={16} />
+                        <UserPlus size={16} />
                       </span>
-                      <span className="flex-1 font-medium">As a Student</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        mobileHandleNavigate("/signup?user=professional");
-                        closeMenu();
-                      }}
-                      className="w-full flex items-center gap-3 rounded-xl p-3 text-white text-sm hover:bg-white/10 transition text-left"
-                    >
-                      <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-light/50 dark:bg-border shrink-0">
-                        <Briefcase size={16} />
-                      </span>
-                      <span className="flex-1 font-medium">As a Professional</span>
+                      <span className="flex-1 font-medium">Registration</span>
                     </button>
                   </div>
                 )}

@@ -42,7 +42,7 @@ export default function EventsHero({ featuredEvent, loading }) {
 					</a>
 					{
 						!user && (
-							<Link to='/signup'>
+							<Link to='/registration'>
 								<Button className='w-full whitespace-nowrap rounded-xl px-6 py-3 lg:px-12 lg:py-6 bg-linear-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary transition text-white dark:hover:bg-white/10 hover:text-white dark:bg-main dark:from-transparent dark:to-transparent hover:dark:from-transparent hover:dark:to-transparent dark:border dark:border-border'>
 											Become a Member
 								</Button>

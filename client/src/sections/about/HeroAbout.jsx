@@ -2,7 +2,6 @@ import React from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import aboutImage from "../../assets/images/about/about-image.jpg";
 import Badge from "../../components/Badge";
 import { committees } from "../../data/committeesData";
 
@@ -45,7 +44,7 @@ export default function HeroSection() {
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3 w-[80%] sm:w-auto">
               {!user && (
                 <Link
-                  to="/signup"
+                  to="/registration"
                   className="bg-primary-linear text-white font-semibold rounded-full px-6 py-3 flex items-center justify-center gap-2 w-full sm:w-auto transition-all duration-300 hover:opacity-85 hover:scale-[1.02]"
                 >
                   Become a Member <ArrowRight size={18} />
@@ -83,7 +82,7 @@ export default function HeroSection() {
           {/* Right Column */}
           <div className="relative rounded-2xl">
             <img
-              src={aboutImage}
+              src="https://res.cloudinary.com/xcdyzvmc/image/upload/v1785588071/about-image.jpg_r4gq2q.jpg"
               alt="Person wearing VR headset working on robotics"
               className="mx-auto w-full object-cover rounded-2xl"
             />
