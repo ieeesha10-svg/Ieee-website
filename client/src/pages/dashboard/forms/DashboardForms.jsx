@@ -12,6 +12,7 @@ import { SURVEY_COLOR, FEEDBACK_COLOR, CUSTOM_COLOR } from "../../../data/formTy
 import DeleteModal from "../../../components/DeleteModal";
 import DashFormsSkeleton from "../../../components/skeletons/DashFormsSkeleton";
 import Modal from "../../../components/Modal";
+import Pagination from "../../../components/events/Pagination";
 
 /*Toggle Switch */
 function Toggle({ checked, onChange }) {
@@ -261,8 +262,22 @@ function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
 
 /* Main Component */
 export default function DashboardForms() {
-  const { forms, setForms, isLoading, openCount, closedCount, refetch } =
-    useForms();
+  const {
+    forms,
+    setForms,
+    filteredForms,
+    paginatedForms,
+    filter,
+    setFilter,
+    isLoading,
+    openCount,
+    closedCount,
+    eventCount,
+    page,
+    setPage,
+    totalPages,
+    refetch,
+  } = useForms();
   const { deleteForm } = useDeleteForm(refetch);
   const { toggleFormStatus } = useToggleForm();
   const { updateForm } = useUpdateForm(refetch);
@@ -273,16 +288,8 @@ export default function DashboardForms() {
   const [editEndDate, setEditEndDate] = useState("");
   const [editMaxSubmissions, setEditMaxSubmissions] = useState("");
   const [savingDates, setSavingDates] = useState(false);
-  const [filter, setFilter] = useState("all");
 
   if (isLoading) return <DashFormsSkeleton />;
-
-  const filteredForms = forms.filter((f) => {
-    if (filter === "open") return f.isOpen;
-    if (filter === "closed") return !f.isOpen;
-    if (filter === "events") return !!f.activityID;
-    return true;
-  });
 
   const formToDelete = forms.find((f) => f.id === deletingId);
 
@@ -339,7 +346,7 @@ export default function DashboardForms() {
           {pill("all", "All", "bg-primary", forms.length)}
           {pill("open", "Open", "bg-primary", openCount)}
           {pill("closed", "Closed", "bg-gray-400", closedCount)}
-          {pill("events", "Event Forms", "bg-blue-500", forms.filter((f) => f.activityID).length)}
+          {pill("events", "Event Forms", "bg-blue-500", eventCount)}
         </div>
 
 				{/* Action Button */}
@@ -362,7 +369,7 @@ export default function DashboardForms() {
       {/* Forms List */}
       <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm">
         {filteredForms.length > 0 ? (
-          filteredForms.map((form) => (
+          paginatedForms.map((form) => (
             <FormRow
               key={form.id}
               form={form}
@@ -386,6 +393,8 @@ export default function DashboardForms() {
           </div>
         )}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
       <FieldsModal
         form={fieldsModalForm}

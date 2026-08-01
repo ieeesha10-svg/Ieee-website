@@ -57,12 +57,19 @@ const getForm = catchAsync(async (req, res) => {
 // @route   GET /api/form/all
 // @access  Private (Admin)
 const getForms = catchAsync(async (req, res) => {
+  // Pagination
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
   // Sort by newest first
   const [result] = await Form.aggregate([
     {
       $facet: {
         forms: [
-          { $sort: { createdAt: -1 } }
+          { $sort: { createdAt: -1 } },
+          { $skip: skip },
+          { $limit: limit },
         ],
 
         totalCount: [
@@ -93,7 +100,19 @@ const getForms = catchAsync(async (req, res) => {
   const closedCount = result.closedCount[0]?.count || 0;
   const activeCount = result.activeCount[0]?.count || 0;
   
-  res.json({ count, draftCount, closedCount, activeCount, forms });
+  res.json({
+    count,
+    draftCount,
+    closedCount,
+    activeCount,
+    forms,
+    pagination: {
+      totalItems: count,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      itemsPerPage: limit,
+    },
+  });
 });
 
 // @desc    Delete a form
