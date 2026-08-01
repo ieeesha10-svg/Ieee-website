@@ -1,9 +1,23 @@
 <!DOCTYPE html>
 <html>
-<div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
-  <h2>Welcome to IEEE SHA!</h2>
-  <p>Your verification code is:</p>
-  <h1 style="color: #00629B; letter-spacing: 5px;">{{otpCode}}</h1>
-  <p>This code will expire in 10 minutes.</p>
-</div>
+<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: Arial, Helvetica, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);">
+    <div style="background-color: #00629B; padding: 22px 28px; text-align: center;">
+      <h1 style="margin: 0; color: #ffffff; font-size: 20px; letter-spacing: 1px;">IEEE El Shorouk Academy</h1>
+      <p style="margin: 4px 0 0; color: #bfe0f5; font-size: 12px; letter-spacing: 2px;">STUDENT BRANCH</p>
+    </div>
+
+    <div style="padding: 32px 28px; color: #333333; text-align: center;">
+      <h2 style="margin: 0 0 8px; color: #00629B; font-size: 22px;">Welcome to IEEE SHA!</h2>
+      <p style="margin: 0 0 20px; font-size: 15px; color: #555555; line-height: 1.6;">Please use the verification code below to confirm your email address.</p>
+
+      <div style="background-color: #f0f6fb; border: 2px dashed #00629B; border-radius: 10px; padding: 20px; margin: 8px auto 20px; max-width: 300px; text-align: center;">
+        <h1 style="margin: 0; color: #00629B; font-size: 36px; letter-spacing: 8px; font-family: 'Courier New', monospace;">{{otpCode}}</h1>
+      </div>
+
+      <p style="margin: 0 0 8px; font-size: 13px; color: #777777;">This code will expire in <strong>10 minutes</strong>.</p>
+      <p style="margin: 0; font-size: 13px; color: #777777;">If you didn't request this, you can safely ignore this email.</p>
+    </div>
+  </div>
+</body>
 </html>

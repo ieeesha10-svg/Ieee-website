@@ -7,16 +7,16 @@
       <p style="margin: 4px 0 0; color: #bfe0f5; font-size: 12px; letter-spacing: 2px;">STUDENT BRANCH</p>
     </div>
 
-    <div style="padding: 32px 28px; color: #333333;">
-      <h2 style="margin: 0 0 16px; color: #00629B; font-size: 22px;">Registration Confirmed</h2>
-      <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6;">Dear <strong>{{userName}}</strong>,</p>
-      <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6;">This email confirms your registration for <strong>{{eventTitle}}</strong>.</p>
-      <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6;">Please bring the QR code below with you, as it is required for entry at the event.</p>
+    <div style="background-color: {{bannerBg}}; color: #ffffff; padding: 20px 28px; text-align: center;">
+      <h2 style="margin: 0; font-size: 22px;">{{bannerTitle}}</h2>
+    </div>
 
-      <div style="background-color: #f7f9fb; border: 1px solid #e0e7ee; border-radius: 12px; padding: 24px; text-align: center; margin: 0 0 24px;">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ticketCode}}" alt="QR Code" style="width: 180px; height: 180px; display: block; margin: 0 auto 12px; border-radius: 8px;"/>
-        <p style="margin: 0; font-size: 13px; color: #555555;">Ticket ID</p>
-        <p style="margin: 2px 0 0; font-size: 15px; font-weight: bold; color: #00629B; font-family: 'Courier New', monospace;">{{ticketCode}}</p>
+    <div style="padding: 32px 28px; color: #333333;">
+      <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6;">Dear <strong>{{userName}}</strong>,</p>
+      <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6;">{{message}}</p>
+
+      <div style="margin: 0 0 20px; padding: 14px 18px; background-color: {{panelBg}}; border-left: 4px solid {{bannerBg}}; border-radius: 8px;">
+        <p style="margin: 0; font-size: 14px; color: #555555;">Committee: <strong>{{committeePosition}}</strong></p>
       </div>
 
       <p style="margin: 0 0 8px; font-size: 14px; color: #555555; line-height: 1.6;">Should you have any questions, please do not hesitate to contact us.</p>
