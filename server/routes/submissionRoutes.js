@@ -17,8 +17,8 @@ submissionRouter.use(protect); // All routes require authentication
 // 1. Submit (Any logged-in Student/Member)
 submissionRouter.post('/', upload.any(), submitForm);
 
-// 2. Scan (Gatekeeper/Scanner/XCom)
-submissionRouter.post('/scan', authorize('xcom', 'scanner', 'board'), scanTicket);
+// 2. Scan (all roles except user)
+submissionRouter.post('/scan', authorize('xcom', 'scanner', 'board', 'member'), scanTicket);
 
 // 3. View & Export (Admins Only)
 submissionRouter.get('/export/:formId', authorize('xcom', 'board'), exportSubmissionsToExcel);

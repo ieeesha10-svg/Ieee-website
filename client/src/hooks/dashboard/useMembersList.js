@@ -33,7 +33,7 @@ function mapUser(u) {
   };
 }
 
-export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}) {
+export function useMembersList({ pageSize = 12, initialRole, initialRoles, enabled = true } = {}) {
   const [members, setMembers] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -47,7 +47,7 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
   });
   const [page, setPage] = useState(1);
   const [position, setPosition] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
 
   const [collegeFilters, setCollegeFilters] = useState([]);
   const [yearFilters, setYearFilters] = useState([]);
@@ -91,6 +91,8 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
   }, [pageSize]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     let cancelled = false;
     const fetchAll = async () => {
       setLoading(true);
@@ -126,9 +128,11 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
     return () => {
       cancelled = true;
     };
-  }, [pageSize]);
+  }, [pageSize, enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     const current = JSON.stringify([search, activeColleges, activeYears, roles, position, page]);
 
     if (lastParamsRef.current === null) {
@@ -146,7 +150,7 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles } = {}
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [search, activeColleges, activeYears, roles, position, page, fetchMembers]);
+  }, [search, activeColleges, activeYears, roles, position, page, fetchMembers, enabled]);
 
   const toggleCollege = (college) => {
     setPage(1);

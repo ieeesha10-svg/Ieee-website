@@ -10,6 +10,7 @@ import { navItems, toolsItems } from "../data/DashboardNav";
 import DashNavSkeleton from "../components/skeletons/DashNavSkeleton";
 import { useMembersList } from "../hooks/dashboard/useMembersList";
 import { useExportUsers } from "../hooks/dashboard/useExportUsers";
+import { isAdminRole } from "../utils/roleAccess";
 import api from "../utils/api";
 
 const pageMeta = [...navItems, ...toolsItems].reduce((acc, item) => {
@@ -41,7 +42,7 @@ const DashboardLayout = () => {
     loading: searchLoading,
     search: searchTerm,
     setSearch: setSearchTerm,
-  } = useMembersList({ pageSize: 5 });
+  } = useMembersList({ pageSize: 5, enabled: isAdminRole(user?.role) });
 
   useEffect(() => {
     if (pathname === "/dashboard/forms") {
@@ -192,7 +193,9 @@ const DashboardLayout = () => {
                 </p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="hidden sm:block">{searchInput}</div>
+                {isAdminRole(user?.role) && (
+                  <div className="hidden sm:block">{searchInput}</div>
+                )}
                 {rightSide}
               </div>
             </>
