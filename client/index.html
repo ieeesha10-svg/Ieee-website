@@ -6,9 +6,146 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IEEE El Shorouk Academy Student Branch</title>
     <meta name="description" content="Official website of the IEEE El Shorouk Academy Student Branch. Explore our chapters, events, and join a community of innovators advancing technology." />
+    <style>
+      /* Fallback CSS Loader before React mounts */
+      #initial-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #f9fafb; /* light mode fallback */
+        transition: background-color 0.3s;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        #initial-loader {
+          background-color: #0f172a; /* dark mode fallback */
+        }
+      }
+
+      .spinner-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100px;
+        height: 100px;
+      }
+
+      .ring-outer {
+        position: absolute;
+        width: 6rem;
+        height: 6rem;
+        border-radius: 50%;
+        border-top: 4px solid #3b82f6;
+        border-bottom: 4px solid #3b82f6;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        animation: spin 1s linear infinite;
+        opacity: 0.75;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+      }
+
+      .ring-inner {
+        position: absolute;
+        width: 4rem;
+        height: 4rem;
+        border-radius: 50%;
+        border-right: 4px solid #22d3ee;
+        border-left: 4px solid #22d3ee;
+        border-top: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+        animation: spin-reverse 1.5s linear infinite;
+        opacity: 0.8;
+      }
+
+      .loader-text-container {
+        margin-top: 2rem;
+        text-align: center;
+      }
+
+      .loader-title {
+        font-size: 1.5rem;
+        font-weight: 900;
+        background: linear-gradient(to right, #2563eb, #06b6d4);
+        -webkit-background-clip: text;
+        color: transparent;
+        letter-spacing: 0.05em;
+        margin: 0;
+      }
+      @media (prefers-color-scheme: dark) {
+        .loader-title {
+          background: linear-gradient(to right, #60a5fa, #67e8f9);
+          -webkit-background-clip: text;
+        }
+      }
+
+      .loader-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.5rem;
+        font-weight: 500;
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      @media (prefers-color-scheme: dark) {
+        .loader-subtitle {
+          color: #9ca3af;
+        }
+      }
+
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes spin-reverse {
+        from { transform: rotate(360deg); }
+        to { transform: rotate(0deg); }
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: .5; }
+      }
+
+      .loader-quote {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 1rem;
+        font-style: italic;
+        opacity: 0.8;
+      }
+      @media (prefers-color-scheme: dark) {
+        .loader-quote {
+          color: #9ca3af;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="initial-loader">
+        <div class="spinner-container">
+          <div class="ring-outer"></div>
+          <div class="ring-inner"></div>
+        </div>
+        <div class="loader-text-container">
+          <h2 class="loader-title">IEEE</h2>
+          <p class="loader-subtitle">Loading</p>
+          <p class="loader-quote" id="random-quote"></p>
+        </div>
+      </div>
+    </div>
+    <script>
+      const quotes = [
+        "Hold on, the server is taking a sip of coffee...",
+        "Compiling some greatness... just a sec! ✨"
+      ];
+      document.getElementById('random-quote').innerText = quotes[Math.floor(Math.random() * quotes.length)];
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
