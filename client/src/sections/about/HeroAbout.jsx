@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import Badge from "../../components/Badge";
+import ImageSkeleton from "../../components/skeletons/ImageSkeleton";
 import { committees } from "../../data/committeesData";
 
 function Chip({ title, subtitle, label, className }) {
@@ -25,6 +26,7 @@ function Chip({ title, subtitle, label, className }) {
 
 export default function HeroSection() {
   const { user } = useAuth();
+  const [imgLoaded, setImgLoaded] = useState(false);
   return (
     <section className="py-16 md:py-24 about-page-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -81,10 +83,12 @@ export default function HeroSection() {
 
           {/* Right Column */}
           <div className="relative rounded-2xl">
+            {!imgLoaded && <ImageSkeleton rounded="rounded-2xl" />}
             <img
               src="https://res.cloudinary.com/xcdyzvmc/image/upload/v1785588071/about-image.jpg_r4gq2q.jpg"
               alt="Person wearing VR headset working on robotics"
-              className="mx-auto w-full object-cover rounded-2xl"
+              className="relative mx-auto w-full object-cover rounded-2xl"
+              onLoad={() => setImgLoaded(true)}
             />
 
             <Chip
