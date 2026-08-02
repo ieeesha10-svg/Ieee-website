@@ -15,6 +15,7 @@ import UserLayout from "./layouts/UserLayout";
 // Components
 import PublicNavbar from "./components/PublicNavbar";
 import Footer from "./components/Footer";
+
 // Pages
 import Home from "./pages/Home";
 import Events from "./pages/Events";
