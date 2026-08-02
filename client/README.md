@@ -42,4 +42,18 @@ src/
 | `src/utils/api.js` | Axios instance (reads `VITE_API_URL`) |
 | `vercel.json` | root-level deploy config |
 
-See `docs/FRONTEND_CONFIG.md` for detailed setup.
+## Documentation
+
+Full developer documentation lives in [`docs/`](./docs/). Start at **[`docs/INDEX.md`](./docs/INDEX.md)** — it includes the table of contents and how to contact the maintainer.
+
+| Doc | Purpose |
+|-----|---------|
+| [`INDEX.md`](./docs/INDEX.md) | Entry point, TOC, maintainer contacts |
+| [`PAGES.md`](./docs/PAGES.md) | All routes, guards, and page components |
+| [`DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md) | Colors, fonts, dark mode, shared components |
+| [`ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | App flow: entry → layouts → routing → guards |
+| [`STATE.md`](./docs/STATE.md) | Global state (AuthContext) |
+| [`DATA.md`](./docs/DATA.md) | Static data & role permissions |
+| [`HOOKS.md`](./docs/HOOKS.md) | All custom hooks and API endpoints |
+| [`BUILD_DEPLOY.md`](./docs/BUILD_DEPLOY.md) | Env vars, Vite, Vercel deployment |
+| [`CONTRIBUTING.md`](./docs/CONTRIBUTING.md) | Conventions and how to add pages/components |

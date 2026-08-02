@@ -90,7 +90,7 @@ export default function Hero() {
 				<div className='relative p-0.5 rounded-3xl'>
 					{!imgLoaded && <ImageSkeleton />}
 					<img
-					  src="https://res.cloudinary.com/xcdyzvmc/image/upload/v1785588049/ieee-family.jpg_ezqw29.jpg"
+					  src="https://res.cloudinary.com/xcdyzvmc/image/upload/v1785685478/ieee-family.jpg_ezqw29.jpg"
 						className="w-full rounded-3xl shadow-2xl border-2 border-white/50"
 						onLoad={() => setImgLoaded(true)}
 					 />

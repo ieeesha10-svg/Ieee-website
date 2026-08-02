@@ -1,7 +1,7 @@
 import React from "react";
 import { FiGithub, FiLinkedin, FiGlobe } from "react-icons/fi";
 import { SiBehance } from "react-icons/si";
-import { stats, tracks } from "../data/teamData";
+import { stats, tracks } from "../data/devTeamData";
 import FooterAlt from "../components/FooterAlt";
 
 export default function DevTeam() {
@@ -36,7 +36,11 @@ export default function DevTeam() {
             Meet the elite IEEE Website development team who brought this platform to life.
           </p>
         </div>
-        
+
+        <span className="text-xs font-semibold tracking-[0.2em] uppercase text-primary border border-primary/30 rounded-full px-4 py-1.5">
+          First Launch Team · Created In 2026 · Season 10
+        </span>
+
         <div className="flex items-center justify-center gap-8 md:gap-16">
           {stats.map((stat) => (
             <div key={stat.id} className="flex flex-col items-center">
