@@ -30,7 +30,7 @@ There are **four** route groups, each wrapped in its own guard/layout:
 | `/contact` | `ContactPage` | ✅ | Contact form + social media links |
 | `/crew` | `CrewPage` | ✅ | Crew members via `useCrew` |
 | `/committees` | `CommitteesPage` | ✅ | Static committee cards from `src/data/committeesData.js` |
-| `/dev-team` | `DevTeam` | ✅ | Static team from `src/data/teamData.js` |
+| `/dev-team` | `DevTeam` | ✅ | Static team from `src/data/devTeamData.js` |
 | `/applications` | `FormApplicationsPage` | ✅ | Lists public forms via `usePublicForms` |
 | `/applications/:id` | `FormSubmissionPage` | ✅ | **Protected** — submits a form (`usePublicForm` + `useSubmitForm`) |
 

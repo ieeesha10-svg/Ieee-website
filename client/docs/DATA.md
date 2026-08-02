@@ -80,9 +80,9 @@ Used with `utils/formatAcademicYear.js` (`formatAcademicYear(year)` → "3rd Yea
 `SOCIAL_MEDIA` — Facebook/Instagram/LinkedIn/TikTok with icon, href, title, subtitle.
 `EMAIL_ADDRESS` — `ieee.sha.10@gmail.com` (public contact).
 
-## Team Pages — `chairpersons.js` & `teamData.js`
+## Team Pages — `chairpersons.js` & `devTeamData.js`
 
 - `chairpersons.js` — `COUNSELOR` + `MEMBERS` (chair, vice chair, treasurer, secretary) with local images + socials.
-- `teamData.js` — `stats` + `tracks` for the `/dev-team` page (head + UI/UX + frontend + backend teams) with local images + links.
+- `devTeamData.js` — `stats` + `tracks` for the `/dev-team` page (head + UI/UX + frontend + backend teams) with local images + links.
 
 > Note: these are **static imports** of local images in `src/assets/images/`. The `/crew` page is different — it fetches live crew from `GET /crew` via `useCrew`.
