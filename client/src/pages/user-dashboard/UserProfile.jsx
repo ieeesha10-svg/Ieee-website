@@ -11,14 +11,27 @@ import {
 
 import InputBox from "../../components/InputBox";
 import api from "../../utils/api";
+import { COLLEGE_OPTIONS, OTHER_COLLEGE } from "../../data/collegeOptions";
+import { ORDINAL_OPTIONS } from "../../data/ordinalMap";
 
 export default function UserProfile() {
   const { userData, setUserData, isOffline } = useOutletContext();
+
+  const isKnownCollege = (c) => COLLEGE_OPTIONS.includes(c);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState({ type: "", text: "" });
   const [originalData, setOriginalData] = useState(userData);
+  const [collegeOption, setCollegeOption] = useState(
+    isKnownCollege(userData.college) ? userData.college : ""
+  );
+  const [isOtherCollege, setIsOtherCollege] = useState(
+    !!userData.college && !isKnownCollege(userData.college)
+  );
+  const [customCollege, setCustomCollege] = useState(
+    !!userData.college && !isKnownCollege(userData.college) ? userData.college : ""
+  );
 
   useEffect(() => {
     setOriginalData(userData);
@@ -29,8 +42,31 @@ export default function UserProfile() {
     setUserData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleCollegeSelect = (e) => {
+    const value = e.target.value;
+    if (value === OTHER_COLLEGE) {
+      setIsOtherCollege(true);
+      setCustomCollege("");
+      setUserData((prev) => ({ ...prev, college: "" }));
+    } else {
+      setIsOtherCollege(false);
+      setCustomCollege("");
+      setCollegeOption(value);
+      setUserData((prev) => ({ ...prev, college: value }));
+    }
+  };
+
+  const handleCustomCollege = (e) => {
+    setCustomCollege(e.target.value);
+    setUserData((prev) => ({ ...prev, college: e.target.value }));
+  };
+
   const handleCancel = () => {
     setUserData(originalData);
+    const c = originalData.college;
+    setCollegeOption(isKnownCollege(c) ? c : "");
+    setIsOtherCollege(!!c && !isKnownCollege(c));
+    setCustomCollege(!!c && !isKnownCollege(c) ? c : "");
     setIsEditing(false);
     setSaveMessage({ type: "", text: "" });
   };
@@ -43,7 +79,7 @@ export default function UserProfile() {
       const payload = {
         name: userData.fullName,
         phone: userData.phone,
-        age: Number(userData.age),
+        age: userData.age !== "" && userData.age != null ? Number(userData.age) : undefined,
         ...(userData.position === "professional"
           ? {
               organization: userData.organization,
@@ -54,6 +90,7 @@ export default function UserProfile() {
           : {
               university: userData.university,
               college: userData.college,
+              yearOfStudy: userData.yearOfStudy !== "" ? Number(userData.yearOfStudy) : undefined,
             }),
         optionalData: { aboutMe: userData.aboutMe },
       };
@@ -216,14 +253,68 @@ export default function UserProfile() {
                 onChange={handleChange}
                 placeholder="shorouk academy"
               />
-              <InputBox
-                label="College"
-                name="college"
-                value={userData.college}
-                isEditing={isEditing}
-                onChange={handleChange}
-                placeholder="Engineering"
-              />
+              <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[24px] p-[18.8px] flex flex-col gap-[6px] transition-colors">
+                <label className="text-[#475569] dark:text-muted font-bold text-[13px] leading-[16px] font-[Inter] tracking-wide">
+                  College / Faculty
+                </label>
+                <div className="relative">
+                  <select
+                    name="college"
+                    value={isOtherCollege ? OTHER_COLLEGE : collegeOption}
+                    onChange={handleCollegeSelect}
+                    disabled={!isEditing}
+                    className="w-full bg-[#F1F5F9] dark:bg-transparent dark:text-white border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[12px] p-[12px] text-[#64748B] text-[14px] leading-[17px] font-[Inter] outline-none transition-all duration-300 disabled:opacity-80 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled hidden>Select College / Faculty</option>
+                    {COLLEGE_OPTIONS.map((c) => (
+                      <option className="text-black" key={c} value={c}>{c}</option>
+                    ))}
+                    <option className="text-black" value={OTHER_COLLEGE}>Other</option>
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted opacity-60 pointer-events-none"
+                  />
+                </div>
+              </div>
+              {isOtherCollege && (
+                <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[24px] p-[18.8px] flex flex-col gap-[6px] transition-colors lg:col-span-2">
+                  <label className="text-[#475569] dark:text-muted font-bold text-[13px] leading-[16px] font-[Inter] tracking-wide">
+                    Specify College / Faculty
+                  </label>
+                  <input
+                    type="text"
+                    value={customCollege}
+                    onChange={handleCustomCollege}
+                    disabled={!isEditing}
+                    placeholder="Type your college / faculty"
+                    className="bg-[#F1F5F9] dark:bg-transparent border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[12px] p-[12px] text-[#64748B] dark:text-foreground text-[14px] leading-[17px] font-[Inter] outline-none transition-all duration-300 disabled:opacity-80 disabled:cursor-not-allowed placeholder:text-[#64748B]/60 focus:border-[#0096FF] focus:ring-1 focus:ring-[#0096FF] dark:focus:border-primary dark:focus:ring-primary"
+                  />
+                </div>
+              )}
+              <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[24px] p-[18.8px] flex flex-col gap-[6px] transition-colors">
+                <label className="text-[#475569] dark:text-muted font-bold text-[13px] leading-[16px] font-[Inter] tracking-wide">
+                  Year of Study
+                </label>
+                <div className="relative">
+                  <select
+                    name="yearOfStudy"
+                    value={userData.yearOfStudy ?? ""}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    className="w-full bg-[#F1F5F9] dark:bg-transparent border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[12px] p-[12px] text-[#64748B] dark:text-foreground text-[14px] leading-[17px] font-[Inter] outline-none transition-all duration-300 disabled:opacity-80 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled hidden>Select Year of Study</option>
+                    {ORDINAL_OPTIONS.map(({ label, value }) => (
+                      <option className="text-black" key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted opacity-60 pointer-events-none"
+                  />
+                </div>
+              </div>
             </>
           )}
           <InputBox
@@ -233,30 +324,27 @@ export default function UserProfile() {
             isEditing={isEditing}
             onChange={handleChange}
             type="number"
-            placeholder="19"
+            placeholder="Enter your age"
           />
 
-          {/* Role Dropdown (read-only) */}
-          <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[16px] md:rounded-[24px] p-[14px] md:p-[18.8px] flex flex-col gap-1 md:gap-[6px] relative transition-colors">
-            <label className="text-[#475569] dark:text-muted font-bold text-[12px] md:text-[13px] tracking-wide">
-              Role
-            </label>
-            <select
-              disabled
-              className="bg-[#F1F5F9] dark:bg-transparent border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[10px] md:rounded-[12px] p-2 md:p-[12px] text-[#64748B] dark:text-white text-[13px] md:text-[14px] outline-none appearance-none cursor-not-allowed"
-            >
-              <option>{userData.role}</option>
-            </select>
-            <ChevronDown
-              size={16}
-              className="absolute right-6 top-[60%] text-muted opacity-60"
-            />
-          </div>
+          {/* Role (read-only, hidden for basic users) */}
+          {userData.role !== "user" && (
+            <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[16px] md:rounded-[24px] p-[14px] md:p-[18.8px] flex flex-col gap-1 md:gap-[6px] relative transition-colors">
+              <label className="text-[#475569] dark:text-muted font-bold text-[12px] md:text-[13px] tracking-wide">
+                Role
+              </label>
+              <input
+                disabled
+                value={userData.role}
+                className="bg-[#F1F5F9] dark:bg-transparent border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[10px] md:rounded-[12px] p-2 md:p-[12px] text-[#64748B] dark:text-white text-[13px] md:text-[14px] outline-none cursor-not-allowed"
+              />
+            </div>
+          )}
 
           {/* About Me Textarea */}
           <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[16px] md:rounded-[24px] p-[14px] md:p-[18.8px] flex flex-col gap-1 md:gap-[6px] lg:col-span-2 transition-colors">
             <label className="text-[#475569] dark:text-muted font-bold text-[12px] md:text-[13px] tracking-wide">
-              {userData.position === "professional" ? "Reason for Registration (Optional)" : "About Me (Optional)"}
+              {userData.position === "professional" ? "Reason for Registration" : "About Me"}
             </label>
             <textarea
               name={userData.position === "professional" ? "reasonForRegistration" : "aboutMe"}
