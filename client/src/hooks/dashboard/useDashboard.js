@@ -65,7 +65,8 @@ export function useDashboard() {
       name: capitalize(c.college),
       value: c.count,
       color: CHART_COLORS[i % CHART_COLORS.length],
-    }));
+    }))
+    .sort((a, b) => b.value - a.value);
 
   const academicYearData = (stats.yearSplit || [])
     .filter((y) => y.yearOfStudy != null)
