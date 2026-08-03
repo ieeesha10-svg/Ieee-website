@@ -73,7 +73,7 @@ export default function UserLayout() {
         college: user.college || "",
         committee: user.committee || "",
         aboutMe: user.optionalData?.aboutMe || "",
-        yearOfStudy: user.yearOfStudy || "",
+        yearOfStudy: user.yearOfStudy ?? "",
         position: user.position || "student",
         organization: user.organization || "",
         roleInOrganization: user.roleInOrganization || "",

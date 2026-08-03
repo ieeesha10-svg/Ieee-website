@@ -11,9 +11,9 @@ const createCommitteeRequest = catchAsync(async (req, res) => {
     throw new AppError('Committee position is required', 400);
   }
 
-  const existingRequest = await PendingRequest.findOne({ userId, committee_position });
+  const existingRequest = await PendingRequest.findOne({ userId, request_status: 'pending' });
   if (existingRequest) {
-    throw new AppError('You already have a pending request for this committee position', 400);
+    throw new AppError('You already have a pending committee request. Please wait for it to be reviewed.', 400);
   }
 
   const existingUser = await User.findById(userId);
@@ -83,6 +83,15 @@ const updateRequestStatus = catchAsync(async (req, res) => {
   });
 });
 
+const getMyRequests = catchAsync(async (req, res) => {
+  const requests = await PendingRequest.find({ userId: req.user._id }).sort({ createdAt: -1 });
+
+  res.json({
+    success: true,
+    data: requests,
+  });
+});
+
 const getAllRequests = catchAsync(async (req, res) => {
   const { status, committee_position, page = 1, limit = 10 } = req.query;
   
@@ -145,6 +154,7 @@ const changeCommitteePosition = catchAsync(async (req, res) => {
 module.exports = {
   createCommitteeRequest,
   updateRequestStatus,
+  getMyRequests,
   getAllRequests,
   changeCommitteePosition
 };
