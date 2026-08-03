@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Users, Check, RefreshCw, Loader2 } from "lucide-react";
+import { Check, Clock, Loader2, RefreshCw, Users } from "lucide-react";
 import api from "../../utils/api";
 import Modal from "../../components/Modal";
 import Button from "../../components/Button";
 
 import { committees } from "../../data/committeesData";
 
-function CommitteeCard({ name, icon, emoji, description }) {
+function CommitteeCard({ name, icon, description }) {
   return (
     <div className="relative bg-white dark:bg-[#13161D] rounded-[16px] md:rounded-[20px] border-[0.8px] border-[#0096FF] dark:border-[rgba(0,150,255,0.3)] shadow-[0px_4px_16px_rgba(0,150,255,0.12)] dark:shadow-[0px_4px_16px_rgba(0,150,255,0.08)] p-5 md:p-6 transition-all duration-300 group hover:shadow-[0px_6px_20px_rgba(0,100,220,0.12)]">
       {/* Joined Badge */}
@@ -17,8 +17,8 @@ function CommitteeCard({ name, icon, emoji, description }) {
       </div>
 
       {/* Icon */}
-      <div className="w-[44px] h-[44px] rounded-[12px] bg-[#F0F7FF] dark:bg-[#1A1F2E] flex items-center justify-center mb-4 text-[22px] transition-transform duration-300 group-hover:scale-105">
-        {icon ? <img src={icon} alt={name} className="w-6 h-6 object-contain" /> : emoji}
+      <div className="w-[44px] h-[44px] rounded-[12px] bg-[#F0F7FF] dark:bg-[#1A1F2E] flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-105">
+        {icon ? <img src={icon} alt={name} className="w-6 h-6 object-contain" /> : null}
       </div>
 
       {/* Info */}
@@ -28,32 +28,45 @@ function CommitteeCard({ name, icon, emoji, description }) {
       <p className="font-[Outfit] text-[12px] md:text-[12.8px] leading-[18px] text-[#7A96B2] dark:text-muted mb-4 line-clamp-2">
         {description}
       </p>
-
-      {/* Members count */}
-      {/* <div className="flex items-center gap-[6px]">
-        <Users size={13} className="text-[#0096FF] dark:text-primary" />
-        <span className="font-lakes font-bold text-[11.5px] tracking-[0.3px] text-[#0096FF] dark:text-primary">
-          {members} members
-        </span>
-      </div> */}
     </div>
   );
 }
+
+const findCommittee = (name) =>
+  committees.find(
+    (c) =>
+      c.label.toLowerCase().trim() === (name || "").toLowerCase().trim() ||
+      c.title.toLowerCase().trim() === (name || "").toLowerCase().trim(),
+  );
 
 export default function MyCommittees() {
   const { userData } = useOutletContext();
   const userCommittee = userData?.committee || "";
 
-  const myCommittee = committees.find(
-    (committee) =>
-      committee.label.toLowerCase().trim() === userCommittee.toLowerCase().trim() ||
-      committee.title.toLowerCase().trim() === userCommittee.toLowerCase().trim(),
-  );
+  const myCommittee = findCommittee(userCommittee);
 
+  const [myRequests, setMyRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCommittee, setSelectedCommittee] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+
+  const pendingRequest = myRequests.find((r) => r.request_status === "pending");
+
+  useEffect(() => {
+    const fetchMyRequests = async () => {
+      try {
+        const res = await api.get("/committee-requests/my");
+        setMyRequests(res.data?.data || []);
+      } catch {
+        setMyRequests([]);
+      } finally {
+        setRequestsLoading(false);
+      }
+    };
+    fetchMyRequests();
+  }, []);
 
   const handleRequestChange = async () => {
     if (!selectedCommittee) return;
@@ -68,6 +81,8 @@ export default function MyCommittees() {
         type: "success",
         text: "Your request has been submitted successfully and is pending admin approval.",
       });
+      const res = await api.get("/committee-requests/my");
+      setMyRequests(res.data?.data || []);
       setTimeout(() => {
         setIsModalOpen(false);
         setMessage({ type: "", text: "" });
@@ -81,6 +96,8 @@ export default function MyCommittees() {
       setIsSubmitting(false);
     }
   };
+
+  const pendingCommittee = pendingRequest && findCommittee(pendingRequest.committee_position);
 
   return (
     <div className="bg-white dark:bg-[#13161D] rounded-[32px] p-8 md:p-10 border border-[#F1F5F9] dark:border-[#222936]">
@@ -103,12 +120,39 @@ export default function MyCommittees() {
             setMessage({ type: "", text: "" });
             setIsModalOpen(true);
           }}
-          className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors w-fit"
+          disabled={!!pendingRequest}
+          className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors w-fit disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCw size={16} />
-          Request Change
+          {pendingRequest ? "Request Pending" : "Request Change"}
         </Button>
       </div>
+
+      {/* Pending Request Notice */}
+      {requestsLoading ? (
+        <div className="flex items-center justify-center gap-2 text-sm text-muted py-8">
+          <Loader2 size={18} className="animate-spin" />
+          Loading your requests...
+        </div>
+      ) : pendingRequest ? (
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center shrink-0">
+            {pendingCommittee?.icon ? (
+              <img src={pendingCommittee.icon} alt={pendingCommittee.label} className="w-5 h-5 object-contain" />
+            ) : (
+              <Clock size={18} className="text-amber-600 dark:text-amber-400" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              You have a pending request to join {pendingCommittee?.label || pendingRequest.committee_position}
+            </p>
+            <p className="text-xs text-amber-700 dark:text-amber-400">
+              Submitted on {new Date(pendingRequest.createdAt).toLocaleDateString()} — you can request another change once it's reviewed.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       {/* Committee Card */}
       {myCommittee ? (
@@ -155,7 +199,7 @@ export default function MyCommittees() {
             <select
               value={selectedCommittee}
               onChange={(e) => setSelectedCommittee(e.target.value)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !!pendingRequest}
               className="w-full bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-xl p-3 text-sm text-[#0A1628] dark:text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50"
             >
               <option value="" disabled>Select a committee</option>
