@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { committees } from "../../data/committeesData";
 import { ORDINAL_OPTIONS } from "../../data/ordinalMap";
+import { COLLEGE_OPTIONS, OTHER_COLLEGE } from "../../data/collegeOptions";
 import {
   User,
   Mail,
@@ -15,6 +16,7 @@ import {
   Briefcase,
   Clock,
   Info,
+  ChevronDown,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRegister } from "../../hooks/auth/useRegister";
@@ -56,9 +58,31 @@ function SignupPage() {
   const navigate = useNavigate();
   const { register, loading: registering } = useRegister();
   const [showCommitteeInfo, setShowCommitteeInfo] = useState(false);
+  const [collegeOption, setCollegeOption] = useState("");
+  const [isOtherCollege, setIsOtherCollege] = useState(false);
+  const [customCollege, setCustomCollege] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleCollegeChange = (e) => {
+    const value = e.target.value;
+    if (value === OTHER_COLLEGE) {
+      setIsOtherCollege(true);
+      setCustomCollege("");
+      setFormData({ ...formData, college: "" });
+    } else {
+      setIsOtherCollege(false);
+      setCustomCollege("");
+      setCollegeOption(value);
+      setFormData({ ...formData, college: value });
+    }
+  };
+
+  const handleCustomCollegeChange = (e) => {
+    setCustomCollege(e.target.value);
+    setFormData({ ...formData, college: e.target.value });
   };
 
   const handleSignup = async (e) => {
@@ -227,7 +251,7 @@ function SignupPage() {
         {isStudent ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* University */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">University <RequiredAsterisk /></label>
               <div className="relative">
                 <GraduationCap
@@ -237,7 +261,7 @@ function SignupPage() {
                 <input
                   type="text"
                   name="university"
-                  placeholder="University (e.g., El Shorouk Academy)"
+                  placeholder="e.g., El Shorouk Academy"
                   value={formData.university}
                   onChange={handleChange}
                   className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
@@ -254,16 +278,42 @@ function SignupPage() {
                   className="absolute left-3 top-3 text-gray-400"
                   size={20}
                 />
-                <input
-                  type="text"
+                <select
                   name="college"
-                  placeholder="College / Faculty"
-                  value={formData.college}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                  value={isOtherCollege ? OTHER_COLLEGE : collegeOption}
+                  onChange={handleCollegeChange}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white appearance-none cursor-pointer *:dark:text-white"
                   required
+                >
+                  <option value="" disabled hidden>Select College / Faculty</option>
+                  {COLLEGE_OPTIONS.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                  <option value={OTHER_COLLEGE}>Other</option>
+                </select>
+                <ChevronDown
+                  className="absolute right-3 top-3.5 text-gray-400 pointer-events-none"
+                  size={18}
                 />
               </div>
+
+              {/* Other College (free text, shown below the select) */}
+              {isOtherCollege && (
+                <div className="mt-3">
+                  <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Specify College / Faculty</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="customCollege"
+                      placeholder="Type your college / faculty"
+                      value={customCollege}
+                      onChange={handleCustomCollegeChange}
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Committee */}
