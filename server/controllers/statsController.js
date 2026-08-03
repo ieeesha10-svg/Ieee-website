@@ -7,6 +7,7 @@ const Activity = require("../models/ActivityModel.js");
 const Submission = require("../models/SubmissionModel.js");
 const Form = require("../models/FormModel.js")
 const { catchAsync } = require("../middleware/errorsMiddleware.js");
+const { normalizeCollege } = require("../utils/collegeNormalize.js");
 
 // GET /api/stats/dashboard
 dashboardRouter.get(
@@ -17,7 +18,8 @@ dashboardRouter.get(
 
     // Active Forms Activities
     const activeActivities = await Form.countDocuments({
-      status: "Active"
+      status: "Active",
+      activityID: { $exists: true, $ne: null },
     });
 
     // New Registrations (Last 7 Days)
@@ -30,8 +32,17 @@ dashboardRouter.get(
     // College Split
     const collegeSplit = await User.aggregate([
       { $group: { _id: "$college", count: { $sum: 1 } } },
-      { $project: { college: "$_id", count: 1, _id: 0 } },
     ]);
+
+    const collegeCounts = new Map();
+    for (const { _id, count } of collegeSplit) {
+      const college = normalizeCollege(_id);
+      if (!college) continue;
+      collegeCounts.set(college, (collegeCounts.get(college) || 0) + count);
+    }
+    const collegeSplitData = [...collegeCounts.entries()].map(
+      ([college, count]) => ({ college, count }),
+    );
 
     // Position Split
     const positionSplit = await User.aggregate([
@@ -162,7 +173,7 @@ dashboardRouter.get(
       totalMembers,
       activeActivities,
       newRegistrations,
-      collegeSplit,
+      collegeSplit: collegeSplitData,
       positionSplit,
       yearSplit,
       emailsSent,

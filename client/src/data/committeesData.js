@@ -6,6 +6,7 @@ import paletteIcon from '../assets/icons/committees/palette.png';
 import developerIcon from '../assets/icons/committees/developer.png';
 import bookshelfIcon from '../assets/icons/committees/bookshelf.png';
 import webIcon from '../assets/icons/committees/world-wide-web.png';
+import pesIcon from '../assets/icons/committees/pes.png';
 
 export const committees = [
   {
@@ -70,6 +71,19 @@ export const committees = [
       "Defining and maintaining the branch's visual identity standards.",
       "Producing photography, videography, and graphic assets.",
       "Managing media coverage and archiving branch milestones.",
+    ],
+    recruitmentOpen: false,
+  },
+  {
+    id: "pes",
+    icon: pesIcon,
+    label: "PES",
+    title: "Power & Energy Society",
+    subtitle: "IEEE Power & Energy Society",
+    points: [
+      "Specialized in electrical power engineering (IEEE Power & Energy Society).",
+      "Launched in 2019-2020 as one of the branch's earliest chapters.",
+      "Organizing industry visits and hands-on sessions on solar energy and high-voltage power systems.",
     ],
     recruitmentOpen: false,
   },

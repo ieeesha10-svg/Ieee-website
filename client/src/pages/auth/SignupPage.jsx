@@ -20,6 +20,7 @@ import toast from "react-hot-toast";
 import { useRegister } from "../../hooks/auth/useRegister";
 import AuthLayout from "../../layouts/AuthLayout";
 import Modal from "../../components/Modal";
+import RequiredAsterisk from "../../components/RequiredAsterisk";
 
 function SignupPage() {
   // Preselect a tab via ?user= query param (backward compatible), default to student
@@ -151,62 +152,72 @@ function SignupPage() {
         {/* SECTION 1: Personal Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Full Name */}
-          <div className="relative md:col-span-2">
-            <User className="absolute left-3 top-3 text-gray-400" size={20} />
-            <input
-              type="text"
-              name="name"
-              placeholder="Full Name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
-              required
-            />
+          <div className="md:col-span-2">
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Full Name <RequiredAsterisk /></label>
+            <div className="relative">
+              <User className="absolute left-3 top-3 text-gray-400" size={20} />
+              <input
+                type="text"
+                name="name"
+                placeholder="Full Name"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                required
+              />
+            </div>
           </div>
 
           {/* Email */}
-          <div className="relative md:col-span-2">
-            <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email Address"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
-              required
-            />
+          <div className="md:col-span-2">
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Email Address <RequiredAsterisk /></label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
+              <input
+                type="email"
+                name="email"
+                placeholder="Email Address"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                required
+              />
+            </div>
           </div>
 
           {/* Phone */}
-          <div className="relative">
-            <Phone className="absolute left-3 top-3 text-gray-400" size={20} />
-            <input
-              type="tel"
-              name="phone"
-              placeholder="Phone Number"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
-              required
-            />
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Phone Number</label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-3 text-gray-400" size={20} />
+              <input
+                type="tel"
+                name="phone"
+                placeholder="Phone Number"
+                value={formData.phone}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+              />
+            </div>
           </div>
 
           {/* Age */}
-          <div className="relative">
-            <CalendarDays
-              className="absolute left-3 top-3 text-gray-400"
-              size={20}
-            />
-            <input
-              type="number"
-              name="age"
-              placeholder="Age"
-              value={formData.age}
-              onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
-              required
-            />
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Age</label>
+            <div className="relative">
+              <CalendarDays
+                className="absolute left-3 top-3 text-gray-400"
+                size={20}
+              />
+              <input
+                type="number"
+                name="age"
+                placeholder="Age"
+                value={formData.age}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+              />
+            </div>
           </div>
         </div>
 
@@ -216,143 +227,166 @@ function SignupPage() {
         {isStudent ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* University */}
-            <div className="relative md:col-span-2">
-              <GraduationCap
-                className="absolute left-3 top-3 text-gray-400"
-                size={20}
-              />
-              <input
-                type="text"
-                name="university"
-                placeholder="University (e.g., El Shorouk Academy)"
-                value={formData.university}
-                onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
-                required
-              />
+            <div className="md:col-span-2">
+              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">University <RequiredAsterisk /></label>
+              <div className="relative">
+                <GraduationCap
+                  className="absolute left-3 top-3 text-gray-400"
+                  size={20}
+                />
+                <input
+                  type="text"
+                  name="university"
+                  placeholder="University (e.g., El Shorouk Academy)"
+                  value={formData.university}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                  required
+                />
+              </div>
             </div>
 
             {/* College */}
-            <div className="relative">
-              <BookOpen
-                className="absolute left-3 top-3 text-gray-400"
-                size={20}
-              />
-              <input
-                type="text"
-                name="college"
-                placeholder="College / Faculty"
-                value={formData.college}
-                onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
-                required
-              />
+            <div>
+              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">College / Faculty <RequiredAsterisk /></label>
+              <div className="relative">
+                <BookOpen
+                  className="absolute left-3 top-3 text-gray-400"
+                  size={20}
+                />
+                <input
+                  type="text"
+                  name="college"
+                  placeholder="College / Faculty"
+                  value={formData.college}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                  required
+                />
+              </div>
             </div>
 
             {/* Committee */}
-            <div className="relative flex items-center bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-sky-500 transition-all">
-              <select
-                name="committee"
-                value={formData.committee}
-                onChange={handleChange}
-                className="w-full bg-transparent py-3 px-3 focus:outline-none dark:text-white *:dark:text-black appearance-none cursor-pointer"
-                required
-              >
-                <option value="">Select Committee</option>
-                {committees.map((c) => (
-                  <option key={c.id} value={c.label}>{c.label}</option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => setShowCommitteeInfo(true)}
-                className="shrink-0 mr-2 p-1.5 text-gray-400 hover:text-primary rounded-lg transition-colors"
-                aria-label="Committee info"
-              >
-                <Info size={18} />
-              </button>
+            <div className="md:col-span-2">
+              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Committee</label>
+              <div className="relative flex items-center bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-sky-500 transition-all">
+                <select
+                  name="committee"
+                  value={formData.committee}
+                  onChange={handleChange}
+                  className="w-full bg-transparent py-3 px-3 focus:outline-none dark:text-white *:dark:text-black appearance-none cursor-pointer"
+                >
+                  <option value="">Select Committee</option>
+                  {committees.map((c) => (
+                    <option key={c.id} value={c.label}>{c.label}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowCommitteeInfo(true)}
+                  className="shrink-0 mr-2 p-1.5 text-gray-400 hover:text-primary rounded-lg transition-colors"
+                  aria-label="Committee info"
+                >
+                  <Info size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Year of Study (Converted to a clean Select dropdown) */}
-            <div className="relative flex items-center bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-sky-500 transition-all">
-              <span className="pl-3 pr-2 text-gray-500 dark:text-gray-400 text-sm font-medium border-r border-gray-200 dark:border-gray-600">
-                Year
-              </span>
-              <select
-                name="yearOfStudy"
-                value={formData.yearOfStudy}
-                onChange={handleChange}
-                className="w-full bg-transparent py-3 px-3 focus:outline-none dark:text-white *:dark:text-black appearance-none cursor-pointer"
-                required
-              >
-                {ORDINAL_OPTIONS.map(({ label, value }) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+            <div className="md:col-span-2">
+              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Year of Study <RequiredAsterisk /></label>
+              <div className="relative flex items-center bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-primary dark:focus-within:ring-sky-500 transition-all">
+                <span className="pl-3 pr-2 text-gray-500 dark:text-gray-400 text-sm font-medium border-r border-gray-200 dark:border-gray-600">
+                  Year
+                </span>
+                <select
+                  name="yearOfStudy"
+                  value={formData.yearOfStudy}
+                  onChange={handleChange}
+                  className="w-full bg-transparent py-3 px-3 focus:outline-none dark:text-white *:dark:text-black appearance-none cursor-pointer"
+                  required
+                >
+                  {ORDINAL_OPTIONS.map(({ label, value }) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Organization / Company */}
-            <div className="relative md:col-span-2">
-              <Building2
-                className="absolute left-3 top-3 text-gray-400"
-                size={20}
-              />
-              <input
-                type="text"
-                name="organization"
-                placeholder="Organization / Company"
-                value={formData.organization}
-                onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
-                required
-              />
+            <div className="md:col-span-2">
+              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Organization / Company <RequiredAsterisk /></label>
+              <div className="relative">
+                <Building2
+                  className="absolute left-3 top-3 text-gray-400"
+                  size={20}
+                />
+                <input
+                  type="text"
+                  name="organization"
+                  placeholder="Organization / Company"
+                  value={formData.organization}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                  required
+                />
+              </div>
             </div>
 
             {/* Role in Organization */}
-            <div className="relative">
-              <input
-                type="text"
-                name="roleInOrganization"
-                placeholder="Role in Organization"
-                value={formData.roleInOrganization}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
-                required
-              />
+            <div>
+              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Role in Organization <RequiredAsterisk /></label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="roleInOrganization"
+                  placeholder="Role in Organization"
+                  value={formData.roleInOrganization}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                  required
+                />
+              </div>
             </div>
 
             {/* Years of Experience */}
-            <div className="relative">
-              <Clock
-                className="absolute left-3 top-3 text-gray-400"
-                size={20}
-              />
-              <input
-                type="number"
-                name="yearsOfExperience"
-                min="0"
-                placeholder="Years of Experience"
-                value={formData.yearsOfExperience}
-                onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
-                required
-              />
+            <div>
+              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Years of Experience <RequiredAsterisk /></label>
+              <div className="relative">
+                <Clock
+                  className="absolute left-3 top-3 text-gray-400"
+                  size={20}
+                />
+                <input
+                  type="number"
+                  name="yearsOfExperience"
+                  min="0"
+                  placeholder="Years of Experience"
+                  value={formData.yearsOfExperience}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                  required
+                />
+              </div>
             </div>
 
             {/* Reason for Registration */}
-            <div className="relative md:col-span-2">
-              <textarea
-                name="reasonForRegistration"
-                placeholder="Reason for Registration (optional)"
-                value={formData.reasonForRegistration}
-                onChange={handleChange}
-                rows="3"
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white resize-none"
-              />
+            <div className="md:col-span-2">
+              <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Reason for Registration</label>
+              <div className="relative">
+                <textarea
+                  name="reasonForRegistration"
+                  placeholder="Reason for Registration"
+                  value={formData.reasonForRegistration}
+                  onChange={handleChange}
+                  rows="3"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white resize-none"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -361,32 +395,38 @@ function SignupPage() {
 
         {/* SECTION 3: Password */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="relative">
-            <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              minLength="6"
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
-              required
-            />
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Password <RequiredAsterisk /></label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                minLength="6"
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                required
+              />
+            </div>
           </div>
 
-          <div className="relative">
-            <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              minLength="6"
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
-              required
-            />
+          <div>
+            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">Confirm Password <RequiredAsterisk /></label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
+              <input
+                type="password"
+                name="confirmPassword"
+                placeholder="Confirm Password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                minLength="6"
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                required
+              />
+            </div>
           </div>
         </div>
 
@@ -429,7 +469,7 @@ function SignupPage() {
         <div className="space-y-2">
           <span className="text-sm font-semibold text-foreground">1. Choose a committee</span>
           <p className="text-sm text-muted leading-relaxed">
-            Pick the one that fits you best. You can change it later from your profile.
+            Pick the one that fits you best. Not required for guests — you can change it later from your profile.
           </p>
         </div>
         <div className="border-t border-gray-100 dark:border-[#222936]" />
