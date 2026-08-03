@@ -1,7 +1,7 @@
 import React from "react";
 import SectionHeader from "../../components/SectionHeader";
 import SectionBackground from '../../assets/backgrounds/tech-circuit-pattern.png';
-import FlashIcon from '../../assets/icons/flash.png';
+import FlashIcon from '../../assets/icons/committees/pes.png';
 import Button from "../../components/Button";
 
 export default function Chapters() {
@@ -23,7 +23,7 @@ export default function Chapters() {
               </span>
               <div className="absolute rounded-full w-32 h-32 bg-white/20 -right-14 -top-14" />
               <div className="bg-white/20 rounded-2xl p-3 w-fit transition-transform duration-500 group-hover:scale-110">
-                <img src={FlashIcon} className="w-12 h-12" alt="Chapter's Icon" />
+                <img src={FlashIcon} className="w-15 h-15 md:w-20 md:h-20" alt="Chapter's Icon" />
               </div>
               <h3 className="text-white font-semibold text-xl md:text-3xl mt-6 mb-10">PES</h3>
               <span className="text-white text-sm font-light">IEEE PES</span>
