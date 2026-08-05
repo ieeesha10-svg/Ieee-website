@@ -9,6 +9,7 @@ import { ChevronDown, Upload, X } from 'lucide-react';
 import Button from "../components/Button";
 import Input from "../components/Input";
 import HtmlContent from "../components/HtmlContent";
+import RequiredAsterisk from "../components/RequiredAsterisk";
 
 export default function EventRegistration() {
   const { id } = useParams();
@@ -54,7 +55,12 @@ export default function EventRegistration() {
           !(endDate && new Date(endDate) < new Date())
         );
 
-        const dateStr = startDate && endDate
+        const sameDay = startDate && endDate &&
+          new Date(startDate).getFullYear() === new Date(endDate).getFullYear() &&
+          new Date(startDate).getMonth() === new Date(endDate).getMonth() &&
+          new Date(startDate).getDate() === new Date(endDate).getDate();
+
+        const dateStr = startDate && endDate && !sameDay
           ? `From ${new Date(startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} To ${new Date(endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
           : startDate
           ? new Date(startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
@@ -164,10 +170,17 @@ export default function EventRegistration() {
   };
 
   const renderField = (field) => {
+    const labelWithAsterisk = (label) => (
+      <span>
+        {label}
+        {field.required && <RequiredAsterisk />}
+      </span>
+    );
+
     const common = {
       key: field.id,
       name: field.id,
-      label: field.label,
+      label: labelWithAsterisk(field.label),
       placeholder: field.placeholder || 'Your answer',
       value: answers[field.id] || '',
       onChange: handleChange,
@@ -182,7 +195,7 @@ export default function EventRegistration() {
           <div className="flex flex-col gap-1.5">
             {field.label && (
               <label htmlFor={field.id} className="text-sm md:text-base lg:text-xl xl:text-2xl font-bold text-[#334155] dark:text-white">
-                {field.label}
+                {labelWithAsterisk(field.label)}
               </label>
             )}
             <div className="relative">
@@ -206,8 +219,8 @@ export default function EventRegistration() {
       case 'Checkbox':
         return (
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm md:text-base lg:text-xl xl:text-2xl font-bold text-[#334155] dark:text-white">
-              {field.label}
+            <span className="text-sm lg:text-base font-bold text-[#334155] dark:text-white">
+              {labelWithAsterisk(field.label)}
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
               {field.options?.map(opt => (
@@ -258,7 +271,7 @@ export default function EventRegistration() {
           <div className="flex flex-col gap-1.5">
             {field.label && (
               <label className="text-sm md:text-base lg:text-xl xl:text-2xl font-bold text-[#334155] dark:text-white">
-                {field.label}
+                {labelWithAsterisk(field.label)}
               </label>
             )}
             {selectedFile ? (
@@ -468,9 +481,9 @@ export default function EventRegistration() {
                     )}
 
                     {formData.fields?.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-5">
                         {formData.fields.map(field => (
-                          <div key={field.id} className={field.type === 'TextArea' || field.type === 'Checkbox' || field.type === 'FileUpload' ? 'md:col-span-2' : ''}>
+                          <div key={field.id}>
                             {renderField(field)}
                           </div>
                         ))}
@@ -522,14 +535,14 @@ export default function EventRegistration() {
                   <p className="text-xs text-foreground font-gotham font-medium mt-1">{formData.location}</p>
                 </div>
               )}
-              {formData.maxSubmissions > 0 && (
+              {/* {formData.maxSubmissions > 0 && (
                 <div className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
                   <span className="font-semibold tracking-wider text-primary dark:text-primary-light">Seats</span>
                   <p className="text-xs text-foreground font-gotham font-medium mt-1">
                     {formData.maxSubmissions >= 9007199254740991 ? "200+" : formData.maxSubmissions} Available
                   </p>
                 </div>
-              )}
+              )}*/}
             </div>
 
             {formData.speakers?.length > 0 && (
