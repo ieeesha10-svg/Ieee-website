@@ -23,19 +23,8 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
-  const logout = async () => {
-    try {
-      await api.post('/users/logout'); // Only if your backend has a logout route
-    } catch (err) {
-      console.error("Logout error", err);
-    } finally {
-      setUser(null);
-      window.location.href = '/login'; 
-    }
-  };
-
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading }}>
       {!loading && children} 
     </AuthContext.Provider>
   );
