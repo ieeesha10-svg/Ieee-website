@@ -1,8 +1,11 @@
+// useChangeMemberCommittee: Directly changes a member's committee (admin action,
+// PUT /committee-requests/:userId/position) with an optimistic UI update and a
+// rollback to the previous committee if the request fails.
 import { useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import api from "../../utils/api";
 
-export function useChangeCommittee() {
+export function useChangeMemberCommittee() {
   const [updatingCommittee, setUpdatingCommittee] = useState(null);
 
   const updateCommittee = useCallback(
