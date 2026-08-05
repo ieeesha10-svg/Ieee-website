@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Loader2, FileText } from "lucide-react";
+import { useFormSubmissions } from "../../hooks/dashboard/useGetSubmissions";
 import HtmlContent from "../HtmlContent";
 import Modal from "../Modal";
+import Button from "../Button";
 
 export default function EventViewModal({ open, onClose, eventId, getEventById }) {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -17,6 +21,7 @@ export default function EventViewModal({ open, onClose, eventId, getEventById })
 
   const activity = data?.activity;
   const form = data?.form;
+  const { total: submissionCount } = useFormSubmissions(form?._id);
 
   return (
     <Modal open={open} onClose={onClose} title="Event Details" maxWidth="max-w-xl">
@@ -104,6 +109,16 @@ export default function EventViewModal({ open, onClose, eventId, getEventById })
                   <p className="text-foreground font-medium">{form.endDate ? new Date(form.endDate).toLocaleString() : "N/A"}</p>
                 </div>
               </div>
+              {submissionCount > 0 && (
+                <div className="mt-3">
+                  <Button
+                    variant="link"
+                    onClick={() => navigate(`/dashboard/forms/submissions/${form._id}`)}
+                  >
+                    View Submissions
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>

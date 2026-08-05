@@ -4,7 +4,7 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 
 - `src/hooks/` — public/shared hooks
 - `src/hooks/auth/` — login/register/verify/logout
-- `src/hooks/dashboard/` — admin features (users, events, forms, crew, email)
+- `src/hooks/dashboard/` — admin features (users/members, committees, events, forms, email)
 - `src/hooks/dashboard/events/` and `src/hooks/dashboard/forms/` — event/form CRUD
 
 > Convention: hooks expose `loading`, `error`, and a `refetch`/mutator function. Errors generally surface via `toast` (react-hot-toast) or an `error` state.
@@ -42,14 +42,16 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 | `useSearchMembers` | `GET /users/search?keyword=` | `{ keyword, setKeyword, results, isLoading, error }` | Debounced; min 2 chars |
 | `useExportUsers` | `POST /users/export-specific` (blob) | `{ exporting, exportUsers(ids) }` | Downloads `.xlsx` |
 | `useUpdateRole` | `PATCH /users/members/:id` | `{ updatingRole, updateRole(id, newRole, prevRole, setRoles) }` | Optimistic with rollback |
+| `useGetAdmins` | `GET /users/all?role=board,xcom&limit=100` | `{ admins, adminRoles, setAdmins, setAdminRoles, loading, refetch }` | Fetches admin list + roles for the "User Permissions" section of DashboardSettings; exposes state setters for optimistic updates |
 | `useUserUpdate` | `GET /users/members/:id`, `PUT /users/profile/:id`, `PUT /users/update-password/:id` | `{ userData, loading, error, savingProfile, savingPassword, updateProfile, updatePassword }` | Used on user profile pages |
 
-### Crew / Committees
+### Committees
 
 | Hook | Endpoint(s) | Returns | Notes |
 |------|-------------|---------|-------|
-| `useCommitteeRequests` | `GET /committee-requests?status=pending&page=&limit=`, `PUT /committee-requests/:id/status` | `{ requests, loading, page, totalPages, totalCount, refetch, processRequest, processingId }` | Paginated pending requests |
-| `useChangeCommittee` | `PUT /committee-requests/:memberId/position` | `{ updatingCommittee, updateCommittee(id, name, new, prev, setCommittees) }` | Optimistic with rollback |
+| `useReviewCommitteeRequests` | `GET /committee-requests?status=pending&page=&limit=`, `PUT /committee-requests/:id/status` | `{ requests, loading, page, totalPages, totalCount, refetch, processRequest, processingId }` | Paginated pending requests; approve/reject refetches the list |
+| `useSubmitCommitteeRequest` | `POST /committee-requests` | `{ submitting, submitRequest(committeePosition) }` | Submits a committee-change request for the current user; board/xcom users are auto-accepted server-side |
+| `useChangeMemberCommittee` | `PUT /committee-requests/:memberId/position` | `{ updatingCommittee, updateCommittee(id, name, new, prev, setCommittees) }` | Directly changes a member's committee; optimistic with rollback |
 
 ### Events (`src/hooks/dashboard/events/`)
 

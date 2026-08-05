@@ -35,7 +35,7 @@ Each item has `to`, `label`, `icon` (lucide name), optional `title`/`sub`. `Dash
 
 ## Committees — `committeesData.js`
 
-`committees` array of 8 chapters: Public Relations, Human Resources, Logistics, Marketing, Branding & Media, Technical, Non-Technical, Website. Each has `id`, `icon`, `label`, `title`, `subtitle`, `points[]`, `recruitmentOpen` (all `false` right now).
+`committees` array of 9 chapters: Public Relations, Human Resources, Logistics, Marketing, Branding & Media, PES, Technical, Non-Technical, Website. Each has `id`, `icon`, `label`, `title`, `subtitle`, `points[]`, `recruitmentOpen` (all `false` right now).
 
 ## Event Types — `eventTypes.js`
 

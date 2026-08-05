@@ -13,10 +13,10 @@ There are **four** route groups, each wrapped in its own guard/layout:
 
 | Guard | Defined in `App.jsx` | Behavior |
 |-------|----------------------|----------|
-| `PublicLayout` | `App.jsx:81` | Renders `PublicNavbar` + `Footer`. Footer is hidden on `/login`, `/signup`, `/verify`, `/dev-team`, and `/applications*` |
-| `GuestRoute` | `App.jsx:75` | If `user` exists → redirect to `/profile` |
-| `ProtectedRoute` | `App.jsx:55` | No `user` → redirect to `/login`. With `requireAdmin` → role must be in `ADMIN_ROLES` (`board`, `xcom`). With `roles` → role must be in the passed list |
-| Catch-all | `App.jsx:162` | Unknown routes → `NotFoundPage` with `PublicNavbar` |
+| `PublicLayout` | `App.jsx:80` | Renders `PublicNavbar` + `Footer`. Footer is hidden on `/login`, `/signup`, `/verify`, `/dev-team`, and `/applications*` |
+| `GuestRoute` | `App.jsx:74` | If `user` exists → redirect to `/profile` |
+| `ProtectedRoute` | `App.jsx:56` | No `user` → redirect to `/login`. With `requireAdmin` → role must be in `ADMIN_ROLES` (`board`, `xcom`). With `roles` → role must be in the passed list |
+| Catch-all | `App.jsx:175` | Unknown routes → `NotFoundPage` with `PublicNavbar` |
 
 ## Public Routes
 
@@ -24,7 +24,7 @@ There are **four** route groups, each wrapped in its own guard/layout:
 |-------|---------------------------|--------|-------|
 | `/` | `Home` | ✅ | Composes Hero, Achievements, Chapters, MembershipBenefits, JoinUs, FlagshipEvents, Chairpersons, Mission/Vision, Legacy sections |
 | `/events` | `Events` | ✅ | Upcoming + previous events via `usePublicEvents` |
-| `/events/:id` | `EventRegistration` | ✅ | Event page + linked registration form (`usePublicForm`) |
+| `/events/:id` | `EventRegistration` | ✅ | Event page + linked registration form (fetches `GET /activities/:id`, submits via `useSubmitForm`) |
 | `/events/:id/details` | `EventDetails` | ✅ | Full event details page |
 | `/about` | `AboutPage` | ✅ | Board, committees, impact stats, CTA sections |
 | `/contact` | `ContactPage` | ✅ | Contact form + social media links |
@@ -60,11 +60,11 @@ Wrapped in `DashboardLayout` (admin sidebar + topbar with member search). Guarde
 | Route | Component | Status | Notes |
 |-------|-----------|--------|-------|
 | `/dashboard` | `dashboard/DashboardHome` | ✅ | Stats + charts via `useDashboard` |
-| `/dashboard/users` | `dashboard/DashboardMembers` | ✅ | Members list, filters, role management (`useMembersList`, `useUpdateRole`, `useDeleteMember`) |
+| `/dashboard/users` | `dashboard/DashboardMembers` | ✅ | Members list, filters, role management (`useMembersList`, `useUpdateRole`, `useDeleteMember`); committee requests review + direct committee change (`useReviewCommitteeRequests`, `useChangeMemberCommittee`) |
 | `/dashboard/events` | `dashboard/events/DashboardEvents` | ✅ | Event table + view/edit modals |
 | `/dashboard/events/create-event` | `dashboard/events/CreateEvent` | ✅ | Create event + registration form (`useCreateEvent`) |
 | `/dashboard/events/flagship` | `dashboard/events/FeaturedEvents` | ✅ | Manage featured events (`useFeaturedEvents`, add/remove/swap) |
-| `/dashboard/crew` | `dashboard/DashboardCrew` | ✅ | Crew management + committee requests (`useCommitteeRequests`, `useChangeCommittee`) |
+| `/dashboard/crew` | `dashboard/DashboardCrew` | ✅ | Crew management (raw `/crew` CRUD, not committee-related) |
 | `/dashboard/forms` | `dashboard/forms/DashboardForms` | ✅ | Forms list, filters, open/close/delete (`useForms`, `useToggleForm`, `useDeleteForm`) |
 | `/dashboard/forms/create-form` | `dashboard/forms/CreateForm` | ✅ | Form builder (`useCreateForm`) |
 | `/dashboard/forms/submissions/:formId` | `dashboard/forms/ShowFormSubmissions` | ✅ | Responses for a form (`useFormSubmissions`) |

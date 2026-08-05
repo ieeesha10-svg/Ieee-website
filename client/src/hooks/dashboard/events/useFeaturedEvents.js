@@ -96,13 +96,9 @@ export function useFeaturedEvents() {
 
 export function useAddFeatured(refetch) {
   const addFeatured = async (activityId) => {
-    try {
-      const res = await api.post(`/activities/${activityId}/add-featured`);
-      if (refetch) await refetch();
-      return res.data;
-    } catch (error) {
-      throw error;
-    }
+    const res = await api.post(`/activities/${activityId}/add-featured`);
+    if (refetch) await refetch();
+    return res.data;
   };
 
   return { addFeatured };
@@ -110,13 +106,9 @@ export function useAddFeatured(refetch) {
 
 export function useRemoveFeatured(refetch) {
   const removeFeatured = async (activityId) => {
-    try {
-      const res = await api.delete(`/activities/${activityId}/remove-featured`);
-      if (refetch) await refetch();
-      return res.data;
-    } catch (error) {
-      throw error;
-    }
+    const res = await api.delete(`/activities/${activityId}/remove-featured`);
+    if (refetch) await refetch();
+    return res.data;
   };
 
   return { removeFeatured };
@@ -124,13 +116,9 @@ export function useRemoveFeatured(refetch) {
 
 export function useSwapFeatured(refetch) {
   const swapFeatured = async () => {
-    try {
-      const res = await api.post("/activities/swap-featured");
-      if (refetch) await refetch();
-      return res.data;
-    } catch (error) {
-      throw error;
-    }
+    const res = await api.post("/activities/swap-featured");
+    if (refetch) await refetch();
+    return res.data;
   };
 
   return { swapFeatured };

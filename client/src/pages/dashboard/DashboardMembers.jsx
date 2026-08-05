@@ -6,8 +6,8 @@ import { useMembersList } from '../../hooks/dashboard/useMembersList';
 import { useSearchMembers } from '../../hooks/dashboard/useSearchMembers';
 import { useExportUsers } from '../../hooks/dashboard/useExportUsers';
 import { useUpdateRole } from '../../hooks/dashboard/useUpdateRole';
-import { useCommitteeRequests } from '../../hooks/dashboard/useCommitteeRequests';
-import { useChangeCommittee } from '../../hooks/dashboard/useChangeCommittee';
+import { useReviewCommitteeRequests } from '../../hooks/dashboard/useReviewCommitteeRequests';
+import { useChangeMemberCommittee } from '../../hooks/dashboard/useChangeMemberCommittee';
 import { useDeleteMember } from '../../hooks/auth/useDeleteMember';
 import { committees } from '../../data/committeesData';
 // Components
@@ -59,7 +59,7 @@ export default function DashboardMembers() {
 
 	const { updatingRole, updateRole } = useUpdateRole();
   
-	const { updatingCommittee, updateCommittee } = useChangeCommittee();
+	const { updatingCommittee, updateCommittee } = useChangeMemberCommittee();
   
   const {
     requests,
@@ -70,7 +70,7 @@ export default function DashboardMembers() {
     totalPages: requestTotalPages,
     processRequest,
     processingId,
-  } = useCommitteeRequests();
+  } = useReviewCommitteeRequests();
 	const { deleteMember, deleting } = useDeleteMember();
   
   const { exporting, exportUsers } = useExportUsers();

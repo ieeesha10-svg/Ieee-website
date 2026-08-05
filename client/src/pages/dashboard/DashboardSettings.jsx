@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   Save,
@@ -15,29 +15,18 @@ import {
   X,
   Check,
 } from "lucide-react";
-import toast from "react-hot-toast";
-// Hooks
+// Hooks & Data
 import { useUserUpdate } from "../../hooks/dashboard/useUserUpdate";
 import { useUpdateRole } from "../../hooks/dashboard/useUpdateRole";
 import { useMembersList } from "../../hooks/dashboard/useMembersList";
-import DeleteModal from "../../components/DeleteModal";
-import api from "../../utils/api";
+import { useGetAdmins } from "../../hooks/dashboard/useGetAdmins";
+import { useSubmitCommitteeRequest } from "../../hooks/dashboard/useSubmitCommitteeRequest";
 import { ADMIN_ROLES } from '../../data/roles'
-import { pickColor } from '../../data/avatarColors'
 import { ORDINAL_OPTIONS } from '../../data/ordinalMap'
+import { committees } from '../../data/committeesData'
 // Components
+import DeleteModal from "../../components/DeleteModal";
 import Skeleton from "../../components/skeletons/DashSettingsSkeleton";
-
-const COMMITTEE_OPTIONS = [
-  { label: "Public Relations", value: "Public Relations" },
-  { label: "Human Resources", value: "Human Resources" },
-  { label: "Logistics", value: "Logistics" },
-  { label: "Marketing", value: "Marketing" },
-  { label: "Branding & Media", value: "Branding & Media" },
-  { label: "Technical", value: "Technical" },
-  { label: "Non-Technical", value: "Non-Technical" },
-  { label: "Website", value: "Website" },
-];
 
 function SectionCard({ children, className = "" }) {
   return (
@@ -68,7 +57,7 @@ function Field({ label, disabled, ...props }) {
   );
 }
 
-function SelectField({ label, value, onChange, options }) {
+function SelectField({ label, value, onChange, options, disabled }) {
   return (
     <div>
       <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
@@ -78,7 +67,8 @@ function SelectField({ label, value, onChange, options }) {
         <select
           value={value}
           onChange={onChange}
-          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors appearance-none pr-9"
+          disabled={disabled}
+          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors appearance-none pr-9 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -128,18 +118,7 @@ function RoleSelect({ value, onChange }) {
   );
 }
 
-function mapAdmin(u) {
-  return {
-    id: u._id,
-    name: u.name,
-    email: u.email,
-    role: u.role || "member",
-    initials: u.name
-      ? u.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-      : "??",
-    color: pickColor(u._id),
-  };
-}
+const COMMITTEE_OPTIONS = committees.map((c) => ({ label: c.label, value: c.label }));
 
 export default function DashboardSettings() {
   const { user } = useAuth();
@@ -186,29 +165,14 @@ export default function DashboardSettings() {
   const [profileMessage] = useState({ type: "", text: "" });
   const [passwordMessage, setPasswordMessage] = useState({ type: "", text: "" });
 
-  const [admins, setAdmins] = useState([]);
-  const [adminRoles, setAdminRoles] = useState({});
   const { updateRole } = useUpdateRole();
+  const { admins, adminRoles, setAdmins, setAdminRoles, refetch: fetchAdmins } = useGetAdmins();
+  const { submitting: committeeSaving, submitRequest } = useSubmitCommitteeRequest();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const fetchAdmins = useCallback(async () => {
-    try {
-      const res = await api.get(`/users/all?role=${ADMIN_ROLES.join(",")}&limit=100`);
-      const users = (res.data.users || []).map(mapAdmin);
-      setAdmins(users);
-      const rolesMap = {};
-      users.forEach((a) => { rolesMap[a.id] = a.role; });
-      setAdminRoles(rolesMap);
-    } catch (err) {
-      console.error("Failed to fetch admins:", err);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchAdmins();
-  }, [fetchAdmins]);
+  const isAdminRole = ADMIN_ROLES.includes(user?.role);
 
   const handleRoleChange = (adminId, newRole) => {
     const previousRole = adminRoles[adminId];
@@ -217,7 +181,10 @@ export default function DashboardSettings() {
 
   const removeAdmin = async (id) => {
     const previousRole = adminRoles[id];
-    updateRole(id, "member", previousRole, setAdminRoles);
+    updateRole(id, "member", previousRole, setAdminRoles, {
+      message: "User removed from admin list",
+      options: { icon: <Trash2 size={16} className="text-red-500" /> },
+    });
     setAdmins((prev) => prev.filter((a) => a.id !== id));
   };
 
@@ -247,6 +214,17 @@ export default function DashboardSettings() {
         : [],
       optionalData: { aboutMe: profile.aboutMe },
     };
+
+    if (isAdminRole) {
+      delete payload.committee;
+      if (profile.committee !== baseProfile.committee) {
+        const ok = await submitRequest(profile.committee);
+        if (!ok) {
+          updateField("committee", baseProfile.committee);
+          return;
+        }
+      }
+    }
 
     await updateProfile(payload);
   };
@@ -391,10 +369,10 @@ export default function DashboardSettings() {
 
         <button
           onClick={handleSaveProfile}
-          disabled={savingProfile}
+          disabled={savingProfile || committeeSaving}
           className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {savingProfile ? (
+          {savingProfile || committeeSaving ? (
             <Loader2 size={14} className="animate-spin" />
           ) : (
             <Save size={14} />
@@ -531,7 +509,7 @@ export default function DashboardSettings() {
 
               {/* Admins Table */}
               <div className="overflow-x-auto -mx-5 md:-mx-6">
-                <table className="w-full min-w-[500px]">
+                <table className="w-full min-w-125">
                   <thead>
                     <tr className="text-[11px] font-bold text-muted uppercase tracking-wide border-b border-gray-100 dark:border-[#222936]">
                       <th className="text-left px-5 md:px-6 pb-3">Admin</th>
@@ -605,13 +583,15 @@ export default function DashboardSettings() {
       {showAddModal && <AddAdminModal
         onClose={() => setShowAddModal(false)}
         onAdded={() => { setShowAddModal(false); fetchAdmins(); }}
+        updateRole={updateRole}
+        setAdminRoles={setAdminRoles}
       />}
 
     </div>
   );
 }
 
-function AddAdminModal({ onClose, onAdded }) {
+function AddAdminModal({ onClose, onAdded, updateRole, setAdminRoles }) {
   const [adding, setAdding] = useState(false);
   const [selected, setSelected] = useState({});
 
@@ -636,27 +616,11 @@ function AddAdminModal({ onClose, onAdded }) {
   const addAsAdmins = async () => {
     setAdding(true);
     const users = Object.values(selected);
-    console.log("Promoting users:", users);
-    try {
-      const results = await Promise.allSettled(
-        users.map((m) => {
-          return api.patch(`/users/members/${m.id}`, { role: "board" });
-        })
-      );
-      const failed = results.filter((r) => r.status === "rejected");
-      if (failed.length > 0) {
-        failed.forEach((r) => console.error("Promote user failed:", r.reason?.response?.data || r.reason));
-        toast.error(`Failed to promote ${failed.length} user(s)`);
-      } else {
-        toast.success(`${selectedCount} user(s) promoted to admin`);
-        onAdded();
-      }
-    } catch (err) {
-      console.error("Unexpected error promoting users:", err);
-      toast.error("Failed to promote some users");
-    } finally {
-      setAdding(false);
+    for (const m of users) {
+      await updateRole(m.id, "board", m.role, setAdminRoles);
     }
+    setAdding(false);
+    onAdded();
   };
 
   return (
