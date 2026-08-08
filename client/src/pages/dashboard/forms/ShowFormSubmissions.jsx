@@ -247,18 +247,29 @@ export default function ShowFormSubmissions() {
             </p>
           </div>
         </div>
-        <button
-          onClick={handleExport}
-          disabled={exporting}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {exporting ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Download size={16} />
-          )}
-          Export as Excel
-        </button>
+        <div className="flex items-center gap-2">
+        {!location.state?.activityID && (
+          <Link
+            to={`/applications/${formId}`}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors shrink-0"
+          >
+            <ExternalLink size={16} />
+            View on Website
+          </Link>
+        )}
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {exporting ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Download size={16} />
+            )}
+            Export as Excel
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm overflow-hidden">
