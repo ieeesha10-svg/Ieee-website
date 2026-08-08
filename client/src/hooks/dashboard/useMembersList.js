@@ -81,10 +81,8 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles, enabl
       setMembers((data.users || []).map(mapUser));
       setTotalCount(data.allUsersCount || 0);
       setTotalPages(data.pages || 1);
-    } catch (err) {
-      if (err.name !== "CanceledError" && err.name !== "AbortError") {
-        console.error("Error fetching members:", err);
-      }
+    } catch {
+      /* ignore aborted requests */
     } finally {
       setLoading(false);
     }
@@ -118,8 +116,8 @@ export function useMembersList({ pageSize = 12, initialRole, initialRoles, enabl
         setMembers(users.slice(0, pageSize).map(mapUser));
         setTotalCount(res.data.allUsersCount || users.length);
         setTotalPages(Math.ceil((res.data.allUsersCount || users.length) / pageSize));
-      } catch (err) {
-        if (!cancelled) console.error("Error fetching members:", err);
+      } catch {
+        /* ignore aborted requests */
       } finally {
         if (!cancelled) setLoading(false);
       }

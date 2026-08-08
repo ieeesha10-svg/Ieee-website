@@ -25,8 +25,8 @@ export function useCrew() {
         }));
 
         setTeam(formattedTeam);
-      } catch (error) {
-        console.error("Error fetching crew members:", error);
+      } catch {
+        /* ignore */
       } finally {
         setIsLoading(false);
       }

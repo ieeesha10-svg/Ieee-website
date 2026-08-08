@@ -8,7 +8,6 @@ export function useUpdateForm(refetch) {
       if (refetch) await refetch();
       return res.data;
     } catch (error) {
-      console.error("Error updating form:", error);
       toast.error(error.response?.data?.message || "Failed to update form");
       throw error;
     }

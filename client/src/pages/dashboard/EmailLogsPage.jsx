@@ -135,8 +135,7 @@ export default function EmailLogsPage() {
 
       // رسالة النجاح لليوزر
       toast.success("Email logs exported successfully!");
-    } catch (err) {
-      console.error("Export failed:", err);
+    } catch {
       // رسالة الخطأ لليوزر
       toast.error("Failed to export data. Please check your connection.");
     } finally {

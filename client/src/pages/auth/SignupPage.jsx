@@ -127,7 +127,6 @@ function SignupPage() {
         navigate("/verify", { state: { email: formData.email } });
       }, 1500);
     } catch (error) {
-      console.log(error);
       const msg =
         error.response?.data?.error ||
         error.response?.data?.message ||

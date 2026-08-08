@@ -25,8 +25,8 @@ export function useExportUsers() {
           : `ieee-members-${date}.xlsx`;
       link.click();
       URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Export failed:", err);
+    } catch {
+      /* ignore */
     } finally {
       setExporting(false);
     }

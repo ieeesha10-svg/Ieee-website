@@ -42,7 +42,6 @@ export function useDashboard() {
     api.get("/states/dashboard")
       .then((res) => setStats(res.data))
       .catch((err) => {
-        console.error("Error fetching dashboard data:", err);
         setError(err.response?.data?.message || err.message || "Failed to load dashboard data");
       })
       .finally(() => setLoading(false));
