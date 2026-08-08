@@ -112,36 +112,11 @@ export function useCreateForm() {
 
       if (emptyLabel) {
         newErrors.fields = "All field labels are required";
-        const flagged = fieldsList.filter(
-          (f) => !f.label || !f.label.trim()
-        );
-        console.warn(
-          "[useCreateForm] Fields with empty labels:",
-          flagged
-        );
       } else if (invalidType) {
         newErrors.fields = "Each field must have a valid type";
-        const flagged = fieldsList.filter(
-          (f) => !ALLOWED_TYPES.includes(f.type)
-        );
-        console.warn(
-          "[useCreateForm] Fields with invalid type:",
-          flagged
-        );
       } else if (emptyDropdown) {
         newErrors.fields =
           "Each Dropdown/Checkbox field must have at least one option";
-        const flagged = fieldsList.filter(
-          (f) =>
-            (f.type === "Dropdown" || f.type === "Checkbox") &&
-            (!f.options ||
-              f.options.length === 0 ||
-              f.options.every((o) => !o.trim()))
-        );
-        console.warn(
-          "[useCreateForm] Dropdown fields with no options:",
-          flagged
-        );
       }
 
       const slugs = fieldsList.map((f) =>
@@ -150,9 +125,6 @@ export function useCreateForm() {
       const hasDups = slugs.length !== new Set(slugs).size;
       if (hasDups && !newErrors.fields) {
         newErrors.fields = "Each field label must be unique";
-        console.warn(
-          "[useCreateForm] Duplicate field slugs detected"
-        );
       }
     }
 
@@ -245,8 +217,6 @@ export function useCreateForm() {
 
       navigate("/dashboard/forms");
     } catch (error) {
-      console.error("[useCreateForm] Submit error:", error);
-
       const status = error.response?.status;
       const data = error.response?.data || {};
       const serverMsg =

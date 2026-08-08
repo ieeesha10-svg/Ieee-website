@@ -12,7 +12,6 @@ export function useDeleteForm(refetch) {
       });
       if (refetch) await refetch();
     } catch (error) {
-      console.error("Error deleting form:", error);
       const msg =
         error.response?.data?.message ||
         error.response?.data?.error ||

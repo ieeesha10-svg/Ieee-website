@@ -33,8 +33,8 @@ export function useGetAdmins() {
       const rolesMap = {};
       users.forEach((a) => { rolesMap[a.id] = a.role; });
       setAdminRoles(rolesMap);
-    } catch (err) {
-      console.error("Failed to fetch admins:", err);
+    } catch {
+      /* ignore */
     } finally {
       setLoading(false);
     }

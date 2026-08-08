@@ -104,7 +104,6 @@ export default function UserProfile() {
         text: "Profile updated successfully!",
       });
     } catch (error) {
-      console.error("Error saving data:", error);
       setSaveMessage({
         type: "error",
         text: error.response?.data?.message || "Failed to update profile.",

@@ -46,9 +46,8 @@ export function usePublicForms() {
         });
 
       setForms(mapped);
-    } catch (err) {
+    } catch {
       // Endpoint may require admin auth — standalone forms unavailable
-      console.error("Error fetching forms:", err);
     } finally {
       setIsLoading(false);
     }

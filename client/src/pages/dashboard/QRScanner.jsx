@@ -274,8 +274,7 @@ export default function QRScanner() {
       );
 
       setIsScanning(true);
-    } catch (err) {
-      console.error("Camera error:", err);
+    } catch {
       alert(
         "Could not access camera. Please allow camera permissions and try again.",
       );
@@ -287,8 +286,8 @@ export default function QRScanner() {
       try {
         await scannerRef.current.stop();
         scannerRef.current.clear();
-      } catch (e) {
-        console.error("Stop scanner error:", e);
+      } catch {
+        /* ignore scanner stop errors */
       }
       scannerRef.current = null;
     }

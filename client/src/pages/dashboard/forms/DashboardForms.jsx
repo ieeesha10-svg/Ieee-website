@@ -217,7 +217,7 @@ function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
         {form.responses > 0 ? (
           <Link
             to={`/dashboard/forms/submissions/${form.id}`}
-            state={{ formTitle: form.title, fields: form.fields }}
+            state={{ formTitle: form.title, fields: form.fields, activityID: form.activityID }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-[#222936] text-foreground rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
           >
             <Eye size={13} className="text-primary" />

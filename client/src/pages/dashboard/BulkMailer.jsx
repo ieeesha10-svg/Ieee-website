@@ -218,8 +218,7 @@ export default function BulkMailer() {
             const mappedRows = rows.map((r, i) => ({ ...r, _excelRowId: i }));
             setExcelMembers(mappedRows);
           }
-        } catch (error) {
-          console.error("Error parsing excel", error);
+        } catch {
           setStatusMsg({ type: "error", text: "Failed to parse Excel file." });
         }
       };
@@ -343,7 +342,6 @@ export default function BulkMailer() {
         });
       }
     } catch (error) {
-      console.error("Send error:", error);
       const msg =
         error.response?.data?.error ||
         error.response?.data?.message ||

@@ -115,8 +115,7 @@ export default function AttendedEvents() {
           };
         });
         setEvents(mappedEvents);
-      } catch (err) {
-        console.error("Error fetching attended events:", err);
+      } catch {
         setError("Failed to load attended events.");
       } finally {
         setIsLoading(false);

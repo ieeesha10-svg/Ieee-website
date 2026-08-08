@@ -71,8 +71,8 @@ export function useEmailLogs() {
           totalItems: response.data.pagination.totalItems || 0,
           totalPages: response.data.pagination.totalPages || 1,
         }));
-      } catch (error) {
-        console.error("Error fetching email logs:", error);
+      } catch {
+        /* ignore */
       } finally {
         setLoading(false);
       }
