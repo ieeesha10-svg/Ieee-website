@@ -1,8 +1,11 @@
+// useReviewCommitteeRequests: Loads the paginated list of pending committee
+// requests (with the requesting user's info) and lets admins approve/reject them
+// via processRequest, refetching the list after each decision.
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import api from "../../utils/api";
 
-export function useCommitteeRequests({ pageSize = 10 } = {}) {
+export function useReviewCommitteeRequests({ pageSize = 10 } = {}) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

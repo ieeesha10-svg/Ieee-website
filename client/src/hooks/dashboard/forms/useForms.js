@@ -76,8 +76,8 @@ export function useForms() {
           expired.some(e => e.id === f.id) ? { ...f, isOpen: false } : f
         ));
       }
-    } catch (error) {
-      console.error("Error fetching forms:", error);
+    } catch {
+      /* ignore */
     } finally {
       setIsLoading(false);
     }

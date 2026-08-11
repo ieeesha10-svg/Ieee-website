@@ -9,8 +9,7 @@ export function useToggleForm(refetch) {
         `"${title || "Form"}" is now ${becomingOpen ? "open" : "closed"}`
       );
       if (refetch) await refetch();
-    } catch (error) {
-      console.error("Error toggling form status:", error);
+    } catch {
       toast.error("Failed to toggle form status");
     }
   };

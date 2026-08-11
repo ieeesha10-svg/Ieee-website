@@ -20,17 +20,16 @@ export const navItems = [
     title: "Events",
   },
   {
-    to: "/dashboard/crew",
-    label: "Crew",
-    icon: "Users",
-    title: "Crew Management",
-  },
-
-  {
     to: "/dashboard/forms",
     label: "Forms",
     icon: "FileText",
     title: "Registration Forms",
+  },
+  {
+    to: "/dashboard/crew",
+    label: "Crew",
+    icon: "Users",
+    title: "Crew Management",
   },
   {
     to: "/dashboard/email",

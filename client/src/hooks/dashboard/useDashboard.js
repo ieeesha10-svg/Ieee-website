@@ -42,7 +42,6 @@ export function useDashboard() {
     api.get("/states/dashboard")
       .then((res) => setStats(res.data))
       .catch((err) => {
-        console.error("Error fetching dashboard data:", err);
         setError(err.response?.data?.message || err.message || "Failed to load dashboard data");
       })
       .finally(() => setLoading(false));
@@ -65,7 +64,8 @@ export function useDashboard() {
       name: capitalize(c.college),
       value: c.count,
       color: CHART_COLORS[i % CHART_COLORS.length],
-    }));
+    }))
+    .sort((a, b) => b.value - a.value);
 
   const academicYearData = (stats.yearSplit || [])
     .filter((y) => y.yearOfStudy != null)

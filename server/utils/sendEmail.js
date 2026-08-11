@@ -166,11 +166,17 @@ const sendTicketEmail = async ({ email, userName, ticketCode, eventTitle }) => {
 // 3. Reset Password Email
 const resetPasswordEmailToken = async (recipientEmail, resetToken) => {
   try {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const baseUrl = isProduction
+      ? process.env.CLIENT_URL ||'https://ieeesha.org'
+      : 'http://localhost:5173';
+    const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
+
     await sendTemplateEmail({
       to: recipientEmail,
       subject: 'Reset Your Password',
       template: 'resetPassword.html',
-      data: { resetToken }
+      data: { resetToken, resetLink }
     });
     return true;
   } catch (err) {

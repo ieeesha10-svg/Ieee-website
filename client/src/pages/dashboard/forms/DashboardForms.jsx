@@ -10,6 +10,7 @@ import { useUpdateForm } from "../../../hooks/dashboard/forms/useUpdateForm";
 import { SURVEY_COLOR, FEEDBACK_COLOR, CUSTOM_COLOR } from "../../../data/formTypes";
 // Components
 import DeleteModal from "../../../components/DeleteModal";
+import RequiredAsterisk from "../../../components/RequiredAsterisk";
 import DashFormsSkeleton from "../../../components/skeletons/DashFormsSkeleton";
 import Modal from "../../../components/Modal";
 import Pagination from "../../../components/events/Pagination";
@@ -111,8 +112,8 @@ function FieldsModal({ form, onClose }) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h4 className="text-sm font-semibold text-foreground truncate">{field.label || "Untitled"}</h4>
-                {field.required && <span className="text-[10px] font-bold text-red-500 shrink-0">*</span>}
+                <h4 className="text-sm font-semibold text-foreground">{field.label || "Untitled"}</h4>
+                {field.required && <RequiredAsterisk />}
               </div>
               <p className="text-xs text-muted mt-0.5">
                 <span className="font-medium">{fieldTypeLabel(field.type)}</span>
@@ -216,7 +217,7 @@ function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
         {form.responses > 0 ? (
           <Link
             to={`/dashboard/forms/submissions/${form.id}`}
-            state={{ formTitle: form.title, fields: form.fields }}
+            state={{ formTitle: form.title, fields: form.fields, activityID: form.activityID }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-[#222936] text-foreground rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
           >
             <Eye size={13} className="text-primary" />
@@ -352,7 +353,7 @@ export default function DashboardForms() {
 				{/* Action Button */}
 				
         <div className="flex items-center gap-2">
-          <a href="/applications" target="_blank" rel="noopener noreferrer">
+          <a href="/applications" rel="noopener noreferrer">
             <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/10 transition-colors shadow-sm w-full sm:w-auto">
             <ExternalLink size={16} /> View on Site
             </button>

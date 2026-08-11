@@ -73,7 +73,7 @@ export default function UserLayout() {
         college: user.college || "",
         committee: user.committee || "",
         aboutMe: user.optionalData?.aboutMe || "",
-        yearOfStudy: user.yearOfStudy || "",
+        yearOfStudy: user.yearOfStudy ?? "",
         position: user.position || "student",
         organization: user.organization || "",
         roleInOrganization: user.roleInOrganization || "",
@@ -81,8 +81,7 @@ export default function UserLayout() {
         reasonForRegistration: user.reasonForRegistration || "",
         createdAt: user.createdAt || "",
       });
-    } catch (error) {
-      console.error("Error fetching user data:", error);
+    } catch {
       setFetchError("Failed to load profile data.");
     } finally {
       setIsLoading(false);

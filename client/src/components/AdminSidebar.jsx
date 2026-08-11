@@ -14,6 +14,8 @@ import {
   Menu,
   X,
   Home,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
@@ -37,6 +39,7 @@ const AdminSidebar = () => {
   const { logout } = useLogout();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -51,14 +54,16 @@ const AdminSidebar = () => {
     if (await logout()) setShowLogoutModal(false);
   };
 
-  const nav = (onNavClick) => (
+  const nav = (onNavClick, collapsed) => (
     <>
       <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-4">
         {visibleNavItems.length > 0 && (
           <div>
-            <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">
-              MAIN
-            </p>
+            {!collapsed && (
+              <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">
+                MAIN
+              </p>
+            )}
           <nav className="flex flex-col gap-0.5">
             {visibleNavItems.map((item) => {
               const Icon = ICON_MAP[item.icon];
@@ -68,11 +73,12 @@ const AdminSidebar = () => {
                   to={item.to}
                   end={item.end}
                   onClick={onNavClick}
+                  title={collapsed ? item.label : undefined}
                   className={({ isActive }) => {
                     const active = item.end
                       ? isActive || location.pathname === item.to + "/"
                       : isActive;
-                    return `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${active ? "bg-primary text-white hover:bg-primary-dark" : "text-[#7A9BB5] hover:bg-input hover:text-foreground"}`;
+                    return `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${collapsed ? "justify-center px-0" : ""} ${active ? "bg-primary text-white hover:bg-primary-dark" : "text-[#7A9BB5] hover:bg-input hover:text-foreground"}`;
                   }}
                 >
                   {({ isActive }) => {
@@ -82,8 +88,8 @@ const AdminSidebar = () => {
                     return (
                       <>
                         {Icon && <Icon size={16} />}
-                        {item.label}
-                        {active && (
+                        {!collapsed && item.label}
+                        {!collapsed && active && (
                           <ChevronRight
                             size={14}
                             className="ml-auto shrink-0"
@@ -100,9 +106,11 @@ const AdminSidebar = () => {
         )}
 
         <div className={`pt-2 ${isAdminRole(user?.role) ? "border-t border-white/7" : ""}`}>
-          <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">
-            TOOLS
-          </p>
+          {!collapsed && (
+            <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">
+              TOOLS
+            </p>
+          )}
           <nav className="flex flex-col gap-0.5">
             {visibleToolsItems.map((item) => {
               const Icon = ICON_MAP[item.icon];
@@ -111,18 +119,19 @@ const AdminSidebar = () => {
                   key={item.to}
                   to={item.to}
                   onClick={onNavClick}
+                  title={collapsed ? item.label : undefined}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isActive ? "bg-primary text-white hover:bg-primary-dark" : "text-[#7A9BB5] hover:bg-input hover:text-foreground"}`
+                    `flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${collapsed ? "justify-center px-0" : ""} ${isActive ? "bg-primary text-white hover:bg-primary-dark" : "text-[#7A9BB5] hover:bg-input hover:text-foreground"}`
                   }
                 >
                   {({ isActive }) => (
                     <>
                       {Icon && <Icon size={16} />}
-                      {item.label}
-                      {isActive && (
+                      {!collapsed && item.label}
+                      {!collapsed && isActive && (
                         <ChevronRight size={14} className="ml-auto shrink-0" />
                       )}
-                      {item.badge && (
+                      {!collapsed && item.badge && (
                         <span className="ml-auto text-[10px] font-bold bg-primary/20 text-primary border border-primary/30 rounded-md px-1.5 py-0.5 leading-none">
                           {item.badge}
                         </span>
@@ -139,20 +148,23 @@ const AdminSidebar = () => {
       <div className="mt-auto p-4 border-t border-white/8 flex flex-col gap-2">
         <Link
           to="/"
-          className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-[#8BA0B8] hover:text-white hover:bg-[#1A2E42] transition-colors"
+          title={collapsed ? "Home" : undefined}
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-[#8BA0B8] hover:text-white hover:bg-[#1A2E42] transition-colors ${collapsed ? "justify-center px-2" : ""}`}
         >
           <Home size={18} />
-          <span>Home</span>
+          {!collapsed && <span>Home</span>}
         </Link>
-        <div className="flex items-center gap-2 bg-[#1A2E42] border-white/8 px-4 py-3 rounded-xl">
-          <div className="flex-1 min-w-0">
-            <p className="text-[#5A7186] text-[10px] leading-tight">
-              Logged in as
-            </p>
-            <p className="text-white text-xs font-semibold leading-tight truncate">
-              {user?.name || "Admin"}
-            </p>
-          </div>
+        <div className={`flex items-center gap-2 bg-[#1A2E42] border-white/8 px-4 py-3 rounded-xl ${collapsed ? "justify-center px-2" : ""}`}>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-[#5A7186] text-[10px] leading-tight">
+                Logged in as
+              </p>
+              <p className="text-white text-xs font-semibold leading-tight truncate">
+                {user?.name || "Admin"}
+              </p>
+            </div>
+          )}
           <button
             onClick={() => setShowLogoutModal(true)}
             aria-label="Log out"
@@ -160,8 +172,7 @@ const AdminSidebar = () => {
           >
             <LogOut size={15} />
           </button>
-				</div>
-        
+        </div>
       </div>
     </>
   );
@@ -201,7 +212,7 @@ const AdminSidebar = () => {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-sm font-semibold leading-tight">
-              IEEE Student Branch
+              El-Sherouk Student Branch
             </p>
             <p className="text-muted text-xs leading-tight mt-2">Admin Panel</p>
           </div>
@@ -217,19 +228,36 @@ const AdminSidebar = () => {
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="shrink-0 h-screen sticky top-0 z-50 hidden md:flex flex-col bg-[#0a0e1a]">
-        <div className="px-4 py-4 border-b border-white/7 flex items-center gap-3">
+      <aside
+        className={`shrink-0 h-screen sticky top-0 z-50 hidden md:flex flex-col bg-[#0a0e1a] border-r border-border transition-[width] duration-300 ${
+          collapsed ? "w-20" : "w-64"
+        }`}
+      >
+        <div
+          className={`px-4 py-4 border-b border-white/7 flex items-center gap-3 ${
+            collapsed ? "justify-center px-2" : ""
+          }`}
+        >
           <div className="bg-primary text-white text-[10px] font-bold rounded-md px-1.5 py-1 shrink-0 w-8 h-8 flex items-center justify-center">
             IEEE
           </div>
-          <div>
-            <p className="text-white text-sm font-semibold leading-tight">
-              IEEE Student Branch
-            </p>
-            <p className="text-[#5A7186] text-xs leading-tight">Admin Panel</p>
-          </div>
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-semibold leading-tight">
+                El-Sherouk Student Branch
+              </p>
+              <p className="text-[#5A7186] text-xs leading-tight">Admin Panel</p>
+            </div>
+          )}
+          <button
+            onClick={() => setCollapsed((prev) => !prev)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="shrink-0 text-[#8BA0B8] hover:text-white hover:bg-[#1A2E42] transition-colors rounded-md p-1 cursor-pointer"
+          >
+            {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
         </div>
-        {nav()}
+        {nav(undefined, collapsed)}
       </aside>
 
       {createPortal(

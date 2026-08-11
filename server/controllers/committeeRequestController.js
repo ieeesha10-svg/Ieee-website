@@ -11,14 +11,29 @@ const createCommitteeRequest = catchAsync(async (req, res) => {
     throw new AppError('Committee position is required', 400);
   }
 
-  const existingRequest = await PendingRequest.findOne({ userId, committee_position });
-  if (existingRequest) {
-    throw new AppError('You already have a pending request for this committee position', 400);
-  }
-
   const existingUser = await User.findById(userId);
   if (!existingUser) {
     throw new AppError('User not found', 404);
+  }
+
+  // XCom & Board members are accepted immediately
+  if (['xcom', 'board'].includes(existingUser.role)) {
+    if (existingUser.committee === committee_position) {
+      throw new AppError('User already has this committee position', 400);
+    }
+    existingUser.committee = committee_position;
+    await existingUser.save();
+    await PendingRequest.deleteMany({ userId, request_status: 'pending' });
+    return res.status(201).json({
+      success: true,
+      message: 'Committee request submitted and accepted automatically',
+      data: existingUser
+    });
+  }
+
+  const existingRequest = await PendingRequest.findOne({ userId, request_status: 'pending' });
+  if (existingRequest) {
+    throw new AppError('You already have a pending committee request. Please wait for it to be reviewed.', 400);
   }
 
   const request = await PendingRequest.create({
@@ -80,6 +95,15 @@ const updateRequestStatus = catchAsync(async (req, res) => {
     success: true,
     message: `Request ${status} successfully`,
     data: user
+  });
+});
+
+const getMyRequests = catchAsync(async (req, res) => {
+  const requests = await PendingRequest.find({ userId: req.user._id }).sort({ createdAt: -1 });
+
+  res.json({
+    success: true,
+    data: requests,
   });
 });
 
@@ -145,6 +169,7 @@ const changeCommitteePosition = catchAsync(async (req, res) => {
 module.exports = {
   createCommitteeRequest,
   updateRequestStatus,
+  getMyRequests,
   getAllRequests,
   changeCommitteePosition
 };

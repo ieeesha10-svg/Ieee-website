@@ -33,6 +33,8 @@ import NotFoundPage from "./pages/NotFoundPage";
 import LoginPage from "./pages/auth/LoginPage";
 import SignupPage from "./pages/auth/SignupPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
+import ForgetPasswordPage from "./pages/auth/ForgetPasswordPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 // Dashboard Pages
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import DashboardMembers from "./pages/dashboard/DashboardMembers";
@@ -93,6 +95,8 @@ const PublicLayout = () => {
         "/signup",
         "/registration",
         "/verify",
+        "/forgot-password",
+        "/reset-password",
         "/dev-team",
         "/applications",
       ].includes(location.pathname) &&
@@ -116,6 +120,8 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/registration" element={<SignupPage />} />
             <Route path="/verify" element={<VerifyEmailPage />} />
+            <Route path="/forgot-password" element={<ForgetPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
           </Route>
           <Route path="/crew" element={<CrewPage />} />
           <Route path="/committees" element={<CommitteesPage />} />

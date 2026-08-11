@@ -33,7 +33,7 @@ userRouter.post("/logout", logoutUser);
 
 userRouter.put("/update-password/:id", protect, updatePassword);
 userRouter.post("/forgot-password", forgetPassword);
-userRouter.post("/reset-password/:token", resetPassword);
+userRouter.post("/reset-password", resetPassword);
 
 // Protected Routes
 userRouter.get("/profile", protect, getUserProfile);

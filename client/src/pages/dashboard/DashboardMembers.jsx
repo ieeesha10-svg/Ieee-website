@@ -6,8 +6,8 @@ import { useMembersList } from '../../hooks/dashboard/useMembersList';
 import { useSearchMembers } from '../../hooks/dashboard/useSearchMembers';
 import { useExportUsers } from '../../hooks/dashboard/useExportUsers';
 import { useUpdateRole } from '../../hooks/dashboard/useUpdateRole';
-import { useCommitteeRequests } from '../../hooks/dashboard/useCommitteeRequests';
-import { useChangeCommittee } from '../../hooks/dashboard/useChangeCommittee';
+import { useReviewCommitteeRequests } from '../../hooks/dashboard/useReviewCommitteeRequests';
+import { useChangeMemberCommittee } from '../../hooks/dashboard/useChangeMemberCommittee';
 import { useDeleteMember } from '../../hooks/auth/useDeleteMember';
 import { committees } from '../../data/committeesData';
 // Components
@@ -16,6 +16,7 @@ import AdvancedSearch from '../../components/AdvancedSearch';
 import MemberFilters from '../../components/dashboard/MemberFilters';
 import DeleteUserModal from '../../components/dashboard/DeleteUserModal';
 import Modal from '../../components/Modal';
+import Pagination from '../../components/events/Pagination';
 
 export default function DashboardMembers() {
 	const { user } = useAuth();
@@ -23,7 +24,6 @@ export default function DashboardMembers() {
   const {
     members,
     setMembers,
-    totalCount,
     collegeFilters,
     yearFilters,
     roleFilters,
@@ -59,15 +59,18 @@ export default function DashboardMembers() {
 
 	const { updatingRole, updateRole } = useUpdateRole();
   
-	const { updatingCommittee, updateCommittee } = useChangeCommittee();
+	const { updatingCommittee, updateCommittee } = useChangeMemberCommittee();
   
   const {
     requests,
     loading: requestsLoading,
     totalCount: pendingCount,
+    page: requestPage,
+    setPage: setRequestPage,
+    totalPages: requestTotalPages,
     processRequest,
     processingId,
-  } = useCommitteeRequests();
+  } = useReviewCommitteeRequests();
 	const { deleteMember, deleting } = useDeleteMember();
   
   const { exporting, exportUsers } = useExportUsers();
@@ -436,7 +439,7 @@ export default function DashboardMembers() {
         {!isSearching && (
           <div className="flex items-center justify-between px-6 py-4">
             <span className="text-sm text-muted">
-              Showing {members.length} of {totalCount} members
+              Showing {page} of {totalPages} pages
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -529,6 +532,16 @@ export default function DashboardMembers() {
               </li>
             ))}
           </ul>
+        )}
+
+        {!requestsLoading && requests.length > 0 && (
+          <div>
+            <Pagination
+              page={requestPage}
+              totalPages={requestTotalPages}
+              onPageChange={setRequestPage}
+            />
+          </div>
         )}
 			</div>
       

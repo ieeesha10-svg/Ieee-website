@@ -6,9 +6,10 @@ import ahmedImg from "../assets/images/dev-team/ahmed-elmalah.jpeg";
 import abdallahImg from "../assets/images/dev-team/abdallah-aziz.jpeg";
 import hossamImg from "../assets/images/dev-team/hossam-ghallab.jpeg";
 import madihaImg from "../assets/images/dev-team/madiha-elyazal.jpeg";
+import aliElsayedImg from "../assets/images/chairpersons/ali-elsayed.jpg";
 
 export const stats = [
-  { id: 1, value: "7", label: "Engineers" },
+  { id: 1, value: "8", label: "Engineers" },
   { id: 2, value: "3", label: "Tracks" },
   { id: 3, value: "1", label: "Vision" },
 ];
@@ -17,10 +18,10 @@ export const tracks = [
   {
     id: "track-01",
     number: "01",
-    title: "Head Of Website Team / Vice Head Of Technical Team",
+    title: "Head Of Website Team / Non-Technical Team",
     members: [
       {
-        id: 0,
+        id: 1,
         number: "01",
         name: "Ali Ahmed",
         role: "Full Stack Engineer",
@@ -31,6 +32,17 @@ export const tracks = [
           github: "https://github.com/ALi-ahmed-e",
         },
       },
+      {
+        id: 2,
+        number: "02",
+        name: "Ali Elsayed",
+        role: "Season X Vicechair - Strategic Advisor",
+        dept: "IEEE SHA",
+        image: aliElsayedImg,
+        links: {
+          linkedin: "https://www.linkedin.com/in/alli-elsayed",
+        },
+      },
     ],
   },
   {
@@ -39,8 +51,8 @@ export const tracks = [
     title: "UI/UX Design Team",
     members: [
       {
-        id: 1,
-        number: "01",
+        id: 3,
+        number: "03",
         name: "Mohamed Alaa",
         role: "UI/UX Designer",
         dept: "IEEE SHA",
@@ -51,8 +63,8 @@ export const tracks = [
         },
       },
       {
-        id: 2,
-        number: "02",
+        id: 4,
+        number: "04",
         name: "Farah Orabi",
         role: "UI/UX Designer",
         dept: "IEEE SHA",
@@ -69,8 +81,8 @@ export const tracks = [
     title: "Frontend Development Team",
     members: [
       {
-        id: 3,
-        number: "03",
+        id: 5,
+        number: "05",
         name: "Ahmed El-Mallah",
         role: "Frontend Engineer",
         dept: "IEEE SHA",
@@ -82,8 +94,8 @@ export const tracks = [
         },
       },
       {
-        id: 4,
-        number: "04",
+        id: 6,
+        number: "06",
         name: "Abdallah Aziz",
         role: "Frontend Engineer",
         dept: "IEEE SHA",
@@ -91,7 +103,7 @@ export const tracks = [
         links: {
           linkedin: "https://www.linkedin.com/in/abdallah-m-aziz",
           github: "https://github.com/abdullahMohamed13",
-          portfolio: "https://abdallah-aziz.vercel.app",
+          portfolio: "https://abdallah-aziz.onrender.com",
         },
       },
     ],
@@ -102,8 +114,8 @@ export const tracks = [
     title: "Backend Development Team",
     members: [
       {
-        id: 5,
-        number: "05",
+        id: 7,
+        number: "07",
         name: "Hossam Ghallab",
         role: "Backend Engineer",
         dept: "IEEE SHA",
@@ -114,8 +126,8 @@ export const tracks = [
         },
       },
       {
-        id: 6,
-        number: "06",
+        id: 8,
+        number: "08",
         name: "Madiha Elyazal",
         role: "Backend Engineer",
         dept: "IEEE SHA",

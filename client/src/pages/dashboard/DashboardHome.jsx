@@ -8,7 +8,7 @@
 	
 	*/
 }
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Users,
@@ -33,6 +33,8 @@ import {
 } from "recharts";
 import { useDashboard } from "../../hooks/dashboard/useDashboard";
 import Skeleton from "../../components/skeletons/DashHomeSkeleton";
+import Button from "../../components/Button";
+import Modal from "../../components/Modal";
 
 const ICON_MAP = { Users, Calendar, TrendingUp, Mail, Trophy };
 
@@ -80,6 +82,10 @@ const totalBackground = (arr) => arr.reduce((s, e) => s + e.value, 0);
 
 export default function Dashboard() {
   const { data, loading, error } = useDashboard();
+
+  const [showAllBackground, setShowAllBackground] = useState(false);
+  const topBackgroundData = data?.academicBackgroundData?.slice(0, 7) || [];
+  const restBackgroundData = data?.academicBackgroundData?.slice(7) || [];
 
   if (loading) return <Skeleton />;
 
@@ -143,7 +149,7 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie
-                  data={data.academicBackgroundData}
+                  data={topBackgroundData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
@@ -151,7 +157,7 @@ export default function Dashboard() {
                   innerRadius={60}
                   outerRadius={90}
                 >
-                  {data.academicBackgroundData.map((entry, idx) => (
+                  {topBackgroundData.map((entry, idx) => (
                     <Cell key={idx} fill={entry.color} />
                   ))}
                 </Pie>
@@ -161,7 +167,7 @@ export default function Dashboard() {
           </div>
 
           <div className="mt-4 space-y-2">
-            {data.academicBackgroundData.map((entry) => {
+            {topBackgroundData.map((entry) => {
               const pct = (
                 (entry.value / totalBackground(data.academicBackgroundData)) *
                 100
@@ -181,6 +187,44 @@ export default function Dashboard() {
               );
             })}
           </div>
+
+          {restBackgroundData.length > 0 && (
+            <Button
+              variant="link"
+              onClick={() => setShowAllBackground(true)}
+              className="!px-0 mt-3"
+            >
+              Show all {data.academicBackgroundData.length} colleges
+            </Button>
+          )}
+
+          <Modal
+            open={showAllBackground}
+            onClose={() => setShowAllBackground(false)}
+            title="Academic Background"
+          >
+            <div className="space-y-2">
+              {data.academicBackgroundData.map((entry) => {
+                const pct = (
+                  (entry.value / totalBackground(data.academicBackgroundData)) *
+                  100
+                ).toFixed(0);
+                return (
+                  <div
+                    key={entry.name}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span className="flex-1 text-foreground">{entry.name}</span>
+                    <span className="font-bold text-foreground">{pct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </Modal>
         </div>
 
         {/* Panel: Academic Year Split */}
@@ -330,20 +374,16 @@ export default function Dashboard() {
               <tbody>
                 {data.latestSignups.map((signup, idx) => (
                   <tr key={idx} className="*:py-2.5">
-                    <td className="flex items-center gap-3 font-medium text-sm text-foreground whitespace-nowrap">
+                    <td className="flex items-center gap-3 font-medium text-sm text-foreground min-w-0 break-words">
                       <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white ${signup.avatarColor}`}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white shrink-0 ${signup.avatarColor}`}
                       >
                         {signup.initials}
                       </div>
                       {signup.name}
                     </td>
-                    <td className="text-sm text-muted whitespace-nowrap">
-                      {signup.institution}
-                    </td>
-                    <td className="text-xs text-muted text-right whitespace-nowrap">
-                      {signup.time}
-                    </td>
+                    <td className="text-sm text-muted break-words">{signup.institution}</td>
+                    <td className="text-xs text-muted text-right break-words">{signup.time}</td>
                   </tr>
                 ))}
               </tbody>

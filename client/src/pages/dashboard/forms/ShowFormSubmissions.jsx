@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import { ArrowLeft, FileText, Loader2, ChevronDown, ChevronUp, Download, ExternalLink } from "lucide-react";
-import toast from "react-hot-toast";
-import api from "../../../utils/api";
 import { useFormSubmissions } from "../../../hooks/dashboard/useGetSubmissions";
+import { useExportFormSubmissions } from "../../../hooks/dashboard/forms/useExportFormSubmissions";
 
 function isFileUrl(value) {
   if (typeof value !== "string") return false;
@@ -109,58 +108,74 @@ function SubmissionRow({ submission, index, fieldLabelMap }) {
       </tr>
       {expanded && (
         <tr className="bg-gray-50/70 dark:bg-white/[0.02]">
-          <td colSpan={5} className="px-4 py-4">
-            <div className="ml-2 space-y-2">
+          <td colSpan={5} className="px-8 py-4">
+            <div className="ml-2 overflow-x-auto rounded-lg border border-border">
               {submission.answers &&
-                Object.entries(submission.answers).map(([key, value]) => (
-                  <div key={key} className="flex gap-3 text-sm">
-                    <span className="font-medium text-muted min-w-[140px]">
-                      {fieldLabelMap[key] || key}
-                    </span>
-                    <span className="text-foreground">
-                      {(() => {
-                        if (Array.isArray(value)) return value.join(", ");
-                        if (isFileUrl(value)) {
-                          if (isImageUrl(value)) {
-                            return (
-                              <a
-                                href={value}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex flex-col items-start gap-1 group"
-                              >
-                                <img
-                                  src={value}
-                                  alt={getFileNameFromUrl(value)}
-                                  className="max-h-32 rounded-md border border-border object-cover"
-                                />
-                                <span className="inline-flex items-center gap-1 text-xs text-primary group-hover:underline">
-                                  <ExternalLink size={12} />
+              Object.keys(submission.answers).length > 0 ? (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-[#F8FAFC] dark:bg-[#202636] border-b border-border">
+                      <th className="text-left font-semibold text-muted uppercase tracking-wide px-4 py-2.5 border-r border-border">
+                        Question
+                      </th>
+                      <th className="text-left font-semibold text-muted uppercase tracking-wide px-4 py-2.5">
+                        Response
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {Object.entries(submission.answers).map(([key, value]) => (
+                      <tr key={key}>
+                        <td className="px-4 py-2.5 font-medium text-muted border-r border-border align-top">
+                          {fieldLabelMap[key] || key}
+                        </td>
+                        <td className="px-4 py-2.5 text-foreground align-top">
+                          {(() => {
+                            if (Array.isArray(value)) return value.join(", ");
+                            if (isFileUrl(value)) {
+                              if (isImageUrl(value)) {
+                                return (
+                                  <a
+                                    href={value}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex flex-col items-start gap-1 group"
+                                  >
+                                    <img
+                                      src={value}
+                                      alt={getFileNameFromUrl(value)}
+                                      className="max-h-32 rounded-md border border-border object-cover"
+                                    />
+                                    <span className="inline-flex items-center gap-1 text-xs text-primary group-hover:underline">
+                                      <ExternalLink size={12} />
+                                      {getFileNameFromUrl(value)}
+                                    </span>
+                                  </a>
+                                );
+                              }
+                              return (
+                                <a
+                                  href={getAttachmentUrl(value)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-primary hover:underline"
+                                >
+                                  <Download size={14} className="shrink-0" />
                                   {getFileNameFromUrl(value)}
-                                </span>
-                              </a>
-                            );
-                          }
-                          return (
-                            <a
-                              href={getAttachmentUrl(value)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-primary hover:underline"
-                            >
-                              <Download size={14} className="shrink-0" />
-                              {getFileNameFromUrl(value)}
-                            </a>
-                          );
-                        }
-                        return String(value);
-                      })()}
-                    </span>
-                  </div>
-                ))}
-              {(!submission.answers ||
-                Object.keys(submission.answers).length === 0) && (
-                <p className="text-sm text-muted italic">No answers provided</p>
+                                </a>
+                              );
+                            }
+                            return String(value);
+                          })()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-sm text-muted italic px-4 py-3">
+                  No answers provided
+                </p>
               )}
             </div>
           </td>
@@ -180,24 +195,9 @@ export default function ShowFormSubmissions() {
   );
 
   const { submissions, total, isLoading, error } = useFormSubmissions(formId);
+  const { exporting, exportSubmissions } = useExportFormSubmissions();
 
-  const handleExport = async () => {
-    try {
-      const response = await api.get(`/submissions/export/${formId}`, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${formTitle}_responses.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Failed to export submissions");
-    }
-  };
+  const handleExport = () => exportSubmissions(formId, formTitle);
 
   if (isLoading) {
     return (
@@ -247,13 +247,29 @@ export default function ShowFormSubmissions() {
             </p>
           </div>
         </div>
-        <button
-          onClick={handleExport}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0"
-        >
-          <Download size={16} />
-          Export as Excel
-        </button>
+        <div className="flex items-center gap-2">
+        {!location.state?.activityID && (
+          <Link
+            to={`/applications/${formId}`}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors shrink-0"
+          >
+            <ExternalLink size={16} />
+            View on Website
+          </Link>
+        )}
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {exporting ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Download size={16} />
+            )}
+            Export as Excel
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm overflow-hidden">

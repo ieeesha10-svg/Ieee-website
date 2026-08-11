@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { LogIn, Mail, Lock } from "lucide-react";
+import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { useLogin } from "../../hooks/auth/useLogin";
 import { useAuth } from "../../context/AuthContext";
@@ -10,6 +10,7 @@ import { ADMIN_ROLES } from "../../data/roles";
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const { login, loading } = useLogin();
@@ -59,13 +60,30 @@ const LoginPage = () => {
         <div className="relative">
           <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+            className="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
             required
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="absolute right-3 top-3 text-gray-400 hover:text-primary dark:hover:text-sky-400 transition-colors"
+          >
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </div>
+
+        <div className="flex justify-end -mt-2">
+          <Link
+            to="/forgot-password"
+            className="text-sm text-primary dark:text-sky-400 font-bold hover:underline"
+          >
+            Forgot Password?
+          </Link>
         </div>
 
         <button

@@ -62,7 +62,6 @@ export function useSearchMembers() {
         setResults((res.data?.data || []).map(mapUser));
       } catch (err) {
         if (err.name !== "CanceledError" && err.name !== "AbortError") {
-          console.error("Advanced search failed:", err);
           setError(err.response?.data?.message || err.message || "Search failed");
           setResults([]);
         }

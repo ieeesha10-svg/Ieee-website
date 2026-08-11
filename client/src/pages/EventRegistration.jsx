@@ -7,11 +7,11 @@ import {
   ACCEPTED_FILE_EXTENSIONS,
   useFileUpload,
 } from "../utils/fileUploadUtils";
-import { ChevronDown, Upload, X } from "lucide-react";
-
+import { ChevronDown, Upload, X, CheckCircle2 } from "lucide-react";
 import Button from "../components/Button";
 import Input from "../components/Input";
 import HtmlContent from "../components/HtmlContent";
+import RequiredAsterisk from "../components/RequiredAsterisk";
 
 export default function EventRegistration() {
   const { id } = useParams();
@@ -64,8 +64,16 @@ export default function EventRegistration() {
             !(endDate && new Date(endDate) < new Date()),
         );
 
+        const sameDay =
+          startDate &&
+          endDate &&
+          new Date(startDate).getFullYear() ===
+            new Date(endDate).getFullYear() &&
+          new Date(startDate).getMonth() === new Date(endDate).getMonth() &&
+          new Date(startDate).getDate() === new Date(endDate).getDate();
+
         const dateStr =
-          startDate && endDate
+          startDate && endDate && !sameDay
             ? `From ${new Date(startDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} To ${new Date(endDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
             : startDate
               ? new Date(startDate).toLocaleDateString("en-US", {
@@ -189,10 +197,17 @@ export default function EventRegistration() {
   };
 
   const renderField = (field) => {
+    const labelWithAsterisk = (label) => (
+      <span>
+        {label}
+        {field.required && <RequiredAsterisk />}
+      </span>
+    );
+
     const common = {
       key: field.id,
       name: field.id,
-      label: field.label,
+      label: labelWithAsterisk(field.label),
       placeholder: field.placeholder || "Your answer",
       value: answers[field.id] || "",
       onChange: handleChange,
@@ -210,7 +225,7 @@ export default function EventRegistration() {
                 htmlFor={field.id}
                 className="text-sm md:text-base lg:text-xl xl:text-2xl font-bold text-[#334155] dark:text-white"
               >
-                {field.label}
+                {labelWithAsterisk(field.label)}
               </label>
             )}
             <div className="relative">
@@ -243,8 +258,8 @@ export default function EventRegistration() {
       case "Checkbox":
         return (
           <div className="flex flex-col gap-1.5">
-            <span className="text-sm md:text-base lg:text-xl xl:text-2xl font-bold text-[#334155] dark:text-white">
-              {field.label}
+            <span className="text-sm lg:text-base font-bold text-[#334155] dark:text-white">
+              {labelWithAsterisk(field.label)}
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
               {field.options?.map((opt) => (
@@ -311,7 +326,7 @@ export default function EventRegistration() {
           <div className="flex flex-col gap-1.5">
             {field.label && (
               <label className="text-sm md:text-base lg:text-xl xl:text-2xl font-bold text-[#334155] dark:text-white">
-                {field.label}
+                {labelWithAsterisk(field.label)}
               </label>
             )}
             {selectedFile ? (
@@ -548,19 +563,10 @@ export default function EventRegistration() {
                 {showSuccess && (
                   <div className="flex flex-col items-center justify-center text-center py-8">
                     <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6">
-                      <svg
-                        className="w-8 h-8 text-green-600 dark:text-green-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                        />
-                      </svg>
+                      <CheckCircle2
+                        size={32}
+                        className="text-green-600 dark:text-green-400"
+                      />
                     </div>
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
                       You're Registered!
@@ -592,20 +598,9 @@ export default function EventRegistration() {
                     )}
 
                     {formData.fields?.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-5">
                         {formData.fields.map((field) => (
-                          <div
-                            key={field.id}
-                            className={
-                              field.type === "TextArea" ||
-                              field.type === "Checkbox" ||
-                              field.type === "FileUpload"
-                                ? "md:col-span-2"
-                                : ""
-                            }
-                          >
-                            {renderField(field)}
-                          </div>
+                          <div key={field.id}>{renderField(field)}</div>
                         ))}
                       </div>
                     ) : (
@@ -678,11 +673,9 @@ export default function EventRegistration() {
                   </p>
                 </div>
               )}
-              {formData.maxSubmissions > 0 && (
-                <div className="rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]">
-                  <span className="font-semibold tracking-wider text-primary dark:text-primary-light">
-                    Seats
-                  </span>
+              {/* {formData.maxSubmissions > 0 && (
+                <div className='rounded-xl p-3 border border-border bg-[#F8FAFC] dark:bg-[#111827]'>
+                  <span className="font-semibold tracking-wider text-primary dark:text-primary-light">Seats</span>
                   <p className="text-xs text-foreground font-gotham font-medium mt-1">
                     {formData.maxSubmissions >= 9007199254740991
                       ? "200+"
@@ -690,7 +683,7 @@ export default function EventRegistration() {
                     Available
                   </p>
                 </div>
-              )}
+              )}*/}
             </div>
 
             {formData.speakers?.length > 0 && (
