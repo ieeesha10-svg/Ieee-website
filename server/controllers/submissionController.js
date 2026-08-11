@@ -175,7 +175,7 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
       return res.status(404).json({ message: 'Form not found in database' });
     }
     const submissions = await Submission.find({ formId })
-      .populate('userId', 'name email phone university position organization')
+      .populate('userId', 'name email phone university college yearOfStudy position organization')
       .sort('-createdAt')
       .lean();
 
@@ -187,35 +187,110 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Responses');
 
-    // 3. Define Headers (Profile + Question Data)
-    const columns = [
-      { header: 'Date', key: 'date', width: 15 },
+    // Helper: format a Date as YYYY-MM-DD (local time)
+    const formatDate = (date) => {
+      if (!date) return '-';
+      const d = new Date(date);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    // Helper: format a Date as HH:mm (time in hours, local time)
+    const formatTime = (date) => {
+      if (!date) return '-';
+      const d = new Date(date);
+      // 12 hour format
+      return `${String(d.getHours() % 12 || 12).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`;
+      // 24 hour format
+      // return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    };
+
+    // 3. Define Headers (User Info + Question Data)
+    const userInfoColumns = [
+      { header: 'User ID', key: 'userId', width: 28 },
+      { header: 'Submitted Date', key: 'date', width: 15 },
+      { header: 'Submitted Time', key: 'time', width: 12 },
       { header: 'Attended', key: 'attended', width: 10 },
+      { header: 'Attended Time', key: 'attendedTime', width: 12 },
       { header: 'Name', key: 'userName', width: 25 },
       { header: 'Email', key: 'userEmail', width: 30 },
-      { header: 'Phone', key: 'userPhone', width: 15 }
+      { header: 'Phone', key: 'userPhone', width: 15 },
+      { header: 'Position', key: 'userPosition', width: 15 },
+      { header: 'Organization', key: 'userOrganization', width: 20 },
+      { header: 'University', key: 'userUniversity', width: 25 },
+      { header: 'College', key: 'userCollege', width: 25 },
+      { header: 'Year of Study', key: 'userYearOfStudy', width: 12 },
+      { header: 'Status', key: 'status', width: 12 }
     ];
 
     // Add columns dynamically based on Form questions
-    if (form.structure && Array.isArray(form.structure)) {
-      form.structure.forEach(field => {
-        if (['TextInput', 'TextArea', 'Dropdown', 'Checkbox'].includes(field.element)) {
-          columns.push({ header: field.label || 'Question', key: field.id, width: 30 });
-        }
+    const answerColumns = [];
+    if (form.fields && Array.isArray(form.fields)) {
+      form.fields.forEach(field => {
+        answerColumns.push({ header: field.label || 'Question', key: field.id, width: 30 });
       });
     }
 
-    worksheet.columns = columns;
-    worksheet.getRow(1).font = { bold: true };
+    const columns = [...userInfoColumns, ...answerColumns];
+    worksheet.columns = columns.map(col => ({ key: col.key, width: col.width }));
+
+    // --- Section header row (row 1): user info vs answers ---
+    const sectionRow = worksheet.getRow(1);
+    sectionRow.height = 28;
+
+    const userInfoCell = sectionRow.getCell(1);
+    userInfoCell.value = 'User Information';
+    userInfoCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+    userInfoCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E79' } };
+    userInfoCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    worksheet.mergeCells(1, 1, 1, userInfoColumns.length);
+
+    if (answerColumns.length > 0) {
+      const answersCell = sectionRow.getCell(userInfoColumns.length + 1);
+      answersCell.value = "User's Answers";
+      answersCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+      answersCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF548235' } };
+      answersCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      worksheet.mergeCells(1, userInfoColumns.length + 1, 1, columns.length);
+    }
+
+    // --- Column header row (row 2): bold + colored background ---
+    const headerRow = worksheet.getRow(2);
+    columns.forEach((col, i) => {
+      headerRow.getCell(i + 1).value = col.header;
+    });
+    headerRow.height = 20;
+    headerRow.eachCell(cell => {
+      cell.font = { bold: true };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDDEBF7' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF9DC3E6' } },
+        left: { style: 'thin', color: { argb: 'FF9DC3E6' } },
+        bottom: { style: 'thin', color: { argb: 'FF9DC3E6' } },
+        right: { style: 'thin', color: { argb: 'FF9DC3E6' } }
+      };
+    });
 
     // 4. Fill Data
     submissions.forEach(sub => {
       const rowData = {
-        date: sub.createdAt ? sub.createdAt.toISOString().split('T')[0] : '-',
+        userId: sub.userId?._id?.toString() || '-',
+        date: formatDate(sub.createdAt),
+        time: formatTime(sub.createdAt),
         attended: sub.attended ? 'Yes' : 'No',
+        attendedTime: formatTime(sub.attendedAt),
         userName: sub.userId?.name || 'Guest',
-        userEmail: sub.registrantEmail || '-',
-        userPhone: sub.userId?.phone || '-'
+        userEmail: sub.registrantEmail || sub.userId?.email || '-',
+        userPhone: sub.userId?.phone || '-',
+        userPosition: sub.userId?.position || '-',
+        userOrganization: sub.userId?.organization || '-',
+        userUniversity: sub.userId?.university || '-',
+        userCollege: sub.userId?.college || '-',
+        userYearOfStudy: sub.userId?.yearOfStudy ?? '-',
+        status: sub.status || '-'
       };
 
       // Merge Dynamic Answers & Handle Arrays (like Checkboxes)
@@ -291,10 +366,16 @@ const getSubmissions = catchAsync(async (req, res) => {
           { $count: "count" }
         ],
 
+        // attended and not attended
         attendedCount: [
-          { $match: { status: "attended" } },
+          { $match: { attended: true } },
           { $count: "count" }
-        ]
+        ],
+
+        notAttendedCount: [
+          { $match: { attended: false } },
+          { $count: "count" }
+        ],
       }
     }
   ]);
@@ -392,7 +473,16 @@ const downloadFile = catchAsync(async (req, res) => {
   res.send(buffer);
 });
 
-module.exports = { submitForm, scanTicket, getUserSubmission, getSubmissions, getSubmissionsForForm, editSubmission, exportSubmissionsToExcel, downloadFile };
+module.exports = {
+  submitForm,
+  scanTicket,
+  getUserSubmission,
+  getSubmissions,
+  getSubmissionsForForm,
+  editSubmission,
+  exportSubmissionsToExcel,
+  downloadFile,
+};
 
 
 /*
