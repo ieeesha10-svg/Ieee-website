@@ -426,8 +426,6 @@ const getUsers = async (req, res) => {
   }
 };
 
-
-
 // @desc    Export Users to Excel (matches current filters)
 // @route   GET /api/users/export
 // @access  Private (Admin/XCom)
@@ -535,6 +533,9 @@ const exportUsersToExcel = async (req, res) => {
   }
 };
 
+// @desc    Export Specific Users to Excel (matches current filters)
+// @route   POST /api/users/export-specific
+// @access  Private (Admin/XCom)
 const exportSpecificUsersToExcel = async (req, res) => {
   try {
     let userIds = req.body.userIds; // Expecting an array of user IDs in the request body
@@ -761,7 +762,11 @@ const updatePassword = catchAsync(async (req, res) => {
 const forgetPassword = catchAsync(async (req, res) => {
   const { email } = req.body;
 
-  const user = await User.findOne({ email });
+  if (!email) {
+    throw new AppError('Please provide your email address', 400);
+  }
+
+  const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) {
     throw new AppError('User not found', 404);
   }
@@ -770,6 +775,7 @@ const forgetPassword = catchAsync(async (req, res) => {
   const token = jwt.sign({ id: user._id, secret: resetOTP }, process.env.JWT_SECRET, { expiresIn: '1h' });
   user.resetPasswordToken = token;
   user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+  await user.save();
 
   const emailsent = await resetPasswordEmailToken(email, token);
   if (!emailsent) {
@@ -794,12 +800,15 @@ const resetPassword = catchAsync(async (req, res) => {
     throw new AppError('New password and confirm new password do not match', 400);
   }
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email: email.toLowerCase() })
+    .select('+resetPasswordToken +resetPasswordExpires');
   if (!user) {
     throw new AppError('User not found', 404);
   }
 
-  if (token !== user.resetPasswordToken || user.resetPasswordExpires < Date.now()) {
+  const tokenMatches = user.resetPasswordToken && user.resetPasswordToken === token;
+  const isExpired = user.resetPasswordExpires && user.resetPasswordExpires < Date.now();
+  if (!tokenMatches || isExpired) {
     throw new AppError('Invalid or expired reset token', 400);
   }
 
@@ -807,6 +816,8 @@ const resetPassword = catchAsync(async (req, res) => {
   const hashedPassword = await bcrypt.hash(newPassword, salt);
 
   user.password = hashedPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
   await user.save();
 
   res.status(200).json({
