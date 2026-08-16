@@ -62,7 +62,7 @@ export default function Hero() {
 					{/* Call-To-Action Buttons*/}
 					<div className='flex gap-3 justify-center md:justify-start'>
 						<Link to="/committees">
-							<Button className='bg-white text-primary hover:bg-white/80 dark:text-white'>
+							<Button className='bg-white text-primary hover:bg-white/80 dark:text-white' aria-label="Get Started">
 								Get Started
 							</Button>
 						</Link>
@@ -91,7 +91,7 @@ export default function Hero() {
 					{!imgLoaded && <ImageSkeleton />}
 					<img
 					  src="https://res.cloudinary.com/xcdyzvmc/image/upload/v1785685478/ieee-family.jpg_ezqw29.jpg"
-						alt="IEEE family photo"
+						alt="IEEE family"
 						className="w-full rounded-3xl shadow-2xl border-2 border-white/50"
 						onLoad={() => setImgLoaded(true)}
 					 />

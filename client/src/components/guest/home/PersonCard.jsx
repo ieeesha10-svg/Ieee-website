@@ -9,7 +9,7 @@ export default function PersonCard({ person }) {
       <div className="relative w-full aspect-square overflow-hidden bg-gray-200 dark:bg-gray-800 rounded-t-2xl border-t-4 border-r-4 border-l-4 border-main group-hover:border-primary transition-all duration-500">
         <img
           src={person.image}
-          alt={`${person.name} Image`}
+          alt={person.name}
           className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105 group-hover:brightness-105"
         />
       </div>
