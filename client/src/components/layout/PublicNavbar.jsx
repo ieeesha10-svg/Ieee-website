@@ -111,6 +111,7 @@ const PublicNavbar = () => {
               )}
               <button
                 onClick={() => setShowLogoutModal(true)}
+                aria-label="Log out"
                 className="text-red-500 hover:text-red-700 transition flex items-center gap-1 font-medium"
               >
                 <LogOutIcon size={18} />
@@ -188,6 +189,7 @@ const PublicNavbar = () => {
           </div>
           <button
             onClick={closeMenu}
+            aria-label="Close menu"
             className="shrink-0 rounded-full p-2 bg-primary-light/80 dark:bg-border transition"
           >
             <X size={20} />

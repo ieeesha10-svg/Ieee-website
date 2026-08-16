@@ -38,6 +38,7 @@ function PasswordField({
         <button
           type="button"
           onClick={onToggle}
+          aria-label={show ? "Hide password" : "Show password"}
           className="absolute right-[14px] top-1/2 -translate-y-1/2 text-[#7A96B2] hover:text-[#0096FF] dark:hover:text-primary transition-colors"
         >
           {show ? <EyeOff size={16} /> : <Eye size={16} />}

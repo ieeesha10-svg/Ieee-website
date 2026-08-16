@@ -76,7 +76,7 @@ function EventCard({ title, dateObj, location, time, type, colorTheme }) {
       </div>
 
       {/* Heart Icon */}
-      <button className="self-start mt-2 mr-2">
+      <button className="self-start mt-2 mr-2" aria-label="Favorite event">
         <Heart size={20} className="text-[#FF4757] fill-[#FF4757]" />
       </button>
     </div>

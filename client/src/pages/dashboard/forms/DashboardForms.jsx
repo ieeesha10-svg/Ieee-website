@@ -16,11 +16,12 @@ import Modal from "../../../components/ui/Modal";
 import Pagination from "../../../components/ui/Pagination";
 
 /*Toggle Switch */
-function Toggle({ checked, onChange }) {
+function Toggle({ checked, onChange, ariaLabel }) {
   return (
     <button
       role="switch"
       aria-checked={checked}
+      aria-label={ariaLabel}
       onClick={onChange}
       className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-200 ${
         checked ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
@@ -204,6 +205,7 @@ function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
           <div className="relative group">
 						<Toggle
 							checked={form.isOpen}
+							ariaLabel={`Toggle form "${form.title}" ${form.isOpen ? "closed" : "open"}`}
 							onChange={dateExpired ? undefined : () => onToggle(form.id, form.title, !form.isOpen)}
 						/>
             {dateExpired && (

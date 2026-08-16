@@ -630,6 +630,7 @@ function AddAdminModal({ onClose, onAdded, updateRole, setAdminRoles }) {
           <h3 className="text-base font-bold text-foreground">Add Admin</h3>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="p-1 text-muted hover:text-foreground transition-colors rounded-lg"
           >
             <X size={18} />

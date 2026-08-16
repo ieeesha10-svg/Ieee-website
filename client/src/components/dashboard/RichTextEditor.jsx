@@ -70,6 +70,7 @@ function LinkModal({ isOpen, initialUrl, onConfirm, onClose }) {
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close"
             className="p-1 rounded-md text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
           >
             <X size={16} />

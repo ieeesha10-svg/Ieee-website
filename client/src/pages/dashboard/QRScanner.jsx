@@ -73,6 +73,7 @@ function ResultModal({ result, onDismiss, onNext }) {
         {/* Close button */}
         <button
           onClick={onDismiss}
+          aria-label="Close"
           className="absolute top-3 right-3 text-muted hover:text-foreground transition-colors"
         >
           <X size={18} />
