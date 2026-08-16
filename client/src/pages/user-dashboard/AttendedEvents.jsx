@@ -59,7 +59,7 @@ function EventCard({ title, dateObj, location, time, type, colorTheme }) {
 
       {/* Main Content */}
       <div className="flex-1">
-        <h4 className="font-bold text-[16px] text-[#111827] mb-1">{title}</h4>
+        <h3 className="font-bold text-[16px] text-[#111827] mb-1">{title}</h3>
 
         <div className="flex items-center gap-4 text-[13px] text-gray-500 font-medium">
           <div className="flex items-center gap-1.5">

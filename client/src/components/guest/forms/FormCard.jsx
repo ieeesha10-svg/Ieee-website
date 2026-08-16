@@ -80,9 +80,9 @@ export default function FormCard({ form }) {
         {style.label}
       </span>
 
-      <h3 className="mt-4 text-lg font-bold text-foreground leading-snug capitalize">
+      <h2 className="mt-4 text-lg font-bold text-foreground leading-snug capitalize">
         {form.title}
-      </h3>
+      </h2>
 
       {form.description && (
         <p className="mt-2 text-sm text-muted line-clamp-3 leading-relaxed">

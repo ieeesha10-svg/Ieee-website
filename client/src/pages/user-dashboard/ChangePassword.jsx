@@ -224,9 +224,9 @@ export default function ChangePassword() {
 
       {/* ─── Password Tips Card ───────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-[#13161D] rounded-[20px] md:rounded-[24px] border-[0.8px] border-[rgba(0,120,255,0.11)] dark:border-[#222936] shadow-[0px_6px_24px_rgba(0,100,220,0.08)] dark:shadow-none p-6 md:p-8 lg:p-10 transition-colors">
-        <h4 className="font-lakes font-bold text-[13.6px] leading-[19px] text-[#3A5068] dark:text-white mb-[20px]">
+        <h3 className="font-lakes font-bold text-[13.6px] leading-[19px] text-[#3A5068] dark:text-white mb-[20px]">
           Password Tips
-        </h4>
+        </h3>
         <ul className="space-y-[15px]">
           {tips.map((tip, i) => (
             <li key={i} className="flex items-center gap-[10px]">

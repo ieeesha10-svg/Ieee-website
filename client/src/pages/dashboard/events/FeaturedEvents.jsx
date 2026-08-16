@@ -56,7 +56,7 @@ function EventPicker({ featuredIds, onSelect, onClose }) {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold text-foreground truncate">{event.title}</h4>
+                    <h3 className="text-sm font-semibold text-foreground truncate">{event.title}</h3>
                     {event.description && (
                       <p className="text-xs text-muted line-clamp-2 mt-0.5">{event.description}</p>
                     )}
@@ -224,7 +224,7 @@ export default function FeaturedEvents() {
       {featured.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936]">
           <Star size={32} className="text-muted mb-3" />
-          <h3 className="text-foreground font-semibold mb-1">No flaghip events</h3>
+          <h2 className="text-foreground font-semibold mb-1">No flaghip events</h2>
           <p className="text-muted text-sm">Click "Add Flaghip Event" to get started.</p>
         </div>
       ) : (
@@ -245,7 +245,7 @@ export default function FeaturedEvents() {
               </div>
               <div className="p-4 space-y-3">
                 <div>
-                  <h3 className="font-bold text-foreground">{event.title}</h3>
+                  <h2 className="font-bold text-foreground">{event.title}</h2>
                   {event.description && (
                     <p className="text-sm text-muted line-clamp-2 mt-1">{event.description}</p>
                   )}

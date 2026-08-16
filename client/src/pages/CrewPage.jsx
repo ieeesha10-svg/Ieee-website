@@ -85,9 +85,9 @@ export default function CrewPage() {
 
                 {/* Info Section */}
                 <div className="flex flex-col items-center text-center p-6 flex-1">
-                  <h3 className="text-[#1A1A1A] dark:text-white text-lg font-bold font-lakes mb-1">
+                  <h2 className="text-[#1A1A1A] dark:text-white text-lg font-bold font-lakes mb-1">
                     {person.name}
-                  </h3>
+                  </h2>
                   <p className="text-[#0077CC] dark:text-[#33B5FF] text-sm font-medium font-lakes mb-3">
                     {person.role}
                   </p>

@@ -138,9 +138,9 @@ export default function DashboardCrew() {
                   </div>
                 )}
                 <div>
-                  <h3 className="text-foreground font-semibold text-lg leading-snug">
+                  <h2 className="text-foreground font-semibold text-lg leading-snug">
                     {member.name}
-                  </h3>
+                  </h2>
                   <p className="text-primary text-sm font-medium">
                     {member.position}
                   </p>
@@ -168,9 +168,9 @@ export default function DashboardCrew() {
           <div className="w-14 h-14 rounded-xl bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center mb-4">
             <Users size={24} className="text-muted" />
           </div>
-          <h3 className="text-foreground font-semibold text-base mb-1">
+          <h2 className="text-foreground font-semibold text-base mb-1">
             No crew members yet
-          </h3>
+          </h2>
           <p className="text-muted text-sm">
             Add your first member to display them on the website.
           </p>
