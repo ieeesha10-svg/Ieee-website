@@ -72,7 +72,7 @@ const PublicNavbar = () => {
 
         {/* Logo */}
         <Link to="/">
-          <img src="/logo.png" alt="IEEE Logo" />
+          <img src="/logo.webp" alt="IEEE Logo" />
         </Link>
 				<div className="hidden md:flex items-center gap-6">
 	        {NAV_LINKS.map((nav_link, index) => {

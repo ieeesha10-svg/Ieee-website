@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom'
 import Button from '../../components/ui/Button.jsx'
 import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 // Images
-import HeroBackground from '../../assets/backgrounds/hero-bg.jpg';
-import RocketIcon from '../../assets/icons/rocket.png'
+import HeroBackground from '../../assets/backgrounds/hero-bg.webp';
+import RocketIcon from '../../assets/icons/rocket.webp'
 
 export default function Hero() {
 	// Dots that we will be mapping on them to display them randomly in the hero section

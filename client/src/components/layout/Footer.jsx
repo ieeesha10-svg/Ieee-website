@@ -18,7 +18,7 @@ export default function Footer() {
         {/* 1. Brand Section */}
         <div className="flex flex-col items-center lg:items-start gap-4 lg:gap-6 max-w-[284px] text-center lg:text-left">
           <img
-            src="/icons/logo.svg"
+            src="/logo-alt.webp"
             alt="IEEE Student Branch"
             className="h-[50px] lg:h-[72px] object-contain dark:brightness-1000"
           />

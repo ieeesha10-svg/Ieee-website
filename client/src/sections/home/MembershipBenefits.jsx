@@ -37,37 +37,37 @@ const benefits = [
   {
     title: "IEEE Xplore Digital Library",
     desc: "Get free access to over 5 million technical papers, journals, and standards. Explore cutting-edge research and stay informed with the world's most comprehensive collection of electrical engineering and computer science literature.",
-    img: "/images/benefits/xplore.png",
+    img: "/images/benefits/xplore.webp",
   },
   {
     title: "IEEE DataPort",
     desc: "Gain unlimited access to thousands of datasets and exclusive data management features. Perfect for researchers and engineers working with big data, machine learning, and advanced analytics projects.",
-    img: "/images/benefits/dataport.png",
+    img: "/images/benefits/dataport.webp",
   },
   {
     title: "IEEE Spectrum Magazine",
     desc: "Stay updated with the latest technology trends, innovations, and expert analysis. IEEE Spectrum keeps over 500,000 members informed about major developments in technology, engineering, and science.",
-    img: "/images/benefits/spectrum.png",
+    img: "/images/benefits/spectrum.webp",
   },
   {
     title: "IEEE JobSite",
     desc: "Discover internships, graduate roles, and full-time job opportunities worldwide. Connect with top employers in technology and engineering sectors looking for talented professionals like you.",
-    img: "/images/benefits/jobsite.png",
+    img: "/images/benefits/jobsite.webp",
   },
   {
     title: "IEEE Volunteering",
     desc: "Make a global impact by connecting with volunteering opportunities across geographical boundaries. Join a community dedicated to advancing technology for humanity while building meaningful professional relationships.",
-    img: "/images/benefits/volunteering.png",
+    img: "/images/benefits/volunteering.webp",
   },
   {
     title: "IEEE Learning Network",
     desc: "Access online courses, professional certifications, and skill-building webinars designed to advance your career. Enhance your expertise with industry-recognized training programs and continuous learning opportunities.",
-    img: "/images/benefits/learning.png",
+    img: "/images/benefits/learning.webp",
   },
   {
     title: "IEEE Collabratec",
     desc: "Network with over 700,000 professionals, mentors, and collaborators worldwide. Build connections, share knowledge, and collaborate on projects within the largest global community of technology professionals.",
-    img: "/images/benefits/collabratec.png",
+    img: "/images/benefits/collabratec.webp",
   },
 ];
 

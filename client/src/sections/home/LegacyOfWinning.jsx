@@ -5,9 +5,9 @@ import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 // Images
 import AboutImage from '../../assets/images/home/about-image.png'
 // Icons
-import TrophyIcon from '../../assets/icons/trophy.png'
-import MedalIcon from '../../assets/icons/medal.png'
-import LightningIcon from '../../assets/icons/lightning.png'
+import TrophyIcon from '../../assets/icons/trophy.webp'
+import MedalIcon from '../../assets/icons/medal.webp'
+import LightningIcon from '../../assets/icons/lightning.webp'
 
 export default function About() {
 	const CARDS_DATA = [

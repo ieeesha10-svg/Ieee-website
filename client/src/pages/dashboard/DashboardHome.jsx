@@ -18,7 +18,7 @@ import {
   Trophy,
   ChevronRight,
 } from "lucide-react";
-import MedalIcon from "../../assets/icons/outline-medal.png";
+import MedalIcon from "../../assets/icons/outline-medal.webp";
 import {
   PieChart,
   Pie,

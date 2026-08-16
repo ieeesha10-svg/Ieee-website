@@ -1,7 +1,7 @@
 import React from "react";
 import SectionHeader from "../../components/ui/SectionHeader";
-import SectionBackground from '../../assets/backgrounds/tech-circuit-pattern.png';
-import FlashIcon from '../../assets/icons/committees/pes.png';
+import SectionBackground from '../../assets/backgrounds/tech-circuit-pattern.webp';
+import FlashIcon from '../../assets/icons/committees/pes.webp';
 import Button from "../../components/ui/Button";
 
 export default function Chapters() {
