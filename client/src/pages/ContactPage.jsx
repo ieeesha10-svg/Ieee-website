@@ -6,8 +6,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { EMAIL_ADDRESS, SOCIAL_MEDIA } from '../data/socialMedia';
-import Badge from '../components/Badge'
-import ContactForm from '../components/ContactForm';
+import Badge from '../components/ui/Badge'
+import ContactForm from '../components/guest/contact/ContactForm';
 
 function InfoCard({ Icon, label, value, subtext, href }) {
   const content = (

@@ -1,7 +1,7 @@
 import React, {useState} from 'react'
 import { Link } from 'react-router-dom';
 
-import Button from '../../components/Button';
+import Button from '../../components/ui/Button';
 import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 import { useAuth } from '../../context/AuthContext';
 

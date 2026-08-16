@@ -8,10 +8,10 @@ import {
   useFileUpload,
 } from "../utils/fileUploadUtils";
 import { ChevronDown, Upload, X, CheckCircle2 } from "lucide-react";
-import Button from "../components/Button";
-import Input from "../components/Input";
-import HtmlContent from "../components/HtmlContent";
-import RequiredAsterisk from "../components/RequiredAsterisk";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import HtmlContent from "../components/ui/HtmlContent";
+import RequiredAsterisk from "../components/ui/RequiredAsterisk";
 
 export default function EventRegistration() {
   const { id } = useParams();

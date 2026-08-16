@@ -1,5 +1,5 @@
 import React from 'react'
-import Badge from '../../components/Badge'
+import Badge from '../../components/ui/Badge'
 import { committees } from '../../data/committeesData'
 
 export default function CommitteesSection() {

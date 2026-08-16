@@ -1,6 +1,6 @@
 import React from 'react'
 import { Activity, Wrench, Lightbulb, Users, Phone, Rocket } from 'lucide-react'
-import Badge from '../../components/Badge'
+import Badge from '../../components/ui/Badge'
 
 const ourActivities = [
   { tag: '01', icon: Wrench, title: 'Workshops', desc: 'Hands-on sessions covering embedded systems, web dev, AI, and more — led by experienced IEEE members.' },

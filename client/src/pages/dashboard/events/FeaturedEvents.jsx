@@ -7,9 +7,9 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 // components
-import EventCard from "../../../components/events/HomeEventCard";
-import Pagination from "../../../components/events/Pagination";
-import Button from "../../../components/Button";
+import EventCard from "../../../components/guest/events/HomeEventCard";
+import Pagination from "../../../components/ui/Pagination";
+import Button from "../../../components/ui/Button";
 // Hooks
 import { useFeaturedEvents, useAddFeatured, useRemoveFeatured, useSwapFeatured } from "../../../hooks/dashboard/events/useFeaturedEvents";
 import { useEvents } from "../../../hooks/dashboard/events/useEvents";
@@ -17,7 +17,7 @@ import { useUpdateEvent } from "../../../hooks/dashboard/events/useUpdateEvent";
 import { useGetEvent } from "../../../hooks/dashboard/events/useGetEvent";
 import { toLocalDatetimeString } from "../../../utils/dateUtils";
 // Modals
-import Modal from "../../../components/Modal";
+import Modal from "../../../components/ui/Modal";
 import EventEditModal from "../../../components/dashboard/EventEditModal";
 import EventViewModal from "../../../components/dashboard/EventViewModal";
 

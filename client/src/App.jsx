@@ -13,8 +13,8 @@ import { ADMIN_ROLES, SCAN_ACCESS_ROLES } from "./data/roles";
 import DashboardLayout from "./layouts/DashboardLayout";
 import UserLayout from "./layouts/UserLayout";
 // Components
-import PublicNavbar from "./components/PublicNavbar";
-import Footer from "./components/Footer";
+import PublicNavbar from "./components/layout/PublicNavbar";
+import Footer from "./components/layout/Footer";
 
 // Pages
 import Home from "./pages/Home";

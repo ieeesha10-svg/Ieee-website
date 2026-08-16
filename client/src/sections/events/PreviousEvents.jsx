@@ -1,8 +1,8 @@
 import React from 'react'
 
-import SectionHeader from "../../components/SectionHeader";
-import EventsListCard from "../../components/events/EventsListCard";
-import Pagination from "../../components/events/Pagination";
+import SectionHeader from "../../components/ui/SectionHeader";
+import EventsListCard from "../../components/guest/events/EventsListCard";
+import Pagination from "../../components/ui/Pagination";
 
 export default function PreviousEvents({ events = [], loading, page = 1, totalPages = 1, onPageChange }) {
 	return (

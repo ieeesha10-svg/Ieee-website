@@ -9,11 +9,11 @@ import { useToggleForm } from "../../../hooks/dashboard/forms/useToggleForm";
 import { useUpdateForm } from "../../../hooks/dashboard/forms/useUpdateForm";
 import { SURVEY_COLOR, FEEDBACK_COLOR, CUSTOM_COLOR } from "../../../data/formTypes";
 // Components
-import DeleteModal from "../../../components/DeleteModal";
-import RequiredAsterisk from "../../../components/RequiredAsterisk";
+import DeleteModal from "../../../components/ui/DeleteModal";
+import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
 import DashFormsSkeleton from "../../../components/skeletons/DashFormsSkeleton";
-import Modal from "../../../components/Modal";
-import Pagination from "../../../components/events/Pagination";
+import Modal from "../../../components/ui/Modal";
+import Pagination from "../../../components/ui/Pagination";
 
 /*Toggle Switch */
 function Toggle({ checked, onChange }) {

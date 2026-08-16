@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2, FileText } from "lucide-react";
 import { useFormSubmissions } from "../../hooks/dashboard/useGetSubmissions";
-import HtmlContent from "../HtmlContent";
-import Modal from "../Modal";
-import Button from "../Button";
+import HtmlContent from "../ui/HtmlContent";
+import Modal from "../ui/Modal";
+import Button from "../ui/Button";
 
 export default function EventViewModal({ open, onClose, eventId, getEventById }) {
   const navigate = useNavigate();

@@ -7,7 +7,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../../utils/api";
 import toast from "react-hot-toast";
 // Components
-import Pagination from "../../../components/events/Pagination"
+import Pagination from "../../../components/ui/Pagination"
 import Skeleton from "../../../components/skeletons/DashEventsSkeleton"
 import UpcomingEvents from "../../../sections/events/UpcomingEvents"
 import PreviousEvents from "../../../sections/events/PreviousEvents"
@@ -22,8 +22,8 @@ import { EVENT_TYPE_LABELS } from "../../../data/eventTypes";
 const EVENTS_PER_PAGE = 6;
 // Modals
 import EventEditModal from "../../../components/dashboard/EventEditModal";
-import Modal from "../../../components/Modal"
-import DeleteModal from "../../../components/DeleteModal"
+import Modal from "../../../components/ui/Modal"
+import DeleteModal from "../../../components/ui/DeleteModal"
 import EventViewModal from "../../../components/dashboard/EventViewModal"
 
 const TYPE_COLORS = {

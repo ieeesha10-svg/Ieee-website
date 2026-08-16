@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { usePublicForms } from "../hooks/usePublicForms";
-import FormCard from "../components/forms/FormCard";
-import Badge from "../components/Badge";
-import FooterAlt from "../components/FooterAlt";
+import FormCard from "../components/guest/forms/FormCard";
+import Badge from "../components/ui/Badge";
+import FooterAlt from "../components/layout/FooterAlt";
 
 const TABS = ["All", "Registration", "Survey", "Feedback", "General"];
 

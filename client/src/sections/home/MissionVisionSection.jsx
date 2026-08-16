@@ -1,6 +1,6 @@
 import React from 'react'
 import { Target, Eye } from 'lucide-react'
-import Badge from '../../components/Badge'
+import Badge from '../../components/ui/Badge'
 
 export default function MissionVisionSection() {
   return (

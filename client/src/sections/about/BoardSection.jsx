@@ -1,5 +1,5 @@
 import React from 'react'
-import Badge from '../../components/Badge'
+import Badge from '../../components/ui/Badge'
 import { MEMBERS } from '../../data/chairpersons'
 import linkedinIcon from "../../assets/images/chairpersons/linkedin.png";
 import facebookIcon from "../../assets/images/chairpersons/facebook.png";

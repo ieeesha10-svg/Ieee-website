@@ -2,7 +2,7 @@ import React from "react";
 import { FiGithub, FiLinkedin, FiGlobe } from "react-icons/fi";
 import { SiBehance } from "react-icons/si";
 import { stats, tracks } from "../data/devTeamData";
-import FooterAlt from "../components/FooterAlt";
+import FooterAlt from "../components/layout/FooterAlt";
 
 export default function DevTeam() {
   return (
