@@ -13,7 +13,7 @@ import {
   Crosshair,
 } from "lucide-react";
 
-import robotImage from "../assets/images/404-robot.png";
+import robotImage from "../assets/images/404-robot.webp";
 import { EMAIL_ADDRESS } from "../data/socialMedia";
 
 function ScatteredDecorators() {

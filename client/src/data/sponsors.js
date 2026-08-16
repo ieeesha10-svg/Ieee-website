@@ -1,17 +1,17 @@
-import codeClouders from "../assets/images/sponsers/code clouders.jpeg";
-import edges from "../assets/images/sponsers/edges.jpeg";
-import eduvate from "../assets/images/sponsers/EDUVATE.jpg";
-import emas from "../assets/images/sponsers/EMAS.png";
-import haLogo from "../assets/images/sponsers/HA logo.png";
-import jetsolar from "../assets/images/sponsers/jet-solar.png";
-import tramAcademy from "../assets/images/sponsers/tram-academy.JPG";
-import kian from "../assets/images/sponsers/kian.jpeg";
-import neo from "../assets/images/sponsers/neo (1).jpg";
-import porto from "../assets/images/sponsers/PORTO (1).jpg";
-import seweddy from "../assets/images/sponsers/SEWEDY (1).jpg";
-import ult from "../assets/images/sponsers/ULT.jpg";
-import itc from "../assets/images/sponsers/itc.JPG";
-import MeLed from "../assets/images/sponsers/me-led.JPG";
+import codeClouders from "../assets/images/sponsers/code clouders.webp";
+import edges from "../assets/images/sponsers/edges.webp";
+import eduvate from "../assets/images/sponsers/EDUVATE.webp";
+import emas from "../assets/images/sponsers/EMAS.webp";
+import haLogo from "../assets/images/sponsers/HA logo.webp";
+import jetsolar from "../assets/images/sponsers/jet-solar.webp";
+import tramAcademy from "../assets/images/sponsers/tram-academy.webp";
+import kian from "../assets/images/sponsers/kian.webp";
+import neo from "../assets/images/sponsers/neo (1).webp";
+import porto from "../assets/images/sponsers/PORTO (1).webp";
+import seweddy from "../assets/images/sponsers/SEWEDY (1).webp";
+import ult from "../assets/images/sponsers/ULT.webp";
+import itc from "../assets/images/sponsers/itc.webp";
+import MeLed from "../assets/images/sponsers/me-led.webp";
 
 export const SPONSORS = [
   { src: codeClouders, alt: "Code Clouders" },

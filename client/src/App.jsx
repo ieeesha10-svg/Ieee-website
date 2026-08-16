@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -15,45 +15,60 @@ import UserLayout from "./layouts/UserLayout";
 // Components
 import PublicNavbar from "./components/layout/PublicNavbar";
 import Footer from "./components/layout/Footer";
+import LoadingPage from "./components/ui/LoadingPage";
 
 // Pages
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
-import EventRegistration from "./pages/EventRegistration";
-import EventDetails from "./pages/EventDetails";
 import CrewPage from "./pages/CrewPage";
 import CommitteesPage from "./pages/CommitteesPage";
 import DevTeam from "./pages/DevTeam";
-import ApplicationsPage from "./pages/FormApplicationsPage";
-import FormSubmissionPage from "./pages/FormSubmissionPage";
-import NotFoundPage from "./pages/NotFoundPage";
+const EventRegistration = lazy(() => import("./pages/EventRegistration"));
+const EventDetails = lazy(() => import("./pages/EventDetails"));
+const ApplicationsPage = lazy(() => import("./pages/FormApplicationsPage"));
+const FormSubmissionPage = lazy(() => import("./pages/FormSubmissionPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 // Auth Pages
-import LoginPage from "./pages/auth/LoginPage";
-import SignupPage from "./pages/auth/SignupPage";
-import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
-import ForgetPasswordPage from "./pages/auth/ForgetPasswordPage";
-import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
+const SignupPage = lazy(() => import("./pages/auth/SignupPage"));
+const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage"));
+const ForgetPasswordPage = lazy(() => import("./pages/auth/ForgetPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage"));
 // Dashboard Pages
-import DashboardHome from "./pages/dashboard/DashboardHome";
-import DashboardMembers from "./pages/dashboard/DashboardMembers";
-import DashboardEvents from "./pages/dashboard/events/DashboardEvents";
-import CreateEvent from "./pages/dashboard/events/CreateEvent";
-import FeaturedEvents from "./pages/dashboard/events/FeaturedEvents";
-import DashboardCrew from "./pages/dashboard/DashboardCrew";
-import EmailLogsPage from "./pages/dashboard/EmailLogsPage";
-import DashboardForms from "./pages/dashboard/forms/DashboardForms";
-import CreateForm from "./pages/dashboard/forms/CreateForm";
-import ShowFormSubmissions from "./pages/dashboard/forms/ShowFormSubmissions";
-import BulkMailer from "./pages/dashboard/BulkMailer";
-import DashboardSettings from "./pages/dashboard/DashboardSettings";
-import QRScanner from "./pages/dashboard/QRScanner";
+const DashboardHome = lazy(() => import("./pages/dashboard/DashboardHome"));
+const DashboardMembers = lazy(() => import("./pages/dashboard/DashboardMembers"));
+const DashboardEvents = lazy(() => import("./pages/dashboard/events/DashboardEvents"));
+const CreateEvent = lazy(() => import("./pages/dashboard/events/CreateEvent"));
+const FeaturedEvents = lazy(() => import("./pages/dashboard/events/FeaturedEvents"));
+const DashboardCrew = lazy(() => import("./pages/dashboard/DashboardCrew"));
+const EmailLogsPage = lazy(() => import("./pages/dashboard/EmailLogsPage"));
+const DashboardForms = lazy(() => import("./pages/dashboard/forms/DashboardForms"));
+const CreateForm = lazy(() => import("./pages/dashboard/forms/CreateForm"));
+const ShowFormSubmissions = lazy(() => import("./pages/dashboard/forms/ShowFormSubmissions"));
+const BulkMailer = lazy(() => import("./pages/dashboard/BulkMailer"));
+const DashboardSettings = lazy(() => import("./pages/dashboard/DashboardSettings"));
+const QRScanner = lazy(() => import("./pages/dashboard/QRScanner"));
 // Profile Pages
-import UserProfile from "./pages/user-dashboard/UserProfile";
-import ChangePassword from "./pages/user-dashboard/ChangePassword";
-import MyCommittees from "./pages/user-dashboard/MyCommittees";
-import AttendedEvents from "./pages/user-dashboard/AttendedEvents";
+const UserProfile = lazy(() => import("./pages/user-dashboard/UserProfile"));
+const ChangePassword = lazy(() => import("./pages/user-dashboard/ChangePassword"));
+const MyCommittees = lazy(() => import("./pages/user-dashboard/MyCommittees"));
+const AttendedEvents = lazy(() => import("./pages/user-dashboard/AttendedEvents"));
+
+const hideInitialLoader = () => {
+  const loader = document.getElementById("initial-loader");
+  if (!loader || loader.classList.contains("loader-hidden")) return;
+  loader.classList.add("loader-hidden");
+  setTimeout(() => loader.remove(), 400);
+};
+
+const DismissInitialLoader = () => {
+  React.useEffect(() => {
+    hideInitialLoader();
+  }, []);
+  return null;
+};
 
 const ProtectedRoute = ({ requireAdmin = false, roles = null }) => {
   const { user } = useAuth();
@@ -108,7 +123,9 @@ const PublicLayout = () => {
 function App() {
   return (
     <BrowserRouter useTransitions={false}>
-      <Routes>
+      <Suspense fallback={<LoadingPage />}>
+        <DismissInitialLoader />
+        <Routes>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/events" element={<Events />} />
@@ -183,6 +200,7 @@ function App() {
           }
         />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

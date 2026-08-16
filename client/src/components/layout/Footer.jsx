@@ -18,7 +18,7 @@ export default function Footer() {
         {/* 1. Brand Section */}
         <div className="flex flex-col items-center lg:items-start gap-4 lg:gap-6 max-w-[284px] text-center lg:text-left">
           <img
-            src="/icons/logo.svg"
+            src="/logo-alt.webp"
             alt="IEEE Student Branch"
             className="h-[50px] lg:h-[72px] object-contain dark:brightness-1000"
           />
@@ -30,9 +30,9 @@ export default function Footer() {
 
         {/* 2. Quick Links */}
         <div className="flex flex-col items-center lg:items-start gap-4">
-          <h4 className="font-lakes font-bold text-[#1A1A1A] dark:text-[#F2F2F2] text-[16px] lg:text-[18px] transition-colors duration-300">
+          <h2 className="font-lakes font-bold text-[#1A1A1A] dark:text-[#F2F2F2] text-[16px] lg:text-[18px] transition-colors duration-300">
             Quick Links
-          </h4>
+          </h2>
           <ul className="grid grid-cols-2 items-center lg:items-start gap-x-6 gap-y-3">
             {QUICK_LINKS.map(({ label, to }) => (
               <li key={to}>
@@ -68,9 +68,9 @@ export default function Footer() {
 
         {/* 4. Connect With Us */}
         <div className="flex flex-col items-center lg:items-start gap-4">
-          <h4 className="font-lakes font-bold text-[#1A1A1A] dark:text-[#F2F2F2] text-[16px] lg:text-[18px] transition-colors duration-300">
+          <h2 className="font-lakes font-bold text-[#1A1A1A] dark:text-[#F2F2F2] text-[16px] lg:text-[18px] transition-colors duration-300">
             Connect With Us
-          </h4>
+          </h2>
 
           {/* Social Icons */}
           <div className="flex flex-row items-center gap-4">

@@ -686,6 +686,7 @@ export default function BulkMailer() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleSelectAll}
+                      aria-label="Select all filtered"
                       className="text-primary hover:text-primary-dark transition-colors"
                     >
                       {activeMembersToDisplay.length > 0 &&
@@ -797,6 +798,7 @@ export default function BulkMailer() {
                   <button
                     type="button"
                     onClick={() => removeAttachment(i)}
+                    aria-label={`Remove ${file.name}`}
                     className="text-muted hover:text-red-500 transition-colors"
                   >
                     <X size={12} />

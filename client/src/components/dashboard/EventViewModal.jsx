@@ -114,6 +114,7 @@ export default function EventViewModal({ open, onClose, eventId, getEventById })
                   <Button
                     variant="link"
                     onClick={() => navigate(`/dashboard/forms/submissions/${form._id}`)}
+                    aria-label="View Submissions"
                   >
                     View Submissions
                   </Button>

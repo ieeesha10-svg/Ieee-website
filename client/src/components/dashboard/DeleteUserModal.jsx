@@ -51,6 +51,7 @@ export default function DeleteUserModal({
             variant="outline"
             onClick={onClose}
             disabled={loading}
+            aria-label="Cancel"
             className="px-4 py-2 text-sm"
           >
             Cancel
@@ -58,6 +59,7 @@ export default function DeleteUserModal({
           <Button
             onClick={onConfirm}
             disabled={!confirmed || loading}
+            aria-label={loading ? "Deleting user" : "Delete user"}
             className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Deleting..." : "Delete User"}

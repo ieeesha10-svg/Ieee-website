@@ -77,7 +77,7 @@ function EventCard({ event, onView, onEdit, onDelete }) {
         <button onClick={() => onEdit(event)} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
           <Edit size={13} /> Edit
         </button>
-        <button onClick={() => onDelete(event)} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors ml-auto">
+        <button onClick={() => onDelete(event)} aria-label={`Delete ${event.title}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors ml-auto">
           <Trash2 size={13} />
         </button>
       </div>
@@ -335,7 +335,7 @@ export default function DashboardEvents() {
           <div className="relative w-full min-h-full bg-main shadow-xl">
             <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-[#222936] bg-white dark:bg-[#1a1f2e] sticky top-0 z-10">
               <h2 className="text-base font-bold text-foreground capitalize">{previewSection} Events Section Preview</h2>
-              <button onClick={() => { setPreviewSection(null); setPreviewPage(1); }} className="p-1.5 text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+              <button onClick={() => { setPreviewSection(null); setPreviewPage(1); }} aria-label="Close" className="p-1.5 text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
                 <X size={16} />
               </button>
             </div>

@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom'
 import Button from '../../components/ui/Button.jsx'
 import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 // Images
-import HeroBackground from '../../assets/backgrounds/hero-bg.jpg';
-import RocketIcon from '../../assets/icons/rocket.png'
+import HeroBackground from '../../assets/backgrounds/hero-bg.webp';
+import RocketIcon from '../../assets/icons/rocket.webp'
 
 export default function Hero() {
 	// Dots that we will be mapping on them to display them randomly in the hero section
@@ -62,7 +62,7 @@ export default function Hero() {
 					{/* Call-To-Action Buttons*/}
 					<div className='flex gap-3 justify-center md:justify-start'>
 						<Link to="/committees">
-							<Button className='bg-white text-primary hover:bg-white/80 dark:text-white'>
+							<Button className='bg-white text-primary hover:bg-white/80 dark:text-white' aria-label="Get Started">
 								Get Started
 							</Button>
 						</Link>
@@ -91,6 +91,7 @@ export default function Hero() {
 					{!imgLoaded && <ImageSkeleton />}
 					<img
 					  src="https://res.cloudinary.com/xcdyzvmc/image/upload/v1785685478/ieee-family.jpg_ezqw29.jpg"
+						alt="IEEE family"
 						className="w-full rounded-3xl shadow-2xl border-2 border-white/50"
 						onLoad={() => setImgLoaded(true)}
 					 />

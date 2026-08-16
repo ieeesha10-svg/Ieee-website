@@ -72,7 +72,7 @@ const PublicNavbar = () => {
 
         {/* Logo */}
         <Link to="/">
-          <img src="/logo.png" alt="IEEE Logo" />
+          <img src="/logo.webp" alt="IEEE Logo" />
         </Link>
 				<div className="hidden md:flex items-center gap-6">
 	        {NAV_LINKS.map((nav_link, index) => {
@@ -111,6 +111,7 @@ const PublicNavbar = () => {
               )}
               <button
                 onClick={() => setShowLogoutModal(true)}
+                aria-label="Log out"
                 className="text-red-500 hover:text-red-700 transition flex items-center gap-1 font-medium"
               >
                 <LogOutIcon size={18} />
@@ -159,6 +160,7 @@ const PublicNavbar = () => {
           <ThemeToggle />
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             className="text-white rounded-full border border-primary-light p-3 transition"
           >
             {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
@@ -188,6 +190,7 @@ const PublicNavbar = () => {
           </div>
           <button
             onClick={closeMenu}
+            aria-label="Close menu"
             className="shrink-0 rounded-full p-2 bg-primary-light/80 dark:bg-border transition"
           >
             <X size={20} />

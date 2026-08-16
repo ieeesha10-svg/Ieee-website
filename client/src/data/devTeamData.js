@@ -1,12 +1,12 @@
 
-import aliImg from "../assets/images/dev-team/ali-ahmed.jpeg";
-import mohamedImg from "../assets/images/dev-team/mohamed-alaa.jpeg";
-import farahImg from "../assets/images/dev-team/farah-orabi.jpeg";
-import ahmedImg from "../assets/images/dev-team/ahmed-elmalah.jpeg";
-import abdallahImg from "../assets/images/dev-team/abdallah-aziz.jpeg";
-import hossamImg from "../assets/images/dev-team/hossam-ghallab.jpeg";
-import madihaImg from "../assets/images/dev-team/madiha-elyazal.jpeg";
-import aliElsayedImg from "../assets/images/chairpersons/ali-elsayed.jpg";
+import aliImg from "../assets/images/dev-team/ali-ahmed.webp";
+import mohamedImg from "../assets/images/dev-team/mohamed-alaa.webp";
+import farahImg from "../assets/images/dev-team/farah-orabi.webp";
+import ahmedImg from "../assets/images/dev-team/ahmed-elmalah.webp";
+import abdallahImg from "../assets/images/dev-team/abdallah-aziz.webp";
+import hossamImg from "../assets/images/dev-team/hossam-ghallab.webp";
+import madihaImg from "../assets/images/dev-team/madiha-elyazal.webp";
+import aliElsayedImg from "../assets/images/chairpersons/ali-elsayed.webp";
 
 export const stats = [
   { id: 1, value: "8", label: "Engineers" },
@@ -18,13 +18,13 @@ export const tracks = [
   {
     id: "track-01",
     number: "01",
-    title: "Head Of Website Team / Non-Technical Team",
+    title: "Non-Technical Team",
     members: [
       {
         id: 1,
         number: "01",
         name: "Ali Ahmed",
-        role: "Full Stack Engineer",
+        role: "Head Of Website Team | Full Stack Engineer",
         dept: "IEEE SHA",
         image: aliImg,
         links: {
@@ -36,7 +36,7 @@ export const tracks = [
         id: 2,
         number: "02",
         name: "Ali Elsayed",
-        role: "Season X Vicechair - Strategic Advisor",
+        role: "Season X Vicechair | Strategic Advisor",
         dept: "IEEE SHA",
         image: aliElsayedImg,
         links: {

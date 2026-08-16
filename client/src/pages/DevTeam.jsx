@@ -111,17 +111,17 @@ export default function DevTeam() {
                     </div>
                     <div className="flex items-center gap-3 mt-4 text-muted/50 border-t border-primary/15 pt-2">
                       {member.links?.github && member.links.github && (
-                        <a href={member.links.github} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                        <a href={member.links.github} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} on GitHub`} className="hover:text-primary transition-colors">
                           <FiGithub className="w-4 h-4" />
                         </a>
                       )}
                       {member.links?.linkedin && member.links.linkedin && (
-                        <a href={member.links.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                        <a href={member.links.linkedin} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} on LinkedIn`} className="hover:text-primary transition-colors">
                           <FiLinkedin className="w-4 h-4" />
                         </a>
                       )}
                       {member.links?.portfolio && member.links.portfolio && (
-                        <a href={member.links.portfolio} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                        <a href={member.links.portfolio} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} Portfolio`} className="hover:text-primary transition-colors">
                           {member.links.portfolio.includes("behance") ? <SiBehance className="w-4 h-4" /> : <FiGlobe className="w-4 h-4" />}
                         </a>
                       )}

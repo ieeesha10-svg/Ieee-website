@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Mail, KeyRound } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthLayout from "../../layouts/AuthLayout";
-import MailIcon from "../../assets/icons/mail.png";
+import MailIcon from "../../assets/icons/mail.webp";
 import { useVerifyAccount } from "../../hooks/auth/useVerifyAccount";
 import { useAuth } from "../../context/AuthContext";
 import { ADMIN_ROLES } from "../../data/roles";

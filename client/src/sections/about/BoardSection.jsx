@@ -1,9 +1,9 @@
 import React from 'react'
 import Badge from '../../components/ui/Badge'
 import { MEMBERS } from '../../data/chairpersons'
-import linkedinIcon from "../../assets/images/chairpersons/linkedin.png";
-import facebookIcon from "../../assets/images/chairpersons/facebook.png";
-import collabratecIcon from "../../assets/images/chairpersons/collabratec-logo.png";
+import linkedinIcon from "../../assets/images/chairpersons/linkedin.webp";
+import facebookIcon from "../../assets/images/chairpersons/facebook.webp";
+import collabratecIcon from "../../assets/images/chairpersons/collabratec-logo.webp";
 
 export default function BoardSection() {
   return (

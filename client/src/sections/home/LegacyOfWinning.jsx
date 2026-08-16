@@ -5,9 +5,9 @@ import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 // Images
 import AboutImage from '../../assets/images/home/about-image.png'
 // Icons
-import TrophyIcon from '../../assets/icons/trophy.png'
-import MedalIcon from '../../assets/icons/medal.png'
-import LightningIcon from '../../assets/icons/lightning.png'
+import TrophyIcon from '../../assets/icons/trophy.webp'
+import MedalIcon from '../../assets/icons/medal.webp'
+import LightningIcon from '../../assets/icons/lightning.webp'
 
 export default function About() {
 	const CARDS_DATA = [
@@ -49,7 +49,7 @@ export default function About() {
 		<div className="grid grid-col-1 place-items-center lg:grid-cols-2 gap-20 mt-20">
 			<div className="relative order-2 lg:order-1">
 				{!imgLoaded && <ImageSkeleton />}
-				<img src={AboutImage} onLoad={() => setImgLoaded(true)} className="rounded-3xl" alt="About Section's Picture" />
+				<img src={AboutImage} onLoad={() => setImgLoaded(true)} className="rounded-3xl" alt="About Section" />
 				<div className='absolute -bottom-4 -right-4 py-8 px-6 lg:py-10 lg:px-8 flex items-center flex-col justify-center text-white bg-brand-linear rounded-3xl'>
 					<span className="text-3xl lg:text-5xl">500+</span>
 					<span className="text-[9px] lg:text-lg mt-2">Proud Members</span>

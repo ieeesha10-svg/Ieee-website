@@ -1,6 +1,6 @@
 import React from 'react';
 import { Toaster } from 'react-hot-toast';
-import BgImage from '../assets/backgrounds/black-line-circuit-pattern.png';
+import BgImage from '../assets/backgrounds/black-line-circuit-pattern.webp';
 
 export default function AuthLayout({ children, title, subtitle, icon, maxWidth = 'max-w-md' }) {
   return (

@@ -70,6 +70,7 @@ export default function EventsListCard({
             <Button
               variant="default"
               className="w-full"
+              aria-label={isRegistered ? "View Details" : "Join Now"}
             >
               {isRegistered ? "View Details" : "Join Now"}
             </Button>
@@ -80,7 +81,7 @@ export default function EventsListCard({
             state={{ image, title, description }}
             className="mt-auto"
           >
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" aria-label="View Details">
               View Details
             </Button>
           </Link>

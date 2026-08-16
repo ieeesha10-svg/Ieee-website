@@ -624,6 +624,7 @@ export default function EventRegistration() {
                         submitLoading ||
                         (formData.settings?.requiresLogin && !user)
                       }
+                      aria-label={submitLoading ? "Submitting" : "Complete Registration"}
                     >
                       {submitLoading
                         ? "Submitting..."

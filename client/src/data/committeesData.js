@@ -1,12 +1,12 @@
-import prIcon from '../assets/icons/committees/pr.png';
-import hrIcon from '../assets/icons/committees/hr-desk.png';
-import logisticsIcon from '../assets/icons/committees/logistics.png';
-import marketingIcon from '../assets/icons/committees/marketing.png';
-import paletteIcon from '../assets/icons/committees/palette.png';
-import developerIcon from '../assets/icons/committees/developer.png';
-import bookshelfIcon from '../assets/icons/committees/bookshelf.png';
-import webIcon from '../assets/icons/committees/world-wide-web.png';
-import pesIcon from '../assets/icons/committees/pes.png';
+import prIcon from '../assets/icons/committees/pr.webp';
+import hrIcon from '../assets/icons/committees/hr-desk.webp';
+import logisticsIcon from '../assets/icons/committees/logistics.webp';
+import marketingIcon from '../assets/icons/committees/marketing.webp';
+import paletteIcon from '../assets/icons/committees/palette.webp';
+import developerIcon from '../assets/icons/committees/developer.webp';
+import bookshelfIcon from '../assets/icons/committees/bookshelf.webp';
+import webIcon from '../assets/icons/committees/world-wide-web.webp';
+import pesIcon from '../assets/icons/committees/pes.webp';
 
 export const committees = [
   {

@@ -10,7 +10,7 @@ export default function JoinUs() {
       <div
         className="absolute inset-0 w-full h-full opacity-10 pointer-events-none"
         style={{
-          backgroundImage: 'url("/images/cta-bg.png")',
+          backgroundImage: 'url("/images/cta-bg.webp")',
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -22,7 +22,7 @@ export default function JoinUs() {
         {/* Top Icon */}
         <div className="flex justify-center items-center w-[68px] h-[68px] lg:w-[136px] lg:h-[136px] mb-4 lg:mb-8">
           <img
-            src="/icons/join.png"
+            src="/icons/join.webp"
             alt="Join IEEE"
             className="w-[60px] h-[60px] lg:w-[120px] lg:h-[120px] object-contain"
           />

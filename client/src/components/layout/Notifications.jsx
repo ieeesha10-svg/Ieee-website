@@ -8,6 +8,7 @@ export default function Notifications() {
     <div className="relative">
       <button
         onClick={() => setOpen((prev) => !prev)}
+        aria-label="Notifications"
         className="w-8 h-8 rounded-full bg-input flex items-center justify-center text-muted hover:text-foreground transition"
       >
         <Bell size={16} />

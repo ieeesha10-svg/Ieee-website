@@ -59,7 +59,7 @@ function EventCard({ title, dateObj, location, time, type, colorTheme }) {
 
       {/* Main Content */}
       <div className="flex-1">
-        <h4 className="font-bold text-[16px] text-[#111827] mb-1">{title}</h4>
+        <h3 className="font-bold text-[16px] text-[#111827] mb-1">{title}</h3>
 
         <div className="flex items-center gap-4 text-[13px] text-gray-500 font-medium">
           <div className="flex items-center gap-1.5">
@@ -76,7 +76,7 @@ function EventCard({ title, dateObj, location, time, type, colorTheme }) {
       </div>
 
       {/* Heart Icon */}
-      <button className="self-start mt-2 mr-2">
+      <button className="self-start mt-2 mr-2" aria-label="Favorite event">
         <Heart size={20} className="text-[#FF4757] fill-[#FF4757]" />
       </button>
     </div>

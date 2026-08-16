@@ -3,19 +3,19 @@ import React from "react";
 const achievementsData = [
   {
     id: 1,
-    icon: "/icons/trophy.png",
+    icon: "/icons/trophy.webp",
     title: "Best Student Chapter 2025",
     description: "Outstanding technical activities and engagement",
   },
   {
     id: 2,
-    icon: "/icons/star.png",
+    icon: "/icons/star.webp",
     title: "Innovation Excellence",
     description: "Groundbreaking projects and research",
   },
   {
     id: 3,
-    icon: "/icons/solidarity.png",
+    icon: "/icons/solidarity.webp",
     title: "Community Impact Award",
     description: "Making real difference in communities",
   },
@@ -38,7 +38,7 @@ export default function Achievements() {
       <div
         className="absolute bottom-0 left-0 w-full h-43.25 z-0 opacity-100"
         style={{
-          backgroundImage: 'url("/images/Pattern.png")',
+          backgroundImage: 'url("/images/Pattern.webp")',
           backgroundSize: "auto 100%",
           backgroundPosition: "bottom",
           backgroundRepeat: "repeat-x",
