@@ -1,91 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Badge from "../../components/Badge";
-import SectionHeader from "../../components/SectionHeader";
-// Social icons
-import linkedinIcon from "../../assets/images/chairpersons/linkedin.png";
-import facebookIcon from "../../assets/images/chairpersons/facebook.png";
-import collabratecIcon from "../../assets/images/chairpersons/collabratec-logo.png";
+import Badge from "../../components/ui/Badge";
+import SectionHeader from "../../components/ui/SectionHeader";
+import PersonCard from "../../components/guest/home/PersonCard";
+import Sponsors from "./Sponsors";
 // Chairpersons
 import { MEMBERS, COUNSELOR } from "../../data/chairpersons";
-// Sponsors
-import codeClouders from "../../assets/images/sponsers/code clouders.jpeg";
-import edges from "../../assets/images/sponsers/edges.jpeg";
-import eduvate from "../../assets/images/sponsers/EDUVATE.jpg";
-import emas from "../../assets/images/sponsers/EMAS.png";
-import haLogo from "../../assets/images/sponsers/HA logo.png";
-import jetsolar from "../../assets/images/sponsers/jet-solar.png";
-import tramAcademy from "../../assets/images/sponsers/tram-academy.JPG";
-import kian from "../../assets/images/sponsers/kian.jpeg";
-import neo from "../../assets/images/sponsers/neo (1).jpg";
-import porto from "../../assets/images/sponsers/PORTO (1).jpg";
-import seweddy from "../../assets/images/sponsers/SEWEDY (1).jpg";
-import ult from "../../assets/images/sponsers/ULT.jpg";
-import itc from "../../assets/images/sponsers/itc.JPG";
-import MeLed from "../../assets/images/sponsers/me-led.JPG";
-
-const SPONSORS = [
-  { src: codeClouders, alt: "Code Clouders" },
-  { src: edges, alt: "Edges" },
-  { src: eduvate, alt: "Eduvate" },
-  { src: emas, alt: "EMAS" },
-  { src: haLogo, alt: "HA Logo" },
-  { src: jetsolar, alt: "JET SOLAR" },
-  { src: tramAcademy, alt: "TRAM Academy" },
-  { src: kian, alt: "Kian" },
-  { src: neo, alt: "Neo" },
-  { src: porto, alt: "Porto" },
-  { src: seweddy, alt: "Sewedy" },
-  { src: ult, alt: "ULT" },
-  { src: itc, alt: "ITC" },
-  { src: MeLed, alt: "ME-LED" },
-];
-
-function PersonCard({ person }) {
-  return (
-    <div className="group relative flex flex-col bg-white dark:bg-[#1A1F2E] rounded-[10px] lg:rounded-[14px] shadow-[0_2px_4px_-1px_rgba(0,0,0,0.1)] lg:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-none overflow-hidden transition-all duration-400 hover:-translate-y-2 h-full">
-      <div className="relative w-full aspect-square overflow-hidden bg-gray-200 dark:bg-gray-800 rounded-t-2xl border-t-4 border-r-4 border-l-4 border-main group-hover:border-primary transition-all duration-500">
-        <img
-          src={person.image}
-          alt={`${person.name} Image`}
-          className="w-full h-full object-cover transition-all duration-500 group-hover:scale-105 group-hover:brightness-105"
-        />
-      </div>
-
-      <div className="group-hover:bg-primary transition-colors duration-400 flex flex-col items-center justify-center text-center p-3 lg:p-6 flex-1">
-        <div className="flex flex-col items-center justify-center flex-1 text-center mb-3 lg:mb-0 *:transition-colors *:duration-400">
-          <h3 className="group-hover:text-white text-[13px] lg:text-[18px] font-bold leading-tight mb-1">
-            {person.name}
-          </h3>
-          <p className="group-hover:text-white text-primary dark:text-primary-light text-[10px] lg:text-sm font-medium leading-tight mb-[6px] lg:mb-3">
-            {person.role}
-          </p>
-          <p className="group-hover:text-white text-[#4A5565] dark:text-[#9CA3AF] text-[9px] lg:text-[14px] leading-[1.4] lg:leading-relaxed line-clamp-3 lg:line-clamp-none">
-            {person.description}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-center gap-2 mt-auto">
-          {person.socials?.facebook && (
-            <a href={person.socials.facebook} target="_blank" rel="noopener noreferrer" className="w-[24px] lg:w-[32px] h-[24px] lg:h-[32px] rounded-full flex items-center justify-center">
-              <img src={facebookIcon} alt="facebook Account" className="w-full h-full object-contain" />
-            </a>
-          )}
-          {person.socials?.linkedin && (
-            <a href={person.socials.linkedin} target="_blank" rel="noopener noreferrer" className="w-[24px] lg:w-[32px] h-[24px] lg:h-[32px] rounded-full flex items-center justify-center">
-              <img src={linkedinIcon} alt="LinkedIn Account" className="w-full h-full object-contain" />
-            </a>
-          )}
-          {person.socials?.collabratec && (
-            <a href={person.socials.collabratec} target="_blank" rel="noopener noreferrer" className="w-[24px] lg:w-[32px] h-[24px] lg:h-[32px] flex items-center justify-center">
-              <img src={collabratecIcon} alt="Collabratec" className="w-full h-full object-contain" />
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function Team() {
 
@@ -132,29 +52,7 @@ export default function Team() {
         </div>
 
         {/* Sponsors Section */}
-        <div className="mt-12 lg:mt-24 w-full max-w-[394px] lg:max-w-none flex flex-col items-center bg-transparent lg:bg-black/5 dark:lg:bg-white/10 lg:border-[0.5px] border-transparent lg:border-black/10 dark:lg:border-white/20 rounded-[12px] lg:rounded-3xl py-8 lg:py-12 px-4 lg:px-8 transition-colors duration-300">
-          <h3 className="text-[#1A1A1A] dark:text-[#F2F2F2] text-[18px] lg:text-[36px] font-lakes mb-8 lg:mb-12 text-center transition-colors duration-300">
-            OUR PRESTIGIOUS SPONSORS
-          </h3>
-          <div className="w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-            <div className="inline-flex animate-marquee hover:[animation-play-state:paused]">
-              <div className="flex flex-shrink-0">
-                {SPONSORS.map((s, i) => (
-                  <div key={i} className="mr-6 lg:mr-8 flex items-center justify-center bg-white dark:bg-[#1a1f2e] rounded-xl p-4 h-24 lg:h-28 w-[140px] lg:w-[180px]">
-                    <img src={s.src} alt={s.alt} className="rounded-full max-h-full max-w-full object-contain" />
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-shrink-0">
-                {SPONSORS.map((s, i) => (
-                  <div key={`dup-${i}`} className="mr-6 lg:mr-8 flex items-center justify-center bg-white dark:bg-[#1a1f2e] rounded-xl p-4 h-24 lg:h-28 w-[140px] lg:w-[180px]">
-                    <img src={s.src} alt={s.alt} className="rounded-full max-h-full max-w-full object-contain" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <Sponsors />
       </div>
     </section>
   );

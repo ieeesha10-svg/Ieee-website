@@ -1,6 +1,6 @@
 import React from 'react'
 import { Users, Calendar, FileText, LayoutGrid } from 'lucide-react'
-import Badge from '../../components/Badge'
+import Badge from '../../components/ui/Badge'
 import { committees } from '../../data/committeesData'
 
 const stats = [

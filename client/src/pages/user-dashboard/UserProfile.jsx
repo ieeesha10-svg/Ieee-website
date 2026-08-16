@@ -9,7 +9,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-import InputBox from "../../components/InputBox";
+import InputBox from "../../components/ui/InputBox";
 import api from "../../utils/api";
 import { COLLEGE_OPTIONS, OTHER_COLLEGE } from "../../data/collegeOptions";
 import { ORDINAL_OPTIONS } from "../../data/ordinalMap";

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Plus, Trash2, Edit, Loader2, Users, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../utils/api";
-import Modal from "../../components/Modal";
+import Modal from "../../components/ui/Modal";
 
 export default function DashboardCrew() {
   const [crew, setCrew] = useState([]);

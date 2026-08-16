@@ -23,8 +23,8 @@ import {
 import toast from "react-hot-toast";
 import { useRegister } from "../../hooks/auth/useRegister";
 import AuthLayout from "../../layouts/AuthLayout";
-import Modal from "../../components/Modal";
-import RequiredAsterisk from "../../components/RequiredAsterisk";
+import Modal from "../../components/ui/Modal";
+import RequiredAsterisk from "../../components/ui/RequiredAsterisk";
 
 function SignupPage() {
   // Preselect a tab via ?user= query param (backward compatible), default to student

@@ -7,11 +7,11 @@ import { useCreateEvent } from "../../../hooks/dashboard/events/useCreateEvent";
 import { toLocalDatetimeString } from "../../../utils/dateUtils";
 import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
 import { EVENT_TYPES, EVENT_TYPE_LABELS } from "../../../data/eventTypes";
-import SectionCard from "../../../components/SectionCard";
-import RequiredAsterisk from "../../../components/RequiredAsterisk";
+import SectionCard from "../../../components/ui/SectionCard";
+import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
 import RichTextEditor from "../../../components/dashboard/RichTextEditor";
-import Tooltip from "../../../components/Tooltip";
-import SpeakerManager from "../../../components/SpeakerManager";
+import Tooltip from "../../../components/ui/Tooltip";
+import SpeakerManager from "../../../components/dashboard/SpeakerManager";
 import { isHtmlContentEmpty } from "../../../utils/eventUtils";
 
 const EMPTY_FORM = {

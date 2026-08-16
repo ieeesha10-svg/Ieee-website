@@ -1,6 +1,6 @@
 import React from "react";
 import { Send, Lock } from "lucide-react";
-import RequiredAsterisk from "./RequiredAsterisk";
+import RequiredAsterisk from "../../ui/RequiredAsterisk";
 
 export default function ContactForm() {
   return (

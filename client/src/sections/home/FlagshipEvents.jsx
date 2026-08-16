@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useFeaturedEvents } from "../../hooks/dashboard/events/useFeaturedEvents";
 import { usePublicEvents } from "../../hooks/usePublicEvents";
-import EventCard from "../../components/events/HomeEventCard";
-import EventDetailModal from "../../components/events/EventDetailModal";
+import EventCard from "../../components/guest/events/HomeEventCard";
+import EventDetailModal from "../../components/guest/events/EventDetailModal";
 import FlagshipSkeleton from "../../components/skeletons/FlagshipSkeleton";
 
 export default function FlagshipEvents() {

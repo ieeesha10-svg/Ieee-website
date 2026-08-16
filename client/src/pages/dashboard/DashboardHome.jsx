@@ -33,8 +33,8 @@ import {
 } from "recharts";
 import { useDashboard } from "../../hooks/dashboard/useDashboard";
 import Skeleton from "../../components/skeletons/DashHomeSkeleton";
-import Button from "../../components/Button";
-import Modal from "../../components/Modal";
+import Button from "../../components/ui/Button";
+import Modal from "../../components/ui/Modal";
 
 const ICON_MAP = { Users, Calendar, TrendingUp, Mail, Trophy };
 

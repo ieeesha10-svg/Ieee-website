@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
-import Badge from "../../components/Badge";
+import Badge from "../../components/ui/Badge";
 import ImageSkeleton from "../../components/skeletons/ImageSkeleton";
 import { committees } from "../../data/committeesData";
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 // Components
-import Button from '../../components/Button.jsx'
+import Button from '../../components/ui/Button.jsx'
 import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 // Images
 import HeroBackground from '../../assets/backgrounds/hero-bg.jpg';

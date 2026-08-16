@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
-import { ArrowLeft, FileText, Loader2, ChevronDown, ChevronUp, Download, ExternalLink } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, ChevronDown, ChevronUp, Download, ExternalLink, ArrowDownUp, Check } from "lucide-react";
 import { useFormSubmissions } from "../../../hooks/dashboard/useGetSubmissions";
 import { useExportFormSubmissions } from "../../../hooks/dashboard/forms/useExportFormSubmissions";
 
@@ -197,6 +197,19 @@ export default function ShowFormSubmissions() {
   const { submissions, total, isLoading, error } = useFormSubmissions(formId);
   const { exporting, exportSubmissions } = useExportFormSubmissions();
 
+  const [sortOrder, setSortOrder] = useState("oldest");
+  const [orderOpen, setOrderOpen] = useState(false);
+
+  const sortedSubmissions = useMemo(
+    () =>
+      [...submissions].sort((a, b) => {
+        const ta = new Date(a.createdAt || 0).getTime();
+        const tb = new Date(b.createdAt || 0).getTime();
+        return sortOrder === "oldest" ? ta - tb : tb - ta;
+      }),
+    [submissions, sortOrder],
+  );
+
   const handleExport = () => exportSubmissions(formId, formTitle);
 
   if (isLoading) {
@@ -257,6 +270,57 @@ export default function ShowFormSubmissions() {
             View on Website
           </Link>
         )}
+          <div className="relative">
+            <button
+              onClick={() => setOrderOpen((prev) => !prev)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors shrink-0"
+            >
+              <ArrowDownUp size={16} />
+              {sortOrder === "oldest" ? "Oldest" : "Newest"}
+              <ChevronDown
+                size={14}
+                className={`transition-transform ${orderOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {orderOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setOrderOpen(false)}
+                />
+                <div className="absolute right-0 mt-2 w-40 z-20 bg-white dark:bg-[#1a1f2e] border border-gray-100 dark:border-[#222936] rounded-lg shadow-lg overflow-hidden">
+                  <button
+                    onClick={() => {
+                      setSortOrder("oldest");
+                      setOrderOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors ${
+                      sortOrder === "oldest"
+                        ? "font-semibold text-primary"
+                        : "text-foreground"
+                    }`}
+                  >
+                    Oldest
+                    {sortOrder === "oldest" && <Check size={14} />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSortOrder("newest");
+                      setOrderOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors ${
+                      sortOrder === "newest"
+                        ? "font-semibold text-primary"
+                        : "text-foreground"
+                    }`}
+                  >
+                    Newest
+                    {sortOrder === "newest" && <Check size={14} />}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
           <button
             onClick={handleExport}
             disabled={exporting}
@@ -273,7 +337,7 @@ export default function ShowFormSubmissions() {
       </div>
 
       <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm overflow-hidden">
-        {submissions.length > 0 ? (
+        {sortedSubmissions.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-[#F8FAFC] dark:bg-[#202636]">
@@ -285,7 +349,7 @@ export default function ShowFormSubmissions() {
                   <th className="px-4 w-32 text-right">ANSWERS</th>
                 </tr>
               </thead>
-              {submissions.map((submission, i) => (
+              {sortedSubmissions.map((submission, i) => (
                 <SubmissionRow
                   key={submission._id}
                   submission={submission}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import HtmlContent from '../components/HtmlContent';
+import HtmlContent from '../components/ui/HtmlContent';
 
 export default function EventDetails() {
   const { id } = useParams();

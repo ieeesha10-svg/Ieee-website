@@ -11,12 +11,12 @@ import { useChangeMemberCommittee } from '../../hooks/dashboard/useChangeMemberC
 import { useDeleteMember } from '../../hooks/auth/useDeleteMember';
 import { committees } from '../../data/committeesData';
 // Components
-import Button from '../../components/Button';
-import AdvancedSearch from '../../components/AdvancedSearch';
+import Button from '../../components/ui/Button';
+import AdvancedSearch from '../../components/dashboard/AdvancedSearch';
 import MemberFilters from '../../components/dashboard/MemberFilters';
 import DeleteUserModal from '../../components/dashboard/DeleteUserModal';
-import Modal from '../../components/Modal';
-import Pagination from '../../components/events/Pagination';
+import Modal from '../../components/ui/Modal';
+import Pagination from '../../components/ui/Pagination';
 
 export default function DashboardMembers() {
 	const { user } = useAuth();

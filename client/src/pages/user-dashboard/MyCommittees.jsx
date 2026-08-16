@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Check, Clock, Loader2, RefreshCw, Users } from "lucide-react";
 import api from "../../utils/api";
-import Modal from "../../components/Modal";
-import Button from "../../components/Button";
+import Modal from "../../components/ui/Modal";
+import Button from "../../components/ui/Button";
 
 import { committees } from "../../data/committeesData";
 

@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { usePublicForms } from "../hooks/usePublicForms";
-import FormCard from "../components/forms/FormCard";
-import Badge from "../components/Badge";
-import FooterAlt from "../components/FooterAlt";
+import FormCard from "../components/guest/forms/FormCard";
+import Badge from "../components/ui/Badge";
+import FooterAlt from "../components/layout/FooterAlt";
 
 const TABS = ["All", "Registration", "Survey", "Feedback", "General"];
 
@@ -35,7 +36,7 @@ export default function ApplicationsPage() {
           </h1>
 
           <p className="mt-4 text-muted max-w-lg mx-auto leading-relaxed text-sm md:text-base">
-						Welcome, students. Browse and submit our active forms — from recruitment applications to workshop registrations.
+						Browse and submit our active forms — from recruitment applications to workshop registrations.
 						All submissions are reviewed by our branch committee.
           </p>
 
@@ -98,13 +99,33 @@ export default function ApplicationsPage() {
               ))}
             </div>
           ) : filteredForms.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-muted text-lg font-medium">No forms available</p>
-              <p className="text-muted/60 text-sm mt-1">
-                {activeTab === "All"
-                  ? "Check back later for open applications."
-                  : `No ${activeTab.toLowerCase()} are currently open.`}
-              </p>
+            <div className="text-center py-5 lg:py-8">
+              {activeTab !== "Registration" && (
+                <>
+                  <p className="text-muted text-lg font-medium">No forms available</p>
+                  <p className="text-muted/60 text-sm mt-1">
+                    {activeTab === "All"
+                      ? "Check back later for open applications."
+                      : `No ${activeTab.toLowerCase()} are currently open.`}
+                  </p>
+                </>
+              )}
+              {activeTab === "Registration" && (
+                <div className="mt-8">
+                  <p className="text-muted text-lg font-medium">No open registrations right now</p>
+                  <p className="text-muted text-sm max-w-md mx-auto leading-relaxed mt-2">
+                    We're not accepting applications at the moment — but if you're ready to
+                    bring value to our branch and join the team, we'd love to talk to
+                    you directly.
+                  </p>
+                  <Link
+                    to="/contact"
+                    className="mt-6 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary dark:bg-primary-dark text-white font-medium hover:bg-primary/80 hover:dark:bg-primary-dark/80 transition-all duration-200"
+                  >
+                    Contact Us
+                  </Link>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

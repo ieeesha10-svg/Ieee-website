@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Trash2 } from "lucide-react";
-import Modal from "../Modal";
-import Button from "../Button";
+import Modal from "../ui/Modal";
+import Button from "../ui/Button";
 
 export default function DeleteUserModal({
   open,

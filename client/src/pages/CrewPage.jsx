@@ -1,9 +1,10 @@
-import React from "react";
-import { Linkedin, Mail, Globe } from "lucide-react";
+import React, { useState } from "react";
+import { Linkedin, Mail, Globe, User } from "lucide-react";
 import { useCrew } from "../hooks/useCrew";
 
 export default function CrewPage() {
   const { team, isLoading } = useCrew();
+  const [brokenImages, setBrokenImages] = useState(() => new Set());
 
   return (
     <div className="min-h-screen py-24 px-4 lg:px-8 bg-[#F2F2F2] dark:bg-[#0A0E1A] transition-colors duration-300">
@@ -42,14 +43,18 @@ export default function CrewPage() {
               >
                 {/* Image Section with Hover Overlay */}
                 <div className="relative w-full aspect-[4/5] overflow-hidden bg-gray-200 dark:bg-gray-800">
-                  <img
-                    src={person.image}
-                    alt={person.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    onError={(e) => {
-                      e.target.src = "/images/Checker.png";
-                    }}
-                  />
+                  {brokenImages.has(person.id) ? (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-800">
+                      <User size={64} strokeWidth={1.5} className="text-gray-400 dark:text-gray-500" />
+                    </div>
+                  ) : (
+                    <img
+                      src={person.image}
+                      alt={person.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={() => setBrokenImages((prev) => new Set(prev).add(person.id))}
+                    />
+                  )}
                   {/* Social Icons Overlay (Shows on Hover) */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0A0E1A]/90 via-[#0A0E1A]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6 gap-4">
                     {person.socials?.linkedin && (

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import SunIcon from '../assets/icons/sun.png'
-import MoonIcon from '../assets/icons/moon.png'
-import useDarkMode from "../hooks/useDarkMode";
+import SunIcon from '../../assets/icons/sun.png'
+import MoonIcon from '../../assets/icons/moon.png'
+import useDarkMode from "../../hooks/useDarkMode";
 
 export default function ThemeToggle() {
   const [colorTheme, setTheme] = useDarkMode();

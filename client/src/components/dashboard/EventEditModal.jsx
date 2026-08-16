@@ -4,9 +4,9 @@ import { EVENT_TYPES, EVENT_TYPE_LABELS } from "../../data/eventTypes";
 import { useUpdateForm } from "../../hooks/dashboard/forms/useUpdateForm";
 import { isHtmlContentEmpty } from "../../utils/eventUtils";
 // Components
-import Tooltip from "../Tooltip";
+import Tooltip from "../ui/Tooltip";
 import RichTextEditor from "./RichTextEditor";
-import SpeakerManager from "../SpeakerManager";
+import SpeakerManager from "./SpeakerManager";
 
 export default function EditEvent({ initial, onSubmit, loading, formId, coverImageUrl }) {
   const [form, setForm] = useState(initial);

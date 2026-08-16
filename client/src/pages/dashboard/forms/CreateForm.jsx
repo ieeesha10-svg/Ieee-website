@@ -4,8 +4,8 @@ import { X, GripVertical, Check, Trash2, Loader2, ArrowLeft } from "lucide-react
 import { useCreateForm } from "../../../hooks/dashboard/forms/useCreateForm";
 import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
 import { FORM_TYPE_OPTIONS } from "../../../data/formTypes";
-import SectionCard from "../../../components/SectionCard";
-import RequiredAsterisk from "../../../components/RequiredAsterisk";
+import SectionCard from "../../../components/ui/SectionCard";
+import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
 
 function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDragIndex, moveField }) {
   const hasOptions = field.type === "Dropdown" || field.type === "Checkbox";

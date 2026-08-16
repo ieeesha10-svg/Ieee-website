@@ -25,7 +25,7 @@ import { ADMIN_ROLES } from '../../data/roles'
 import { ORDINAL_OPTIONS } from '../../data/ordinalMap'
 import { committees } from '../../data/committeesData'
 // Components
-import DeleteModal from "../../components/DeleteModal";
+import DeleteModal from "../../components/ui/DeleteModal";
 import Skeleton from "../../components/skeletons/DashSettingsSkeleton";
 
 function SectionCard({ children, className = "" }) {
