@@ -67,8 +67,8 @@ const SpeakerManager = ({ speakers, onChange }) => {
                 <span className="text-sm text-foreground font-medium">{s.name}</span>
                 {s.title && <span className="text-xs text-muted ml-2">— {s.title}</span>}
               </div>
-              <button type="button" onClick={() => openEditModal(i)} className="text-muted hover:text-primary transition-colors"><Edit size={13} /></button>
-              <button type="button" onClick={() => removeSpeaker(i)} className="text-muted hover:text-red-500 transition-colors"><X size={13} /></button>
+              <button type="button" onClick={() => openEditModal(i)} aria-label={`Edit ${s.name}`} className="text-muted hover:text-primary transition-colors"><Edit size={13} /></button>
+              <button type="button" onClick={() => removeSpeaker(i)} aria-label={`Remove ${s.name}`} className="text-muted hover:text-red-500 transition-colors"><X size={13} /></button>
             </div>
           ))}
         </div>

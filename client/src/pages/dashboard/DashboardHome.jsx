@@ -192,6 +192,7 @@ export default function Dashboard() {
             <Button
               variant="link"
               onClick={() => setShowAllBackground(true)}
+              aria-label={`Show all ${data.academicBackgroundData.length} colleges`}
               className="!px-0 mt-3"
             >
               Show all {data.academicBackgroundData.length} colleges

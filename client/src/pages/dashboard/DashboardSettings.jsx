@@ -107,6 +107,7 @@ function RoleSelect({ value, onChange }) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      aria-label="Role"
       className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
     >
       {ADMIN_ROLES.map((r) => (
@@ -412,6 +413,7 @@ export default function DashboardSettings() {
                     current: !s.current,
                   }))
                 }
+                aria-label={showPasswords.current ? "Hide current password" : "Show current password"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"
               >
                 {showPasswords.current ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -437,6 +439,7 @@ export default function DashboardSettings() {
                 onClick={() =>
                   setShowPasswords((s) => ({ ...s, new: !s.new }))
                 }
+                aria-label={showPasswords.new ? "Hide new password" : "Show new password"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"
               >
                 {showPasswords.new ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -465,6 +468,7 @@ export default function DashboardSettings() {
                     confirm: !s.confirm,
                   }))
                 }
+                aria-label={showPasswords.confirm ? "Hide confirm password" : "Show confirm password"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"
               >
                 {showPasswords.confirm ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -553,6 +557,7 @@ export default function DashboardSettings() {
                         <td className="px-5 md:px-6 py-3 text-right">
                           <button
                             onClick={() => setDeleteTarget(admin)}
+                            aria-label={`Delete ${admin.name}`}
                             className="p-1.5 text-muted hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
                             <Trash2 size={14} />

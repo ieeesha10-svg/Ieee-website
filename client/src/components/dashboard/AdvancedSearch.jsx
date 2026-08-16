@@ -19,6 +19,7 @@ export default function AdvancedSearch({ value, onChange, isLoading, placeholder
       {value && (
         <button
           onClick={() => onChange("")}
+          aria-label="Clear search"
           className="text-muted hover:text-foreground transition-colors"
         >
           <X className="w-4 h-4" />

@@ -121,6 +121,7 @@ export default function MyCommittees() {
             setIsModalOpen(true);
           }}
           disabled={!!pendingRequest}
+          aria-label={pendingRequest ? "Request Pending" : "Request Change"}
           className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors w-fit disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCw size={16} />
@@ -218,6 +219,7 @@ export default function MyCommittees() {
               variant="outline"
               onClick={() => setIsModalOpen(false)}
               disabled={isSubmitting}
+              aria-label="Cancel"
               className="px-5 py-2 text-sm text-[#64748B] dark:text-muted border-gray-200 dark:border-[#222936] hover:bg-gray-50 dark:hover:bg-[#1A1F2E] rounded-xl transition-colors"
             >
               Cancel
@@ -225,6 +227,7 @@ export default function MyCommittees() {
             <Button
               onClick={handleRequestChange}
               disabled={isSubmitting || !selectedCommittee}
+              aria-label="Submit Request"
               className="bg-primary hover:bg-primary-dark text-white px-5 py-2 text-sm rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
             >
               {isSubmitting && <Loader2 size={16} className="animate-spin" />}

@@ -40,7 +40,7 @@ export default function Chapters() {
                   <span className="text-sm text-muted">Events</span>
                 </div>
 								<a href="https://www.facebook.com/IEEE.PES.SHA.SC" target="_blank">
-									<Button variant="link">Learn More</Button>
+									<Button variant="link" aria-label="Learn More">Learn More</Button>
 								</a>
               </div>
             </div>

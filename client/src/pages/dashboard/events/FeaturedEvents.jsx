@@ -181,6 +181,7 @@ export default function FeaturedEvents() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => window.history.back()}
+            aria-label="Go back"
             className="p-2 text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
           >
             <ArrowLeft size={18} />
@@ -349,10 +350,10 @@ export default function FeaturedEvents() {
 							<div className="flex gap-2 items-center">
 								<h2 className="font-bold text-foreground mr-2">Homepage Preview</h2>
 								<Link to='/'>
-									<Button variant="link">Go to Homepage</Button>
+									<Button variant="link" aria-label="Go to Homepage">Go to Homepage</Button>
 								</Link>
 							</div>
-              <button onClick={() => setShowPreview(false)} className="p-1.5 text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+              <button onClick={() => setShowPreview(false)} aria-label="Close" className="p-1.5 text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
                 <X size={16} />
               </button>
             </div>

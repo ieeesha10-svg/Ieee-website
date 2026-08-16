@@ -140,6 +140,7 @@ export default function DashboardMembers() {
           variant='outline'
           onClick={resetFilters}
           disabled={!hasActiveFilters}
+          aria-label="Reset Filters"
           className={`text-muted bg-card-alt text-sm border border-border rounded-lg shrink-0 transition-colors hidden md:inline-flex
             ${hasActiveFilters ?
               "hover:text-white dark:hover:text-foreground hover:border-primary/30" :
@@ -200,6 +201,7 @@ export default function DashboardMembers() {
               variant='outline'
               onClick={resetFilters}
               disabled={!hasActiveFilters}
+              aria-label="Reset Filters"
               className={`text-muted bg-card-alt text-sm border border-border rounded-lg shrink-0 transition-colors md:hidden
                 ${hasActiveFilters ?
                   "hover:text-foreground hover:border-primary/30" :
@@ -220,6 +222,7 @@ export default function DashboardMembers() {
                 <th className="px-2 w-10">
                   <input
                     type="checkbox"
+                    aria-label="Select all members"
                     checked={
                       displayMembers.length > 0 &&
                       displayMembers.every((m) => selectedIds.includes(m.id))
@@ -280,6 +283,7 @@ export default function DashboardMembers() {
                     <td className="py-3 px-2">
                       <input
                         type="checkbox"
+                        aria-label={`Select ${member.name}`}
                         checked={selectedIds.includes(member.id)}
                         onChange={() => toggleSelect(member.id)}
                         className="ml-3 w-4 h-4 accent-primary cursor-pointer"
@@ -514,6 +518,7 @@ export default function DashboardMembers() {
                       processRequest(request.id, "approved");
                     }}
                     disabled={processingId === request.id}
+                    aria-label="Approve request"
                     className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Approve
@@ -524,6 +529,7 @@ export default function DashboardMembers() {
                       processRequest(request.id, "rejected");
                     }}
                     disabled={processingId === request.id}
+                    aria-label="Reject request"
                     className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Reject
@@ -592,6 +598,7 @@ export default function DashboardMembers() {
                   processRequest(selectedRequest.id, "approved");
                 }}
                 disabled={processingId === selectedRequest.id}
+                aria-label="Approve request"
                 className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Approve
@@ -602,6 +609,7 @@ export default function DashboardMembers() {
                   processRequest(selectedRequest.id, "rejected");
                 }}
                 disabled={processingId === selectedRequest.id}
+                aria-label="Reject request"
                 className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Reject

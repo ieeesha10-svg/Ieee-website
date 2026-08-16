@@ -798,6 +798,7 @@ export default function BulkMailer() {
                   <button
                     type="button"
                     onClick={() => removeAttachment(i)}
+                    aria-label={`Remove ${file.name}`}
                     className="text-muted hover:text-red-500 transition-colors"
                   >
                     <X size={12} />

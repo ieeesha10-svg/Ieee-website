@@ -160,6 +160,7 @@ const PublicNavbar = () => {
           <ThemeToggle />
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             className="text-white rounded-full border border-primary-light p-3 transition"
           >
             {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
