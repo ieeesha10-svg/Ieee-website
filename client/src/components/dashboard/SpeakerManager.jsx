@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { X, Edit, Plus } from "lucide-react";
-import Modal from "./Modal";
+import Modal from "../ui/Modal";
 
 const SpeakerManager = ({ speakers, onChange }) => {
   const [speakerName, setSpeakerName] = useState("");
