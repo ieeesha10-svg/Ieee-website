@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { EMAIL_ADDRESS, SOCIAL_MEDIA } from "../data/socialMedia";
+import { EMAIL_ADDRESS, SOCIAL_MEDIA } from "../../data/socialMedia";
 
 const QUICK_LINKS = [
   { label: "About", to: "/about" },

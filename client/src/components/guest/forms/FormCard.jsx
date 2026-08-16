@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import api from "../../utils/api";
+import { useAuth } from "../../../context/AuthContext";
+import api from "../../../utils/api";
 import toast from "react-hot-toast";
-import { SURVEY_COLOR, FEEDBACK_COLOR, CUSTOM_COLOR } from "../../data/formTypes";
+import { SURVEY_COLOR, FEEDBACK_COLOR, CUSTOM_COLOR } from "../../../data/formTypes";
 
 const CATEGORY_STYLES = {
   Registration: {

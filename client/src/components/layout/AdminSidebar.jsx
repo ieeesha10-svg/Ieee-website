@@ -18,11 +18,11 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 import { Toaster } from "react-hot-toast";
-import { useAuth } from "../context/AuthContext";
-import { useLogout } from "../hooks/auth/useLogout";
-import { navItems, toolsItems } from "../data/DashboardNav";
-import ConfirmModal from "./ConfirmModal";
-import { isAdminRole } from "../utils/roleAccess";
+import { useAuth } from "../../context/AuthContext";
+import { useLogout } from "../../hooks/auth/useLogout";
+import { navItems, toolsItems } from "../../data/DashboardNav";
+import ConfirmModal from "../ui/ConfirmModal";
+import { isAdminRole } from "../../utils/roleAccess";
 
 const ICON_MAP = {
   LayoutDashboard,

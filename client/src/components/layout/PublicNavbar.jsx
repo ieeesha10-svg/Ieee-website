@@ -19,13 +19,13 @@ import {
   UserPlus,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import useJoinMenu from "../hooks/useJoinMenu";
-import ThemeToggle from "./ThemeToggle";
-import { useAuth } from "../context/AuthContext";
+import useJoinMenu from "../../hooks/useJoinMenu";
+import ThemeToggle from "../ui/ThemeToggle";
+import { useAuth } from "../../context/AuthContext";
 import { Toaster } from "react-hot-toast";
-import ConfirmModal from "./ConfirmModal";
-import { useLogout } from "../hooks/auth/useLogout";
-import { canUseScanPage, dashboardHref, isAdminRole } from "../utils/roleAccess";
+import ConfirmModal from "../ui/ConfirmModal";
+import { useLogout } from "../../hooks/auth/useLogout";
+import { canUseScanPage, dashboardHref, isAdminRole } from "../../utils/roleAccess";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },

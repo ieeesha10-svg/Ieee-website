@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Check } from "lucide-react";
-import Modal from "../Modal";
+import Modal from "../../ui/Modal";
 
 export default function FormSubmissionSuccessModal({
   isOpen,

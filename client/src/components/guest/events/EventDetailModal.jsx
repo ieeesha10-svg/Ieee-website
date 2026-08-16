@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, MapPin, Calendar, Users } from "lucide-react";
-import HtmlContent from "../HtmlContent";
+import HtmlContent from "../../ui/HtmlContent";
 
 export default function EventDetailModal({ event, onClose }) {
   const [visible, setVisible] = useState(false);
