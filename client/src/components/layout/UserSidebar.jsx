@@ -5,9 +5,9 @@ import { ChevronRight } from "lucide-react";
 export function SidebarSection({ title, children }) {
   return (
     <div className="space-y-[12px]">
-      <h3 className="text-[#7A96B2] dark:text-[#4A6080] text-[12px] font-lakes font-bold tracking-[1.088px] uppercase pl-1">
+      <h2 className="text-[#7A96B2] dark:text-[#4A6080] text-[12px] font-lakes font-bold tracking-[1.088px] uppercase pl-1">
         {title}
-      </h3>
+      </h2>
       <div className="flex flex-col gap-2 md:gap-4">{children}</div>
     </div>
   );
@@ -38,13 +38,13 @@ export function NavItem({ icon, title, subtitle, isActive, hasNotification }) {
 
         {/* Title + Subtitle */}
         <div className="min-w-0">
-          <h4
+          <h3
             className={`text-[14.08px] leading-[17px] font-gotham font-normal truncate ${
               isActive ? "text-white" : "text-[#0A1628] dark:text-white"
             }`}
           >
             {title}
-          </h4>
+          </h3>
           <p
             className={`text-[11.52px] leading-[15px] font-[Outfit] mt-[1px] truncate ${
               isActive ? "text-white/85" : "text-[#7A96B2] dark:text-muted"
