@@ -72,6 +72,7 @@ export default function EventsHero({ featuredEvent, loading }) {
 							{eventImage ? (
 								<img
 									src={eventImage}
+									alt={title}
 									onLoad={() => setImgLoaded(true)}
 									className="w-full h-full object-cover"
 								/>

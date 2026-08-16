@@ -91,6 +91,7 @@ export default function Hero() {
 					{!imgLoaded && <ImageSkeleton />}
 					<img
 					  src="https://res.cloudinary.com/xcdyzvmc/image/upload/v1785685478/ieee-family.jpg_ezqw29.jpg"
+						alt="IEEE family photo"
 						className="w-full rounded-3xl shadow-2xl border-2 border-white/50"
 						onLoad={() => setImgLoaded(true)}
 					 />

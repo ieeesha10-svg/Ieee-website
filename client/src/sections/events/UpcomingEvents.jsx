@@ -40,7 +40,7 @@ export default function UpcomingEvents({ events = [], loading, page = 1, totalPa
 					) : (
 					<div className="col-span-full flex flex-col items-center gap-3 py-10">
 						<div className="p-3 rounded-full bg-white/10 flex items-center justify-center text-2xl">
-							<img src="/logo.png" className="w-20 h-20 object-contain" />
+							<img src="/logo.png" alt="IEEE Logo" className="w-20 h-20 object-contain" />
 						</div>
 						<p className="text-white/80 text-center text-lg uppercase font-gotham">Something exciting is brewing...</p>
 						<p className="text-white/50 text-center">No upcoming events yet — but stay tuned, we're just getting started!</p>

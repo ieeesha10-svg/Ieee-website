@@ -21,7 +21,7 @@ export default function ThemeToggle() {
     className={`relative w-16 h-8 rounded-full transition-colors duration-300 ${darkSide ? "bg-[#475259]" : "bg-[#C6DEEF]"}`}
   >
     <span className={`absolute top-1 left-1 w-6 h-6 rounded-full flex items-center justify-center bg-white shadow-md transition-transform duration-300 ${darkSide ? "translate-x-0" : "translate-x-8"}`}>
-      <img src={darkSide ? MoonIcon : SunIcon} className="w-3.5 h-3.5" />
+      <img src={darkSide ? MoonIcon : SunIcon} alt={darkSide ? "Moon icon" : "Sun icon"} className="w-3.5 h-3.5" />
     </span>
   </button>
   );
