@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import Badge from "../../components/ui/Badge";
 import ImageSkeleton from "../../components/skeletons/ImageSkeleton";
 import { committees } from "../../data/committeesData";
+import AboutImageFallback from "../../assets/images/about-image.webp";
 
 function Chip({ title, subtitle, label, className }) {
   return (
@@ -27,6 +28,7 @@ function Chip({ title, subtitle, label, className }) {
 export default function HeroSection() {
   const { user } = useAuth();
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
   return (
     <section className="py-16 md:py-24 about-page-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -85,10 +87,11 @@ export default function HeroSection() {
           <div className="relative rounded-2xl">
             {!imgLoaded && <ImageSkeleton rounded="rounded-2xl" />}
             <img
-              src="https://res.cloudinary.com/xcdyzvmc/image/upload/v1785588071/about-image.jpg_r4gq2q.jpg"
+              src={imgFailed ? AboutImageFallback : "https://res.cloudinary.com/xcdyzvmc/image/upload/v1785588071/about-image.jpg_r4gq2q.jpg"}
               alt="Person wearing VR headset working on robotics"
               className="relative mx-auto w-full object-cover rounded-2xl"
               onLoad={() => setImgLoaded(true)}
+              onError={() => setImgFailed(true)}
             />
 
             <Chip
