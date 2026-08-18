@@ -59,7 +59,7 @@ function mapActivity(activity, form) {
   };
 }
 
-export function usePublicEvents() {
+export function usePublicEvents({ maxPages = null } = {}) {
   const [upcoming, setUpcoming] = useState([]);
   const [previous, setPrevious] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,9 +75,10 @@ export function usePublicEvents() {
       ]);
 
       const { totalPages } = firstPageRes.data.pagination;
+      const pagesToFetch = maxPages ? Math.min(maxPages, totalPages) : totalPages;
       let allActivities = firstPageRes.data.activities || [];
 
-      for (let p = 2; p <= totalPages; p++) {
+      for (let p = 2; p <= pagesToFetch; p++) {
         const res = await api.get(`/activities?page=${p}&limit=10`);
         allActivities = [...allActivities, ...(res.data.activities || [])];
       }

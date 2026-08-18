@@ -7,7 +7,7 @@ import FlagshipSkeleton from "../../components/skeletons/FlagshipSkeleton";
 
 export default function FlagshipEvents() {
   const { featured, loading: featuredLoading } = useFeaturedEvents();
-  const { upcoming, previous, loading: eventsLoading } = usePublicEvents();
+  const { upcoming, previous, loading: eventsLoading } = usePublicEvents({ maxPages: 1 });
   const [selectedEvent, setSelectedEvent] = useState(null);
 
   const loading = featuredLoading || eventsLoading;
@@ -34,7 +34,7 @@ export default function FlagshipEvents() {
             <span className="text-primary-dark">EVENTS</span>
           </h2>
 
-          <div className="mt-3 lg:mt-4 rounded-full w-[100px] lg:w-[128px] h-[4px] lg:h-[6px] bg-linear-to-r from-primary-dark to-primary-light" />
+					<div className="mt-3 lg:mt-4 rounded-full w-25 lg:w-32 h-1 lg:h-1.5 bg-linear-to-r from-primary-dark to-primary-light" />
         </div>
 
         <div className="flex flex-col lg:flex-row items-start justify-center gap-10 lg:gap-8">
