@@ -13,20 +13,20 @@ There are **four** route groups, each wrapped in its own guard/layout:
 
 | Guard | Defined in `App.jsx` | Behavior |
 |-------|----------------------|----------|
-| `PublicLayout` | `App.jsx:80` | Renders `PublicNavbar` + `Footer`. Footer is hidden on `/login`, `/signup`, `/verify`, `/dev-team`, and `/applications*` |
-| `GuestRoute` | `App.jsx:74` | If `user` exists → redirect to `/profile` |
-| `ProtectedRoute` | `App.jsx:56` | No `user` → redirect to `/login`. With `requireAdmin` → role must be in `ADMIN_ROLES` (`board`, `xcom`). With `roles` → role must be in the passed list |
-| Catch-all | `App.jsx:175` | Unknown routes → `NotFoundPage` with `PublicNavbar` |
+| `PublicLayout` | `App.jsx:97` | Renders `PublicNavbar` + `Footer`. Footer is hidden on `/login`, `/registration`, `/verify`, `/forgot-password`, `/reset-password`, `/dev-team`, and `/applications` |
+| `GuestRoute` | `App.jsx:91` | If `user` exists → redirect to `/profile` |
+| `ProtectedRoute` | `App.jsx:73` | No `user` → redirect to `/login`. With `requireAdmin` → role must be in `ADMIN_ROLES` (`board`, `xcom`). With `roles` → role must be in the passed list |
+| Catch-all | `App.jsx:193` | Unknown routes → `NotFoundPage` with `PublicNavbar` |
 
 ## Public Routes
 
 | Route | Component (`src/pages/`) | Status | Notes |
 |-------|---------------------------|--------|-------|
-| `/` | `Home` | ✅ | Composes Hero, Achievements, Chapters, MembershipBenefits, JoinUs, FlagshipEvents, Chairpersons, Mission/Vision, Legacy sections |
+| `/` | `Home` | ✅ | Composes Hero, MissionVision, MembershipBenefits, FlagshipEvents, Chapters, Chairpersons, JoinUs sections |
 | `/events` | `Events` | ✅ | Upcoming + previous events via `usePublicEvents` |
 | `/events/:id` | `EventRegistration` | ✅ | Event page + linked registration form (fetches `GET /activities/:id`, submits via `useSubmitForm`) |
 | `/events/:id/details` | `EventDetails` | ✅ | Full event details page |
-| `/about` | `AboutPage` | ✅ | Board, committees, impact stats, CTA sections |
+| `/about` | `AboutPage` | ✅ | HeroAbout, ImpactStats, WhatWeDo, Committees, Board, CTA sections — wrapped in `Wrapper` with odd/even alternating backgrounds |
 | `/contact` | `ContactPage` | ✅ | Contact form + social media links |
 | `/crew` | `CrewPage` | ✅ | Crew members via `useCrew` |
 | `/committees` | `CommitteesPage` | ✅ | Static committee cards from `src/data/committeesData.js` |
@@ -39,8 +39,10 @@ There are **four** route groups, each wrapped in its own guard/layout:
 | Route | Component | Status | Notes |
 |-------|-----------|--------|-------|
 | `/login` | `auth/LoginPage` | ✅ | Email + password (`useLogin`). Redirects based on role |
-| `/signup` | `auth/SignupPage` | ✅ | Name, email, phone, age, uni, college, year, password (`useRegister`) |
+| `/registration` | `auth/SignupPage` | ✅ | Name, email, phone, age, uni, college, year, password (`useRegister`) |
 | `/verify` | `auth/VerifyEmailPage` | ✅ | Email + 6-digit OTP (`useVerifyAccount`) |
+| `/forgot-password` | `auth/ForgetPasswordPage` | ✅ | Email input (`useForgetPassword`). Sends reset email |
+| `/reset-password` | `auth/ResetPasswordPage` | ✅ | New password + confirm (`useResetPassword`). Token from email link |
 
 ## User Profile Routes (`ProtectedRoute`)
 
