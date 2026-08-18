@@ -6,6 +6,7 @@ import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 // Images
 import HeroBackground from '../../assets/backgrounds/hero-bg.webp';
 import RocketIcon from '../../assets/icons/rocket.webp'
+import FamilyFallback from '../../assets/images/ieee-family.webp'
 
 export default function Hero() {
 	// Dots that we will be mapping on them to display them randomly in the hero section
@@ -25,8 +26,17 @@ export default function Hero() {
 	];
 
 	const [imgLoaded, setImgLoaded] = useState(false);
+	const [imgFailed, setImgFailed] = useState(false);
 
-	return <section className='relative overflow-hidden bg-cover' style={{ backgroundImage: `url(${HeroBackground})` }}>
+	return <section className='relative overflow-hidden bg-cover'>
+		<img
+			src={HeroBackground}
+			alt="Hero Background Image"
+			aria-hidden="true"
+			className="absolute inset-0 w-full h-full object-cover"
+			fetchPriority="high"
+			loading="eager"
+		/>
 		{/* Overlay */}
 		<div className='absolute inset-0 bg-primary/95 dark:bg-main/98' />
 
@@ -88,13 +98,14 @@ export default function Hero() {
 
 				{/* Right Section - images & visuals */}
 				<div className='relative p-0.5 rounded-3xl'>
-					{!imgLoaded && <ImageSkeleton />}
-					<img
-					  src="https://res.cloudinary.com/xcdyzvmc/image/upload/v1785685478/ieee-family.jpg_ezqw29.jpg"
-						alt="IEEE family"
-						className="w-full rounded-3xl shadow-2xl border-2 border-white/50"
-						onLoad={() => setImgLoaded(true)}
-					 />
+				{!imgLoaded && <ImageSkeleton />}
+				<img
+				  src={imgFailed ? FamilyFallback : "https://res.cloudinary.com/xcdyzvmc/image/upload/v1785685478/ieee-family.jpg_ezqw29.jpg"}
+					alt="IEEE family"
+					className="w-full rounded-3xl shadow-2xl border-2 border-white/50"
+					onLoad={() => setImgLoaded(true)}
+					onError={() => setImgFailed(true)}
+				 />
 					<div className='absolute -bottom-5 -right-3 lg:-bottom-8 lg:-right-5 p-3.5 md:p-4.5 lg:p-6 flex items-center flex-col justify-center bg-main rounded-2xl'>
 						<img src={RocketIcon} alt="Rocket Icon" className='w-6 h-6 md:w-12 md:h-12'/>
 						<span className='mt-3 text-center text-primary text-[11px] md:text-sm'>Innovation Hub</span>

@@ -12,6 +12,7 @@ const textStyles = {
 };
 
 const highlightClasses = {
+  'primary': 'text-primary',
   'primary-light': 'text-primary-light',
   'primary-dark': 'text-primary-dark',
 };
@@ -26,7 +27,7 @@ export default function SectionTitle({
 }) {
 	return (
 		<div className={twMerge("inline-block", className)}>
-			<h2 className="font-black text-4xl sm:text-5xl md:text-7xl leading-tight uppercase">
+			<h2 className="font-black text-4xl md:text-5xl leading-tight uppercase">
 				<span className={textStyles[variant]}>{title}</span>{" "}
 				<span className={highlightClasses[highlightColor]}>{highlight}</span>
 			</h2>

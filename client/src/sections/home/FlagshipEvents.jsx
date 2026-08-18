@@ -4,10 +4,11 @@ import { usePublicEvents } from "../../hooks/usePublicEvents";
 import EventCard from "../../components/guest/events/HomeEventCard";
 import EventDetailModal from "../../components/guest/events/EventDetailModal";
 import FlagshipSkeleton from "../../components/skeletons/FlagshipSkeleton";
+import SectionHeader from "../../components/ui/SectionHeader";
 
 export default function FlagshipEvents() {
   const { featured, loading: featuredLoading } = useFeaturedEvents();
-  const { upcoming, previous, loading: eventsLoading } = usePublicEvents();
+  const { upcoming, previous, loading: eventsLoading } = usePublicEvents({ maxPages: 1 });
   const [selectedEvent, setSelectedEvent] = useState(null);
 
   const loading = featuredLoading || eventsLoading;
@@ -27,14 +28,11 @@ export default function FlagshipEvents() {
     >
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col items-center mb-12 lg:mb-20">
-          <h2 className="text-3xl md:text-4xl lg:text-[72px] font-black uppercase text-center leading-tight">
-            <span className="text-foreground transition-colors duration-300">
-              FLAGSHIP{" "}
-            </span>
-            <span className="text-primary-dark">EVENTS</span>
-          </h2>
-
-          <div className="mt-3 lg:mt-4 rounded-full w-[100px] lg:w-[128px] h-[4px] lg:h-[6px] bg-linear-to-r from-primary-dark to-primary-light" />
+          <SectionHeader
+            title="FLAGSHIP"
+            highlight="EVENTS"
+            highlightColor="primary-dark"
+          />
         </div>
 
         <div className="flex flex-col lg:flex-row items-start justify-center gap-10 lg:gap-8">

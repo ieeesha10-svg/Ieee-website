@@ -1,6 +1,7 @@
 import React from 'react'
 import { Target, Eye } from 'lucide-react'
 import Badge from '../../components/ui/Badge'
+import SectionHeader from '../../components/ui/SectionHeader'
 
 export default function MissionVisionSection() {
   return (
@@ -9,10 +10,12 @@ export default function MissionVisionSection() {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
           <Badge text='Purpose' />
-          <h2 className="font-black uppercase text-4xl lg:text-5xl font-bold mt-4">
-            <span className="text-primary">Our Mission</span>{' '}
-            <span className="text-foreground">& Vision</span>
-          </h2>
+          <SectionHeader
+            title="Our Mission"
+            highlight="& Vision"
+            highlightColor="primary"
+            className="mt-4"
+          />
           <p className="text-muted mt-3 text-lg lg:text-xl">
             What drives us forward and where we&apos;re headed as a community of engineers.
           </p>
