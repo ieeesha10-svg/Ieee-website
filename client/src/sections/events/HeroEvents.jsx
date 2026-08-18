@@ -1,9 +1,9 @@
 import React, {useState} from 'react'
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 import Button from '../../components/ui/Button';
 import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
-import { useAuth } from '../../context/AuthContext';
 
 export default function EventsHero({ featuredEvent, loading }) {
   const { user } = useAuth();
@@ -31,20 +31,23 @@ export default function EventsHero({ featuredEvent, loading }) {
 				</p>
 
 				{/* Call-To-Action Buttons*/}
-				<div className='*:text-lg *:lg:text-xl flex flex-col lg:flex-row gap-4 lg:mx-0 w-[80%] mx-auto justify-center md:justify-start mt-5'>
+				<div className='flex flex-col lg:flex-row gap-4 lg:mx-0 w-[80%] mx-auto justify-center md:justify-start mt-5'>
 					<a href='#upcoming-events'>
-						<button
-							className='px-6 py-3 lg:px-12 lg:py-6 w-full whitespace-nowrap rounded-xl font-light text-primary hover:bg-white/40 hover:text-primary-dark dark:text-white hover:dark:text-white dark:bg-[#2563EB] hover:dark:bg-[#2563EB]/60 transition duration-300'
-							style={{ boxShadow: '0px 0px 12px #00C0E8B2, 0px 10px 15px #0000001A, 0px 4px 6px #0000001A' }}
+						<Button
+							className='bg-primary-linear text-white hover:opacity-85 hover:scale-[1.02] whitespace-nowrap'
 						>
 							Explore Events
-						</button>
+						</Button>
 					</a>
 					{
 						!user && (
 							<Link to='/registration'>
-								<Button className='w-full whitespace-nowrap rounded-xl px-6 py-3 lg:px-12 lg:py-6 bg-linear-to-r from-primary to-primary-light hover:from-primary-light hover:to-primary transition text-white dark:hover:bg-white/10 hover:text-white dark:bg-main dark:from-transparent dark:to-transparent hover:dark:from-transparent hover:dark:to-transparent dark:border dark:border-border' aria-label="Become a Member">
-											Become a Member
+								<Button
+									variant='outline'
+									className='whitespace-nowrap '
+									aria-label="Become a Member"
+								>
+									Become a Member
 								</Button>
 							</Link>
 						)
@@ -83,7 +86,7 @@ export default function EventsHero({ featuredEvent, loading }) {
 							)}
 						</div>
 						<div className='flex flex-col gap-6 py-7 px-5'>
-							<div className='text-[10px] lg:text-sm text-[#2563EB] bg-[#2563EB]/20 dark:text-primary-light dark:bg-primary-light/20 rounded-full w-fit px-3.5 py-2'>
+							<div className='text-[10px] lg:text-sm text-primary bg-primary/20 dark:text-primary-light dark:bg-primary-light/20 rounded-full w-fit px-3.5 py-2'>
 								Upcoming Event
 							</div>
 							<h3 className='font-gotham text-xl lg:text-3xl'>

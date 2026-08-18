@@ -12,7 +12,7 @@ export default function Button({ variant = "default", className, children, ...pr
   return (
     <button
       className={twMerge(
-        "inline-flex items-center justify-center gap-1 font-medium rounded-lg transition-all duration-200",
+        "inline-flex items-center justify-center gap-1 font-medium rounded-lg transition-all duration-300",
         variants[variant],
         className
       )}

@@ -224,8 +224,12 @@
       #0096ff 100%
     );
   }
-  .about-page-bg {
-  	@apply bg-white dark:bg-card;
+
+  .shadow-card {
+    box-shadow:
+      0 2px 6px -1px color-mix(in srgb, var(--color-primary) 4%, transparent),
+      0 4px 14px -4px color-mix(in srgb, var(--color-primary) 3%, transparent),
+      0 8px 28px -6px rgba(0, 0, 0, 0.12);
   }
 
   .dark nav .bg-primary-linear {
