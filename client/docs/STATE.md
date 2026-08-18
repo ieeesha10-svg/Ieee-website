@@ -7,7 +7,7 @@ There is exactly **one** global context: `AuthContext` in `src/context/AuthConte
 Wrapped around the whole app in `src/main.jsx`:
 
 ```jsx
-const { user, setUser, loading, logout } = useAuth();
+const { user, setUser, loading } = useAuth();
 ```
 
 | Value | Type | Description |
@@ -15,7 +15,8 @@ const { user, setUser, loading, logout } = useAuth();
 | `user` | `object \| null` | The logged-in user profile (`{ _id, name, email, role, ... }`) or `null` |
 | `setUser` | `fn` | Manually update the user object (e.g. after login) |
 | `loading` | `boolean` | `true` until the initial auth check finishes |
-| `logout` | `fn` | Posts `/users/logout`, clears user, hard-redirects to `/login` |
+
+> **Note:** Logout is handled by the `useLogout` hook (`src/hooks/auth/useLogout.js`), not the context. It calls `POST /users/logout`, clears the user via `setUser(null)`, and hard-redirects to `/login`.
 
 ## How it loads
 

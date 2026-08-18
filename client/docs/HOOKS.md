@@ -13,13 +13,13 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 
 | Hook | Endpoint(s) | Returns | Notes |
 |------|-------------|---------|-------|
-| `usePublicEvents` | `GET /activities?page=&limit=10` (paginates all), `GET /form` | `{ upcoming, previous, loading, error, refetch }` | Merges activities with linked registration forms; splits into Active/Completed |
+| `usePublicEvents` | `GET /activities?page=&limit=10` (paginates all), `GET /form` | `{ upcoming, previous, loading, error, refetch }` | Options: `{ maxPages }` — limits how many pages to fetch (default: all). Merges activities with linked registration forms; splits into Active/Completed |
 | `usePublicForms` | `GET /form` | `{ forms, isLoading, refetch }` | Only standalone forms (`status === "Active" && !activityID`) |
 | `usePublicForm` (in `usePublicFormById.js`) | `GET /form/:id` | `{ form, isLoading, error }` | |
-| `useSubmitForm` | `POST /submissions` (raw fetch, multipart) | `{ submit, loading, error, alreadySubmitted, ticketCode, reset }` | ⚠️ Duplicate-submission detection relies on an exact message string match ("You already submitted this form") — fragile, see code comment |
+| `useSubmitForm` | `POST /submissions` (raw fetch, multipart) | `{ submit, loading, error, alreadySubmitted, ticketCode, reset, setAlreadySubmitted }` | ⚠️ Duplicate-submission detection relies on an exact message string match ("You already submitted this form") — fragile, see code comment |
 | `useCrew` | `GET /crew` | `{ team, isLoading }` | Maps API crew to card shape |
 | `useDarkMode` | — | `[colorTheme, setTheme]` | localStorage `theme` + `.dark` class on `<html>` |
-| `useJoinMenu` | — | `{ ref, open, toggle, openMenu, close, handleNavigate }` | Dropdown open/close + outside-click + Esc handling |
+| `useJoinMenu(navigate)` | — | `{ ref, open, toggle, openMenu, close, handleNavigate }` | Takes `navigate` from `useNavigate()`. Dropdown open/close + outside-click + Esc handling |
 
 ## Auth Hooks (`src/hooks/auth/`)
 
@@ -30,6 +30,8 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 | `useVerifyAccount` | `POST /users/verify-email` | `{ verifyAccount(email, otp), loading, error }` | |
 | `useLogout` | `POST /users/logout` | `{ logout(e?), loading }` | Navigates to `/`, clears user, toasts |
 | `useDeleteMember` | `DELETE /users/members/:id` | `{ deleteMember(member), deleting }` | Toasts success/failure |
+| `useForgetPassword` | `POST /users/forgot-password` | `{ forgetPassword(email), loading, error }` | Sends reset email |
+| `useResetPassword` | `POST /users/reset-password` | `{ resetPassword(password), loading, error }` | Resets password via token from email link |
 
 ## Dashboard Hooks (`src/hooks/dashboard/`)
 
@@ -73,6 +75,7 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 | `useUpdateForm` | `PUT /form/:id/settings` | `{ updateForm(formId, updates) }` | |
 | `useDeleteForm` | `DELETE /form/:id` | `{ deleteForm(id, title) }` | |
 | `useToggleForm` | `PUT /form/:id/toggle` | `{ toggleFormStatus(id, title, becomingOpen) }` | |
+| `useExportFormSubmissions` | `GET /submissions/export/:formId` (blob) | `{ exporting, exportSubmissions(formId, filename) }` | Downloads submissions as `.xlsx` |
 
 ### Email
 
@@ -93,7 +96,7 @@ Not hooks, but used by them:
 | File | Purpose |
 |------|---------|
 | `api.js` | Axios instance (baseURL from `VITE_API_URL`, `withCredentials: true`) |
-| `eventUtils.js` | `mapActivity`, `buildPayload`, `isHtmlContentEmpty`, `getTypeColor`, date formatters |
+| `eventUtils.js` | `mapActivity`, `buildPayload`, `isHtmlContentEmpty`, `getTypeColor`, `formatDate`, `formatEventDate` |
 | `dateUtils.js` | `toLocalDatetimeString` (datetime-local input value) |
 | `fileUploadUtils.js` | `ACCEPTED_FILE_TYPES`, `ACCEPTED_FILE_EXTENSIONS`, `useFileUpload` helper (10MB limit, PDF/JPG/PNG/GIF/WEBP/DOC/DOCX) |
 | `formatAcademicYear.js` | `formatAcademicYear(year)` |

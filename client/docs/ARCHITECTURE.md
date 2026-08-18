@@ -11,7 +11,7 @@ index.html
        └─ <App/>                  // <BrowserRouter> + all <Routes>
             ├─ <PublicLayout>     // PublicNavbar + Footer + <Outlet/>
             │    ├─ public pages
-            │    ├─ <GuestRoute>  // auth pages (login/signup/verify)
+             │    ├─ <GuestRoute>  // auth pages (login/registration/verify)
             │    └─ <ProtectedRoute> + <UserLayout>  // /profile/*
             ├─ <ProtectedRoute requireAdmin> + <DashboardLayout>  // /dashboard/*
             ├─ <ProtectedRoute roles={SCAN_ACCESS_ROLES}> + <DashboardLayout>  // /dashboard/scan
@@ -27,7 +27,7 @@ index.html
 | Layouts | `src/layouts/` | `PublicLayout` (in `App.jsx`), `AuthLayout`, `UserLayout`, `DashboardLayout` |
 | Pages | `src/pages/` | Route-level components (one per route) |
 | Sections | `src/sections/` | Composable page sections (home/about/events) |
-| Components | `src/components/` | Reusable UI + feature components |
+| Components | `src/components/` | Reusable UI (`ui/`), layout (`layout/`), guest-facing (`guest/`), dashboard (`dashboard/`), skeletons (`skeletons/`) |
 | Hooks | `src/hooks/` | Data-fetching + UI state hooks (wraps `api`) |
 | Context | `src/context/AuthContext.jsx` | Global auth/user state |
 | Data | `src/data/` | Static data + role/permission maps |
@@ -51,7 +51,7 @@ All routes live here. Three reusable guards are defined in the same file:
 
 - `ProtectedRoute({ requireAdmin, roles })` — redirects to `/login` when there is no `user`, when `roles` is provided and the role isn't included, or when `requireAdmin` is true and the role isn't in `ADMIN_ROLES`. Renders `<Outlet/>` when allowed.
 - `GuestRoute` — redirects logged-in users to `/profile`.
-- `PublicLayout` — renders navbar + footer around public pages. The footer is skipped for `/login`, `/signup`, `/verify`, `/dev-team`, and any `/applications*` path.
+- `PublicLayout` — renders navbar + footer around public pages. The footer is skipped for `/login`, `/registration`, `/verify`, `/forgot-password`, `/reset-password`, `/dev-team`, and `/applications`.
 
 Full route table: [PAGES.md](./PAGES.md).
 
@@ -83,7 +83,7 @@ const api = axios.create({
 });
 ```
 
-- Set `VITE_API_URL` in `.env` (see [BUILD_DEPLOY.md](./BUILD_DEPLOY.md)).
+- Set `VITE_API_URL` in `.env` (see [CONTRIBUTING.md](./CONTRIBUTING.md)).
 - `withCredentials: true` is critical — auth relies on cookies, not tokens in localStorage.
 - One exception: `useSubmitForm` posts with raw `fetch` to `/submissions` (multipart for file uploads) but still passes `credentials: "include"`.
 

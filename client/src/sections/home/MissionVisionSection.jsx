@@ -13,7 +13,8 @@ export default function MissionVisionSection() {
           <SectionHeader
             title="Our Mission"
             highlight="& Vision"
-            highlightColor="primary"
+						highlightColor="primary"
+						variant='light'
             className="mt-4"
           />
           <p className="text-muted mt-3 text-lg lg:text-xl">

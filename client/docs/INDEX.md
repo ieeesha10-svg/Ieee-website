@@ -24,30 +24,55 @@ Start here if you are new. Each document covers one topic and links back to the 
 | [STATE.md](./STATE.md) | Global state (`AuthContext`) and how roles drive the UI |
 | [DATA.md](./DATA.md) | Static data: roles/permissions, committees, form & event types, team |
 | [HOOKS.md](./HOOKS.md) | Every custom hook and the API endpoints it calls |
-| [BUILD_DEPLOY.md](./BUILD_DEPLOY.md) | Environment variables, Vite, and Vercel deployment |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | Conventions and how to add pages/components safely |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Setup, conventions, build/deploy, and how to add pages/components safely |
 
 ## Quick Orientation
 
 ```
 client/
-├── index.html            HTML shell (fonts via Google, favicon, meta tags)
-├── vite.config.js        Vite + Tailwind v4 plugin
-├── vercel.json           SPA rewrites (all paths → /)
-├── .env.example          VITE_API_URL template
+├── index.html              HTML shell (fonts, favicon, meta tags)
+├── vite.config.js          Vite + Tailwind v4 plugin
+├── vercel.json             SPA rewrites (all paths → /)
+├── .env.example            VITE_API_URL template
 ├── src/
-│   ├── main.jsx          Entry point — mounts <AuthProvider><App /></AuthProvider>
-│   ├── App.jsx           All routing, layouts, and route guards
-│   ├── index.css         Tailwind + fonts + design tokens (light/dark)
-│   ├── assets/           Fonts (TT Lakes, Gotham), images, icons
-│   ├── components/       Shared + feature UI components
-│   ├── context/          AuthContext (the only global context)
-│   ├── data/             Static data & role permission maps
-│   ├── hooks/            Data-fetching and UI hooks (one per feature area)
-│   ├── layouts/          Public / Dashboard / User page shells
-│   ├── pages/            Route-level components
-│   ├── sections/         Page sections (home, about, events)
-│   └── utils/            api.js (Axios), date/event/file helpers
+│   ├── main.jsx            Entry point — mounts <AuthProvider><App /></AuthProvider>
+│   ├── App.jsx             All routing, layouts, and route guards
+│   ├── index.css           Tailwind + fonts + design tokens (light/dark)
+│   ├── assets/
+│   │   ├── backgrounds/    Hero background images
+│   │   ├── icons/          SVG and webp icons
+│   │   ├── images/         Page/section images, chairperson photos
+│   │   └── fonts/          TT Lakes, Gotham font files
+│   ├── components/
+│   │   ├── dashboard/      Admin dashboard modals, editors, filters
+│   │   ├── guest/
+│   │   │   ├── contact/    ContactForm
+│   │   │   ├── events/     EventCard, EventDetailModal, EventCountdown
+│   │   │   ├── forms/      FormCard, FormSubmissionSuccessModal
+│   │   │   └── home/       PersonCard
+│   │   ├── layout/         Navbar, Footer, Sidebars, Notifications
+│   │   ├── skeletons/      Loading skeletons for every major view
+│   │   └── ui/             Badge, Button, Modal, SectionHeader, SectionIntro, etc.
+│   ├── context/            AuthContext (the only global context)
+│   ├── data/               Static data: roles, committees, team, form/event types
+│   ├── hooks/
+│   │   ├── auth/           Login, register, verify, logout, password reset
+│   │   ├── dashboard/
+│   │   │   ├── events/     CRUD hooks for events
+│   │   │   ├── forms/      CRUD hooks for forms + export
+│   │   │   └── (root)      Members, roles, submissions, email logs
+│   │   └── (root)          Public hooks: events, forms, dark mode, crew
+│   ├── layouts/            AuthLayout, DashboardLayout, UserLayout
+│   ├── pages/              Route-level components
+│   │   ├── auth/           Login, Signup, Verify, ForgotPassword, ResetPassword
+│   │   ├── dashboard/      Admin views: home, events, forms, members, settings
+│   │   └── user-dashboard/ Profile, committees, attended events, password
+│   ├── sections/
+│   │   ├── about/          HeroAbout, ImpactStats, WhatWeDo, Committees, Board, CTA
+│   │   ├── events/         HeroEvents, UpcomingEvents, PreviousEvents
+│   │   └── home/           HeroHome, MissionVision, MembershipBenefits, FlagshipEvents,
+│   │                       Chapters, Chairpersons, JoinUs, LegacyOfWinning
+│   └── utils/              api.js (Axios), date/event/file helpers, roleAccess.js
 ```
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full flow.

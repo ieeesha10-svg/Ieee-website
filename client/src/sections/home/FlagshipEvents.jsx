@@ -28,7 +28,8 @@ export default function FlagshipEvents() {
     >
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col items-center mb-12 lg:mb-20">
-          <SectionHeader
+					<SectionHeader
+						variant="light"
             title="FLAGSHIP"
             highlight="EVENTS"
             highlightColor="primary-dark"

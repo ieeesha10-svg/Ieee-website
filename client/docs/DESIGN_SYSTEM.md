@@ -38,7 +38,6 @@ Usage in JSX: `bg-main`, `text-foreground`, `text-muted`, `bg-card`, `bg-navbar-
 
 - `bg-primary-linear` — horizontal blue gradient (`#0096FF → #33B5FF`)
 - `bg-brand-linear` — diagonal blue gradient (`#0077CC → #0096FF`)
-- `about-page-bg` — white/card background used on the About page
 - `animate-marquee` — 40s linear marquee animation (used on home)
 
 ## Fonts
@@ -92,7 +91,7 @@ Uses `tailwind-merge` (`twMerge`) so `className` overrides work.
 <SectionHeader
   title="text before"
   highlight="highlighted word"
-  highlightColor="primary-light" | "primary-dark"
+  highlightColor="primary" | "primary-light" | "primary-dark"
   variant="dark" | "light"   // text color
   line="gradient" | "white"  // underline style
 />
@@ -129,10 +128,14 @@ Labeled input supporting `text`, `textarea`, and `select` via the `type` prop. O
 | `InputBox` | Unstyled/lighter input wrapper |
 | `RequiredAsterisk` | Marks required labels |
 | `Tooltip` | Hover tooltip |
+| `SectionIntro` | Header wrapper for section titles — `text-center max-w-2xl mx-auto mb-12 flex flex-col items-center`. Used in about sections with `Badge` + `SectionHeader` |
+| `DeleteModal` | Wraps `Modal` for delete confirmation flows |
+| `LoadingPage` | Full-screen loading spinner (used as Suspense fallback in `App.jsx`) |
+| `Pagination` (`components/ui/`) | Page navigation controls |
 | `AdvancedSearch` | Member advanced search (dashboard) |
 | `SpeakerManager` | Manage speakers list on event forms |
 | `Notifications` | ⚠️ Present but commented out in `DashboardLayout` |
-| `events/` | `EventCountdown`, `EventDetailModal`, `EventsListCard`, `HomeEventCard`, `Pagination` |
+| `events/` | `EventCountdown`, `EventDetailModal`, `EventsListCard`, `HomeEventCard` |
 | `forms/` | `FormCard`, `FormSubmissionSuccessModal` |
 | `dashboard/` | `DeleteUserModal`, `EventEditModal`, `EventViewModal`, `FilterGroup`, `MemberFilters` |
 | `skeletons/` | Loading skeletons: `DashNavSkeleton`, `DashHomeSkeleton`, `DashEventsSkeleton`, `DashFormsSkeleton`, `DashSettingsSkeleton`, `FlagshipSkeleton`, `ImageSkeleton` |

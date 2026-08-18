@@ -58,10 +58,16 @@ Validated by `useCreateForm` and rendered by the form builder.
 ## Form Types — `formTypes.js`
 
 ```js
-export const FORM_TYPE_OPTIONS = [ "", "registration", "survey", "feedback", "custom" ];
+export const FORM_TYPE_OPTIONS = [
+  { value: "", label: "Select a form type" },
+  { value: "registration", label: "Registration" },
+  { value: "survey", label: "Survey" },
+  { value: "feedback", label: "Feedback" },
+  { value: "custom", label: "Custom" },
+];
 ```
 
-Plus `FORM_TYPE_BADGE` (label + badge classes + dot color per type) and the type colors.
+Plus `FORM_TYPE_BADGE` (label + badge classes + dot color per type) and color constants: `SURVEY_COLOR`, `FEEDBACK_COLOR`, `CUSTOM_COLOR`.
 
 ## Academic Years — `ordinalMap.js`
 
@@ -77,7 +83,7 @@ Used with `utils/formatAcademicYear.js` (`formatAcademicYear(year)` → "3rd Yea
 
 ## Social Media — `socialMedia.js`
 
-`SOCIAL_MEDIA` — Facebook/Instagram/LinkedIn/TikTok with icon, href, title, subtitle.
+`SOCIAL_MEDIA` — Facebook/Instagram/LinkedIn/TikTok with `Icon` (React component), `href`, `title`, `subtitle`, `linkLabel`.
 `EMAIL_ADDRESS` — `ieee.sha.10@gmail.com` (public contact).
 
 ## Team Pages — `chairpersons.js` & `devTeamData.js`
@@ -86,3 +92,27 @@ Used with `utils/formatAcademicYear.js` (`formatAcademicYear(year)` → "3rd Yea
 - `devTeamData.js` — `stats` + `tracks` for the `/dev-team` page (head + UI/UX + frontend + backend teams) with local images + links.
 
 > Note: these are **static imports** of local images in `src/assets/images/`. The `/crew` page is different — it fetches live crew from `GET /crew` via `useCrew`.
+
+## Sponsors — `sponsors.js`
+
+`SPONSORS` array of 14 sponsor objects with `src` (local image import from `src/assets/images/sponsers/`) and `alt` (company name). Used by the `Sponsors` section on the home page.
+
+## College Options — `collegeOptions.js`
+
+```js
+export const COLLEGE_OPTIONS = [
+  "Engineering",
+  "Computer Science",
+  "Biomedical Engineering",
+  "Communication & Computer Engineering",
+  "Electrical Power & Machinery",
+  "Architectural Engineering",
+  "Civil Engineering",
+  "BIS",
+  "Management Information Systems (MIS)",
+  "Mass Communication",
+];
+export const OTHER_COLLEGE = "__other__";
+```
+
+Used in signup and form pages for the college dropdown. `OTHER_COLLEGE` is a sentinel value for free-text input when the user's college isn't listed.

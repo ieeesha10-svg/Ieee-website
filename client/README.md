@@ -20,14 +20,19 @@ npm run lint
 
 ```
 src/
-├── assets/          fonts, icons, images
-├── components/      shared UI (Button, Navbar, Sidebar, etc.)
-├── context/         React Context providers (AuthContext)
-├── hooks/           custom hooks (useDarkMode)
-├── layouts/         page wrappers (AuthLayout)
-├── pages/           route-level components
-├── sections/        page sections (home/About, home/Hero, etc.)
-├── utils/           api.js (Axios instance)
+├── assets/          backgrounds, fonts, icons, images
+├── components/
+│   ├── dashboard/   admin modals, editors, filters
+│   ├── guest/       contact, events, forms, home components
+│   ├── layout/      navbar, footer, sidebars
+│   ├── skeletons/   loading skeletons for every view
+│   └── ui/          Badge, Button, Modal, SectionHeader, SectionIntro, etc.
+├── context/         AuthContext (the only global context)
+├── hooks/           auth, dashboard (events/forms), public hooks
+├── layouts/         AuthLayout, DashboardLayout, UserLayout
+├── pages/           route-level components (auth/, dashboard/, user-dashboard/)
+├── sections/        page sections (about/, events/, home/)
+├── utils/           api.js, date/event/file helpers, roleAccess.js
 ├── App.jsx          routing & layout logic
 ├── index.css        Tailwind + fonts + design tokens
 └── main.jsx         entry point
@@ -55,5 +60,4 @@ Full developer documentation lives in [`docs/`](./docs/). Start at **[`docs/INDE
 | [`STATE.md`](./docs/STATE.md) | Global state (AuthContext) |
 | [`DATA.md`](./docs/DATA.md) | Static data & role permissions |
 | [`HOOKS.md`](./docs/HOOKS.md) | All custom hooks and API endpoints |
-| [`BUILD_DEPLOY.md`](./docs/BUILD_DEPLOY.md) | Env vars, Vite, Vercel deployment |
-| [`CONTRIBUTING.md`](./docs/CONTRIBUTING.md) | Conventions and how to add pages/components |
+| [`CONTRIBUTING.md`](./docs/CONTRIBUTING.md) | Setup, conventions, build/deploy, how to add pages/components |
