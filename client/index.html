@@ -9,10 +9,26 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Barlow:wght@100;200;300;400;500;600;700;800;900&display=swap" as="style" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@100;200;300;400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'" />
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@100;200;300;400;500;600;700;800;900&display=swap" /></noscript>
-    <meta name="description" content="Official website of the IEEE El Shorouk Academy Student Branch. Explore our chapters, events, and join a community of innovators advancing technology." />
+    <link
+      rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Barlow:wght@100;200;300;400;500;600;700;800;900&display=swap"
+      as="style"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow:wght@100;200;300;400;500;600;700;800;900&display=swap"
+      media="print"
+      onload="this.media = 'all'"
+    />
+    <noscript
+      ><link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Barlow:wght@100;200;300;400;500;600;700;800;900&display=swap"
+    /></noscript>
+    <meta
+      name="description"
+      content="Official website of the IEEE El Shorouk Academy Student Branch. Explore our chapters, events, and join a community of innovators advancing technology."
+    />
     <script>
       (function () {
         try {
@@ -46,8 +62,13 @@
         position: fixed;
         inset: 0;
         z-index: 9999;
-        transition: opacity 0.4s ease, background-color 0.3s;
-        font-family: system-ui, -apple-system, sans-serif;
+        transition:
+          opacity 0.4s ease,
+          background-color 0.3s;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
       }
       #initial-loader.loader-hidden {
         opacity: 0;
@@ -134,16 +155,29 @@
       }
 
       @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
       }
       @keyframes spin-reverse {
-        from { transform: rotate(360deg); }
-        to { transform: rotate(0deg); }
+        from {
+          transform: rotate(360deg);
+        }
+        to {
+          transform: rotate(0deg);
+        }
       }
       @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: .5; }
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
       }
 
       .loader-quote {
@@ -171,7 +205,7 @@
           <div class="ring-inner"></div>
         </div>
         <div class="loader-text-container">
-          <h2 class="loader-title">IEEE El-Sherouk Academy</h2>
+          <h2 class="loader-title">IEEE El-Shorouk Academy</h2>
           <p class="loader-subtitle">Loading</p>
           <p class="loader-quote" id="random-quote"></p>
         </div>
@@ -181,9 +215,10 @@
     <script>
       const quotes = [
         "Hold on, the server is taking a sip of coffee... ☕",
-        "Compiling some greatness... just a sec! ✨"
+        "Compiling some greatness... just a sec! ✨",
       ];
-      document.getElementById('random-quote').innerText = quotes[Math.floor(Math.random() * quotes.length)];
+      document.getElementById("random-quote").innerText =
+        quotes[Math.floor(Math.random() * quotes.length)];
     </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
