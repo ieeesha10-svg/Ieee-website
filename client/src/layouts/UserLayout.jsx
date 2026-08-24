@@ -4,44 +4,37 @@ import { SidebarSection, NavItem } from "../components/layout/UserSidebar";
 import ProfileBadge from "../components/layout/ProfileBadge";
 import api from "../utils/api";
 import { formatAcademicYear } from "../utils/formatAcademicYear";
-import {
-  User,
-  Lock,
-  Users,
-  Bookmark,
-  Loader2,
-  AlertTriangle,
-  RefreshCcw,
-  WifiOff,
-} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { User, Lock, Users, Bookmark, WifiOff } from "lucide-react";
 
 const getYearText = (year) => (year ? formatAcademicYear(year) : "");
 
+const buildUserData = (user) => ({
+  _id: user?._id || "",
+  fullName: user?.name || "",
+  email: user?.email || "",
+  phone: user?.phone || "",
+  role: user?.role || "member",
+  age: user?.age || "",
+  university: user?.university || "",
+  college: user?.college || "",
+  committee: user?.committee || "",
+  aboutMe: user?.optionalData?.aboutMe || "",
+  yearOfStudy: user?.yearOfStudy ?? "",
+  position: user?.position || "student",
+  organization: user?.organization || "",
+  roleInOrganization: user?.roleInOrganization || "",
+  yearsOfExperience: user?.yearsOfExperience || "",
+  reasonForRegistration: user?.reasonForRegistration || "",
+  createdAt: user?.createdAt || "",
+});
+
 export default function UserLayout() {
   const location = useLocation();
+  const { user } = useAuth();
 
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  const [isLoading, setIsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
-  const [userData, setUserData] = useState({
-    _id: "",
-    fullName: "",
-    email: "",
-    phone: "",
-    role: "",
-    age: "",
-    university: "",
-    college: "",
-    committee: "",
-    aboutMe: "",
-    yearOfStudy: "",
-    position: "",
-    organization: "",
-    roleInOrganization: "",
-    yearsOfExperience: "",
-    reasonForRegistration: "",
-    createdAt: "",
-  });
+  const [userData, setUserData] = useState(() => buildUserData(user));
 
   // Online/Offline detection
   useEffect(() => {
@@ -55,75 +48,9 @@ export default function UserLayout() {
     };
   }, []);
 
-  // Fetch user data
-  const fetchUserData = async () => {
-    setIsLoading(true);
-    setFetchError(null);
-    try {
-      const response = await api.get("/users/profile");
-      const user = response.data?.user || response.data;
-      setUserData({
-        _id: user._id || "",
-        fullName: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        role: user.role || "member",
-        age: user.age || "",
-        university: user.university || "",
-        college: user.college || "",
-        committee: user.committee || "",
-        aboutMe: user.optionalData?.aboutMe || "",
-        yearOfStudy: user.yearOfStudy ?? "",
-        position: user.position || "student",
-        organization: user.organization || "",
-        roleInOrganization: user.roleInOrganization || "",
-        yearsOfExperience: user.yearsOfExperience || "",
-        reasonForRegistration: user.reasonForRegistration || "",
-        createdAt: user.createdAt || "",
-      });
-    } catch {
-      setFetchError("Failed to load profile data.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-main flex flex-col items-center justify-center gap-4 text-foreground">
-        <Loader2 className="animate-spin text-primary w-10 h-10" />
-        <p className="font-lakes font-medium text-muted">
-          Loading your profile...
-        </p>
-      </div>
-    );
-  }
-
-  // Error state
-  if (fetchError) {
-    return (
-      <div className="min-h-screen bg-main flex flex-col items-center justify-center gap-4 text-foreground p-4">
-        <AlertTriangle className="text-red-500 w-16 h-16 mb-2" />
-        <h2 className="font-gotham text-2xl font-bold">
-          Oops! Something went wrong
-        </h2>
-        <p className="font-lakes text-muted text-center max-w-md">
-          {fetchError}
-        </p>
-        <button
-          onClick={fetchUserData}
-          className="mt-4 flex items-center gap-2 bg-primary-linear text-white px-6 py-2.5 rounded-lg font-lakes hover:opacity-90 transition-opacity"
-        >
-          <RefreshCcw size={18} /> Try Again
-        </button>
-      </div>
-    );
-  }
+  // The profile is already fetched once by AuthContext (checkAuth), and this
+  // layout is only reachable behind ProtectedRoute, so the data is available
+  // here without a second /users/profile request.
 
   return (
     <div className="min-h-screen bg-main text-foreground transition-colors duration-300">
