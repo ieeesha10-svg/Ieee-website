@@ -18,18 +18,20 @@ export const tracks = [
   {
     id: "track-01",
     number: "01",
-    title: "Non-Technical Team",
+    title: "Head & Non-Technical",
     members: [
       {
         id: 1,
         number: "01",
         name: "Ali Ahmed",
-        role: "Head Of Website Team | Full Stack Engineer",
+        role: "Head Of Website Team | season x technical vice chair | Full Stack Engineer",
         dept: "IEEE SHA",
         image: aliImg,
         links: {
           linkedin: "https://www.linkedin.com/in/ali-ahmed-3621a8247/",
           github: "https://github.com/ALi-ahmed-e",
+          portfolio: "https://aliahmed-pied.vercel.app/",
+
         },
       },
       {

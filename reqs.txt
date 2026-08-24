@@ -1,0 +1,52 @@
+    ===================================
+                               IEEE SHA
+                               ===================================
+
+ UI/UX
+- Dark Mode: Design Light & Dark versions for every page .
+- Mobile-First: Desktop AND Mobile frame for every design.
+- Components: Finalize Buttons, Form Inputs, and Navbars before full pages.
+
+
+
+
+ FRONTEND (React/Vite/Tailwind)
+*Tech Requirements
+- Form Validation: React Hook Form + Yup (strict email/ID rules)
+- Auth: Axios Interceptors for JWT handling
+
+*Pages (V1 Launch)
+- Home Page
+- Profile Page
+- Events Page (List view)
+- Login Page (with validation)
+- Signup Page (with validation)
+- Verify Email Page
+
+
+*Admin Dashboard (Board & XCom Only)
+after w- Dashboard Overview (Stats)
+- Bulk Mailer (Rich text editor with complex filters)****
+
+after w- User Management (Data table with search/filter)
+- Forms Manager/Creator (Dynamic fields) ****
+- QR Scanner (Mobile camera access)
+
+*Remaining for V1
+- Single Event Details Page (Params: /events/:id)
+- Custom 404 Error Page (Broken robot illustration?)
+- Contact Us & FAQ
+
+ BACKEND (Node/Express/MongoDB)
+-dashboard states (inhance)
+
+-our crew (editable ofc)
+-about us
+
+
+ VERSION 2 (Future Scope)
+- Our Crew / Board Page (Dynamic fetching from DB)
+- About Us / Committees Page
+- Dynamic Recruitment Form (For annual hiring)
+- PES Chapter integration (Filter events by chapter)
+- Blog / Tech Articles (Markdown support?)
