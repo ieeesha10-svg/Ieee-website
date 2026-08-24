@@ -8,6 +8,10 @@ const Submission = require("../models/SubmissionModel.js");
 const Form = require("../models/FormModel.js")
 const { catchAsync } = require("../middleware/errorsMiddleware.js");
 const { normalizeCollege } = require("../utils/collegeNormalize.js");
+const { protect, authorize } = require("../middleware/authMiddleware.js");
+
+// Protect all routes below this line
+dashboardRouter.use(protect, authorize("xcom", "board")); 
 
 // GET /api/stats/dashboard
 dashboardRouter.get(
