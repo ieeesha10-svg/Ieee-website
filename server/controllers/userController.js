@@ -942,7 +942,11 @@ const getEventsForMember = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError("User not found", 400));
   }
-  const submissions = await Submission.find({ registrantEmail: user.email });
+  const submissions = await Submission.find({ registrantEmail: user.email })
+    .populate({
+      path: "formId",
+      populate: { path: "activityID", model: "Activity" },
+    });
   if (!submissions || submissions.length === 0) {
     return next(new AppError("No events found for this member", 400));
   }
