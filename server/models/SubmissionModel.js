@@ -8,11 +8,11 @@ const submissionSchema = new mongoose.Schema({
     ref: "Form",
     required: true,
   },
-  // Link to the User (Enforced now, so we can track history)
+  // Link to the User (set when the submitter is logged in; guests leave it empty)
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true
+    required: false, // Guests (form.requiresLogin = false) submit without an account
   },
 
   // Backup email (Useful for searching without joining tables)
@@ -44,10 +44,12 @@ const submissionSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // PREVENT DUPLICATES:
-// This ensures a user can only submit the same form ONCE.
+// This ensures an account can only submit the same form ONCE.
+// Sparse lets multiple GUEST submissions coexist; guests are de-duplicated by
+// email inside the submit controller instead of by the unique index.
 submissionSchema.index(
   { formId: 1, userId: 1 },
-  { unique: true }
+  { unique: true, sparse: true }
 );
 
 

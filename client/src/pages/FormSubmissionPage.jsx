@@ -57,6 +57,27 @@ export default function FormSubmissionPage() {
 
   const { handleFileSelect, handleFileDrop, handleFileRemove } = useFileUpload(setFiles, setErrors);
 
+  // Forms are open to everyone. Only a form that opts in to `requiresLogin` needs an account.
+  if (form?.requiresLogin && !user) {
+    return (
+      <section className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full text-center bg-card-alt border border-border rounded-xl p-8">
+          <h1 className="text-xl font-bold text-foreground mb-2">Login required</h1>
+          <p className="text-sm text-muted leading-relaxed mb-6">
+            This form requires an account before you can submit your response.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/login")}
+            className="w-full py-3 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors duration-200"
+          >
+            Go to Login
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   const validate = () => {
     if (!form?.fields) return {};
     const errs = {};

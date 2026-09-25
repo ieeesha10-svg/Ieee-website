@@ -32,5 +32,21 @@ const authorize = (...roles) => {
   };
 };
 
+// Like `protect`, but lets guests through — sets `req.user` only when a valid JWT cookie is present.
+const optionalProtect = async (req, res, next) => {
+  const token = req.cookies.jwt;
 
-module.exports = { protect, authorize };
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.id).select('-password');
+    } catch (error) {
+      req.user = undefined;
+    }
+  }
+
+  next();
+};
+
+
+module.exports = { protect, authorize, optionalProtect };
