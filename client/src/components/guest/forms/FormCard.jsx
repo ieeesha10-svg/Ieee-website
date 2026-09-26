@@ -55,10 +55,7 @@ export default function FormCard({ form }) {
 
   const handleClick = () => {
     if (!hasLink) return;
-    if (!user) {
-      navigate("/login");
-      return;
-    }
+    // Forms are open to everyone — logged in or not.
     if (isSubmitted) {
       toast("You have already submitted this form", { icon: "ℹ️" });
       return;

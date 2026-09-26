@@ -10,7 +10,27 @@ const { getEmailFooter } = require('./emailTemplates');
 const brevoClient = new BrevoClient({ apiKey: process.env.BREVO_API_KEY });
 
 const SENDER_NAME = 'IEEE SHA Student Branch';
-const SENDER_EMAIL = 'noreply@ieeesha.org';
+const SENDER_EMAIL = 'noreply@ieeesha.org'
+
+// One-time, non-fatal check that the configured sender is actually usable.
+let senderChecked = false;
+const warnIfSenderInvalid = () => {
+  if (senderChecked) return;
+  senderChecked = true;
+  brevoClient.senders
+    .getSenders()
+    .then(({ senders }) => {
+      const active = (senders || []).filter(s => s.active).map(s => s.email);
+      if (!active.includes(SENDER_EMAIL)) {
+        console.warn(
+          `[sendEmail] WARNING: sender "${SENDER_EMAIL}" is not an active Brevo sender — ` +
+          `every email will be rejected at the relay. Active senders: ${active.join(', ') || 'none'}. ` +
+          `Set BREVO_SENDER_EMAIL in server/.env.`
+        );
+      }
+    })
+    .catch(() => { /* never let a network blip break sending */ });
+};
 // ============================================================
 
 // // ===================== PROVIDER: RESEND (disabled) =====================
@@ -60,17 +80,20 @@ const sendEmail = async ({ to, subject, html, attachments }) => {
   //
   // return data;
 
-  const { data } = await brevoClient.transactionalEmails.sendTransacEmail({
+  // NOTE: @getbrevo/brevo v6 resolves with the response payload itself
+  // ({ messageId }), NOT `{ data }` — destructuring `data` yielded undefined.
+  const response = await brevoClient.transactionalEmails.sendTransacEmail({
     htmlContent: html,
     sender: { name: SENDER_NAME, email: SENDER_EMAIL },
     subject,
     to: [{ email: to }],
+    // Brevo's field is `attachment` (singular); `attachments` is ignored by the API.
     ...(attachments && attachments.length > 0
-      ? { attachments: attachments.map(att => ({ name: att.filename, content: att.content.toString('base64') })) }
+      ? { attachment: attachments.map(att => ({ name: att.filename, content: att.content.toString('base64') })) }
       : {})
   });
 
-  return data;
+  return response;
 };
 
 // Render a stored template + footer and send it dynamically
@@ -112,13 +135,16 @@ const sendBulkEmails = async ({
 }) => {
   const mailAttachments = await buildAttachments(attachments);
   const mailSubject = subject || 'Notification';
+  // Shared footer, built once and appended to every personalized body
+  const footer = getEmailFooter();
 
   for (const recipient of recipients) {
     const { email, data = {} } = recipient;
-    const html = personalizeMessage(messageBody, data);
+    const html = personalizeMessage(messageBody, data) + footer;
 
     try {
-      await sendEmail({ to: email, subject: mailSubject, html, attachments: mailAttachments });
+      const result = await sendEmail({ to: email, subject: mailSubject, html, attachments: mailAttachments });
+      // console.log(`Email sent to ${email}:`, result);
       await EmailLog.create({ sendBy, email, subject: mailSubject, status: 'Done', messageBody: html });
       if (onResult) onResult({ email, status: 'Done' });
     } catch (err) {

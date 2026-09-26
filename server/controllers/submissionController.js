@@ -14,23 +14,17 @@ const uploadToCloudinary = require('../utils/uploadToCloudinary');
 
 // @desc    Submit a form & Get Ticket
 // @route   POST /api/submissions
-// @access  Private
+// @access  Public — logged-in users submit with their account; guests submit if form.requiresLogin is false
+
 const submitForm = catchAsync(async (req, res) => {
-  const userid = req.user._id;
-  const user = await User.findById(userid);
   const { formId } = req.body;
   let answers = req.body.answers;
-  
-  if (!userid || !user) {
-    throw new AppError('User not found', 404);
-  }
-  
+
   if (!formId || !answers) {
     throw new AppError('Form ID and answers are required', 400);
   }
-  // 1. extract answers from the request body
-  // console.log(JSON.parse(answers));
 
+  // 1. extract answers from the request body
   if (typeof answers === 'string') {
     try {
       answers = JSON.parse(answers);
@@ -38,6 +32,13 @@ const submitForm = catchAsync(async (req, res) => {
       throw new AppError('Invalid answers format, must be valid JSON', 400);
     }
   }
+
+  // POST /submissions is public — `req.user` is only set by `optionalProtect`
+  // when a valid session cookie was sent (i.e. the submitter has an account).
+  const userid = req.user?._id;
+  const emailKey = Object.keys(answers || {})
+    .find((key) => /email/i.test(key));
+  const email = emailKey ? answers[emailKey] : undefined;
 
   // 2. Validate Form
   const form = await Form.findById(formId);
@@ -47,6 +48,11 @@ const submitForm = catchAsync(async (req, res) => {
   if (form.status !== "Active" || new Date(form.endDate).setHours(23,59,59,999) < new Date()) {
     throw new AppError('This form is currently closed', 400);
   }
+
+  // Forms that opt in to `requiresLogin` still need an account.
+  if (form.requiresLogin && !userid) {
+    throw new AppError('Please log in to submit this form', 401);
+  }
   
   // 4. Check max submissions
   const submissionsCount = await Submission.countDocuments({ formId });
@@ -55,10 +61,17 @@ const submitForm = catchAsync(async (req, res) => {
   }
   
   // 5. Prevent duplicate submissions
-  const existingSubmission = await Submission.findOne({
-    formId,
-    userId: userid
-  });
+  //    - Logged-in users are tracked by userId.
+  //    - Guests fall back to their email answer, so an email field is required.
+  let existingSubmission;
+  if (userid) {
+    existingSubmission = await Submission.findOne({ formId, userId: userid });
+  } else {
+    if (!email) {
+      throw new AppError('An email address is required to submit this form', 400);
+    }
+    existingSubmission = await Submission.findOne({ formId, 'answers.email': email });
+  }
   
   if (existingSubmission) {
     throw new AppError('You already submitted this form', 400);
@@ -67,8 +80,9 @@ const submitForm = catchAsync(async (req, res) => {
   // 6. upload files to cloudinary
   if (req.files && req.files.length > 0) {
     for (const file of req.files) {
+      // random string for unique file name
       const folderPath = `submissions/${formId}`;
-      const fileUrl = await uploadToCloudinary(file.buffer, folderPath, file.mimetype, file.originalname);
+      const fileUrl = await uploadToCloudinary(file.buffer, folderPath, file.mimetype, file.originalname + `-${nanoid(6)}`);
       
       answers[file.fieldname] = fileUrl;
     }
@@ -79,15 +93,15 @@ const submitForm = catchAsync(async (req, res) => {
   let qrImage;
   
   if (form.type === "registration") {
-    ticketCode = `${formId}-${userid}-${nanoid(6)}`;
+    ticketCode = `${formId}-${userid || 'guest'}-${nanoid(6)}`;
     qrImage = await QRCode.toDataURL(ticketCode);
   }
   
-  // 8. Save Submission
+  // 8. Save Submission (guests have no userId — the sparse unique index skips them)
   const newSubmission = new Submission({
     formId,
-    userId: userid,
-    registrantEmail: req.user.email,
+    ...(userid && { userId: userid }),
+    registrantEmail: req.user?.email || email,
     answers,
     // use spread operator to add ticketCode and qrImage to the newSubmission object if form type is registration
     ...(ticketCode && { ticketCode }),
@@ -109,8 +123,8 @@ const submitForm = catchAsync(async (req, res) => {
   // 9. Send Email (Async)
   if (form.type === "registration" && ticketCode && qrImage) {
     sendTicketEmail({
-      email: req.user.email,
-      userName: req.user.name,
+      email: req.user?.email || email,
+      userName: req.user?.name || answers.full_name || answers.name || 'Guest',
       ticketCode,
       eventTitle: form.title
     }).catch(err => console.error("Email Error:", err));

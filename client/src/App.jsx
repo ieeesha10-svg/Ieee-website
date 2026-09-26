@@ -144,8 +144,9 @@ function App() {
           <Route path="/committees" element={<CommitteesPage />} />
           <Route path="/dev-team" element={<DevTeam />} />
           <Route path="/applications" element={<ApplicationsPage />} />
+          {/* Public — visitors can open a form even without an account (backend honors form.requiresLogin) */}
+          <Route path="/applications/:id" element={<FormSubmissionPage />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/applications/:id" element={<FormSubmissionPage />} />
             <Route path="/profile" element={<UserLayout />}>
               <Route index element={<UserProfile />} />
               <Route path="password" element={<ChangePassword />} />

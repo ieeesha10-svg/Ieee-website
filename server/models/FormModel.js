@@ -77,7 +77,11 @@ const formSchema = new mongoose.Schema({
     }
   ]
   */
-  type : String,
+  type : {
+    type: String,
+    enum: ["registration", "feedback", "survey", "other"],
+    default: "other"
+  },
   startDate: {
     type: Date,
     required: true
@@ -90,7 +94,11 @@ const formSchema = new mongoose.Schema({
     type: Number,
     default: Number.MAX_SAFE_INTEGER // <-- No limit by default (infinite)
   },
-  requiresLogin: { type: Boolean, default: false }, // <--- The feature you asked for: If true, users must be logged in to submit the form. If false, anyone can submit.
+  sendEmailOnSubmission: {
+    type: Boolean,
+    default: false
+  },
+  requiresLogin: { type: Boolean, default: false }, // Form-builder setting: when true, only logged-in users can submit; when false (default), anyone can submit.
 }, { timestamps: true });
 
 

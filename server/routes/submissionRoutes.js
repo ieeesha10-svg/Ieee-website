@@ -12,10 +12,15 @@ const {
 } = require('../controllers/submissionController');
 const upload = require('../middleware/uploadMiddleware');
 
-const { protect, authorize } = require('../middleware/authMiddleware');
-submissionRouter.use(protect); // All routes require authentication
-// 1. Submit (Any logged-in Student/Member)
-submissionRouter.post('/', upload.any(), submitForm);
+const { protect, authorize, optionalProtect } = require('../middleware/authMiddleware');
+
+// 1. Submit — public route. `optionalProtect` attaches `req.user` when a valid
+//    session cookie exists (for member submissions) but lets guests through.
+//    The controller enforces the form's `requiresLogin` setting.
+submissionRouter.post('/', optionalProtect, upload.any(), submitForm);
+
+// Everything below requires authentication.
+submissionRouter.use(protect);
 
 // 2. Scan (all roles except user)
 submissionRouter.post('/scan', authorize('xcom', 'scanner', 'board', 'member'), scanTicket);
