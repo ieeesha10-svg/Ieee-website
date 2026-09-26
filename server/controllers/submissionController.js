@@ -3,10 +3,29 @@ const Form = require('../models/FormModel');
 const User = require('../models/UserModel');
 const QRCode = require('qrcode');
 const ExcelJS = require('exceljs');
-const {sendTicketEmail}=require('../utils/sendEmail');
+const { sendTicketEmail, sendSubmissionReceivedEmail } = require('../utils/sendEmail');
 const { nanoid } = require('nanoid');
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 const uploadToCloudinary = require('../utils/uploadToCloudinary');
+const validator = require('validator');
+
+// Answers are keyed by `field.id`, which FormModel derives from the field label
+// (lowercased, spaces -> underscores). "Email Address" therefore becomes
+// "email_address", never "email" — so the key has to be discovered, not assumed.
+const EMAIL_KEY_RE = /e[-_]?mail/i;
+const NAME_KEY_RE = /^(full[_\-\s]?)?name$/i;
+
+// Locate the form field that collects the submitter's name, if the form has one.
+const findNameField = (form) =>
+  (form.fields || []).find(
+    (f) => NAME_KEY_RE.test(f.id) || NAME_KEY_RE.test(String(f.label || '').trim())
+  );
+
+// Locate the form field that collects the submitter's email, if the form has one.
+const findEmailField = (form) =>
+  (form.fields || []).find(
+    (f) => EMAIL_KEY_RE.test(f.id) || EMAIL_KEY_RE.test(String(f.label || ''))
+  );
 
 // ==========================================
 // 1. STUDENT ACTIONS
@@ -14,7 +33,7 @@ const uploadToCloudinary = require('../utils/uploadToCloudinary');
 
 // @desc    Submit a form & Get Ticket
 // @route   POST /api/submissions
-// @access  Public — logged-in users submit with their account; guests submit if form.requiresLogin is false
+// @access  Public — anyone can submit; only forms with `requiresLogin` need an account
 
 const submitForm = catchAsync(async (req, res) => {
   const { formId } = req.body;
@@ -33,17 +52,19 @@ const submitForm = catchAsync(async (req, res) => {
     }
   }
 
+  if (typeof answers !== 'object' || answers === null || Array.isArray(answers)) {
+    throw new AppError('Answers must be a JSON object', 400);
+  }
+
   // POST /submissions is public — `req.user` is only set by `optionalProtect`
   // when a valid session cookie was sent (i.e. the submitter has an account).
   const userid = req.user?._id;
-  const emailKey = Object.keys(answers || {})
-    .find((key) => /email/i.test(key));
-  const email = emailKey ? answers[emailKey] : undefined;
+  const userName = req.user?.name;
 
   // 2. Validate Form
   const form = await Form.findById(formId);
   if (!form) throw new AppError('Form not found', 404);
-  
+
   // 3. Check Expiry
   if (form.status !== "Active" || new Date(form.endDate).setHours(23,59,59,999) < new Date()) {
     throw new AppError('This form is currently closed', 400);
@@ -53,55 +74,116 @@ const submitForm = catchAsync(async (req, res) => {
   if (form.requiresLogin && !userid) {
     throw new AppError('Please log in to submit this form', 401);
   }
-  
-  // 4. Check max submissions
+
+  // 4. Resolve the name + email answers.
+  //    Prefer the form's own declared fields; fall back to scanning the answer
+  //    keys so forms whose builder labels are unusual still work.
+  const nameField = findNameField(form);
+  const emailField = findEmailField(form);
+
+  const nameKey =
+    (nameField && answers[nameField.id]) ? nameField.id
+      : Object.keys(answers).find((k) => NAME_KEY_RE.test(k) && answers[k]);
+  const emailKey =
+    (emailField && answers[emailField.id]) ? emailField.id
+      : Object.keys(answers).find((k) => EMAIL_KEY_RE.test(k) && answers[k]);
+
+  const submittedName = nameKey ? String(answers[nameKey] ?? '').trim() : '';
+  const submittedEmailRaw = emailKey ? String(answers[emailKey] ?? '').trim() : '';
+
+  // Store the normalised values, not the raw padding, so exports and the admin
+  // submissions table show clean data.
+  if (nameKey) answers[nameKey] = submittedName;
+  if (!userid && emailKey) answers[emailKey] = submittedEmailRaw;
+
+  // 5. Full Name is mandatory for everyone, signed in or not. `SubmissionModel`'s
+  //    pre-save hook enforces every `required: true` field anyway, so exempting
+  //    members here would only produce a confusing second error later.
+  if (!submittedName) {
+    throw new AppError(
+      nameField?.label ? `${nameField.label} is required` : 'Full Name is required',
+      400,
+      'NAME_REQUIRED'
+    );
+  }
+
+  // 6. A valid email is mandatory — it is where every follow-up gets sent.
+  //    For a logged-in member the account email is authoritative.
+  const submittedEmail = (userid ? req.user.email : submittedEmailRaw).toLowerCase();
+
+  if (!submittedEmail) {
+    throw new AppError(
+      emailField?.label ? `${emailField.label} is required` : 'An email address is required',
+      400,
+      'EMAIL_REQUIRED'
+    );
+  }
+
+  if (!validator.isEmail(submittedEmail)) {
+    throw new AppError('Please enter a valid email address', 400, 'EMAIL_INVALID');
+  }
+
+  // 7. One account per email address. A guest whose email already has an
+  //    account must log in instead of submitting a second, unlinked identity.
+  //    Never applied to the signed-in user — their own account matches by design.
+  if (!userid) {
+    const accountOwner = await User.findOne({ email: submittedEmail }).select('_id').lean();
+    if (accountOwner) {
+      throw new AppError(
+        'An account is already associated with this email address. Please log in with it to continue.',
+        409,
+        'EMAIL_HAS_ACCOUNT'
+      );
+    }
+  }
+
+  // 8. Check max submissions
   const submissionsCount = await Submission.countDocuments({ formId });
   if (submissionsCount >= form.maxSubmissions) {
     throw new AppError('Maximum submissions reached', 400);
   }
-  
-  // 5. Prevent duplicate submissions
+
+  // 9. Prevent duplicate submissions
   //    - Logged-in users are tracked by userId.
   //    - Guests fall back to their email answer, so an email field is required.
   let existingSubmission;
   if (userid) {
     existingSubmission = await Submission.findOne({ formId, userId: userid });
   } else {
-    if (!email) {
-      throw new AppError('An email address is required to submit this form', 400);
-    }
-    existingSubmission = await Submission.findOne({ formId, 'answers.email': email });
-  }
-  
-  if (existingSubmission) {
-    throw new AppError('You already submitted this form', 400);
+    existingSubmission = await Submission.findOne({ formId, registrantEmail: submittedEmail });
   }
 
-  // 6. upload files to cloudinary
+  if (existingSubmission) {
+    throw new AppError('You already submitted this form', 400, 'ALREADY_SUBMITTED');
+  }
+
+  // 10. upload files to cloudinary
   if (req.files && req.files.length > 0) {
     for (const file of req.files) {
       // random string for unique file name
       const folderPath = `submissions/${formId}`;
       const fileUrl = await uploadToCloudinary(file.buffer, folderPath, file.mimetype, file.originalname + `-${nanoid(6)}`);
-      
+
       answers[file.fieldname] = fileUrl;
     }
   }
 
-  // 7. Generate Ticket (ONLY if it's a registration form)
+  // 11. Generate Ticket (ONLY if it's a registration form)
+  //     The ticket is still stored because the admin QR scanner
+  //     (POST /api/submissions/scan) depends on it for attendance.
   let ticketCode;
   let qrImage;
-  
+
   if (form.type === "registration") {
     ticketCode = `${formId}-${userid || 'guest'}-${nanoid(6)}`;
     qrImage = await QRCode.toDataURL(ticketCode);
   }
-  
-  // 8. Save Submission (guests have no userId — the sparse unique index skips them)
+
+  // 12. Save Submission (guests have no userId — the sparse unique index skips them)
   const newSubmission = new Submission({
     formId,
     ...(userid && { userId: userid }),
-    registrantEmail: req.user?.email || email,
+    registrantEmail: submittedEmail,
     answers,
     // use spread operator to add ticketCode and qrImage to the newSubmission object if form type is registration
     ...(ticketCode && { ticketCode }),
@@ -115,27 +197,40 @@ const submitForm = catchAsync(async (req, res) => {
       throw new AppError(`Submission failed validation: ${error.message}`, 400);
     }
     if (error.code === 11000) {
-      throw new AppError('You already submitted this form', 400);
+      throw new AppError('You already submitted this form', 400, 'ALREADY_SUBMITTED');
     }
     throw new AppError(`Submission failed: ${error.message}`, 500);
   }
 
-  // 9. Send Email (Async)
-  if (form.type === "registration" && ticketCode && qrImage) {
-    sendTicketEmail({
-      email: req.user?.email || email,
-      userName: req.user?.name || answers.full_name || answers.name || 'Guest',
-      ticketCode,
-      eventTitle: form.title
-    }).catch(err => console.error("Email Error:", err));
-  }
+  // 13. Send Email (Async)
+  //     Old behaviour: a QR "ticket confirmation" was emailed for registration
+  //     forms, which read as an attendance ticket even for ordinary application
+  //     forms. Disabled for now — the ticket is still generated and stored, so
+  //     re-enable by uncommenting the block below.
+  //
+  // if (form.type === "registration" && ticketCode && qrImage) {
+  //   sendTicketEmail({
+  //     email: submittedEmail,
+  //     userName: userName || answers.full_name || answers.name || 'Guest',
+  //     ticketCode,
+  //     eventTitle: form.title
+  //   }).catch(err => console.error("Email Error:", err));
+  // }
 
-  // 10. Send Response
-  res.status(201).json({ 
-    status: 'success', 
-    message: 'Submitted successfully', 
+  const recipientName = userName || submittedName || 'there';
+
+  sendSubmissionReceivedEmail({
+    email: submittedEmail,
+    userName: recipientName,
+    formTitle: form.title
+  }).catch(err => console.error("Email Error:", err));
+
+  // 14. Send Response
+  res.status(201).json({
+    status: 'success',
+    message: 'Submitted successfully',
     ...(ticketCode && { ticketCode }),
-    data: newSubmission 
+    data: newSubmission
   });
 });
 
@@ -505,4 +600,17 @@ module.exports = {
 * The `attendedAt` field is disabled: In the `scanTicket` function, you are logging the attendance time: `submission.attendedAt = Date.now();`. However, in `submissionSchema`, the field `// attendedAt: Date` is commented out. You must enable it in the schema so that it is saved to the database.
 * Missing routes in submissionRouter.js: You’ve written two functions in the Controller—`getSubmission` (to retrieve a single submission) and `editSubmission` (to update a submission’s status)—but you completely forgot to add them to the Router file.
 * Generating tickets for everything (logically): The current code generates a ticketCode and a qrImage and sends a QR email for any form that is filled out (whether it’s an Event, a volunteer request, or a survey). You may need to add a condition to generate tickets only if `form.type` is related to an event (Event/Workshop).
+
+* RESOLVED in the current revision — see the numbered steps in `submitForm`:
+*   - Ticket/QR generation is now limited to `form.type === "registration"`, and the QR
+*     confirmation email is commented out. Every submission instead gets the neutral
+*     `submissionReceived.html` acknowledgement from `sendSubmissionReceivedEmail`.
+*   - The guest duplicate check used a hardcoded `'answers.email'` path. Field ids are
+*     generated from labels (see `FormModel`'s pre-save hook), so a field labelled
+*     "Email Address" is stored under `answers.email_address` and the old query never
+*     matched — guests could submit the same form repeatedly. It now queries
+*     `registrantEmail`, which is indexed.
+*   - Full Name and a valid Email are now enforced server-side, and a guest email that
+*     already owns an account is rejected with `EMAIL_HAS_ACCOUNT` (409) so the client
+*     can offer a log-in link.
 */

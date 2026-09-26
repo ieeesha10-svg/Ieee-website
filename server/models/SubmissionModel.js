@@ -44,12 +44,22 @@ const submissionSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // PREVENT DUPLICATES:
-// This ensures an account can only submit the same form ONCE.
-// Sparse lets multiple GUEST submissions coexist; guests are de-duplicated by
-// email inside the submit controller instead of by the unique index.
+// An account can only submit the same form ONCE.
+//
+// This must be a PARTIAL index, not a sparse one. For a compound index MongoDB's
+// `sparse` only skips a document when *every* indexed field is missing — a guest
+// still has `formId`, so `sparse` would index them as `{ formId, userId: null }`
+// and the second guest on a form would collide with the first.
+//
+// `partialFilterExpression` limits the constraint to submissions that actually
+// carry a userId, leaving guest submissions completely unconstrained. Guests are
+// de-duplicated by `registrantEmail` inside the submit controller instead.
 submissionSchema.index(
   { formId: 1, userId: 1 },
-  { unique: true, sparse: true }
+  {
+    unique: true,
+    partialFilterExpression: { userId: { $type: 'objectId' } },
+  }
 );
 
 

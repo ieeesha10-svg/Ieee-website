@@ -216,7 +216,11 @@ const registerUser = async (req, res) => {
       email: user.email
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    // Respect the status carried by AppError (e.g. 400 for "User already exists",
+    // 401 for a bad OTP) instead of reporting every failure as a server error.
+    // A Mongoose ValidationError is a bad request, not a server fault.
+    const status = error.statusCode || (error.name === 'ValidationError' ? 400 : 500);
+    res.status(status).json({ error: error.message });
   }
 };
 
@@ -277,7 +281,9 @@ const verifyEmailOTP = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    // Same as registerUser: keep the AppError status (e.g. 400/401) intact.
+    const status = error.statusCode || (error.name === 'ValidationError' ? 400 : 500);
+    res.status(status).json({ error: error.message });
   }
 };
 

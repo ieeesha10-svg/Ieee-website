@@ -1,9 +1,12 @@
 class AppError extends Error {
-  constructor(message, statusCode) {
+  // `code` is an optional machine-readable identifier (e.g. 'EMAIL_HAS_ACCOUNT').
+  // The client branches on it instead of string-matching `message`.
+  constructor(message, statusCode, code) {
     super(message);
     this.statusCode = statusCode || 500;
     this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
     this.isOperational = true;
+    if (code) this.code = code;
     Error.captureStackTrace(this, this.constructor);
   }
 }
@@ -22,7 +25,8 @@ const globalErrorHandler = (err, req, res, next) => {
 
   res.status(statusCode).json({
     status,
-    message
+    message,
+    ...(err.code ? { code: err.code } : {})
   });
 };
 

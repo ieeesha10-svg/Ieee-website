@@ -1,27 +1,126 @@
-<!DOCTYPE html>
-<html>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: Arial, Helvetica, sans-serif;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);">
-    <div style="background-color: #00629B; padding: 22px 28px; text-align: center;">
-      <h1 style="margin: 0; color: #ffffff; font-size: 20px; letter-spacing: 1px;">IEEE El Shorouk Academy</h1>
-      <p style="margin: 4px 0 0; color: #bfe0f5; font-size: 12px; letter-spacing: 2px;">STUDENT BRANCH</p>
+<!--
+  CONTENT CARD - not a full document. The page background, this card, the brand
+  bar and the footer are all assembled by buildEmailDocument() in
+  server/utils/emailTemplates.js.
+
+  Style tokens (shared with the footer):
+    brand #00629b | ink #1f2933 | muted #667482 | hairline #e6eaee | panel #f0f6fb
+    heading 15px/21px bold | body 13px/20px | small 11px/18px | caps 10px/15px
+
+  NOTE: submissionController.js currently keeps the QR ticket email commented
+  out, so this template is not sent. It is kept in step with the rest so
+  re-enabling the ticket flow needs no restyling.
+-->
+
+<!-- ==================== INTRO ==================== -->
+<tr>
+  <td style="padding: 28px 25px 0 25px;">
+    <div
+      style="
+        color: #1f2933;
+        font-size: 18px;
+        line-height: 25px;
+        font-weight: 700;
+      "
+    >
+      Registration confirmed
     </div>
+    <p
+      style="
+        margin: 8px 0 0;
+        color: #667482;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      Hi <strong>{{userName}}</strong>, your registration for
+      <strong style="color: #1f2933;">{{eventTitle}}</strong> is confirmed.
+    </p>
+  </td>
+</tr>
 
-    <div style="padding: 32px 28px; color: #333333;">
-      <h2 style="margin: 0 0 16px; color: #00629B; font-size: 22px;">Registration Confirmed</h2>
-      <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6;">Dear <strong>{{userName}}</strong>,</p>
-      <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6;">This email confirms your registration for <strong>{{eventTitle}}</strong>.</p>
-      <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6;">Please bring the QR code below with you, as it is required for entry at the event.</p>
+<!-- ==================== TICKET ==================== -->
+<tr>
+  <td style="padding: 20px 25px 0 25px;">
+    <table
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      width="100%"
+      style="
+        background-color: #f7f9fb;
+        border: 1px solid #e0e7ee;
+      "
+    >
+      <tr>
+        <td align="center" style="padding: 22px 20px;">
+          <img
+            src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&amp;data={{ticketCode}}"
+            alt="Ticket QR code"
+            width="160"
+            style="
+              display: block;
+              width: 160px;
+              max-width: 160px;
+              height: auto;
+              border: 0;
+              outline: none;
+              text-decoration: none;
+            "
+          />
+          <div
+            style="
+              margin-top: 14px;
+              color: #667482;
+              font-size: 10px;
+              line-height: 15px;
+              font-weight: 700;
+              letter-spacing: 1px;
+            "
+          >
+            TICKET ID
+          </div>
+          <div
+            style="
+              margin-top: 4px;
+              color: #00629b;
+              font-size: 15px;
+              line-height: 21px;
+              font-weight: 700;
+              font-family: 'Courier New', Courier, monospace;
+            "
+          >
+            {{ticketCode}}
+          </div>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
 
-      <div style="background-color: #f7f9fb; border: 1px solid #e0e7ee; border-radius: 12px; padding: 24px; text-align: center; margin: 0 0 24px;">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ticketCode}}" alt="QR Code" style="width: 180px; height: 180px; display: block; margin: 0 auto 12px; border-radius: 8px;"/>
-        <p style="margin: 0; font-size: 13px; color: #555555;">Ticket ID</p>
-        <p style="margin: 2px 0 0; font-size: 15px; font-weight: bold; color: #00629B; font-family: 'Courier New', monospace;">{{ticketCode}}</p>
-      </div>
-
-      <p style="margin: 0 0 8px; font-size: 14px; color: #555555; line-height: 1.6;">Should you have any questions, please do not hesitate to contact us.</p>
-      <p style="margin: 0; font-size: 14px; color: #555555;">Best regards,<br>IEEE SHA Team</p>
-    </div>
-  </div>
-</body>
-</html>
+<!-- ==================== CLOSING ==================== -->
+<tr>
+  <td style="padding: 18px 25px 28px 25px;">
+    <p
+      style="
+        margin: 0 0 6px;
+        color: #667482;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      Please bring this QR code with you, as it is required for entry at the event.
+    </p>
+    <p
+      style="
+        margin: 0;
+        color: #1f2933;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      Best regards,<br />IEEE SHA Team
+    </p>
+  </td>
+</tr>
