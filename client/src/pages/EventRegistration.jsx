@@ -12,6 +12,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import HtmlContent from "../components/ui/HtmlContent";
 import RequiredAsterisk from "../components/ui/RequiredAsterisk";
+import { validateSubmission } from "../utils/formValidation";
 
 export default function EventRegistration() {
   const { id } = useParams();
@@ -37,6 +38,7 @@ export default function EventRegistration() {
     loading: submitLoading,
     error: submitError,
     alreadySubmitted,
+    emailHasAccount,
     ticketCode,
     setAlreadySubmitted,
   } = useSubmitForm();
@@ -162,23 +164,7 @@ export default function EventRegistration() {
     setErrors,
   );
 
-  const validate = () => {
-    const errs = {};
-    formData.fields?.forEach((f) => {
-      if (f.required) {
-        if (f.type === "FileUpload") {
-          if (!files[f.id]) errs[f.id] = `${f.label} is required`;
-        } else if (f.type === "Checkbox") {
-          if (!answers[f.id] || answers[f.id].length === 0) {
-            errs[f.id] = `${f.label} is required`;
-          }
-        } else if (!answers[f.id]?.trim()) {
-          errs[f.id] = `${f.label} is required`;
-        }
-      }
-    });
-    return errs;
-  };
+  const validate = () => validateSubmission(formData.fields, answers, files);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -573,8 +559,8 @@ export default function EventRegistration() {
                     </h2>
                     <p className="text-muted max-w-md">
                       {ticketCode
-                        ? "Check your email for the QR code to use at the event."
-                        : "Your submission has been received successfully."}
+                        ? "Your registration went through. Check your email for the confirmation and the upcoming details."
+                        : "Your submission has been received successfully. Check your email for the confirmation."}
                     </p>
                   </div>
                 )}
@@ -584,6 +570,15 @@ export default function EventRegistration() {
                     <p className="text-sm font-semibold text-red-600 dark:text-red-400">
                       {submitError}
                     </p>
+                    {emailHasAccount && (
+                      <button
+                        type="button"
+                        onClick={() => navigate("/login")}
+                        className="mt-3 w-full py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors duration-200"
+                      >
+                        Go to Login
+                      </button>
+                    )}
                   </div>
                 )}
 

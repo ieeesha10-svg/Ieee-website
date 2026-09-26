@@ -7,32 +7,30 @@ import api from "../utils/api";
  * Handles submitting a response to a specific form via POST /api/submissions.
  *
  * Backend behavior this hook is built around:
- * - Body: { formId, answers }
- * - On success (201): returns { message, ticketCode }
- * - On failure (400) if already submitted: { status: "error", message: "You already submitted this form" }
- * - Other 400s (e.g. deadline passed, maxSubmissions reached) return a generic message too —
- *   surfaced via `error` for the UI to display.
+ * - Body: { formId, answers } (multipart, files appended by field id)
+ * - On success (201): returns { message, ticketCode, data }
+ * - On failure the server sends { status, message, code? }. Branch on `code`, not on
+ *   the message text:
+ *     - "ALREADY_SUBMITTED"  -> sets `alreadySubmitted`
+ *     - "EMAIL_HAS_ACCOUNT"  -> sets `emailHasAccount` so the UI can offer a log-in link
+ *     - "NAME_REQUIRED" / "EMAIL_REQUIRED" / "EMAIL_INVALID" -> shown inline
+ *   Anything else falls back to `error` with the server's message.
  *
  * Usage:
- *   const { submit, loading, error, alreadySubmitted, ticketCode, reset } = useSubmitForm();
- *
- *   const handleSubmit = async () => {
- *     const result = await submit(formId, answers, files);
- *     if (result) {
- *       // result.ticketCode is available here too, in addition to hook state
- *     }
- *   };
+ *   const { submit, loading, error, alreadySubmitted, emailHasAccount, ticketCode, reset } = useSubmitForm();
  */
 export function useSubmitForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [emailHasAccount, setEmailHasAccount] = useState(false);
   const [ticketCode, setTicketCode] = useState(null);
 
   const reset = useCallback(() => {
     setLoading(false);
     setError(null);
     setAlreadySubmitted(false);
+    setEmailHasAccount(false);
     setTicketCode(null);
   }, []);
 
@@ -40,6 +38,7 @@ export function useSubmitForm() {
     setLoading(true);
     setError(null);
     setAlreadySubmitted(false);
+    setEmailHasAccount(false);
 
     try {
       // Use the same base URL as the rest of the app (falls back to the local
@@ -72,11 +71,13 @@ export function useSubmitForm() {
       }
 
       if (!response.ok) {
-        // Fragile: relies on exact string match of the backend's message.
-        // If the backend team adds a structured error code later, replace this
-        // check with e.g. data.code === "DUPLICATE_SUBMISSION".
-        if (data?.message === "You already submitted this form") {
+        if (data?.code === "ALREADY_SUBMITTED") {
           setAlreadySubmitted(true);
+        } else if (data?.code === "EMAIL_HAS_ACCOUNT") {
+          // The email already belongs to an account — surface the server message
+          // and let the page render a link to the login screen.
+          setError(data?.message || "An account is already associated with this email address.");
+          setEmailHasAccount(true);
         } else {
           setError(data?.message || "Something went wrong while submitting the form.");
         }
@@ -99,6 +100,7 @@ export function useSubmitForm() {
     loading,
     error,
     alreadySubmitted,
+    emailHasAccount,
     ticketCode,
     reset,
     setAlreadySubmitted,

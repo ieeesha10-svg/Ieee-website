@@ -9,20 +9,19 @@ import FooterAlt from "../components/layout/FooterAlt";
 import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import { ACCEPTED_FILE_EXTENSIONS, useFileUpload } from "../utils/fileUploadUtils";
+import { validateSubmission } from "../utils/formValidation";
 import { FORM_TYPE_BADGE } from "../data/formTypes";
 
 function getBadgeInfo(formType) {
   return FORM_TYPE_BADGE[formType] || FORM_TYPE_BADGE.custom;
 }
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export default function FormSubmissionPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { form, isLoading, error: fetchError } = usePublicForm(id);
-  const { submit, loading: submitting, error: submitError, alreadySubmitted: alreadySubmittedViaSubmit } = useSubmitForm();
+  const { submit, loading: submitting, error: submitError, alreadySubmitted: alreadySubmittedViaSubmit, emailHasAccount } = useSubmitForm();
 
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
@@ -78,29 +77,7 @@ export default function FormSubmissionPage() {
     );
   }
 
-  const validate = () => {
-    if (!form?.fields) return {};
-    const errs = {};
-    for (const field of form.fields) {
-      if (!field.required) continue;
-      if (field.type === "FileUpload") {
-        if (!files[field.id]) errs[field.id] = `${field.label} is required`;
-        continue;
-      }
-      const val = answers[field.id];
-      if (field.type === "Checkbox") {
-        if (!val || val.length === 0) errs[field.id] = `${field.label} is required`;
-      } else if (!val || (typeof val === "string" && !val.trim())) {
-        errs[field.id] = `${field.label} is required`;
-      } else if (
-        field.id.toLowerCase().includes("email") &&
-        !EMAIL_RE.test(val)
-      ) {
-        errs[field.id] = "Please enter a valid email address";
-      }
-    }
-    return errs;
-  };
+  const validate = () => validateSubmission(form?.fields, answers, files);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -464,6 +441,15 @@ export default function FormSubmissionPage() {
                 <p className="text-sm font-medium text-red-600 dark:text-red-400">
                   {submitError}
                 </p>
+                {emailHasAccount && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/login")}
+                    className="mt-2 w-full py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors duration-200"
+                  >
+                    Go to Login
+                  </button>
+                )}
               </div>
             )}
 

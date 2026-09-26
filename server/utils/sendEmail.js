@@ -3,7 +3,7 @@ const { BrevoClient } = require('@getbrevo/brevo');
 const fs = require('fs');
 const path = require('path');
 const EmailLog = require('../models/EmailLog');
-const { getEmailFooter } = require('./emailTemplates');
+const { buildEmailDocument } = require('./emailTemplates');
 
 // ===================== PROVIDER: BREVO =====================
 // Single Brevo client shared by the whole app
@@ -96,9 +96,15 @@ const sendEmail = async ({ to, subject, html, attachments }) => {
   return response;
 };
 
-// Render a stored template + footer and send it dynamically
-const sendTemplateEmail = async ({ to, subject, template, data = {} }) => {
-  const html = renderTemplate(loadTemplate(template), data) + getEmailFooter();
+// Render a stored template inside the shared email shell (page background,
+// content card, gutter, footer card) and send it.
+const sendTemplateEmail = async ({ to, subject, template, data = {}, preheader }) => {
+  const body = renderTemplate(loadTemplate(template), data);
+  const html = buildEmailDocument({
+    content: body,
+    title: subject,
+    preheader: preheader || subject,
+  });
   return sendEmail({ to, subject, html });
 };
 
@@ -135,12 +141,17 @@ const sendBulkEmails = async ({
 }) => {
   const mailAttachments = await buildAttachments(attachments);
   const mailSubject = subject || 'Notification';
-  // Shared footer, built once and appended to every personalized body
-  const footer = getEmailFooter();
 
   for (const recipient of recipients) {
     const { email, data = {} } = recipient;
-    const html = personalizeMessage(messageBody, data) + footer;
+    // Shared shell, so a bulk body lines up with the footer exactly like the
+    // transactional templates do. Built per recipient because the body is
+    // personalised.
+    const html = buildEmailDocument({
+      content: personalizeMessage(messageBody, data),
+      title: mailSubject,
+      preheader: mailSubject,
+    });
 
     try {
       const result = await sendEmail({ to: email, subject: mailSubject, html, attachments: mailAttachments });
@@ -238,6 +249,25 @@ const sendCommitteeDecisionEmail = async ({ email, userName, committeePosition, 
   }
 };
 
+// 5. Submission Received Email
+// Sent to every form submission (guest or logged-in) confirming the application
+// landed. This replaces the old QR "ticket confirmation" email, which fired on
+// registration forms and was confusing when the form was not an event.
+const sendSubmissionReceivedEmail = async ({ email, userName, formTitle }) => {
+  try {
+    await sendTemplateEmail({
+      to: email,
+      subject: 'We received your application',
+      template: 'submissionReceived.html',
+      data: { userName, formTitle }
+    });
+    return true;
+  } catch (err) {
+    console.error('Server Error sending Submission Received Email:', err);
+    return false;
+  }
+};
+
 module.exports = {
   sendEmail,
   sendTemplateEmail,
@@ -247,5 +277,6 @@ module.exports = {
   sendOTPEmail,
   sendTicketEmail,
   resetPasswordEmailToken,
-  sendCommitteeDecisionEmail
+  sendCommitteeDecisionEmail,
+  sendSubmissionReceivedEmail
 };
