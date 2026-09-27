@@ -2,6 +2,7 @@ const dashboardRouter = require("../controllers/statsController");
 const { authorize, protect } = require("../middleware/authMiddleware");
 const { globalErrorHandler } = require("../middleware/errorsMiddleware");
 const activityRouter = require("../routes/activityRoutes");
+const adminRouter = require("../routes/adminRoutes");
 const crewRouter = require("../routes/crewRoutes");
 const userRouter = require("../routes/userRoutes") ;
 const formRouter = require("../routes/formRoutes");
@@ -28,6 +29,8 @@ const routersHandler = (app) => {
   app.use('/api/committee-requests', committeeRequestRouter);
 
   app.use('/api/emails', require('../routes/emailRouts'));
+
+  app.use('/api/admin', adminRouter);
 
   app.all(/.*/, (req, res) => {
     res.status(404).json({ message: "This router is not exist" });

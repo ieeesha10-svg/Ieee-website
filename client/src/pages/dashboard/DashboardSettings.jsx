@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   Save,
@@ -14,6 +14,12 @@ import {
   Search,
   X,
   Check,
+  Download,
+  Upload,
+  Clock,
+  Database,
+  DatabaseBackup,
+  User
 } from "lucide-react";
 // Hooks & Data
 import { useUserUpdate } from "../../hooks/dashboard/useUserUpdate";
@@ -21,12 +27,15 @@ import { useUpdateRole } from "../../hooks/dashboard/useUpdateRole";
 import { useMembersList } from "../../hooks/dashboard/useMembersList";
 import { useGetAdmins } from "../../hooks/dashboard/useGetAdmins";
 import { useSubmitCommitteeRequest } from "../../hooks/dashboard/useSubmitCommitteeRequest";
+import { useBackup } from "../../hooks/dashboard/useBackup";
 import { ADMIN_ROLES } from '../../data/roles'
 import { ORDINAL_OPTIONS } from '../../data/ordinalMap'
 import { committees } from '../../data/committeesData'
 // Components
 import DeleteModal from "../../components/ui/DeleteModal";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 import Skeleton from "../../components/skeletons/DashSettingsSkeleton";
+import api from "../../utils/api";
 
 function SectionCard({ children, className = "" }) {
   return (
@@ -121,8 +130,25 @@ function RoleSelect({ value, onChange }) {
 
 const COMMITTEE_OPTIONS = committees.map((c) => ({ label: c.label, value: c.label }));
 
+const BACKUP_TYPE_LABELS = {
+  download: { label: "Downloaded Backup", className: "text-primary bg-primary/10" },
+  restore: { label: "Restore From Backup", className: "text-red-600 bg-red-500/10" },
+};
+
+function BackupTypeBadge({ type }) {
+  const { label, className } =
+    BACKUP_TYPE_LABELS[type] || BACKUP_TYPE_LABELS.download;
+  return (
+    <span
+      className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full whitespace-nowrap ${className}`}
+    >
+      {label}
+    </span>
+  );
+}
+
 export default function DashboardSettings() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const {
     userData,
     loading,
@@ -172,6 +198,22 @@ export default function DashboardSettings() {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const {
+    lastBackup,
+    history,
+    totals,
+    loadingInfo,
+    downloading,
+    importing,
+    phase,
+    downloadBackup,
+    importBackup,
+  } = useBackup();
+  const [backupMessage, setBackupMessage] = useState({ type: "", text: "" });
+  const [pendingImport, setPendingImport] = useState(null);
+  const [confirmImport, setConfirmImport] = useState(false);
+  const fileInputRef = useRef(null);
 
   const isAdminRole = ADMIN_ROLES.includes(user?.role);
 
@@ -251,6 +293,49 @@ export default function DashboardSettings() {
     });
     setPasswords({ current: "", new: "", confirm: "" });
     setPasswordMessage({ type: "", text: "" });
+  };
+
+  const handlePickImportFile = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow the same file to be picked again
+    if (file) {
+      setPendingImport(file);
+      setConfirmImport(true);
+    }
+  };
+
+  // A restore replaces the users collection, so the account behind this session
+  // may no longer exist. Check the session before reporting success, and drop
+  // it so the router sends the admin to the login page instead of leaving them
+  // clicking through a session that quietly fails every request.
+  const sessionStillValid = async () => {
+    try {
+      const { data } = await api.get("/users/profile");
+      setUser(data?.user || null);
+      return true;
+    } catch {
+      setUser(null);
+      return false;
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    const result = await importBackup(pendingImport);
+    setConfirmImport(false);
+    setPendingImport(null);
+
+    if (!result.ok) {
+      setBackupMessage({ type: "error", text: result.message });
+      return;
+    }
+
+    const signedIn = await sessionStillValid();
+    setBackupMessage({
+      type: signedIn ? "success" : "error",
+      text: signedIn
+        ? `${result.message} The current data was saved to your device as "${result.safetyBackup}" before the restore.`
+        : `${result.message} Sign in again to carry on — this account was not in the backup you restored.`,
+    });
   };
 
   if (loading) return <Skeleton />;
@@ -575,6 +660,175 @@ export default function DashboardSettings() {
               </button>*/}
             </SectionCard>
 
+      {/* Section 4: Backup & Restore */}
+      <SectionCard>
+        <div className="flex items-center gap-2 mb-1">
+          <DatabaseBackup size={18} className="text-muted" />
+          <h2 className="text-xl font-bold text-foreground">
+            Backup &amp; Restore
+          </h2>
+        </div>
+        <p className="text-xs text-muted mb-5">
+          Download a full copy of every collection, or restore a copy you
+          downloaded earlier. Nothing is stored on the server — every backup
+          goes straight to your device.
+        </p>
+
+        <div className="rounded-lg border border-gray-100 dark:border-[#222936] bg-gray-50 dark:bg-gray-800/40 p-4 mb-4">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-[11px] font-bold text-muted uppercase tracking-wide">
+              Last Backup
+            </p>
+            {lastBackup && <BackupTypeBadge type={lastBackup.type} />}
+          </div>
+
+          {loadingInfo && !lastBackup ? (
+            <p className="flex items-center gap-2 text-sm text-muted">
+              <Loader2 size={14} className="animate-spin" />
+              Checking backup history...
+            </p>
+          ) : lastBackup ? (
+            <div className="space-y-1.5">
+              <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Clock size={14} className="text-muted shrink-0" />
+                {lastBackup.at}
+              </p>
+              <p className="flex items-center gap-2 text-xs text-muted">
+                <User size={13} className="shrink-0" />
+                <span className="truncate">
+                  {lastBackup.by || "Unknown admin"}
+                  {lastBackup.performedByEmail &&
+                    lastBackup.by !== lastBackup.performedByEmail &&
+                    ` · ${lastBackup.performedByEmail}`}
+                </span>
+              </p>
+              <p className="flex items-center gap-2 text-xs text-muted">
+                <Database size={13} className="shrink-0" />
+                {lastBackup.collections?.length || 0} collection
+                {lastBackup.collections?.length === 1 ? "" : "s"} &middot;{" "}
+                {lastBackup.totalDocuments || 0} document
+                {lastBackup.totalDocuments === 1 ? "" : "s"}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted">No backup has been taken yet.</p>
+          )}
+
+          {totals && totals.operations > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-[#222936] grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: "Total operations", value: totals.operations },
+                { label: "Documents handled", value: totals.documents },
+                { label: "Downloads", value: totals.downloads },
+                { label: "Restores", value: totals.restores },
+              ].map((stat) => (
+                <div key={stat.label}>
+                  <p className="text-lg font-bold text-foreground leading-tight">
+                    {Number(stat.value || 0).toLocaleString()}
+                  </p>
+                  <p className="text-[11px] text-muted">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <MessageBanner message={backupMessage} />
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={downloadBackup}
+            disabled={downloading || importing}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {downloading ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Download size={14} />
+            )}
+            Download Backup
+          </button>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={downloading || importing}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-transparent border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {importing ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Upload size={14} />
+            )}
+            {importing
+              ? phase === "safety"
+                ? "Saving Safety Backup..."
+                : "Restoring Data..."
+              : "Import Backup"}
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={handlePickImportFile}
+            className="hidden"
+          />
+        </div>
+
+        {history.length > 0 && (
+          <div className="mt-5">
+            <p className="text-[11px] font-bold text-muted uppercase tracking-wide mb-2">
+              Recent Activity
+            </p>
+            <div className="overflow-x-auto rounded-lg border border-gray-100 dark:border-[#222936]">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-gray-800/40 text-muted">
+                    <th className="text-left font-semibold px-3 py-2 whitespace-nowrap">
+                      When
+                    </th>
+                    <th className="text-left font-semibold px-3 py-2 whitespace-nowrap">
+                      Operation
+                    </th>
+                    <th className="text-left font-semibold px-3 py-2">Admin</th>
+                    <th className="text-right font-semibold px-3 py-2 whitespace-nowrap">
+                      Collections
+                    </th>
+                    <th className="text-right font-semibold px-3 py-2 whitespace-nowrap">
+                      Documents
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map((entry) => (
+                    <tr
+                      key={entry._id}
+                      className="border-t border-gray-100 dark:border-[#222936] text-foreground"
+                    >
+                      <td className="px-3 py-2 whitespace-nowrap text-muted">
+                        {entry.at}
+                      </td>
+                      <td className="px-3 py-2">
+                        <BackupTypeBadge type={entry.type} />
+                      </td>
+                      <td className="px-3 py-2 truncate max-w-[180px]">
+                        {entry.by || "Unknown admin"}
+                      </td>
+                      <td className="px-3 py-2 text-right text-muted">
+                        {entry.collections?.length || 0}
+                      </td>
+                      <td className="px-3 py-2 text-right text-muted">
+                        {(entry.totalDocuments || 0).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </SectionCard>
+
       {/* Delete Admin Modal */}
       <DeleteModal
         isOpen={!!deleteTarget}
@@ -591,6 +845,18 @@ export default function DashboardSettings() {
         updateRole={updateRole}
         setAdminRoles={setAdminRoles}
       />}
+
+      {/* Import Backup Confirmation */}
+      <ConfirmModal
+        isOpen={confirmImport}
+        variant="danger"
+        title="Restore this backup?"
+        message="This will replace all current data. Are you sure? A safety backup of the current data will be downloaded to your device first, and the restore will not run until it is saved."
+        confirmLabel="Download Safety Backup &amp; Restore"
+        isLoading={importing}
+        onConfirm={handleConfirmImport}
+        onCancel={() => { setConfirmImport(false); setPendingImport(null); }}
+      />
 
     </div>
   );
