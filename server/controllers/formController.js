@@ -29,6 +29,18 @@ const createForm = catchAsync(async (req, res) => {
     throw new AppError("Title and Type are required", 400);
   }
 
+  // Check the type against the schema's own enum so there is a single source of
+  // truth. Without this an unsupported type only fails later inside Mongoose and
+  // surfaces as an opaque 500.
+  const allowedTypes = Form.schema.path('type').enumValues;
+  if (!allowedTypes.includes(type)) {
+    throw new AppError(
+      `"${type}" is not a valid form type. Expected one of: ${allowedTypes.join(', ')}.`,
+      400,
+      'INVALID_FORM_TYPE'
+    );
+  }
+
   // A form with no fields is never intentional and cannot be submitted
   // (submitForm requires a name field), so say so rather than silently
   // substituting a default. `fields` being absent entirely still falls back to

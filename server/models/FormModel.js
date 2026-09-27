@@ -80,9 +80,12 @@ const formSchema = new mongoose.Schema({
     }
   ]
   */
+  // Must stay in sync with FORM_TYPE_OPTIONS in client/src/data/formTypes.js.
+  // "other" is legacy-only: forms saved before the current type set keep it so
+  // they never fail validation. It is not offered in the builder.
   type : {
     type: String,
-    enum: ["registration", "feedback", "survey", "other"],
+    enum: ["attendance", "recruitment", "feedback", "workshop", "survey", "other"],
     default: "other"
   },
   startDate: {

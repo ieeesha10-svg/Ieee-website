@@ -93,6 +93,9 @@ const createActivity = catchAsync(async (req, res) => {
   });
 
   // Create associated form.
+  // Every activity gets an `attendance` form, which is the type that mints the
+  // ticket code the gatekeeper QR scanner reads. This preserves the previous
+  // behaviour (every activity-linked form was ticket-bearing).
   const form = await Form.create({
     title: activity.title,
     activityID: activity._id,
@@ -101,7 +104,7 @@ const createActivity = catchAsync(async (req, res) => {
     startDate,
     endDate,
     maxSubmissions,
-    type: "registration",
+    type: "attendance",
     status: formStatus || "Active"
   });
 

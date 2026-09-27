@@ -168,13 +168,13 @@ const submitForm = catchAsync(async (req, res) => {
     }
   }
 
-  // 11. Generate Ticket (ONLY if it's a registration form)
+  // 11. Generate Ticket (ONLY for `attendance` forms)
   //     The ticket is still stored because the admin QR scanner
   //     (POST /api/submissions/scan) depends on it for attendance.
   let ticketCode;
   let qrImage;
 
-  if (form.type === "registration") {
+  if (form.type === "attendance") {
     ticketCode = `${formId}-${userid || 'guest'}-${nanoid(6)}`;
     qrImage = await QRCode.toDataURL(ticketCode);
   }
@@ -203,12 +203,12 @@ const submitForm = catchAsync(async (req, res) => {
   }
 
   // 13. Send Email (Async)
-  //     Old behaviour: a QR "ticket confirmation" was emailed for registration
-  //     forms, which read as an attendance ticket even for ordinary application
+  //     Old behaviour: a QR "ticket confirmation" was emailed for ticketed forms,
+  //     which read as an attendance ticket even for ordinary application
   //     forms. Disabled for now — the ticket is still generated and stored, so
   //     re-enable by uncommenting the block below.
   //
-  // if (form.type === "registration" && ticketCode && qrImage) {
+  // if (form.type === "attendance" && ticketCode && qrImage) {
   //   sendTicketEmail({
   //     email: submittedEmail,
   //     userName: userName || answers.full_name || answers.name || 'Guest',
@@ -602,7 +602,7 @@ module.exports = {
 * Generating tickets for everything (logically): The current code generates a ticketCode and a qrImage and sends a QR email for any form that is filled out (whether it’s an Event, a volunteer request, or a survey). You may need to add a condition to generate tickets only if `form.type` is related to an event (Event/Workshop).
 
 * RESOLVED in the current revision — see the numbered steps in `submitForm`:
-*   - Ticket/QR generation is now limited to `form.type === "registration"`, and the QR
+*   - Ticket/QR generation is now limited to `form.type === "attendance"`, and the QR
 *     confirmation email is commented out. Every submission instead gets the neutral
 *     `submissionReceived.html` acknowledgement from `sendSubmissionReceivedEmail`.
 *   - The guest duplicate check used a hardcoded `'answers.email'` path. Field ids are
