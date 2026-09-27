@@ -10,10 +10,10 @@ import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import { ACCEPTED_FILE_EXTENSIONS, useFileUpload } from "../utils/fileUploadUtils";
 import { validateSubmission } from "../utils/formValidation";
-import { FORM_TYPE_BADGE } from "../data/formTypes";
+import { FORM_TYPE_BADGE, DEFAULT_FORM_TYPE_BADGE } from "../data/formTypes";
 
 function getBadgeInfo(formType) {
-  return FORM_TYPE_BADGE[formType] || FORM_TYPE_BADGE.custom;
+  return FORM_TYPE_BADGE[formType] || DEFAULT_FORM_TYPE_BADGE;
 }
 
 export default function FormSubmissionPage() {

@@ -112,7 +112,10 @@ export default function EventRegistration() {
           fields: form.fields || [],
           maxSubmissions: form?.maxSubmissions || 0,
           endDate: endDate,
-          settings: { requiresLogin: false },
+          // Carry the form's real setting through. This used to be hardcoded to
+          // `false`, so the "please log in" notice and the disabled submit button
+          // below could never fire for a form that actually required an account.
+          settings: { requiresLogin: Boolean(form?.requiresLogin) },
         });
 
         const initial = {};
@@ -536,7 +539,7 @@ export default function EventRegistration() {
           ) : (
             <div className="col-span-1 lg:col-span-2 flex flex-col h-full relative">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground capitalize font-black">
-                {formData.type} Registration
+                Event Registration
               </h2>
               <p className="text-muted mt-1 mb-8">
                 Fill this before attending.

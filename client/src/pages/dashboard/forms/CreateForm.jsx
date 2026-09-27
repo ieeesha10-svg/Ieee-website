@@ -6,8 +6,9 @@ import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
 import { FORM_TYPE_OPTIONS } from "../../../data/formTypes";
 import SectionCard from "../../../components/ui/SectionCard";
 import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
+import ToggleSwitch from "../../../components/ui/ToggleSwitch";
 
-function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDragIndex, moveField }) {
+function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDragIndex, moveField, error }) {
   const hasOptions = field.type === "Dropdown" || field.type === "Checkbox";
   const isDragging = dragIndex === index;
 
@@ -41,7 +42,7 @@ function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDr
         setDragIndex(index);
       }}
       onDragEnd={() => setDragIndex(null)}
-      className={`border-b border-gray-200 dark:border-[#222936] last:border-b-0 transition-opacity ${isDragging ? "opacity-40" : ""}`}
+      className={`border-b transition-opacity ${error ? "border-red-300 dark:border-red-800/60 bg-red-50/40 dark:bg-red-950/20" : "border-gray-200 dark:border-[#222936]"} last:border-b-0 ${isDragging ? "opacity-40" : ""}`}
     >
       <div className="flex items-start gap-2 px-5 py-3">
         <div className="pt-2.5 text-muted shrink-0 cursor-grab">
@@ -54,7 +55,7 @@ function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDr
             value={field.label}
             onChange={(e) => updateFieldAt(index, { label: e.target.value })}
             placeholder="Field label"
-            className="w-full rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-3 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+            className={`w-full rounded-lg border bg-white dark:bg-[#111827] px-3 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:ring-1 transition-colors ${error ? "border-red-400 dark:border-red-700 focus:border-red-500 focus:ring-red-500/30" : "border-gray-200 dark:border-[#222936] focus:border-primary focus:ring-primary/30"}`}
           />
 
           {hasOptions && (
@@ -125,6 +126,10 @@ function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDr
           <Trash2 size={15} />
         </button>
       </div>
+
+      {error && (
+        <p className="px-5 pb-3 pl-11 text-xs text-red-500">{error}</p>
+      )}
     </div>
   );
 }
@@ -250,6 +255,24 @@ export default function CreateForm() {
               className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none"
             />
           </div>
+
+          {/* Who is allowed to submit. Kept in Form Details because it is a
+              property of the form itself, not of its schedule. */}
+          <div className="rounded-lg border border-gray-200 dark:border-[#222936] bg-gray-50 dark:bg-white/[0.03] p-4">
+            <ToggleSwitch
+              id="form-requires-login"
+              checked={Boolean(formData.requiresLogin)}
+              onChange={(value) => updateField("requiresLogin", value)}
+              onLabel="Login required"
+              offLabel="Open to all"
+              label="Require login to submit"
+              description={
+                formData.requiresLogin
+                  ? "Only signed-in members can submit this form. Guests are asked to log in before they can continue."
+                  : "Anyone can submit this form, with or without an account. Submissions are not linked to a member."
+              }
+            />
+          </div>
         </div>
       </SectionCard>
 
@@ -310,8 +333,11 @@ export default function CreateForm() {
               value={formData.maxSubmissions || ""}
               onChange={(e) => updateField("maxSubmissions", e.target.value)}
               placeholder="e.g., 100"
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+              className="w-full px-3 py-2.5 rounded-lg border bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:ring-1 transition-colors border-gray-200 dark:border-[#222936] focus:border-primary focus:ring-primary/30"
             />
+            {errors?.maxSubmissions && (
+              <p className="mt-1 text-xs text-red-500">{errors.maxSubmissions}</p>
+            )}
             <p className="mt-1 text-xs text-muted">
               Leave empty for unlimited
             </p>
@@ -360,7 +386,7 @@ export default function CreateForm() {
               dragIndex={dragIndex}
               setDragIndex={setDragIndex}
               moveField={moveField}
-              errors={errors}
+              error={errors?.fieldErrors?.[idx]}
             />
           ))}
 
@@ -403,14 +429,23 @@ export default function CreateForm() {
         </p>
       </SectionCard>
 
-      {errors?.general && (
+      {(errors?.general || errors?.fields) && (
         <div
           role="alert"
           className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/40 px-4 py-3"
         >
-          <p className="text-sm text-red-600 dark:text-red-400">
-            {errors.general}
-          </p>
+          {errors.fields && (
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {errors.fields}
+            </p>
+          )}
+          {errors.general && (
+            <p
+              className={`text-sm text-red-600 dark:text-red-400 ${errors.fields ? "mt-1" : ""}`}
+            >
+              {errors.general}
+            </p>
+          )}
         </div>
       )}
 

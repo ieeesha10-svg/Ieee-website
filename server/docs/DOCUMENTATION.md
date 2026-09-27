@@ -217,7 +217,7 @@ curl http://localhost:5000/
 2. **Email Verification (OTP)** — A random 6-digit OTP (valid 15 minutes) is emailed via Brevo. `POST /verify-email` validates it, flags the account `isVerified`, clears the OTP, and **auto-login** the user by setting the JWT cookie.
 3. **Authentication** — Login verifies credentials and issues a JWT (30 days) stored in an **httpOnly cookie named `jwt`**. All subsequent requests authenticate via this cookie (`protect` middleware). Logout expires the cookie.
 4. **Events & Forms** — Admins (`xcom`/`board`) create an **Activity**; the API atomically creates a linked dynamic **Form** (custom fields: TextInput, TextArea, Dropdown, Checkbox, FileUpload). Form answers are validated against field definitions inside a Mongoose `pre('save')` hook.
-5. **Submission & Ticketing** — Logged-in users submit forms once (unique compound index `formId + userId`). Registration-type forms mint a unique **ticket code** (`<formId>-<userId>-<nanoid6>`), render a **QR code**, and email it to the attendee. FileUpload answers are streamed to Cloudinary under `submissions/<formId>/`.
+5. **Submission & Ticketing** — Logged-in users submit forms once (unique compound index `formId + userId`). Attendance-type forms mint a unique **ticket code** (`<formId>-<userId>-<nanoid6>`), render a **QR code**, and email it to the attendee. FileUpload answers are streamed to Cloudinary under `submissions/<formId>/`.
 6. **Check-in (Scanning)** — Volunteers (`scanner`) scan QR codes via `POST /submissions/scan`; the submission flips to `attended`, timestamps the check-in, and greets the registrant. Double-scans are rejected.
 7. **Committee Management** — Members request committee positions; `xcom`/`board` approve/reject. Approval assigns `user.committee` and triggers a decision email. XCom/board requests are auto-approved.
 8. **Communication** — Bulk emails are sent either from an uploaded Excel sheet (column A = recipient, other columns become `{{placeholders}}`) or from selected DB users. Every attempt is recorded in the `emaillogs` collection with a status of `Done`, `Rejected`, or `Not email`.
@@ -299,15 +299,15 @@ Every request → protect middleware → jwt.verify → req.user loaded
 |-------|------|-------|
 | `activityID` | ObjectId → Activity | optional link |
 | `createdBy` | ObjectId → User | required |
-| `title`, `description`, `type` | String | `type` drives ticket generation (`registration` ⇒ ticket) |
+| `title`, `description`, `type` | String | `type` drives ticket generation (`attendance` ⇒ ticket). Enum: `attendance`, `recruitment`, `feedback`, `workshop`, `survey`, plus legacy `other` |
 | `fields` | [fieldSchema] | dynamic builder fields |
 | `status` | String | enum: `Active`, `Closed`, `Draft`, `upcoming` |
 | `startDate`, `endDate` | Date | required |
 | `maxSubmissions` | Number | defaults to unlimited (`MAX_SAFE_INTEGER`) |
-| `requiresLogin` | Boolean | default `false` |
+| `requiresLogin` | Boolean | default `false`. Must be sent as a real boolean — a string like `"false"` is truthy in JavaScript, so it is rejected with `400 INVALID_REQUIRES_LOGIN` rather than cast. Enforced in `submitForm`, which returns `401` to a guest. Currently settable at creation only. |
 | `timestamps` | — | |
 
-**fieldSchema:** `{ id, label, type: TextInput|TextArea|Dropdown|Checkbox|FileUpload, required: Boolean, options: [String] }` — `options` mandatory (≥1) for Dropdown/Checkbox. A `pre('save')` hook slugifies labels into machine-friendly ids (e.g. `"Full Name"` → `full_name`).
+**fieldSchema:** `{ id, label, type: TextInput|TextArea|Dropdown|Checkbox|FileUpload, required: Boolean, options: [String] }` — `options` mandatory (≥1) for Dropdown/Checkbox. `id` is never taken from the request: a `pre('validate')` hook derives it from `label` via `server/utils/fieldId.js` (e.g. `"Full Name"` → `full_name`). Creation is rejected with `400 INVALID_FIELD_IDS` if a label yields no usable id, or if two labels yield the same one — two fields sharing an id would share a single answer key.
 
 ### `submissions`
 | Field | Type | Notes |
@@ -850,7 +850,7 @@ Returns all form submissions belonging to a member, with their linked form and a
   "data": [
     {
       "_id": "67a0...",
-      "formId": { "title": "IEEE Day 2026", "type": "registration", "activityID": { "title": "IEEE Day 2026" } },
+      "formId": { "title": "IEEE Day 2026", "type": "attendance", "activityID": { "title": "IEEE Day 2026" } },
       "registrantEmail": "ahmed@example.com",
       "ticketCode": "67a0...-66f1...-Vk3GhQ",
       "attended": true
@@ -1246,7 +1246,7 @@ fields:       [{"label":"Full Name","type":"TextInput","required":true},
     "title": "IEEE Day 2026",
     "activityID": "67d0a1b2c3d4e5f6a7b8c9d0",
     "status": "Active",
-    "type": "registration",
+    "type": "attendance",
     "fields": [
       { "id": "full_name", "label": "Full Name", "type": "TextInput", "required": true }
     ]
@@ -1448,20 +1448,22 @@ Creates a form not necessarily tied to an activity (surveys, volunteer applicati
 | Field | Type | Required | Default |
 |-------|------|:--------:|---------|
 | `title` | string | ✅ | |
-| `type` | string | ✅ | — (use `"registration"` for ticketed events) |
+| `type` | string | ✅ | — (use `"attendance"` for ticketed events) |
 | `description` | string | ➖ | |
-| `fields` | [field] | ➖ | `[{ label: "Full Name", type: "text", required: true }]` |
+| `fields` | [field] | ➖ | `[{ label: "Full Name", type: "TextInput", required: true }]` |
 | `startDate` | date | ➖ | now |
 | `endDate` | date | ➖ | now + 7 days |
 | `maxSubmissions` | number | ➖ | unlimited |
+| `requiresLogin` | boolean | ➖ | `false` — set `true` to require a signed-in member (the builder's "Require login to submit" switch) |
 
 **Request Example**
 
 ```json
 {
   "title": "Volunteer Application",
-  "type": "volunteer",
+  "type": "recruitment",
   "description": "Join our organizing team",
+  "requiresLogin": true,
   "fields": [
     { "label": "Full Name", "type": "TextInput", "required": true },
     { "label": "Preferred Committee", "type": "Dropdown", "required": true, "options": ["Technical", "HR", "PR"] },
@@ -1478,7 +1480,7 @@ Creates a form not necessarily tied to an activity (surveys, volunteer applicati
 {
   "_id": "67e0f1a2b3c4d5e6f7a8b9c0d",
   "title": "Volunteer Application",
-  "type": "volunteer",
+  "type": "recruitment",
   "status": "Draft",
   "createdBy": "67b2d4e5f6a7b8c9d0e1f2a3",
   "fields": [
@@ -1508,11 +1510,11 @@ Public renderer endpoint. Returns the form **only while it is `Active` and befor
 {
   "_id": "67d0a1b2c3d4e5f6a7b8c9d1",
   "title": "IEEE Day 2026",
-  "type": "registration",
+  "type": "attendance",
   "status": "Active",
   "fields": [
     { "id": "full_name", "label": "Full Name", "type": "TextInput", "required": true },
-    { "id": "tshirt_size", "label": "T-Shirt Size", "type": "Dropdown", "required": true, "options": ["S", "M", "L"] }
+    { "id": "t-shirt_size", "label": "T-Shirt Size", "type": "Dropdown", "required": true, "options": ["S", "M", "L"] }
   ],
   "requiresLogin": false
 }
@@ -1619,7 +1621,7 @@ Updates scheduling/capacity settings.
 
 `POST /api/submissions`
 
-Submits answers to a form. One submission per user per form (DB-enforced). For `registration`-type forms, a **ticket code + QR image** is generated and the ticket is emailed asynchronously. Uploaded files go to Cloudinary and their URLs replace/add the corresponding answer keys.
+Submits answers to a form. One submission per user per form (DB-enforced). For `attendance`-type forms, a **ticket code + QR image** is generated and the ticket is emailed asynchronously. Uploaded files go to Cloudinary and their URLs replace/add the corresponding answer keys.
 
 - **Auth:** Yes (any logged-in user)
 - **Headers:** `multipart/form-data` when uploading files (otherwise JSON works)
@@ -1666,7 +1668,7 @@ Submits answers to a form. One submission per user per form (DB-enforced). For `
 }
 ```
 
-*(Non-registration forms omit `ticketCode`.)*
+*(Forms of any other type omit `ticketCode`.)*
 
 **Error Responses**
 

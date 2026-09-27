@@ -63,7 +63,7 @@ Typical flow:
 
 ## Tech Stack (versions)
 
-React 19, React Router 7, Vite 7, Tailwind CSS 4, Axios, react-hot-toast, lucide-react, react-icons, recharts, xlsx, html5-qrcode, Tiptap (rich text editor), DOMPurify, MobX + @react-form-builder (form designer packages).
+React 19, React Router 7, Vite 7, Tailwind CSS 4, Axios, react-hot-toast, lucide-react, react-icons, recharts, xlsx, html5-qrcode, Tiptap (rich text editor), DOMPurify.
 
 ## Code Conventions
 

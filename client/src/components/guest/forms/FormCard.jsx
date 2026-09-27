@@ -3,37 +3,36 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import api from "../../../utils/api";
 import toast from "react-hot-toast";
-import { SURVEY_COLOR, FEEDBACK_COLOR, CUSTOM_COLOR } from "../../../data/formTypes";
+import {
+  RECRUITMENT_COLOR,
+  ATTENDANCE_COLOR,
+  WORKSHOP_COLOR,
+  SURVEY_COLOR,
+  FEEDBACK_COLOR,
+  LEGACY_COLOR,
+} from "../../../data/formTypes";
+
+const tinted = (color, label) => ({
+  badge: "border",
+  badgeStyle: { backgroundColor: `${color}1A`, color, borderColor: `${color}20` },
+  color,
+  label,
+});
 
 const CATEGORY_STYLES = {
-  Registration: {
-    badge: "border bg-primary/10 text-primary-light dark:text-primary border-primary-light/10 dark:border-primary/10",
-    label: "Registration",
-  },
-  Survey: {
-    badge: "border",
-		badgeStyle: { backgroundColor: `${SURVEY_COLOR}1A`, color: SURVEY_COLOR, borderColor: `${SURVEY_COLOR}20` },
-		color: SURVEY_COLOR,
-    label: "Survey",
-  },
-  Feedback: {
-    badge: "border",
-		badgeStyle: { backgroundColor: `${FEEDBACK_COLOR}1A`, color: FEEDBACK_COLOR, borderColor: `${FEEDBACK_COLOR}20` },
-		color: FEEDBACK_COLOR,
-    label: "Feedback",
-  },
-  Custom: {
-    badge: "border",
-		badgeStyle: { backgroundColor: `${CUSTOM_COLOR}1A`, color: CUSTOM_COLOR, borderColor: `${CUSTOM_COLOR}20` },
-    color: CUSTOM_COLOR,
-    label: "General",
-  },
+  Recruitment: tinted(RECRUITMENT_COLOR, "Recruitment"),
+  Attendance: tinted(ATTENDANCE_COLOR, "Attendance"),
+  Workshop: tinted(WORKSHOP_COLOR, "Workshop"),
+  Survey: tinted(SURVEY_COLOR, "Survey"),
+  Feedback: tinted(FEEDBACK_COLOR, "Feedback"),
+  Other: tinted(LEGACY_COLOR, "General"),
 };
+
 
 export default function FormCard({ form }) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const style = CATEGORY_STYLES[form.category] || CATEGORY_STYLES["Custom"];
+  const style = CATEGORY_STYLES[form.category] || CATEGORY_STYLES.Other;
   const hasLink = !!form._id;
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [checkingSubmission, setCheckingSubmission] = useState(true);

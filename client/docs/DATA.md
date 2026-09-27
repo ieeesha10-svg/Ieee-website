@@ -60,14 +60,19 @@ Validated by `useCreateForm` and rendered by the form builder.
 ```js
 export const FORM_TYPE_OPTIONS = [
   { value: "", label: "Select a form type" },
-  { value: "registration", label: "Registration" },
-  { value: "survey", label: "Survey" },
+  { value: "recruitment", label: "Recruitment" },
   { value: "feedback", label: "Feedback" },
-  { value: "custom", label: "Custom" },
+  { value: "attendance", label: "Attendance or Event Registration" },
+  { value: "workshop", label: "Workshop" },
+  { value: "survey", label: "Survey" },
 ];
 ```
 
-Plus `FORM_TYPE_BADGE` (label + badge classes + dot color per type) and color constants: `SURVEY_COLOR`, `FEEDBACK_COLOR`, `CUSTOM_COLOR`.
+`value` is persisted as `form.type` and must match the enum in `server/models/FormModel.js`. `attendance` is the ticket-bearing type — the server mints the QR ticket code only for it, and every activity-linked form is created as `attendance`.
+
+Plus `FORM_TYPE_BADGE` (label + badge classes + dot color per type), `DEFAULT_FORM_TYPE_BADGE` (the fallback for unknown types, an alias of the `other` entry), and color constants: `RECRUITMENT_COLOR`, `ATTENDANCE_COLOR`, `WORKSHOP_COLOR`, `SURVEY_COLOR`, `FEEDBACK_COLOR`, `LEGACY_COLOR`.
+
+`other` exists in the badge map and the server enum for forms saved before this type set; it is not offered in the builder.
 
 ## Academic Years — `ordinalMap.js`
 

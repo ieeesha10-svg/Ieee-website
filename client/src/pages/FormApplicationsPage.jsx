@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { usePublicForms } from "../hooks/usePublicForms";
+import { usePublicForms, FORM_CATEGORIES } from "../hooks/usePublicForms";
 import FormCard from "../components/guest/forms/FormCard";
 import Badge from "../components/ui/Badge";
 import FooterAlt from "../components/layout/FooterAlt";
 
-const TABS = ["All", "Registration", "Survey", "Feedback", "General"];
+const TABS = ["All", ...FORM_CATEGORIES];
+
 
 export default function ApplicationsPage() {
   const { forms, isLoading } = usePublicForms();
@@ -40,7 +41,7 @@ export default function ApplicationsPage() {
 						All submissions are reviewed by our branch committee.
           </p>
 
-					<div className="mt-8 mx-auto max-w-2xl h-px" style={{ background: "linear-gradient(to right, transparent, rgba(0,150,255,0.2) 50%, transparent)" }} />
+            <div className="mt-8 mx-auto max-w-2xl h-px" style={{ background: "linear-gradient(to right, transparent, rgba(0,150,255,0.2) 50%, transparent)" }} />
         </div>
 
         {/* Filter Tabs */}
@@ -100,19 +101,19 @@ export default function ApplicationsPage() {
             </div>
           ) : filteredForms.length === 0 ? (
             <div className="text-center py-5 lg:py-8">
-              {activeTab !== "Registration" && (
+              {activeTab !== "Recruitment" && (
                 <>
                   <p className="text-muted text-lg font-medium">No forms available</p>
                   <p className="text-muted/60 text-sm mt-1">
                     {activeTab === "All"
                       ? "Check back later for open applications."
-                      : `No ${activeTab.toLowerCase()} are currently open.`}
+                      : `No ${activeTab.toLowerCase()} forms are currently open.`}
                   </p>
                 </>
               )}
-              {activeTab === "Registration" && (
+              {activeTab === "Recruitment" && (
                 <div className="mt-8">
-                  <p className="text-muted text-lg font-medium">No open registrations right now</p>
+                  <p className="text-muted text-lg font-medium">No open recruitment right now</p>
                   <p className="text-muted text-sm max-w-md mx-auto leading-relaxed mt-2">
                     We're not accepting applications at the moment — but if you're ready to
                     bring value to our branch and join the team, we'd love to talk to

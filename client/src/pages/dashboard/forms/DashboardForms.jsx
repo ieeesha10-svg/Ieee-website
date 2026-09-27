@@ -1,13 +1,37 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FileText, Clipboard, Calendar, UserPlus, ClipboardList, MessageSquare, Eye, Plus, Trash2, Check, ChevronDown, Pencil, ExternalLink } from "lucide-react";
+import { FileText, Clipboard, Calendar, UserPlus, ClipboardList, MessageSquare, Eye, Plus, Trash2, Check, ChevronDown, Pencil, ExternalLink, FileType, Wrench } from "lucide-react";
 // Hooks & data
 import { useForms } from "../../../hooks/dashboard/forms/useForms";
 import { useDeleteForm } from "../../../hooks/dashboard/forms/useDeleteForm";
 import { useToggleForm } from "../../../hooks/dashboard/forms/useToggleForm";
 import { useUpdateForm } from "../../../hooks/dashboard/forms/useUpdateForm";
-import { SURVEY_COLOR, FEEDBACK_COLOR, CUSTOM_COLOR } from "../../../data/formTypes";
+import {
+  RECRUITMENT_COLOR,
+  ATTENDANCE_COLOR,
+  WORKSHOP_COLOR,
+  SURVEY_COLOR,
+  FEEDBACK_COLOR,
+  LEGACY_COLOR,
+  FORM_TYPE_BADGE,
+  DEFAULT_FORM_TYPE_BADGE,
+} from "../../../data/formTypes";
+
+// form.type -> icon + accent. "other" (legacy) and anything unrecognised fall back
+// to the general entry, so forms saved under an older type still render.
+const FORM_TYPE_ICONS = {
+  recruitment: { Icon: UserPlus, color: RECRUITMENT_COLOR },
+  attendance: { Icon: FileType, color: ATTENDANCE_COLOR },
+  workshop: { Icon: Wrench, color: WORKSHOP_COLOR },
+  survey: { Icon: ClipboardList, color: SURVEY_COLOR },
+  feedback: { Icon: MessageSquare, color: FEEDBACK_COLOR },
+};
+
+function formTypeVisuals(formType) {
+  return FORM_TYPE_ICONS[formType] || { Icon: Clipboard, color: LEGACY_COLOR };
+}
+
 // Components
 import DeleteModal from "../../../components/ui/DeleteModal";
 import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
@@ -56,15 +80,17 @@ function FieldsModal({ form, onClose }) {
             )}
             <div>
               <span className="font-bold text-muted">Type:</span>
-              <p className="text-foreground capitalize">{form.formType || "custom"}</p>
+              <p className="text-foreground">
+                {(FORM_TYPE_BADGE[form.type] || DEFAULT_FORM_TYPE_BADGE).label}
+              </p>
             </div>
             <div>
               <span className="font-bold text-muted">Max Submissions:</span>
               <p className="text-foreground">{form.maxSubmissions ? String(form.maxSubmissions) : "Unlimited"}</p>
             </div>
             <div>
-              <span className="font-bold text-muted">Max Submissions:</span>
-              <p className="text-foreground">{form.maxSubmissions ? String(form.maxSubmissions) : "Unlimited"}</p>
+              <span className="font-bold text-muted">Login:</span>
+              <p className="text-foreground">{form.requiresLogin ? "Required" : "Open to all"}</p>
             </div>
           </div>
 
@@ -158,24 +184,19 @@ function FieldsModal({ form, onClose }) {
 /*Single Form Row */
 function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
   const dateExpired = form.endDate && new Date(form.endDate) < new Date();
+  const { Icon: TypeIcon, color: typeColor } = formTypeVisuals(form.type);
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-5 py-4 border-b border-gray-100 dark:border-[#222936] last:border-b-0 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors">
       {/* Icon + Info */}
       <button type="button" onClick={() => onViewFields(form)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${form.activityID ? "bg-blue-50 dark:bg-blue-900/20" : ""}`}
-          style={form.activityID ? {} : {
-            backgroundColor: form.formType === "survey" ? `${SURVEY_COLOR}33` : form.formType === "feedback" ? `${FEEDBACK_COLOR}33` : form.formType === "registration" ? "#0096ff33" : `${CUSTOM_COLOR}33`
+          style={{
+            backgroundColor: form.activityID ? undefined : `${typeColor}33`,
           }}>
           {form.activityID ? (
             <Calendar size={16} className="text-blue-500 dark:text-blue-400" />
-          ) : form.formType === "registration" ? (
-            <UserPlus size={16} style={{ color: "#0096ff" }} />
-          ) : form.formType === "survey" ? (
-            <ClipboardList size={16} style={{ color: SURVEY_COLOR }} />
-          ) : form.formType === "feedback" ? (
-            <MessageSquare size={16} style={{ color: FEEDBACK_COLOR }} />
           ) : (
-            <Clipboard size={16} style={{ color: CUSTOM_COLOR }} />
+            <TypeIcon size={16} style={{ color: typeColor }} />
           )}
         </div>
         <div className="min-w-0">

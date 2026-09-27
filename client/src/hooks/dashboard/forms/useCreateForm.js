@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../../utils/api";
 import { useAuth } from "../../../context/AuthContext";
 import { ALLOWED_TYPES } from "../../../data/fieldTypes";
+import { slugifyFieldLabel } from "../../../utils/fieldId";
 
 const INITIAL_FORM_DATA = {
   title: "",
@@ -11,6 +12,7 @@ const INITIAL_FORM_DATA = {
   startDate: "",
   endDate: "",
   maxSubmissions: "",
+  requiresLogin: false,
 };
 
 const DEFAULT_FIELDS = [
@@ -18,9 +20,7 @@ const DEFAULT_FIELDS = [
   { id: "email", label: "Email", type: "TextInput", required: true },
 ];
 
-function slugify(str) {
-  return str.toLowerCase().trim().replace(/\s+/g, "_");
-}
+const hasOptions = (type) => type === "Dropdown" || type === "Checkbox";
 
 export function useCreateForm() {
   const { user } = useAuth();
@@ -71,8 +71,12 @@ export function useCreateForm() {
     });
   }, []);
 
+  // Returns a flat `errors` object plus `fieldErrors`, keyed by field index, so
+  // the builder can put each message under the row that caused it. The server
+  // re-checks all of this; this exists to fail fast and point at the row.
   const validate = useCallback(() => {
     const newErrors = {};
+    const fieldErrors = {};
 
     if (!formData.title || !formData.title.trim()) {
       newErrors.title = "Form title is required";
@@ -95,42 +99,66 @@ export function useCreateForm() {
       }
     }
 
-    if (fieldsList.length > 0) {
-      const emptyLabel = fieldsList.some(
-        (f) => !f.label || !f.label.trim()
-      );
-      const invalidType = fieldsList.some(
-        (f) => !ALLOWED_TYPES.includes(f.type)
-      );
-      const emptyDropdown = fieldsList.some(
-        (f) =>
-          (f.type === "Dropdown" || f.type === "Checkbox") &&
-          (!f.options ||
-            f.options.length === 0 ||
-            f.options.every((o) => !o.trim()))
-      );
-
-      if (emptyLabel) {
-        newErrors.fields = "All field labels are required";
-      } else if (invalidType) {
-        newErrors.fields = "Each field must have a valid type";
-      } else if (emptyDropdown) {
-        newErrors.fields =
-          "Each Dropdown/Checkbox field must have at least one option";
-      }
-
-      const slugs = fieldsList.map((f) =>
-        slugify(f.label || "")
-      );
-      const hasDups = slugs.length !== new Set(slugs).size;
-      if (hasDups && !newErrors.fields) {
-        newErrors.fields = "Each field label must be unique";
-      }
+    if (fieldsList.length === 0) {
+      newErrors.fields = "Add at least one field to the form";
+      return { ...newErrors, fieldErrors };
     }
 
-    return newErrors;
+    const firstIndexForId = new Map();
+    const duplicateLabels = [];
+
+    fieldsList.forEach((f, index) => {
+      const label = String(f.label ?? "").trim();
+
+      if (!label) {
+        fieldErrors[index] = "Field label is required";
+        return;
+      }
+
+      if (!ALLOWED_TYPES.includes(f.type)) {
+        fieldErrors[index] = "Choose a valid field type";
+        return;
+      }
+
+      if (hasOptions(f.type)) {
+        const options = (f.options ?? []).filter((o) => o.trim());
+        if (options.length === 0) {
+          fieldErrors[index] =
+            "Add at least one option, or switch the type";
+          return;
+        }
+      }
+
+      // Ids are derived from labels server-side and are the keys answers are
+      // stored under, so a label that yields nothing is unusable, and two labels
+      // that yield the same id would silently share one answer.
+      const id = slugifyFieldLabel(label);
+      if (!id) {
+        fieldErrors[index] =
+          "This label can't be turned into a field id — use at least one letter or number";
+        return;
+      }
+
+      if (firstIndexForId.has(id)) {
+        fieldErrors[index] = "Duplicates an earlier field label";
+        duplicateLabels.push(label);
+      } else {
+        firstIndexForId.set(id, index);
+      }
+    });
+
+    if (duplicateLabels.length > 0) {
+      newErrors.fields = `Every field label must be unique. These are repeated: ${duplicateLabels.join(", ")}`;
+    }
+
+    return { ...newErrors, fieldErrors };
   }, [formData, fieldsList]);
 
+  // Note: field `id`s are deliberately not sent. The server derives them from the
+  // labels (see server/utils/fieldId.js) because that id is the key every answer
+  // is stored under. The builder previously sent its own slug and a `_2` suffix for
+  // collisions, but the server overwrote both with a different algorithm, so two
+  // labels could still end up sharing one answer key.
   const buildPayload = useCallback(() => {
     const payload = {};
 
@@ -153,39 +181,27 @@ export function useCreateForm() {
       payload.maxSubmissions = Number(formData.maxSubmissions);
     }
 
-    if (fieldsList.length > 0) {
-      const usedSlugs = new Map();
-      payload.fields = fieldsList.map((f) => {
-        let fieldId = slugify(f.label);
-        if (usedSlugs.has(fieldId)) {
-          const count = usedSlugs.get(fieldId) + 1;
-          usedSlugs.set(fieldId, count);
-          fieldId = `${fieldId}_${count}`;
-        } else {
-          usedSlugs.set(fieldId, 1);
-        }
+    // Always sent as a real boolean. The server rejects anything else, and a
+    // truthy string such as "false" would otherwise make a public form
+    // login-only.
+    payload.requiresLogin = Boolean(formData.requiresLogin);
 
-        const fieldObj = {
-          id: fieldId,
-          label: f.label.trim(),
-          type: f.type,
-          required: f.required,
-        };
+    payload.fields = fieldsList.map((f) => {
+      const fieldObj = {
+        label: f.label.trim(),
+        type: f.type,
+        required: f.required,
+      };
 
-        if (
-          (f.type === "Dropdown" || f.type === "Checkbox") &&
-          f.options &&
-          f.options.length > 0
-        ) {
-          const filtered = f.options.filter((o) => o.trim());
-          if (filtered.length > 0) {
-            fieldObj.options = filtered;
-          }
-        }
+      if (hasOptions(f.type) && f.options) {
+        const filled = f.options
+          .map((o) => o.trim())
+          .filter((o) => o.length > 0);
+        if (filled.length > 0) fieldObj.options = filled;
+      }
 
-        return fieldObj;
-      });
-    }
+      return fieldObj;
+    });
 
     return payload;
   }, [formData, fieldsList]);
@@ -200,9 +216,14 @@ export function useCreateForm() {
       return;
     }
 
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+    // `fieldErrors` is always present (possibly empty), so it has to be split out
+    // before testing whether anything actually failed.
+    const { fieldErrors, ...formErrors } = validate();
+    if (
+      Object.keys(formErrors).length > 0 ||
+      Object.keys(fieldErrors).length > 0
+    ) {
+      setErrors({ ...formErrors, fieldErrors });
       return;
     }
 
@@ -213,7 +234,7 @@ export function useCreateForm() {
       await api.post("/form", payload);
 
       setFormData({ ...INITIAL_FORM_DATA });
-      setFieldsList([]);
+      setFieldsList(DEFAULT_FIELDS);
 
       navigate("/dashboard/forms");
     } catch (error) {

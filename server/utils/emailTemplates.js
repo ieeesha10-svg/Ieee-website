@@ -1,50 +1,25 @@
 // This file holds all your static HTML parts
 
-const fs = require('fs');
-const path = require('path');
-
-const LOGO_FILE = 'ieeesha-black-logo-200.png';
+const LOGO_URL = 'https://i.ibb.co/p6ZC1kT1/ieeesha-black-logo.png';
 const LOGO_ALT = 'IEEE El Shorouk Academy Student Branch';
-
-let logoDataUri = null;
-
-// Inline the logo as a base64 data URI. Email clients have no base URL, so a
-// relative path such as "./logo.png" can never resolve and always renders as a
-// broken image. The URI is built once and cached for the process lifetime.
-const getLogoDataUri = () => {
-  if (logoDataUri) return logoDataUri;
-
-  try {
-    const filePath = path.join(__dirname, LOGO_FILE);
-    logoDataUri = `data:image/png;base64,${fs.readFileSync(filePath).toString('base64')}`;
-  } catch (err) {
-    console.error(`Email footer logo could not be loaded from ${LOGO_FILE}:`, err.message);
-    logoDataUri = '';
-  }
-
-  return logoDataUri;
-};
 
 // The footer is only the 600px card. The page background, the gutter and the
 // document scaffolding are supplied by buildEmailDocument() so that every email
 // — template or bulk — shares one wrapper and the two cards always line up.
 const getFooterCard = () => {
-  const logo = getLogoDataUri();
-
-  const logoCell = logo
-    ? `<td
+  const logoCell = `<td
          width="135"
          valign="middle"
          align="center"
          style="width: 135px; padding-right: 20px;"
        >
          <img
-           src="${logo}"
+           src="${LOGO_URL}"
            alt="${LOGO_ALT}"
-           width="100"
+           width="90"
            style="
              display: block;
-             width: 100px;
+             width: 90px;
              max-width: 90px;
              height: auto;
              border: 0;
@@ -52,12 +27,9 @@ const getFooterCard = () => {
              text-decoration: none;
            "
          />
-       </td>`
-    : '';
+       </td>`;
 
-  // The divider only makes sense when the logo cell is rendered.
-  const divider = logo
-    ? `<td
+  const divider = `<td
          width="1"
          style="
            width: 1px;
@@ -67,8 +39,7 @@ const getFooterCard = () => {
          "
        >
          &nbsp;
-       </td>`
-    : '';
+       </td>`;
 
   return `
           <!-- ==================== FOOTER CARD ==================== -->
