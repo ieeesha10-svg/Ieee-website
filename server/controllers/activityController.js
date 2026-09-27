@@ -252,7 +252,7 @@ const removeFeaturedActivity = async (req, res) => {
     const updatedDoc = await FeaturedActivities.findOneAndUpdate(
       {}, // we don't need to match anything
       { $pull: { activities: activityId } }, // remove the activity from the list
-      { new: true } // return the updated doc
+      { returnDocument: 'after' } // return the updated doc
     );
 
     // if no doc was found, return an error

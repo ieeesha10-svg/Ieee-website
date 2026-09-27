@@ -1,6 +1,7 @@
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 const PendingRequest = require('../models/PendingRequest');
 const User = require('../models/UserModel');
+const { readSettings } = require('./settingsController');
 const { sendCommitteeDecisionEmail } = require('../utils/sendEmail');
 
 const createCommitteeRequest = catchAsync(async (req, res) => {
@@ -18,6 +19,8 @@ const createCommitteeRequest = catchAsync(async (req, res) => {
 
   // XCom & Board members are accepted immediately
   if (['xcom', 'board'].includes(existingUser.role)) {
+    // Admins are placed directly, so this switch is aimed at members and does
+    // not apply to them.
     if (existingUser.committee === committee_position) {
       throw new AppError('User already has this committee position', 400);
     }
@@ -29,6 +32,16 @@ const createCommitteeRequest = catchAsync(async (req, res) => {
       message: 'Committee request submitted and accepted automatically',
       data: existingUser
     });
+  }
+
+  // An admin can pause new applications. Checked here rather than in the route
+  // so the board can still review everything already submitted.
+  const settings = await readSettings();
+  if (!settings.committeeApplicationsOpen) {
+    throw new AppError(
+      'Committee applications are currently closed. Please try again later.',
+      403
+    );
   }
 
   const existingRequest = await PendingRequest.findOne({ userId, request_status: 'pending' });
