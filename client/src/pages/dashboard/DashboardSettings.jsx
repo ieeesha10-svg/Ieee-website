@@ -19,7 +19,8 @@ import {
   Clock,
   Database,
   DatabaseBackup,
-  User
+  User,
+  UserPlus
 } from "lucide-react";
 // Hooks & Data
 import { useUserUpdate } from "../../hooks/dashboard/useUserUpdate";
@@ -28,6 +29,7 @@ import { useMembersList } from "../../hooks/dashboard/useMembersList";
 import { useGetAdmins } from "../../hooks/dashboard/useGetAdmins";
 import { useSubmitCommitteeRequest } from "../../hooks/dashboard/useSubmitCommitteeRequest";
 import { useBackup } from "../../hooks/dashboard/useBackup";
+import { useSiteSettings } from "../../hooks/dashboard/useSiteSettings";
 import { ADMIN_ROLES } from '../../data/roles'
 import { ORDINAL_OPTIONS } from '../../data/ordinalMap'
 import { committees } from '../../data/committeesData'
@@ -35,6 +37,7 @@ import { committees } from '../../data/committeesData'
 import DeleteModal from "../../components/ui/DeleteModal";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Skeleton from "../../components/skeletons/DashSettingsSkeleton";
+import ToggleSwitch from "../../components/ui/ToggleSwitch";
 import api from "../../utils/api";
 
 function SectionCard({ children, className = "" }) {
@@ -195,6 +198,14 @@ export default function DashboardSettings() {
   const { updateRole } = useUpdateRole();
   const { admins, adminRoles, setAdmins, setAdminRoles, refetch: fetchAdmins } = useGetAdmins();
   const { submitting: committeeSaving, submitRequest } = useSubmitCommitteeRequest();
+  const {
+    registrationOpen,
+    committeeApplicationsOpen,
+    loading: loadingSettings,
+    saving,
+    setRegistration,
+    setCommitteeApplications,
+  } = useSiteSettings();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -659,6 +670,65 @@ export default function DashboardSettings() {
                 Save Permissions
               </button>*/}
             </SectionCard>
+
+      {/* Registration & Applications */}
+      {isAdminRole && (
+        <SectionCard>
+          <div className="flex items-center gap-2 mb-1">
+            <UserPlus size={18} className="text-muted" />
+            <h2 className="text-xl font-bold text-foreground">
+              Registration &amp; Applications
+            </h2>
+          </div>
+          <p className="text-xs text-muted mb-5">
+            Pause new sign-ups or new committee applications without affecting
+            the people already here. Signing in always keeps working, and
+            applications already submitted can still be reviewed.
+          </p>
+
+          <div className="space-y-4">
+            <div className="rounded-lg border border-gray-100 dark:border-[#222936] bg-gray-50 dark:bg-gray-800/40 p-4">
+              <ToggleSwitch
+                id="toggle-registration"
+                checked={registrationOpen}
+                disabled={loadingSettings || saving === "registrationOpen"}
+                onChange={setRegistration}
+                onLabel="Open"
+                offLabel="Closed"
+                label="Allow new accounts"
+                description={
+                  loadingSettings
+                    ? "Checking the current status..."
+                    : registrationOpen
+                      ? "The registration form is open to visitors."
+                      : "The registration form is closed. Sign-in is unaffected."
+                }
+              />
+            </div>
+
+            <div className="rounded-lg border border-gray-100 dark:border-[#222936] bg-gray-50 dark:bg-gray-800/40 p-4">
+              <ToggleSwitch
+                id="toggle-committee-applications"
+                checked={committeeApplicationsOpen}
+                disabled={
+                  loadingSettings || saving === "committeeApplicationsOpen"
+                }
+                onChange={setCommitteeApplications}
+                onLabel="Open"
+                offLabel="Closed"
+                label="Allow committee applications"
+                description={
+                  loadingSettings
+                    ? "Checking the current status..."
+                    : committeeApplicationsOpen
+                      ? "Members can apply for a committee from the committees page."
+                      : "New applications are paused. The board can still review the ones already submitted."
+                }
+              />
+            </div>
+          </div>
+        </SectionCard>
+      )}
 
       {/* Section 4: Backup & Restore */}
       <SectionCard>

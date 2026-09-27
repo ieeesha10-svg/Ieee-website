@@ -165,7 +165,7 @@ const updateFormSettings = catchAsync(async (req, res) => {
       id,
       { $set: updateFields },
       { 
-        new: true,
+        returnDocument: 'after',
         runValidators: true 
       }
     );

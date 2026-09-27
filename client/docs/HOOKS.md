@@ -20,6 +20,8 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 | `useCrew` | `GET /crew` | `{ team, isLoading }` | Maps API crew to card shape |
 | `useDarkMode` | — | `[colorTheme, setTheme]` | localStorage `theme` + `.dark` class on `<html>` |
 | `useJoinMenu(navigate)` | — | `{ ref, open, toggle, openMenu, close, handleNavigate }` | Takes `navigate` from `useNavigate()`. Dropdown open/close + outside-click + Esc handling |
+| `usePublicSettings` | `GET /settings/public` (public) | `{ registrationOpen, committeeApplicationsOpen, loading, refetch }` | The two site-wide switches a visitor needs to know about, in one request. `null` until the answer arrives so a page can withhold itself rather than flash the wrong state. Fails open — the server still refuses a closed request, so the worst case is finding out after submitting |
+| `useCommitteeApplication` | `GET /committee-requests/my`, `POST /committee-requests` | `{ user, pending, applying, loading, apply(label), reload }` | Drives the apply button on the public committees page. Reads `useAuth` for the current member and surfaces their one pending request, so a second apply is explained rather than failing silently. Board/xcom members are accepted immediately and the profile is refreshed in place |
 
 ## Auth Hooks (`src/hooks/auth/`)
 
@@ -82,6 +84,12 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 | Hook | Endpoint(s) | Returns | Notes |
 |------|-------------|---------|-------|
 | `useEmailLogs` | `GET /emails/logs?page=&limit=&search=&status=` | `{ logs, loading, search, setSearch, statusFilter, setStatusFilter, page, setPage, pagination }` | 500ms debounce; maps backend statuses ("Done"/"Rejected"/...) to UI statuses (delivered/failed/pending) |
+
+### Site Settings
+
+| Hook | Endpoint(s) | Returns | Notes |
+|------|-------------|---------|-------|
+| `useSiteSettings` | `GET /settings`, `PUT /settings/registration`, `PUT /settings/committee-applications` | `{ registrationOpen, committeeApplicationsOpen, loading, saving, setRegistration(open), setCommitteeApplications(open), refetch }` | Admin-only, drives `ToggleSwitch` in DashboardSettings. Flips optimistically and rolls back if the server refuses. `saving` names the switch mid-flight so each row disables only itself. Neither switch affects sign-in or the review of already-submitted applications |
 
 ### Submissions
 

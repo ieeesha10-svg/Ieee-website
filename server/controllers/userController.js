@@ -1,6 +1,7 @@
 const User = require('../models/UserModel');
 const Submission = require('../models/SubmissionModel');
 const PendingRequest = require('../models/PendingRequest');
+const { readSettings } = require('./settingsController');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -126,9 +127,16 @@ const registerUser = async (req, res) => {
       phone, age,
       position,
       university, college, yearOfStudy, interests, role,
-      committee,
       organization, roleInOrganization, yearsOfExperience, reasonForRegistration
     } = req.body;
+
+    // An admin can close public sign-up. Checked before anything is created so
+    // a closed form leaves no half-made account behind. Signing in is a
+    // different endpoint and is deliberately not affected.
+    const settings = await readSettings();
+    if (!settings.registrationOpen) {
+      throw new AppError('Registration is currently closed. Please try again later.', 403);
+    }
 
     if (password !== confirmPassword) {
       throw new AppError('Passwords do not match', 400);
@@ -174,7 +182,6 @@ const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       role: finalRole,
-      committee: 'no committee',
       otp,
       otpExpires,
       phone,
@@ -197,13 +204,9 @@ const registerUser = async (req, res) => {
 
     const user = await User.create(userData);
 
-    if (committee) {
-      await PendingRequest.create({
-        userId: user._id,
-        committee_position: committee,
-        request_status: 'pending'
-      });
-    }
+    // A committee is no longer chosen here. New members apply for one from the
+    // committees page once they have an account, which creates a PendingRequest
+    // for the board to approve.
 
     const emailSent = await sendOTPEmail(user.email, otp);
 
@@ -688,7 +691,9 @@ const updateUserProfile = catchAsync(async (req, res) => {
     "yearsOfExperience",
     "reasonForRegistration",
     "interests",
-    "committee",
+    // "committee" is deliberately absent. A committee is only ever granted by
+    // the board approving a PendingRequest, so it must not be settable here or
+    // anyone could put themselves in any committee.
     "optionalData",
   ];
 
@@ -703,7 +708,7 @@ const updateUserProfile = catchAsync(async (req, res) => {
     req.user.id,
     updates,
     {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }
   );
@@ -905,7 +910,7 @@ const upgradeMemberRole = catchAsync(async (req, res, next) => {
   if (!allowedRoles.includes(role)) {
     return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`, 400));
   }
-  const updatedMember = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
+  const updatedMember = await User.findByIdAndUpdate(req.params.id, { role }, { returnDocument: 'after' });
   if (!updatedMember) {
     return next(new AppError("Member not found", 400));
   }
