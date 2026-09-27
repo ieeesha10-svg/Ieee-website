@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { slugifyFieldLabel } = require('../utils/fieldId');
 
 const fieldSchema = new mongoose.Schema({
   id: { 
@@ -66,12 +67,14 @@ const formSchema = new mongoose.Schema({
   },
   fields: [fieldSchema], // <-- Using the defined fieldSchema for better structure and validation
   /*
-  Stores dynamic form fields generated from frontend builder
+  Stores dynamic form fields generated from frontend builder.
+  `id` is always derived from `label` by the pre-validate hook below — clients
+  must not supply their own.
   Example:
   [
     {
       id: "full_name",
-      type: "text",
+      type: "TextInput",
       label: "Full Name",
       required: true
     }
@@ -83,6 +86,7 @@ const formSchema = new mongoose.Schema({
     default: "other"
   },
   startDate: {
+
     type: Date,
     required: true
   },
@@ -102,20 +106,25 @@ const formSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-formSchema.pre('save', function() {
-  if (this.isModified('fields')) {
-    this.fields.forEach(field => {
-      if (field.label) {
-        field.id = field.label
-          .trim()
-          .toLowerCase()
-          .replace(/\s+/g, '_')
-          .replace(/[^\w-]+/g, '');
-        }
-      });
-    }
-  }
-);
+// `field.id` is derived from `field.label` rather than trusted from the client,
+// because that id is the key every answer is stored under. See utils/fieldId.js.
+//
+// This runs on 'validate', not 'save', so canonical ids exist by the time
+// fieldSchema's own `required` validator runs. On 'save' it ran *after*
+// validation, which meant a label that slugs to nothing surfaced as a generic
+// "ID is required" naming a field the client had named differently.
+//
+// The isModified('fields') guard keeps legacy documents loadable: a form that
+// already has duplicate ids from before this fix can still be toggled closed
+// without validation blowing up on the unrelated write.
+formSchema.pre('validate', function () {
+  if (!this.isModified('fields')) return;
+
+  this.fields.forEach((field) => {
+    if (field.label) field.id = slugifyFieldLabel(field.label);
+  });
+});
+
 
 const Form = mongoose.model('Form', formSchema);
 module.exports = Form;

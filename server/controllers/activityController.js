@@ -6,6 +6,7 @@ const Form = require('../models/FormModel.js');
 const Submission = require('../models/SubmissionModel.js');
 const cloudinary = require('../config/cloudinary.js');
 const sanitizeHtml = require('sanitize-html');
+const { deriveFieldIds, describeFieldIdProblems } = require('../utils/fieldId');
 
 /**
  >> each activity has a form associated with it. <<
@@ -55,6 +56,29 @@ const createActivity = catchAsync(async (req, res) => {
     coverImageUrl = result.secure_url;
     coverImagePublicId = result.public_id;
   }
+  // Validate the field list *before* writing anything, so a rejected payload
+  // cannot leave an Activity behind with no Form attached. Field ids are derived
+  // from labels and are the keys answers are stored under, so unusable or
+  // colliding labels are refused rather than producing a form whose two inputs
+  // share one answer.
+  if (!fields) {
+    fields = [
+      { label: "Name", type: "TextInput", required: true },
+      { label: "Email", type: "TextInput", required: true }
+    ];
+  } else if (!Array.isArray(fields) || fields.length === 0) {
+    throw new AppError("A registration form needs at least one field", 400, 'NO_FIELDS');
+  }
+
+  const { emptyLabels, duplicates } = deriveFieldIds(fields);
+  if (emptyLabels.length > 0 || duplicates.length > 0) {
+    throw new AppError(
+      describeFieldIdProblems({ emptyLabels, duplicates }),
+      400,
+      'INVALID_FIELD_IDS'
+    );
+  }
+
   const activity = await Activity.create({
     title,
     content,
@@ -68,13 +92,7 @@ const createActivity = catchAsync(async (req, res) => {
     coverImagePublicId: coverImagePublicId || ""
   });
 
-  if (!fields) {
-    fields = [
-      { id: "name", label: "Name", type: "TextInput", required: true },
-      { id: "email", label: "Email", type: "TextInput", required: true }
-    ];
-  }
-  // Create associated form
+  // Create associated form.
   const form = await Form.create({
     title: activity.title,
     activityID: activity._id,

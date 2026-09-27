@@ -1,5 +1,23 @@
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 const Form = require('../models/FormModel');
+const { deriveFieldIds, describeFieldIdProblems } = require('../utils/fieldId');
+
+/**
+ * Reject a field list that cannot produce usable, unique answer keys.
+ *
+ * Field ids are derived from labels (see utils/fieldId.js) and are what every
+ * answer is stored under, so a label that slugs to nothing, or two labels that
+ * slug to the same id, has to be refused up front. Previously these were only
+ * caught deep inside Mongoose as a generic 500.
+ *
+ * @param {Array} fields
+ */
+function assertUsableFieldIds(fields) {
+  const { emptyLabels, duplicates } = deriveFieldIds(fields);
+  if (emptyLabels.length === 0 && duplicates.length === 0) return;
+
+  throw new AppError(describeFieldIdProblems({ emptyLabels, duplicates }), 400, 'INVALID_FIELD_IDS');
+}
 
 // @desc    Create a new form
 // @route   POST /api/forms
@@ -11,20 +29,30 @@ const createForm = catchAsync(async (req, res) => {
     throw new AppError("Title and Type are required", 400);
   }
 
-  const defaultFields = [
+  // A form with no fields is never intentional and cannot be submitted
+  // (submitForm requires a name field), so say so rather than silently
+  // substituting a default. `fields` being absent entirely still falls back to
+  // the default below, which keeps older clients working.
+  if (fields !== undefined && (!Array.isArray(fields) || fields.length === 0)) {
+    throw new AppError("A form needs at least one field", 400, 'NO_FIELDS');
+  }
+
+  const resolvedFields = fields || [
     {
-      id: "full_name",
       label: "Full Name",
-      type: "text",
+      type: "TextInput",
       required: true
     }
   ];
+
+  assertUsableFieldIds(resolvedFields);
+
   const defaultstartDate = new Date();
   const defaultendDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // Default to 1 week from now
   const form = await Form.create({
     title,
     description,
-    fields: fields || defaultFields,
+    fields: resolvedFields,
     type,
     startDate: startDate || defaultstartDate,
     endDate: endDate || defaultendDate,
@@ -198,11 +226,16 @@ module.exports = {
 };
 
 /*
-== points to consider for improvement ==
+== known gaps (see the repo analysis) ==
 
-There's a problem with the `toggleFormStatus` function: You're changing `form.settings.isActive`, but in the `formSchema` you sent, there is no object named `settings`. The field responsible for the status in the schema is `status`, and its values are strings (“Active”, ‘Closed’, “Draft”).
+`updateFormSettings` below wraps its own body in a try/catch that converts
+everything — including the 404 it raises — into a 500, and only checks
+startDate-before-endDate when both arrive in the same request. Both are still
+open.
 
-The `requiresLogin` field: You added this field to the `formSchema`, but in the `createForm` function (the controller), you are not retrieving it from `req.body` or saving it.
+`requiresLogin` is still never read from `req.body` in `createForm`, and no
+builder UI exposes it, so the flag is effectively always false.
 
-The `activityID` field in the schema: You defined it as `unique: true`. If you create multiple forms without linking them to an `activityID` (i.e., its value is `null`), the database (MongoDB) may refuse to create the second form due to a `Duplicate Key` error on the `null` value.
+`activityID` is not marked unique in FormModel, so forms created without one
+are fine today — the concern in the original review does not apply.
 */
