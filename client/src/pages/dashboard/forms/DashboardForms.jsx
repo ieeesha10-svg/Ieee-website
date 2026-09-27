@@ -88,6 +88,10 @@ function FieldsModal({ form, onClose }) {
               <span className="font-bold text-muted">Max Submissions:</span>
               <p className="text-foreground">{form.maxSubmissions ? String(form.maxSubmissions) : "Unlimited"}</p>
             </div>
+            <div>
+              <span className="font-bold text-muted">Login:</span>
+              <p className="text-foreground">{form.requiresLogin ? "Required" : "Open to all"}</p>
+            </div>
           </div>
 
           <h3 className="text-xs font-bold text-muted uppercase tracking-wide mb-2">Activity</h3>

@@ -59,6 +59,23 @@ const createForm = catchAsync(async (req, res) => {
 
   assertUsableFieldIds(resolvedFields);
 
+  // `requiresLogin` decides who may submit, and is enforced in submitForm. It was
+  // never read from the request, so the flag was unreachable and always fell back
+  // to the schema default. Only a real boolean is accepted: the string "false" is
+  // truthy in JavaScript, so a loose cast would silently turn a public form into a
+  // login-only one.
+  let requiresLogin = false;
+  if (req.body.requiresLogin !== undefined && req.body.requiresLogin !== null) {
+    if (typeof req.body.requiresLogin !== 'boolean') {
+      throw new AppError(
+        'requiresLogin must be true or false',
+        400,
+        'INVALID_REQUIRES_LOGIN'
+      );
+    }
+    requiresLogin = req.body.requiresLogin;
+  }
+
   const defaultstartDate = new Date();
   const defaultendDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // Default to 1 week from now
   const form = await Form.create({
@@ -66,6 +83,7 @@ const createForm = catchAsync(async (req, res) => {
     description,
     fields: resolvedFields,
     type,
+    requiresLogin,
     startDate: startDate || defaultstartDate,
     endDate: endDate || defaultendDate,
     maxSubmissions,
@@ -245,8 +263,10 @@ everything — including the 404 it raises — into a 500, and only checks
 startDate-before-endDate when both arrive in the same request. Both are still
 open.
 
-`requiresLogin` is still never read from `req.body` in `createForm`, and no
-builder UI exposes it, so the flag is effectively always false.
+`requiresLogin` is settable at creation time (the builder's "Require login to
+submit" switch) and is enforced by `submitForm`. `updateFormSettings` still only
+accepts startDate/endDate/maxSubmissions, so the flag cannot be changed after the
+form exists.
 
 `activityID` is not marked unique in FormModel, so forms created without one
 are fine today — the concern in the original review does not apply.

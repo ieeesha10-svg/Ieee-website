@@ -12,6 +12,7 @@ const INITIAL_FORM_DATA = {
   startDate: "",
   endDate: "",
   maxSubmissions: "",
+  requiresLogin: false,
 };
 
 const DEFAULT_FIELDS = [
@@ -179,6 +180,11 @@ export function useCreateForm() {
     if (formData.maxSubmissions && formData.maxSubmissions !== "") {
       payload.maxSubmissions = Number(formData.maxSubmissions);
     }
+
+    // Always sent as a real boolean. The server rejects anything else, and a
+    // truthy string such as "false" would otherwise make a public form
+    // login-only.
+    payload.requiresLogin = Boolean(formData.requiresLogin);
 
     payload.fields = fieldsList.map((f) => {
       const fieldObj = {

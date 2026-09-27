@@ -6,6 +6,7 @@ import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
 import { FORM_TYPE_OPTIONS } from "../../../data/formTypes";
 import SectionCard from "../../../components/ui/SectionCard";
 import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
+import ToggleSwitch from "../../../components/ui/ToggleSwitch";
 
 function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDragIndex, moveField, error }) {
   const hasOptions = field.type === "Dropdown" || field.type === "Checkbox";
@@ -254,12 +255,29 @@ export default function CreateForm() {
               className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none"
             />
           </div>
+
+          {/* Who is allowed to submit. Kept in Form Details because it is a
+              property of the form itself, not of its schedule. */}
+          <div className="rounded-lg border border-gray-200 dark:border-[#222936] bg-gray-50 dark:bg-white/[0.03] p-4">
+            <ToggleSwitch
+              id="form-requires-login"
+              checked={Boolean(formData.requiresLogin)}
+              onChange={(value) => updateField("requiresLogin", value)}
+              onLabel="Login required"
+              offLabel="Open to all"
+              label="Require login to submit"
+              description={
+                formData.requiresLogin
+                  ? "Only signed-in members can submit this form. Guests are asked to log in before they can continue."
+                  : "Anyone can submit this form, with or without an account. Submissions are not linked to a member."
+              }
+            />
+          </div>
         </div>
       </SectionCard>
 
       {/* Section 2: Schedule & Limits */}
       <SectionCard>
-
         <h2 className="text-base font-bold text-foreground mb-5">Schedule & Limits</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
