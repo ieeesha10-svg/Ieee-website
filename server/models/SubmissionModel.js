@@ -43,11 +43,11 @@ const submissionSchema = new mongoose.Schema({
     default: {},
   },
   
-  status: {
-    type: String,
-    enum: ["pending", "approved", "rejected", "attended", "not attended"],
-    default: "pending",
-  },
+  // `status` used to sit here as an enum of pending/approved/rejected/attended.
+  // It duplicated `attended` and nothing ever wrote the three review states, so
+  // the only values that could ever appear were the default and the one
+  // `scanTicket` set. `attended` below is the single source of truth for whether
+  // somebody showed up; the review states are not modelled at all.
     // --- Event Specifics ---
   ticketCode: { 
     type: String, 

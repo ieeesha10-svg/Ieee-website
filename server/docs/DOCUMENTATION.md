@@ -316,10 +316,10 @@ Every request → protect middleware → jwt.verify → req.user loaded
 | `userId` | ObjectId → User | required |
 | `registrantEmail` | String | indexed denormalized copy for fast filtering |
 | `answers` | Object | `{ field_id: value }`, validated against form fields on save |
-| `status` | String | enum: `pending`, `approved`, `rejected`, `attended`, `not attended` |
+| `otherAnswers` | Object | `{ field_id: text }` for any field answered "Other"; validated with `answers` |
 | `ticketCode` | String | **unique, sparse** — `<formId>-<userId>-<nanoid6>` |
 | `qrImage` | String | QR code as Data URL |
-| `attended` | Boolean | default `false` |
+| `attended` | Boolean | default `false` — the only state a submission carries |
 | `attendedAt` | Date | set during scan |
 | `timestamps` | — | |
 
@@ -1662,7 +1662,6 @@ Submits answers to a form. One submission per user per form (DB-enforced). For `
     "answers": { "full_name": "Ahmed Hassan", "tshirt_size": "L" },
     "ticketCode": "67d0a1b2c3d4e5f6a7b8c9d1-66f1a2b3c4d5e6f7a8b9c0d1-Vk3GhQ",
     "qrImage": "data:image/png;base64,iVBORw0KGgo...",
-    "status": "pending",
     "attended": false
   }
 }
@@ -1742,7 +1741,6 @@ Fetches one user's submission for a given form (used to re-display a ticket).
   "userId": "66f1a2b3c4d5e6f7a8b9c0d1",
   "registrantEmail": "ahmed@example.com",
   "answers": { "full_name": "Ahmed Hassan", "tshirt_size": "L" },
-  "status": "pending",
   "ticketCode": "67d0...-66f1...-Vk3GhQ",
   "qrImage": "data:image/png;base64,...",
   "attended": true,
@@ -1765,13 +1763,15 @@ Returns all submissions with aggregate counters.
 ```json
 {
   "totalCount": 512,
-  "pendingCount": 300,
-  "approvedCount": 90,
-  "rejectedCount": 12,
   "attendedCount": 110,
+  "notAttendedCount": 402,
   "submissions": [ /* submission documents */ ]
 }
 ```
+
+*A submission carries no review status. `attended` (and `attendedAt`) is the only
+state it has, set when a ticket is scanned, and the counters above are built from
+it.*
 
 ### 3.6.5 Submissions for One Form (Admin)
 
@@ -1782,7 +1782,23 @@ Returns all submissions with aggregate counters.
 **Success Response — `200 OK`**
 
 ```json
-{ "total": 140, "submissions": [ /* populated with userId name/email */ ] }
+{
+  "total": 140,
+  "submissions": [ /* populated with userId name/email */ ],
+  "form": { "_id": "...", "title": "...", "type": "attendance", "fields": [] }
+}
+```
+
+`form` carries only `title`, `type` and `fields` — the email settings and other
+private form config are deliberately left out. The dashboard needs `type` to
+decide whether attendance applies, and `fields` to label each answer. Both used
+to be read from router state, which is lost on a refresh or a shared link, so a
+reloaded page fell back to showing raw field ids instead of the questions.
+
+**Error Responses**
+
+```json
+// 404 — { "message": "Form not found" }
 ```
 
 ### 3.6.6 Export Submissions to Excel
@@ -1790,6 +1806,12 @@ Returns all submissions with aggregate counters.
 `GET /api/submissions/export/:formId`
 
 Styled multi-sheet workbook: user-info columns + one column per dynamic form question, with section header bands.
+
+The `Attended` and `Attended Time` columns are written **only when the form's
+`type` is `attendance`**. Those forms mint a ticket that the scanner can check
+in; every other type (recruitment, feedback, workshop, survey) is never scanned,
+so including the columns would print a permanent `No` and imply a check-in that
+is not being tracked.
 
 - **Auth:** Yes — roles: `xcom`, `board`
 

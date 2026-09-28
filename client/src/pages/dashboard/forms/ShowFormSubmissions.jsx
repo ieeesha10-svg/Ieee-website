@@ -38,7 +38,7 @@ function getAttachmentUrl(url) {
   return url;
 }
 
-function SubmissionRow({ submission, index, fieldLabelMap, fieldsById }) {
+function SubmissionRow({ submission, index, fieldLabelMap, fieldsById, tracksAttendance, columnCount }) {
   const [expanded, setExpanded] = useState(false);
 
   const name =
@@ -74,21 +74,19 @@ function SubmissionRow({ submission, index, fieldLabelMap, fieldsById }) {
             </div>
           </div>
         </td>
-        <td className="px-4 py-3">
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-              submission.status === "attended"
-                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                : submission.status === "approved"
-                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                  : submission.status === "rejected"
-                    ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                    : "bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400"
-            }`}
-          >
-            {submission.status}
-          </span>
-        </td>
+        {tracksAttendance && (
+          <td className="px-4 py-3">
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                submission.attended
+                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                  : "bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400"
+              }`}
+            >
+              {submission.attended ? "Attended" : "Not Attended"}
+            </span>
+          </td>
+        )}
         <td className="px-4 py-3 text-xs text-muted">{date}</td>
         <td className="px-4 py-3 text-right">
           <button
@@ -109,7 +107,7 @@ function SubmissionRow({ submission, index, fieldLabelMap, fieldsById }) {
       </tr>
       {expanded && (
         <tr className="bg-gray-50/70 dark:bg-white/[0.02]">
-          <td colSpan={5} className="px-8 py-4">
+          <td colSpan={columnCount} className="px-8 py-4">
             <div className="ml-2 overflow-x-auto rounded-lg border border-border">
               {submission.answers &&
               Object.keys(submission.answers).length > 0 ? (
@@ -198,14 +196,24 @@ function SubmissionRow({ submission, index, fieldLabelMap, fieldsById }) {
 
 export default function ShowFormSubmissions() {
   const { formId } = useParams();
+  // Still needed for `activityID` below. The title and the field list deliberately
+  // do NOT come from here any more: router state is gone on a refresh or a shared
+  // link, which used to leave every answer labelled with a raw field id.
   const location = useLocation();
-  const formTitle = location.state?.formTitle || "Form";
+
+  const { submissions, total, form, isLoading, error } = useFormSubmissions(formId);
+  const { exporting, exportSubmissions } = useExportFormSubmissions();
+
+  const formTitle = form?.title || "Form";
+  // Only an `attendance` form mints a ticket, so only an `attendance` form can
+  // say whether somebody turned up. Every other form type - recruitment,
+  // feedback, workshop, survey - is never scanned, so a column here would read
+  // "Not Attended" down the whole page and imply a check-in that does not exist.
+  const tracksAttendance = form?.type === "attendance";
+
   // Memoised so the maps below are not rebuilt on every render: `|| []` makes a
   // fresh array each time, which would give the memos a new dependency every time.
-  const fields = useMemo(
-    () => location.state?.fields || [],
-    [location.state?.fields]
-  );
+  const fields = useMemo(() => form?.fields || [], [form?.fields]);
   const fieldLabelMap = Object.fromEntries(
     fields.map((f) => [f.id, f.label])
   );
@@ -214,8 +222,9 @@ export default function ShowFormSubmissions() {
     [fields]
   );
 
-  const { submissions, total, isLoading, error } = useFormSubmissions(formId);
-  const { exporting, exportSubmissions } = useExportFormSubmissions();
+  // The row and its header each lose a cell, so the answers panel that spans the
+  // table has to shrink with them or it overhangs by one column.
+  const columnCount = tracksAttendance ? 5 : 4;
 
   const [sortOrder, setSortOrder] = useState("oldest");
   const [orderOpen, setOrderOpen] = useState(false);
@@ -364,7 +373,7 @@ export default function ShowFormSubmissions() {
                 <tr className="*:text-left *:text-xs *:font-semibold *:text-muted *:uppercase *:tracking-wide *:py-3">
                   <th className="px-4 w-12">#</th>
                   <th className="px-4">RESPONDENT</th>
-                  <th className="px-4 w-28">STATUS</th>
+                  {tracksAttendance && <th className="px-4 w-32">ATTENDANCE</th>}
                   <th className="px-4 w-40">SUBMITTED</th>
                   <th className="px-4 w-32 text-right">ANSWERS</th>
                 </tr>
@@ -375,7 +384,9 @@ export default function ShowFormSubmissions() {
                   submission={submission}
                   index={i}
                   fieldLabelMap={fieldLabelMap}
-          fieldsById={fieldsById}
+                  fieldsById={fieldsById}
+                  tracksAttendance={tracksAttendance}
+                  columnCount={columnCount}
                 />
               ))}
             </table>
