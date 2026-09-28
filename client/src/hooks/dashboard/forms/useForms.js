@@ -48,7 +48,14 @@ export function useForms() {
             endDate: form.endDate,
             maxSubmissions: form.maxSubmissions,
             description: form.description,
-            formType: form.type,
+            // The API field is `type`. It used to be aliased to `formType`
+            // here, but the form views read `form.type`, so every badge and
+            // icon silently fell back to the "other" styling.
+            type: form.type,
+            requiresLogin: Boolean(form.requiresLogin),
+            sendEmailOnSubmission: Boolean(form.sendEmailOnSubmission),
+            submissionEmailSubject: form.submissionEmailSubject || "",
+            submissionEmailBody: form.submissionEmailBody || "",
             createdAtRaw: form.createdAt,
             updatedAt: form.updatedAt,
             createdAt: form.createdAt

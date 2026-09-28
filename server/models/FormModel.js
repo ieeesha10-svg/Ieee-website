@@ -105,6 +105,23 @@ const formSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // Subject and body of the email the form author wants sent after a
+  // submission. Only read when `sendEmailOnSubmission` is true. The body is
+  // author-written HTML and is rendered through the same {{token}} pass as the
+  // built-in templates, so it can interpolate {{formTitle}}, {{userName}} and,
+  // for attendance forms, {{qrDataUrl}}.
+  submissionEmailSubject: {
+    type: String,
+    trim: true,
+    default: '',
+    maxlength: 200
+  },
+  submissionEmailBody: {
+    type: String,
+    trim: true,
+    default: '',
+    maxlength: 5000
+  },
   requiresLogin: { type: Boolean, default: false }, // Form-builder setting: when true, only logged-in users can submit; when false (default), anyone can submit.
 }, { timestamps: true });
 

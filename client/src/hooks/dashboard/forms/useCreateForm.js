@@ -4,6 +4,7 @@ import api from "../../../utils/api";
 import { useAuth } from "../../../context/AuthContext";
 import { ALLOWED_TYPES } from "../../../data/fieldTypes";
 import { slugifyFieldLabel } from "../../../utils/fieldId";
+import { buildDefaultFields, isIdentityField } from "../../../utils/formIdentity";
 
 const INITIAL_FORM_DATA = {
   title: "",
@@ -13,12 +14,10 @@ const INITIAL_FORM_DATA = {
   endDate: "",
   maxSubmissions: "",
   requiresLogin: false,
+  sendEmailOnSubmission: false,
+  submissionEmailSubject: "",
+  submissionEmailBody: "",
 };
-
-const DEFAULT_FIELDS = [
-  { id: "name", label: "Full Name", type: "TextInput", required: true },
-  { id: "email", label: "Email", type: "TextInput", required: true },
-];
 
 const hasOptions = (type) => type === "Dropdown" || type === "Checkbox";
 
@@ -27,7 +26,7 @@ export function useCreateForm() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({ ...INITIAL_FORM_DATA });
-  const [fieldsList, setFieldsList] = useState(DEFAULT_FIELDS);
+  const [fieldsList, setFieldsList] = useState(() => buildDefaultFields());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -50,16 +49,34 @@ export function useCreateForm() {
     ]);
   }, []);
 
+  // Full Name and Email are part of every form, not part of the layout the
+  // dashboard owner arranges: `submitForm` requires both, the ticket QR and the
+  // confirmation email are keyed on the email, and the submissions export on the
+  // name. So the label and type are pinned — editing either would change the id
+  // the answers are stored under and break those lookups — and `required` is
+  // forced back on. `moveField` still works: order does not affect any of it.
   const updateFieldAt = useCallback((index, patch) => {
     setFieldsList((prev) => {
+      const current = prev[index];
+      if (!current) return prev;
+
       const updated = [...prev];
-      updated[index] = { ...updated[index], ...patch };
+      // Label, type and `required` are pinned and re-applied after the patch, so
+      // nothing that reaches this can rename, retype or make optional the field
+      // the answers for a name or an email are stored under. Any other key in the
+      // patch still applies.
+      updated[index] = isIdentityField(current)
+        ? { ...current, ...patch, label: current.label, type: current.type, required: true }
+        : { ...current, ...patch };
       return updated;
     });
   }, []);
 
   const removeFieldAt = useCallback((index) => {
-    setFieldsList((prev) => prev.filter((_, i) => i !== index));
+    setFieldsList((prev) => {
+      if (isIdentityField(prev[index])) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
   }, []);
 
   const moveField = useCallback((from, to) => {
@@ -97,6 +114,12 @@ export function useCreateForm() {
       if (new Date(formData.endDate) < new Date(formData.startDate)) {
         newErrors.endDate = "End date cannot be before start date";
       }
+    }
+
+    // The server refuses to enable the feature with an empty message, so catch
+    // it here where the message can be shown next to the textarea.
+    if (formData.sendEmailOnSubmission && !formData.submissionEmailBody.trim()) {
+      newErrors.submissionEmailBody = "Write the message to send, or turn the email off";
     }
 
     if (fieldsList.length === 0) {
@@ -186,11 +209,23 @@ export function useCreateForm() {
     // login-only.
     payload.requiresLogin = Boolean(formData.requiresLogin);
 
+    payload.sendEmailOnSubmission = Boolean(formData.sendEmailOnSubmission);
+
+    // The server rejects an enabled flag with an empty body, so only send the
+    // wording when the feature is on. The subject is optional: the server falls
+    // back to "We received your submission for <title>".
+    if (formData.sendEmailOnSubmission) {
+      payload.submissionEmailSubject = formData.submissionEmailSubject.trim();
+      payload.submissionEmailBody = formData.submissionEmailBody.trim();
+    }
+
     payload.fields = fieldsList.map((f) => {
       const fieldObj = {
         label: f.label.trim(),
         type: f.type,
-        required: f.required,
+        // Belt and braces: the row controls are already locked, and the server
+        // rejects an optional name or email, so never emit one.
+        required: isIdentityField(f) ? true : Boolean(f.required),
       };
 
       if (hasOptions(f.type) && f.options) {
@@ -234,7 +269,7 @@ export function useCreateForm() {
       await api.post("/form", payload);
 
       setFormData({ ...INITIAL_FORM_DATA });
-      setFieldsList(DEFAULT_FIELDS);
+      setFieldsList(buildDefaultFields());
 
       navigate("/dashboard/forms");
     } catch (error) {

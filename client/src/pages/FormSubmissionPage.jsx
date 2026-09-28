@@ -10,6 +10,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import { ACCEPTED_FILE_EXTENSIONS, useFileUpload } from "../utils/fileUploadUtils";
 import { validateSubmission } from "../utils/formValidation";
+import { prefillIdentityAnswers } from "../utils/formIdentity";
 import { FORM_TYPE_BADGE, DEFAULT_FORM_TYPE_BADGE } from "../data/formTypes";
 
 function getBadgeInfo(formType) {
@@ -23,7 +24,7 @@ export default function FormSubmissionPage() {
   const { form, isLoading, error: fetchError } = usePublicForm(id);
   const { submit, loading: submitting, error: submitError, alreadySubmitted: alreadySubmittedViaSubmit, emailHasAccount } = useSubmitForm();
 
-  const [answers, setAnswers] = useState({});
+  const [typedAnswers, setTypedAnswers] = useState({});
   const [errors, setErrors] = useState({});
   const [files, setFiles] = useState({});
   const fileInputRefs = React.useRef({});
@@ -44,13 +45,26 @@ export default function FormSubmissionPage() {
       .finally(() => setCheckingSubmission(false));
   }, [user?._id, id]);
 
+  // A member who is signed in should not have to retype what the account already
+  // knows, so their name and email are filled in from the profile. Guests get
+  // nothing seeded and are asked for their own details like anyone else.
+  //
+  // Derived during render rather than pushed into state from an effect: the seed
+  // is always recomputed, so a member who signs in while the page is open still
+  // gets it, and a member who clears the field is not refilled underneath their
+  // cursor — anything they typed, including an empty string, wins.
+  const answers = useMemo(
+    () => ({ ...prefillIdentityAnswers(form?.fields, user, typedAnswers), ...typedAnswers }),
+    [form?.fields, user, typedAnswers]
+  );
+
   const badgeInfo = useMemo(
     () => (form ? getBadgeInfo(form.type) : null),
     [form]
   );
 
   const handleChange = (fieldId, value) => {
-    setAnswers((prev) => ({ ...prev, [fieldId]: value }));
+    setTypedAnswers((prev) => ({ ...prev, [fieldId]: value }));
     setErrors((prev) => ({ ...prev, [fieldId]: "" }));
   };
 

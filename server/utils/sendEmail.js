@@ -63,6 +63,131 @@ const renderTemplate = (template, data = {}) => {
   });
 };
 
+// Escape a value that is about to be spliced into an HTML email.
+//
+// Every message here is HTML, and `{{token}}` substitution is a raw string
+// replace, so a value carrying markup used to be rendered as markup. That value
+// is not always trusted: `userName` is free text typed by whoever submitted the
+// form, and a form title is typed by any admin with dashboard access. Escaping
+// keeps them as text.
+//
+// `qrDataUrl` is the deliberate exception: it is an `<img>` tag this file builds
+// itself rather than user input, so it is passed through raw.
+const escapeHtml = (value) =>
+  String(value ?? '').replace(/[&<>"']/g, (ch) => (
+    {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[ch]
+  ));
+
+// ============================================================
+//  db-user[...] and db-submissions[...]
+// ============================================================
+// The only two placeholders a form author writes. They deliberately replace the
+// older {{token}} / [token] syntax, which was a third competing system and
+// invited mistakes: "[name]" looked like a placeholder but never resolved, and
+// bare "[...]" also swallowed ordinary text like "Session [2026]".
+//
+//   db-user[...]         a field on the submitter's own account
+//                        e.g. db-user[committee], db-user[university]
+//   db-submissions[...]  a value on the submission itself
+//                        e.g. db-submissions[formTitle], db-submissions[qrCode],
+//                            db-submissions[Year of Study]  (any form answer)
+//
+// Anything that cannot be resolved is left exactly as written, so the author sees
+// the placeholder that failed instead of the member receiving "undefined". A
+// guest has no account at all, which means every db-user[...] survives untouched
+// for them by design. db-submissions[...] always resolves, because the answers
+// exist whether or not the submitter is a member.
+//
+// `db-user` is read through an allowlist rather than by handing over the whole
+// user document. `User` carries password, otp and resetPasswordToken, and a
+// template is author-editable text, so a blanket copy would let a template mail
+// out credentials.
+const USER_FIELD_ALLOWLIST = [
+  'name',
+  'email',
+  'phone',
+  'position',
+  'organization',
+  'roleInOrganization',
+  'yearsOfExperience',
+  'age',
+  'university',
+  'college',
+  'yearOfStudy',
+  'interests',
+  'committee',
+  'role',
+  'reasonForRegistration',
+];
+
+// The submission values worth suggesting in the builder. These are the ones that
+// are not answer fields, so an author would otherwise have no way to reach them.
+const RECOMMENDED_SUBMISSION_FIELDS = [
+  'name',
+  'email',
+  'formTitle',
+  'formType',
+  'ticketCode',
+  'qrCode',
+  'qrUrl',
+  'submittedAt',
+];
+
+const readUserField = (user, key) => {
+  // Case-insensitive so db-user[University] and db-user[university] both work.
+  const match = USER_FIELD_ALLOWLIST.find(
+    (allowed) => allowed.toLowerCase() === key.trim().toLowerCase()
+  );
+  if (!match || !user) return undefined;
+  const value = user[match];
+  if (value === undefined || value === null) return undefined;
+  // interests is a list; a comma-separated line reads better than [object Object].
+  if (Array.isArray(value)) return value.join(', ');
+  return String(value);
+};
+
+const caseInsensitiveGet = (map, key) => {
+  if (!map) return undefined;
+  const wanted = key.trim().toLowerCase();
+  const hit = Object.keys(map).find((k) => k.toLowerCase() === wanted);
+  return hit === undefined ? undefined : map[hit];
+};
+
+// The one place author placeholders are resolved.
+//
+// `qrCode` is the sole value passed through unescaped: it is an <img> tag this
+// file builds itself, not something a submitter typed. Every other value is
+// free text from the submitter or an admin, so it is escaped.
+const RAW_HTML_SUBMISSION_FIELDS = new Set(['qrcode']);
+
+const resolveAuthorTokens = (source, { dbUser = null, dbSubmissions = {} } = {}) => {
+  const text = String(source ?? '');
+  if (!text) return text;
+  return text.replace(
+    /\bdb-(user|submissions)\[\s*([^\[\]]+?)\s*\]/gi,
+    (match, kind, rawKey) => {
+      const key = rawKey.trim();
+      const value =
+        kind.toLowerCase() === 'user'
+          ? readUserField(dbUser, key)
+          : caseInsensitiveGet(dbSubmissions, key);
+      // Empty is treated as unresolved on purpose: showing a blank would leave a
+      // confusing gap, so the author sees the placeholder and can fix the spelling.
+      if (value === undefined || value === null || value === '') return match;
+      if (kind.toLowerCase() === 'submissions' && RAW_HTML_SUBMISSION_FIELDS.has(key.toLowerCase())) {
+        return String(value);
+      }
+      return escapeHtml(value);
+    }
+  );
+};
+
 // Low-level send: single Brevo call, throws on API error
 const sendEmail = async ({ to, subject, html, attachments }) => {
   // // Old Resend implementation (disabled)
@@ -98,8 +223,18 @@ const sendEmail = async ({ to, subject, html, attachments }) => {
 
 // Render a stored template inside the shared email shell (page background,
 // content card, gutter, footer card) and send it.
-const sendTemplateEmail = async ({ to, subject, template, data = {}, preheader }) => {
-  const body = renderTemplate(loadTemplate(template), data);
+//
+// The stored templates under view/emails_Templates/ are internal and still keyed
+// on {{token}}, so renderTemplate stays for them. On top of that an author
+// placeholder such as db-user[committee] is resolved, which lets a stored
+// template mix the two. Neither input is required.
+const sendTemplateEmail = async ({
+  to, subject, template, data = {}, preheader, dbUser = null, dbSubmissions = {},
+}) => {
+  const body = resolveAuthorTokens(renderTemplate(loadTemplate(template), data), {
+    dbUser,
+    dbSubmissions,
+  });
   const html = buildEmailDocument({
     content: body,
     title: subject,
@@ -191,7 +326,7 @@ const sendTicketEmail = async ({ email, userName, ticketCode, eventTitle }) => {
       to: email,
       subject: `Confirmation of Registration – ${eventTitle}`,
       template: 'ticketEmail.html',
-      data: { userName, eventTitle, ticketCode }
+      data: { userName: escapeHtml(userName), eventTitle: escapeHtml(eventTitle), ticketCode: escapeHtml(ticketCode) }
     });
     return true;
   } catch (err) {
@@ -232,8 +367,8 @@ const sendCommitteeDecisionEmail = async ({ email, userName, committeePosition, 
         : `Update on your application for ${committeePosition}`,
       template: 'committeeDecision.html',
       data: {
-        userName,
-        committeePosition,
+        userName: escapeHtml(userName),
+        committeePosition: escapeHtml(committeePosition),
         bannerBg: accepted ? '#16a34a' : '#cc2e2e',
         bannerTitle: accepted ? 'Application Approved' : 'Application Update',
         panelBg: accepted ? '#f0fdf4' : '#f8fafc',
@@ -253,17 +388,86 @@ const sendCommitteeDecisionEmail = async ({ email, userName, committeePosition, 
 // Sent to every form submission (guest or logged-in) confirming the application
 // landed. This replaces the old QR "ticket confirmation" email, which fired on
 // registration forms and was confusing when the form was not an event.
-const sendSubmissionReceivedEmail = async ({ email, userName, formTitle }) => {
+const sendSubmissionReceivedEmail = async ({ email, userName, formTitle, dbUser = null, dbSubmissions = {} }) => {
   try {
     await sendTemplateEmail({
       to: email,
       subject: 'We received your application',
       template: 'submissionReceived.html',
-      data: { userName, formTitle }
+      data: { userName: escapeHtml(userName), formTitle: escapeHtml(formTitle) },
+      dbUser,
+      dbSubmissions
     });
     return true;
   } catch (err) {
     console.error('Server Error sending Submission Received Email:', err);
+    return false;
+  }
+};
+
+// 6. Custom post-submission email
+// The subject and body are written by the form author in the builder, so there
+// is no template file. This path deliberately does NOT run renderTemplate: the
+// author gets exactly one syntax, db-user[...] and db-submissions[...]. Feeding
+// {{token}} / [token] through here too was the source of the confusion, and a
+// bare [2026] in a subject got eaten by the old [token] pass.
+//
+// The QR travels inline so the ticket arrives in the same message the author
+// wrote rather than as a second email. On a form with no QR the placeholder is
+// removed rather than left as literal text, since an unresolvable placeholder is
+// otherwise shown on purpose.
+const sendCustomSubmissionEmail = async ({
+  to,
+  subject,
+  messageBody,
+  formTitle,
+  userName,
+  ticketCode,
+  qrDataUrl,
+  data = {},
+  dbUser = null,
+  dbSubmissions = {},
+}) => {
+  try {
+    const hasQr = Boolean(qrDataUrl);
+
+    // Values the author cannot type, exposed under the recommended
+    // db-submissions[...] names so every token is the same shape.
+    const reserved = {
+      name: escapeHtml(userName),
+      formtitle: escapeHtml(formTitle),
+      ticketcode: escapeHtml(ticketCode),
+      qrurl: hasQr ? qrDataUrl : undefined,
+      qrcode: hasQr
+        ? `<img src="${qrDataUrl}" alt="Your ticket QR code" width="220" height="220" style="display:block;width:220px;height:220px;border:0;border-radius:8px;" />`
+        : undefined,
+    };
+
+    // The answers passed in win over the reserved names, so a form that happens
+    // to have its own "Name" field does not shadow the submitter's name.
+    const context = { dbUser, dbSubmissions: { ...reserved, ...dbSubmissions } };
+
+    const stripMissingQr = (text) =>
+      hasQr
+        ? text
+        : text.replace(/\bdb-submissions\[\s*(qrcode|qrurl)\s*\]/gi, '');
+
+    const body = resolveAuthorTokens(stripMissingQr(String(messageBody || '')), context);
+
+    // The subject is author-written text too, so it resolves the same way. Without
+    // this a subject mentioning db-submissions[formTitle] went out verbatim.
+    const resolvedSubject = resolveAuthorTokens(String(subject || ''), context);
+
+    const html = buildEmailDocument({
+      content: body,
+      title: resolvedSubject,
+      preheader: resolvedSubject,
+    });
+
+    await sendEmail({ to, subject: resolvedSubject, html });
+    return true;
+  } catch (err) {
+    console.error('Server Error sending Custom Submission Email:', err);
     return false;
   }
 };
@@ -278,5 +482,14 @@ module.exports = {
   sendTicketEmail,
   resetPasswordEmailToken,
   sendCommitteeDecisionEmail,
-  sendSubmissionReceivedEmail
+  sendSubmissionReceivedEmail,
+  sendCustomSubmissionEmail,
+  // Exported for the submission controller's db-submissions[...] lookup and for tests.
+  resolveAuthorTokens,
+  readUserField,
+  escapeHtml,
+  // Internal {{token}} pass, used by the stored templates in view/emails_Templates.
+  renderTemplate,
+  USER_FIELD_ALLOWLIST,
+  RECOMMENDED_SUBMISSION_FIELDS,
 };

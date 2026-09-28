@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FileText, Clipboard, Calendar, UserPlus, ClipboardList, MessageSquare, Eye, Plus, Trash2, Check, ChevronDown, Pencil, ExternalLink, FileType, Wrench } from "lucide-react";
+import { FileText, Clipboard, Calendar, UserPlus, ClipboardList, MessageSquare, Eye, Plus, Trash2, Check, ChevronDown, Pencil, ExternalLink, FileType, Wrench, Sparkles } from "lucide-react";
 // Hooks & data
 import { useForms } from "../../../hooks/dashboard/forms/useForms";
 import { useDeleteForm } from "../../../hooks/dashboard/forms/useDeleteForm";
 import { useToggleForm } from "../../../hooks/dashboard/forms/useToggleForm";
 import { useUpdateForm } from "../../../hooks/dashboard/forms/useUpdateForm";
+import { templatesForCategory, fillSubject } from "../../../data/emailTemplates";
 import {
   RECRUITMENT_COLOR,
   ATTENDANCE_COLOR,
@@ -37,6 +38,7 @@ import DeleteModal from "../../../components/ui/DeleteModal";
 import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
 import DashFormsSkeleton from "../../../components/skeletons/DashFormsSkeleton";
 import Modal from "../../../components/ui/Modal";
+import ToggleSwitch from "../../../components/ui/ToggleSwitch";
 import Pagination from "../../../components/ui/Pagination";
 
 /*Toggle Switch */
@@ -91,6 +93,12 @@ function FieldsModal({ form, onClose }) {
             <div>
               <span className="font-bold text-muted">Login:</span>
               <p className="text-foreground">{form.requiresLogin ? "Required" : "Open to all"}</p>
+            </div>
+            <div>
+              <span className="font-bold text-muted">Email after submit:</span>
+              <p className="text-foreground">
+                {form.sendEmailOnSubmission ? "Custom message" : "Standard receipt"}
+              </p>
             </div>
           </div>
 
@@ -311,11 +319,26 @@ export default function DashboardForms() {
   const [editStartDate, setEditStartDate] = useState("");
   const [editEndDate, setEditEndDate] = useState("");
   const [editMaxSubmissions, setEditMaxSubmissions] = useState("");
+  const [editRequiresLogin, setEditRequiresLogin] = useState(false);
+  const [editSendEmail, setEditSendEmail] = useState(false);
+  const [editEmailSubject, setEditEmailSubject] = useState("");
+  const [editEmailBody, setEditEmailBody] = useState("");
+  // Set when a template click needs confirming, holding what to apply once the
+  // author agrees. Null means the popup is closed.
+  const [pendingTemplate, setPendingTemplate] = useState(null);
   const [savingDates, setSavingDates] = useState(false);
 
   if (isLoading) return <DashFormsSkeleton />;
 
   const formToDelete = forms.find((f) => f.id === deletingId);
+
+  // Writes the chosen template into the edit form's subject and body. Called
+  // directly when there is nothing to overwrite, and from the popup otherwise.
+  const commitTemplate = (t) => {
+    setEditEmailBody(t.body);
+    setEditEmailSubject(fillSubject(t.subject, editingForm?.title));
+    toast.success(`${t.label} applied to your subject and message.`);
+  };
 
   const handleToggle = (id, title, becomingOpen) => {
     setForms((prev) => prev.map((f) => (f.id === id ? { ...f, isOpen: becomingOpen } : f)));
@@ -327,16 +350,34 @@ export default function DashboardForms() {
     setEditStartDate(form.startDate ? form.startDate.split("T")[0] : "");
     setEditEndDate(form.endDate ? form.endDate.split("T")[0] : "");
     setEditMaxSubmissions(form.maxSubmissions ?? "");
+    setEditRequiresLogin(Boolean(form.requiresLogin));
+    setEditSendEmail(Boolean(form.sendEmailOnSubmission));
+    setEditEmailSubject(form.submissionEmailSubject || "");
+    setEditEmailBody(form.submissionEmailBody || "");
   };
 
   const handleSaveDates = async () => {
     if (!editingForm) return;
+    // The server refuses to enable the email with an empty body, so refuse here
+    // too rather than round-tripping for a 400.
+    if (editSendEmail && !editEmailBody.trim()) {
+      toast.error("Write the message to send, or turn the email off");
+      return;
+    }
     setSavingDates(true);
     try {
       await updateForm(editingForm.id, {
         startDate: new Date(editStartDate + "T00:00:00.000Z").toISOString(),
         endDate: new Date(editEndDate + "T23:59:59.999Z").toISOString(),
         maxSubmissions: editMaxSubmissions === "" ? undefined : Number(editMaxSubmissions),
+        requiresLogin: editRequiresLogin,
+        sendEmailOnSubmission: editSendEmail,
+        // Only sent while the feature is on, so turning it off cannot leave the
+        // wording attached to the form.
+        ...(editSendEmail && {
+          submissionEmailSubject: editEmailSubject.trim(),
+          submissionEmailBody: editEmailBody.trim(),
+        }),
       });
       toast.success("Form updated successfully");
       setEditingForm(null);
@@ -461,6 +502,190 @@ export default function DashboardForms() {
           {editStartDate && editEndDate && new Date(editStartDate) > new Date(editEndDate) && (
             <p className="text-xs text-red-500 font-medium">Start date cannot be after end date.</p>
           )}
+
+          <div className="border-t border-gray-200 dark:border-[#222936] pt-4 space-y-4">
+            <div className="rounded-lg border border-gray-200 dark:border-[#222936] bg-gray-50 dark:bg-white/[0.03] p-4">
+              <ToggleSwitch
+                id="edit-requires-login"
+                checked={editRequiresLogin}
+                onChange={setEditRequiresLogin}
+                onLabel="Login required"
+                offLabel="Open to all"
+                label="Require login to submit"
+                description={
+                  editRequiresLogin
+                    ? "Only signed-in members can submit this form."
+                    : "Anyone can submit this form, with or without an account."
+                }
+              />
+            </div>
+
+            <div className="rounded-lg border border-gray-200 dark:border-[#222936] bg-gray-50 dark:bg-white/[0.03] p-4">
+              <ToggleSwitch
+                id="edit-send-email"
+                checked={editSendEmail}
+                onChange={setEditSendEmail}
+                onLabel="Sent"
+                offLabel="Off"
+                label="Send an email after submission"
+                description={
+                  editSendEmail
+                    ? "Your message below is sent instead of the standard receipt."
+                    : "Off — submitters get the standard receipt."
+                }
+              />
+            </div>
+
+            {editSendEmail && (
+              <div className="space-y-3">
+                <div className="rounded-lg border border-primary/25 dark:border-primary-light/20 bg-primary/5 p-3">
+                  <p className="flex items-center gap-1.5 text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">
+                    <Sparkles size={13} className="text-primary" />
+                    Start from a template
+                  </p>
+                  <p className="text-[11px] text-muted mb-2.5 leading-relaxed">
+                    Picking a template sets the subject and the message together,
+                    using this form&apos;s own fields. It asks before replacing
+                    anything you have already written.
+                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    {templatesForCategory(
+                      editingForm?.type,
+                      editingForm?.fields
+                    ).map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          // Same rule as the builder: an in-app popup, and it
+                          // fires when only the subject has been written too.
+                          if (editEmailBody.trim() || editEmailSubject.trim()) {
+                            setPendingTemplate(t);
+                            return;
+                          }
+                          commitTemplate(t);
+                        }}
+                        title={t.description}
+                        className="text-left px-2.5 py-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] hover:border-primary transition-colors"
+                      >
+                        <span className="block text-xs font-semibold text-foreground">
+                          {t.label}
+                        </span>
+                        <span className="block text-[11px] text-muted leading-snug">
+                          {t.description}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label
+                    htmlFor="edit-email-subject"
+                    className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5"
+                  >
+                    Subject{" "}
+                    <span className="font-normal normal-case tracking-normal text-muted/70">
+                      (optional)
+                    </span>
+                  </label>
+                  <input
+                    id="edit-email-subject"
+                    type="text"
+                    value={editEmailSubject}
+                    onChange={(e) => setEditEmailSubject(e.target.value)}
+                    maxLength={200}
+                    placeholder={`We received your submission for ${editingForm?.title || "this form"}`}
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="edit-email-body"
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5"
+                  >
+                    Message <RequiredAsterisk />
+                  </label>
+                  <textarea
+                    id="edit-email-body"
+                    value={editEmailBody}
+                    onChange={(e) => setEditEmailBody(e.target.value)}
+                    rows={6}
+                    maxLength={5000}
+                    placeholder='<p>Thanks for applying to db-submissions[formTitle].</p>'
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-y font-mono text-[13px] leading-relaxed"
+                  />
+                  <p className="mt-1.5 text-xs text-muted leading-relaxed">
+                    HTML is allowed. Placeholders work in the subject too.
+                  </p>
+                  <div className="mt-2 rounded-lg border border-gray-200 dark:border-[#222936] p-2.5">
+                    <p className="text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
+                      Placeholders you can use
+                    </p>
+                    <p className="text-[11px] text-muted leading-relaxed">
+                      <span className="font-semibold text-foreground">
+                        db-submissions[Field]
+                      </span>{" "}
+                      inserts a value from this submission, and{" "}
+                      <span className="font-semibold text-foreground">
+                        db-user[field]
+                      </span>{" "}
+                      a field from the member&apos;s own account. Anything that
+                      cannot be resolved is left as written, so an unregistered
+                      submitter simply keeps the db-user[...] text instead of a
+                      blank.
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {(editingForm?.fields || []).map((f) => (
+                        <code
+                          key={f.id || f.label}
+                          className="px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 font-mono text-[11px]"
+                        >
+                          db-submissions[{f.label}]
+                        </code>
+                      ))}
+                      {["name", "email", "university", "yearOfStudy", "committee"].map(
+                        (k) => (
+                          <code
+                            key={k}
+                            className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono text-[11px]"
+                          >
+                            db-user[{k}]
+                          </code>
+                        )
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted leading-relaxed mt-2 mb-1">
+                      Recommended submission values:
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {[
+                        "name",
+                        "email",
+                        "formTitle",
+                        "formType",
+                        "ticketCode",
+                        "submittedAt",
+                        ...(editingForm?.type === "attendance"
+                          ? ["qrCode", "qrUrl"]
+                          : []),
+                      ].map((k) => (
+                        <code
+                          key={k}
+                          className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/10 font-mono text-[11px]"
+                        >
+                          db-submissions[{k}]
+                        </code>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted/70 text-right">
+                    {editEmailBody.length}/5000
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-end gap-2 pt-1">
             <button
               onClick={() => setEditingForm(null)}
@@ -478,6 +703,45 @@ export default function DashboardForms() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Confirm before a template overwrites the subject or message already
+          written. An in-app popup rather than window.confirm. */}
+      <Modal
+        open={Boolean(pendingTemplate)}
+        onClose={() => setPendingTemplate(null)}
+        title="Replace your message?"
+      >
+        {pendingTemplate && (
+          <div>
+            <p className="text-sm text-muted leading-relaxed">
+              <span className="font-semibold text-foreground">
+                {pendingTemplate.label}
+              </span>{" "}
+              sets both the subject and the message, so anything you have written
+              will be replaced. It is not saved until you press Save.
+            </p>
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                type="button"
+                onClick={() => setPendingTemplate(null)}
+                className="px-4 py-2 text-sm font-medium text-foreground bg-white dark:bg-[#1a1f2e] border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Keep my text
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  commitTemplate(pendingTemplate);
+                  setPendingTemplate(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
+              >
+                Replace it
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       <DeleteModal
