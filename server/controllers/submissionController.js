@@ -19,6 +19,7 @@ const {
   findEmailField,
   findNameField,
 } = require('../utils/fieldIdentity');
+const { composeAnswerValue } = require('../utils/otherOption');
 
 // ==========================================
 // 1. STUDENT ACTIONS
@@ -47,6 +48,23 @@ const submitForm = catchAsync(async (req, res) => {
 
   if (typeof answers !== 'object' || answers === null || Array.isArray(answers)) {
     throw new AppError('Answers must be a JSON object', 400);
+  }
+
+  // Free text typed against an "Other" choice, sent beside the answers so the
+  // answers stay a clean list of declared options. Parsed here rather than in the
+  // model so a malformed value is a 400 from the request instead of a surprise
+  // halfway through a save.
+  let otherAnswers = req.body.otherAnswers;
+  if (typeof otherAnswers === 'string') {
+    try {
+      otherAnswers = JSON.parse(otherAnswers);
+    } catch (err) {
+      throw new AppError('Invalid otherAnswers format, must be valid JSON', 400);
+    }
+  }
+  if (otherAnswers === undefined || otherAnswers === null) otherAnswers = {};
+  if (typeof otherAnswers !== 'object' || Array.isArray(otherAnswers)) {
+    throw new AppError('otherAnswers must be a JSON object', 400);
   }
 
   // POST /submissions is public — `req.user` is only set by `optionalProtect`
@@ -187,6 +205,7 @@ const submitForm = catchAsync(async (req, res) => {
     ...(userid && { userId: userid }),
     registrantEmail: submittedEmail,
     answers,
+    otherAnswers,
     // use spread operator to add ticketCode and qrImage to the newSubmission object if form type is registration
     ...(ticketCode && { ticketCode }),
     ...(qrImage && { qrImage })
@@ -238,13 +257,14 @@ const submitForm = catchAsync(async (req, res) => {
   for (const field of form.fields || []) {
     const raw = answers[field.id];
     let value;
-    if (Array.isArray(raw)) {
-      value = raw.join(', ');
-    } else if (raw && typeof raw === 'object') {
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
       // An uploaded file answer is stored as an object; show the link.
       value = raw.url || raw.path || raw.name || '';
     } else {
-      value = raw;
+      // Joins an "Other" choice back onto the detail the submitter typed, so
+      // `db-submissions[Committee]` reads "Other: Embedded systems" rather than
+      // the bare word "Other". Any other answer passes through unchanged.
+      value = composeAnswerValue(field, raw, otherAnswers);
     }
     if (field.label) dbSubmissions[String(field.label).trim().toLowerCase()] = value;
     if (field.id) dbSubmissions[String(field.id).trim().toLowerCase()] = value;
@@ -456,13 +476,18 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
 
       // Merge Dynamic Answers & Handle Arrays (like Checkboxes)
       if (sub.answers) {
+        // Keyed by field id, so an "Other" choice can be put back together with
+        // the detail the submitter typed. Without this the spreadsheet says
+        // "Other" and the answer the committee actually needs is missing.
+        const fieldsById = new Map((form.fields || []).map((f) => [f.id, f]));
         const processedAnswers = {};
         for (const [key, value] of Object.entries(sub.answers)) {
-          if (Array.isArray(value)) {
-            processedAnswers[key] = value.join(' - ');
-          } else {
-            processedAnswers[key] = value;
-          }
+          const field = fieldsById.get(key);
+          processedAnswers[key] = field
+            ? composeAnswerValue(field, value, sub.otherAnswers)
+            : Array.isArray(value)
+              ? value.join(' - ')
+              : value;
         }
         Object.assign(rowData, processedAnswers);
       }

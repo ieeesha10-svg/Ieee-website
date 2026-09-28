@@ -10,11 +10,52 @@ import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import { ACCEPTED_FILE_EXTENSIONS, useFileUpload } from "../utils/fileUploadUtils";
 import { validateSubmission } from "../utils/formValidation";
+import { isOtherOption } from "../data/fieldTypes";
 import { prefillIdentityAnswers } from "../utils/formIdentity";
 import { FORM_TYPE_BADGE, DEFAULT_FORM_TYPE_BADGE } from "../data/formTypes";
 
 function getBadgeInfo(formType) {
   return FORM_TYPE_BADGE[formType] || DEFAULT_FORM_TYPE_BADGE;
+}
+
+/**
+ * The free-text box revealed by choosing "Other" on a Dropdown or Checkbox.
+ *
+ * Always required once it appears: choosing "Other" and leaving this empty
+ * records an answer the committee cannot act on, which is the exact dead end the
+ * option exists to avoid.
+ */
+function OtherSpecifyInput({ field, value, onChange, showError }) {
+  return (
+    <div className="mt-1 flex flex-col gap-1.5">
+      <label
+        htmlFor={`other-${field.id}`}
+        className="text-[11px] font-bold uppercase tracking-wider text-muted"
+      >
+        Please specify
+        <RequiredAsterisk color="text-primary" />
+      </label>
+      <input
+        id={`other-${field.id}`}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        maxLength={200}
+        placeholder={`Your answer for ${field.label.toLowerCase()}`}
+        aria-invalid={showError || undefined}
+        className={`w-full rounded-lg border bg-input px-4 py-3 text-sm text-foreground placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
+          showError
+            ? "border-red-500 focus:ring-red-500/30"
+            : "border-border"
+        }`}
+      />
+      {showError && (
+        <span className="text-xs text-red-500">
+          Tell us what you mean by &ldquo;Other&rdquo;
+        </span>
+      )}
+    </div>
+  );
 }
 
 export default function FormSubmissionPage() {
@@ -25,6 +66,7 @@ export default function FormSubmissionPage() {
   const { submit, loading: submitting, error: submitError, alreadySubmitted: alreadySubmittedViaSubmit, emailHasAccount } = useSubmitForm();
 
   const [typedAnswers, setTypedAnswers] = useState({});
+  const [otherAnswers, setOtherAnswers] = useState({});
   const [errors, setErrors] = useState({});
   const [files, setFiles] = useState({});
   const fileInputRefs = React.useRef({});
@@ -68,6 +110,26 @@ export default function FormSubmissionPage() {
     setErrors((prev) => ({ ...prev, [fieldId]: "" }));
   };
 
+  // The free text typed against an "Other" choice. Kept apart from `answers`
+  // because the answer itself has to stay one of the field's declared options -
+  // SubmissionModel rejects anything else.
+  const handleOtherChange = (fieldId, value) => {
+    setOtherAnswers((prev) => ({ ...prev, [fieldId]: value }));
+    setErrors((prev) => ({ ...prev, [fieldId]: "" }));
+  };
+
+  // Called when a choice is deselected or replaced. Any text typed against a
+  // previous "Other" is dropped, so re-selecting "Other" later starts empty
+  // rather than silently reusing a stale answer.
+  const clearOtherText = (fieldId) => {
+    setOtherAnswers((prev) => {
+      if (!(fieldId in prev)) return prev;
+      const next = { ...prev };
+      delete next[fieldId];
+      return next;
+    });
+  };
+
   const { handleFileSelect, handleFileDrop, handleFileRemove } = useFileUpload(setFiles, setErrors);
 
   // Forms are open to everyone. Only a form that opts in to `requiresLogin` needs an account.
@@ -91,7 +153,7 @@ export default function FormSubmissionPage() {
     );
   }
 
-  const validate = () => validateSubmission(form?.fields, answers, files);
+  const validate = () => validateSubmission(form?.fields, answers, files, { otherAnswers });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -102,7 +164,7 @@ export default function FormSubmissionPage() {
       return;
     }
     submittingRef.current = true;
-    const result = await submit(id, answers, files);
+    const result = await submit(id, answers, files, otherAnswers);
     submittingRef.current = false;
     if (result) {
       setShowSuccess(true);
@@ -139,7 +201,8 @@ export default function FormSubmissionPage() {
           </div>
         );
 
-      case "Dropdown":
+      case "Dropdown": {
+        const pickedOther = isOtherOption(answers[field.id]);
         return (
           <div key={field.id} className="flex flex-col gap-1.5">
             <label className="text-[11px] font-bold uppercase tracking-wider text-muted">
@@ -151,7 +214,13 @@ export default function FormSubmissionPage() {
             <div className="relative">
               <select
                 value={answers[field.id] || ""}
-                onChange={(e) => handleChange(field.id, e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // A single answer can only be one thing, so choosing anything
+                  // other than "Other" retires the typed text.
+                  if (!isOtherOption(value)) clearOtherText(field.id);
+                  handleChange(field.id, value);
+                }}
                 className={`w-full appearance-none rounded-lg border bg-input px-4 py-3 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-colors ${
                   showError
                     ? "border-red-500 focus:ring-red-500/30"
@@ -172,13 +241,24 @@ export default function FormSubmissionPage() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
               />
             </div>
+            {pickedOther && (
+              <OtherSpecifyInput
+                field={field}
+                value={otherAnswers[field.id] || ""}
+                onChange={(v) => handleOtherChange(field.id, v)}
+                showError={Boolean(showError) && !String(otherAnswers[field.id] || "").trim()}
+              />
+            )}
             {showError && (
               <span className="text-xs text-red-500">{showError}</span>
             )}
           </div>
         );
+      }
 
-      case "Checkbox":
+      case "Checkbox": {
+        const chosen = answers[field.id] || [];
+        const pickedOther = chosen.some(isOtherOption);
         return (
           <div key={field.id} className="flex flex-col gap-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-muted">
@@ -228,6 +308,9 @@ export default function FormSubmissionPage() {
                       checked={checked}
                       onChange={(e) => {
                         const current = answers[field.id] || [];
+                        // Untick "Other" and the text it was holding goes with it;
+                        // there is nothing left for it to describe.
+                        if (isOtherOption(opt) && !e.target.checked) clearOtherText(field.id);
                         const next = e.target.checked
                           ? [...current, opt]
                           : current.filter((v) => v !== opt);
@@ -242,11 +325,20 @@ export default function FormSubmissionPage() {
                 );
               })}
             </div>
+            {pickedOther && (
+              <OtherSpecifyInput
+                field={field}
+                value={otherAnswers[field.id] || ""}
+                onChange={(v) => handleOtherChange(field.id, v)}
+                showError={Boolean(showError) && !String(otherAnswers[field.id] || "").trim()}
+              />
+            )}
             {showError && (
               <span className="text-xs text-red-500">{showError}</span>
             )}
           </div>
         );
+      }
 
       case "FileUpload": {
         const selectedFile = files[field.id];

@@ -3,6 +3,7 @@ import { useParams, useLocation, Link } from "react-router-dom";
 import { ArrowLeft, FileText, Loader2, ChevronDown, ChevronUp, Download, ExternalLink, ArrowDownUp, Check } from "lucide-react";
 import { useFormSubmissions } from "../../../hooks/dashboard/useGetSubmissions";
 import { useExportFormSubmissions } from "../../../hooks/dashboard/forms/useExportFormSubmissions";
+import { composeOtherValue } from "../../../data/fieldTypes";
 
 function isFileUrl(value) {
   if (typeof value !== "string") return false;
@@ -37,7 +38,7 @@ function getAttachmentUrl(url) {
   return url;
 }
 
-function SubmissionRow({ submission, index, fieldLabelMap }) {
+function SubmissionRow({ submission, index, fieldLabelMap, fieldsById }) {
   const [expanded, setExpanded] = useState(false);
 
   const name =
@@ -131,6 +132,16 @@ function SubmissionRow({ submission, index, fieldLabelMap }) {
                         </td>
                         <td className="px-4 py-2.5 text-foreground align-top">
                           {(() => {
+                            // An "Other" choice is stored as the option, with the
+                            // typed detail beside it, so join the two back up
+                            // before rendering. Otherwise the row would say
+                            // "Other" and the answer the committee needs is gone.
+                            const field = fieldsById?.[key];
+                            if (field) {
+                              return String(
+                                composeOtherValue(field, value, submission.otherAnswers) ?? ""
+                              );
+                            }
                             if (Array.isArray(value)) return value.join(", ");
                             if (isFileUrl(value)) {
                               if (isImageUrl(value)) {
@@ -189,9 +200,18 @@ export default function ShowFormSubmissions() {
   const { formId } = useParams();
   const location = useLocation();
   const formTitle = location.state?.formTitle || "Form";
-  const fields = location.state?.fields || [];
+  // Memoised so the maps below are not rebuilt on every render: `|| []` makes a
+  // fresh array each time, which would give the memos a new dependency every time.
+  const fields = useMemo(
+    () => location.state?.fields || [],
+    [location.state?.fields]
+  );
   const fieldLabelMap = Object.fromEntries(
     fields.map((f) => [f.id, f.label])
+  );
+  const fieldsById = useMemo(
+    () => Object.fromEntries(fields.map((f) => [f.id, f])),
+    [fields]
   );
 
   const { submissions, total, isLoading, error } = useFormSubmissions(formId);
@@ -355,6 +375,7 @@ export default function ShowFormSubmissions() {
                   submission={submission}
                   index={i}
                   fieldLabelMap={fieldLabelMap}
+          fieldsById={fieldsById}
                 />
               ))}
             </table>
