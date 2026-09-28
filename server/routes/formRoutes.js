@@ -6,7 +6,8 @@ const {
   getForms, 
   deleteForm, 
   toggleFormStatus,
-  updateFormSettings
+  updateFormSettings,
+  previewSubmissionEmail
 } = require('../controllers/formController');
 
 // Import Middleware
@@ -27,5 +28,9 @@ formRouter.route('/:id').delete(deleteForm); // Delete
 formRouter.put('/:id/toggle', toggleFormStatus); // Open/Close
 
 formRouter.put('/:id/settings', updateFormSettings); // Update settings
+
+// Renders the submission email for the builder preview. A literal path rather
+// than '/:id/...' so it can never be read as a form id. Nothing is sent.
+formRouter.post('/preview-email', previewSubmissionEmail);
 
 module.exports = formRouter;

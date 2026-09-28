@@ -38,6 +38,7 @@ import DeleteModal from "../../../components/ui/DeleteModal";
 import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
 import DashFormsSkeleton from "../../../components/skeletons/DashFormsSkeleton";
 import Modal from "../../../components/ui/Modal";
+import EmailPreviewModal from "../../../components/dashboard/EmailPreviewModal";
 import ToggleSwitch from "../../../components/ui/ToggleSwitch";
 import Pagination from "../../../components/ui/Pagination";
 
@@ -326,6 +327,7 @@ export default function DashboardForms() {
   // Set when a template click needs confirming, holding what to apply once the
   // author agrees. Null means the popup is closed.
   const [pendingTemplate, setPendingTemplate] = useState(null);
+  const [editPreviewOpen, setEditPreviewOpen] = useState(false);
   const [savingDates, setSavingDates] = useState(false);
 
   if (isLoading) return <DashFormsSkeleton />;
@@ -467,7 +469,15 @@ export default function DashboardForms() {
       />
 
       {/* Edit Dates Modal */}
-      <Modal open={!!editingForm} onClose={() => !savingDates && setEditingForm(null)} title="Edit Form">
+      <Modal
+        open={!!editingForm}
+        onClose={() => {
+          if (savingDates) return;
+          setEditingForm(null);
+          setEditPreviewOpen(false);
+        }}
+        title="Edit Form"
+      >
         <div className="space-y-4">
           <p className="text-muted truncate">{editingForm?.title}</p>
           <div>
@@ -539,10 +549,20 @@ export default function DashboardForms() {
             {editSendEmail && (
               <div className="space-y-3">
                 <div className="rounded-lg border border-primary/25 dark:border-primary-light/20 bg-primary/5 p-3">
-                  <p className="flex items-center gap-1.5 text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">
-                    <Sparkles size={13} className="text-primary" />
-                    Start from a template
-                  </p>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="flex items-center gap-1.5 text-[11px] font-bold text-foreground uppercase tracking-wide">
+                      <Sparkles size={13} className="text-primary" />
+                      Start from a template
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setEditPreviewOpen(true)}
+                      title="See the message a submitter will receive"
+                      className="inline-flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide text-foreground border border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary transition-colors"
+                    >
+                      <Eye size={12} /> Preview
+                    </button>
+                  </div>
                   <p className="text-[11px] text-muted mb-2.5 leading-relaxed">
                     Picking a template sets the subject and the message together,
                     using this form&apos;s own fields. It asks before replacing
@@ -704,6 +724,19 @@ export default function DashboardForms() {
           </div>
         </div>
       </Modal>
+
+      {/* Rendered as a sibling of the edit modal rather than a child, so the two
+          never stack. Guarded on editingForm so closing the editor cannot leave
+          a preview floating over a page that is no longer editing anything. */}
+      <EmailPreviewModal
+        open={editPreviewOpen && !!editingForm}
+        onClose={() => setEditPreviewOpen(false)}
+        formTitle={editingForm?.title}
+        formType={editingForm?.type}
+        fields={editingForm?.fields}
+        subject={editEmailSubject}
+        messageBody={editEmailBody}
+      />
 
       {/* Confirm before a template overwrites the subject or message already
           written. An in-app popup rather than window.confirm. */}

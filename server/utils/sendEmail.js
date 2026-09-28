@@ -416,6 +416,64 @@ const sendSubmissionReceivedEmail = async ({ email, userName, formTitle, dbUser 
 // wrote rather than as a second email. On a form with no QR the placeholder is
 // removed rather than left as literal text, since an unresolvable placeholder is
 // otherwise shown on purpose.
+// Turn a custom email into the finished subject and HTML document.
+//
+// Split out from sendCustomSubmissionEmail because the builder's preview needs
+// the exact same output, and a preview that reimplemented this would drift from
+// what members actually receive. Nothing here sends: the caller decides.
+const renderCustomSubmissionEmail = ({
+  subject,
+  messageBody,
+  formTitle,
+  userName,
+  ticketCode,
+  qrDataUrl,
+  dbUser = null,
+  dbSubmissions = {},
+}) => {
+  const hasQr = Boolean(qrDataUrl);
+
+  // Values the author cannot type, exposed under the recommended
+  // db-submissions[...] names so every placeholder is the same shape.
+  // Left raw on purpose: resolveAuthorTokens escapes on substitution, so
+  // escaping here as well would double-escape and a real name like
+  // "Rane & Omar" would arrive as "Rane &amp;amp; Omar".
+  const reserved = {
+    name: userName,
+    formtitle: formTitle,
+    ticketcode: ticketCode,
+    qrurl: hasQr ? qrDataUrl : undefined,
+    qrcode: hasQr
+      ? `<img src="${qrDataUrl}" alt="Your ticket QR code" width="220" height="220" style="display:block;width:220px;height:220px;border:0;border-radius:8px;" />`
+      : undefined,
+  };
+
+  // Answers are merged over the reserved names so a form's own fields reach the
+  // message. Note the flip side: a field an author labels exactly "Name" will
+  // shadow the submitter's name, the same as it does in submissionController.
+  const context = { dbUser, dbSubmissions: { ...reserved, ...dbSubmissions } };
+
+
+  const stripMissingQr = (text) =>
+    hasQr
+      ? text
+      : text.replace(/\bdb-submissions\[\s*(qrcode|qrurl)\s*\]/gi, '');
+
+  const body = resolveAuthorTokens(stripMissingQr(String(messageBody || '')), context);
+
+  // The subject is author-written text too, so it resolves the same way. Without
+  // this a subject mentioning db-submissions[formTitle] went out verbatim.
+  const resolvedSubject = resolveAuthorTokens(String(subject || ''), context);
+
+  const html = buildEmailDocument({
+    content: body,
+    title: resolvedSubject,
+    preheader: resolvedSubject,
+  });
+
+  return { subject: resolvedSubject, html };
+};
+
 const sendCustomSubmissionEmail = async ({
   to,
   subject,
@@ -424,44 +482,19 @@ const sendCustomSubmissionEmail = async ({
   userName,
   ticketCode,
   qrDataUrl,
-  data = {},
   dbUser = null,
   dbSubmissions = {},
 }) => {
   try {
-    const hasQr = Boolean(qrDataUrl);
-
-    // Values the author cannot type, exposed under the recommended
-    // db-submissions[...] names so every token is the same shape.
-    const reserved = {
-      name: escapeHtml(userName),
-      formtitle: escapeHtml(formTitle),
-      ticketcode: escapeHtml(ticketCode),
-      qrurl: hasQr ? qrDataUrl : undefined,
-      qrcode: hasQr
-        ? `<img src="${qrDataUrl}" alt="Your ticket QR code" width="220" height="220" style="display:block;width:220px;height:220px;border:0;border-radius:8px;" />`
-        : undefined,
-    };
-
-    // The answers passed in win over the reserved names, so a form that happens
-    // to have its own "Name" field does not shadow the submitter's name.
-    const context = { dbUser, dbSubmissions: { ...reserved, ...dbSubmissions } };
-
-    const stripMissingQr = (text) =>
-      hasQr
-        ? text
-        : text.replace(/\bdb-submissions\[\s*(qrcode|qrurl)\s*\]/gi, '');
-
-    const body = resolveAuthorTokens(stripMissingQr(String(messageBody || '')), context);
-
-    // The subject is author-written text too, so it resolves the same way. Without
-    // this a subject mentioning db-submissions[formTitle] went out verbatim.
-    const resolvedSubject = resolveAuthorTokens(String(subject || ''), context);
-
-    const html = buildEmailDocument({
-      content: body,
-      title: resolvedSubject,
-      preheader: resolvedSubject,
+    const { subject: resolvedSubject, html } = renderCustomSubmissionEmail({
+      subject,
+      messageBody,
+      formTitle,
+      userName,
+      ticketCode,
+      qrDataUrl,
+      dbUser,
+      dbSubmissions,
     });
 
     await sendEmail({ to, subject: resolvedSubject, html });
@@ -484,6 +517,9 @@ module.exports = {
   sendCommitteeDecisionEmail,
   sendSubmissionReceivedEmail,
   sendCustomSubmissionEmail,
+  // The renderer behind sendCustomSubmissionEmail, reused by the builder's
+  // preview so the preview cannot drift from the real message.
+  renderCustomSubmissionEmail,
   // Exported for the submission controller's db-submissions[...] lookup and for tests.
   resolveAuthorTokens,
   readUserField,

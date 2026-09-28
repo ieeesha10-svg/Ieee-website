@@ -2,6 +2,15 @@ const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 const Form = require('../models/FormModel');
 const { deriveFieldIds, describeFieldIdProblems } = require('../utils/fieldId');
 const { assertIdentityFields } = require('../utils/fieldIdentity');
+const { renderCustomSubmissionEmail } = require('../utils/sendEmail');
+const {
+  SAMPLE_MEMBER,
+  SAMPLE_NAME,
+  SAMPLE_TICKET_CODE,
+  buildSampleSubmissions,
+  findUnresolved,
+} = require('../utils/emailPreview');
+const QRCode = require('qrcode');
 
 // Keep in sync with the `maxlength` on the Form schema, so an over-long value is
 // refused with a useful message instead of a Mongoose ValidationError.
@@ -355,6 +364,102 @@ const updateFormSettings = catchAsync(async (req, res) => {
   });
 });
 
+// Render a form's submission email without sending it, for the builder preview.
+//
+// The message goes through renderCustomSubmissionEmail, the same function
+// sendCustomSubmissionEmail calls, so the preview is the real message rather
+// than a reimplementation that can drift. Two renderings come back: one as a
+// registered member and one as a guest, because db-user[...] resolves for the
+// first and stays as literal text for the second, and an author cannot see that
+// difference any other way.
+const previewSubmissionEmail = catchAsync(async (req, res) => {
+  const { formTitle, formType, fields, asGuest, subject, messageBody } = req.body || {};
+
+  if (formTitle !== undefined && typeof formTitle !== 'string') {
+    throw new AppError('formTitle must be text', 400, 'INVALID_FORM_TITLE');
+  }
+  if (formType !== undefined && typeof formType !== 'string') {
+    throw new AppError('formType must be text', 400, 'INVALID_FORM_TYPE');
+  }
+  if (subject !== undefined && typeof subject !== 'string') {
+    throw new AppError('subject must be text', 400, 'INVALID_EMAIL_SUBJECT');
+  }
+  if (messageBody !== undefined && typeof messageBody !== 'string') {
+    throw new AppError('messageBody must be text', 400, 'INVALID_EMAIL_BODY');
+  }
+  if (fields !== undefined && !Array.isArray(fields)) {
+    throw new AppError('fields must be a list', 400, 'INVALID_FIELDS');
+  }
+
+  const title = (formTitle || '').trim() || 'Untitled form';
+  const safeFields = Array.isArray(fields) ? fields : [];
+  const asMember = asGuest !== true;
+
+  // The QR is generated for real, from a sample code, so the author sees the
+  // actual block a ticket produces rather than a mocked rectangle. Only
+  // attendance forms ever carry one.
+  const hasQr = formType === 'attendance';
+  const qrDataUrl = hasQr ? await QRCode.toDataURL(SAMPLE_TICKET_CODE) : null;
+
+  const dbSubmissions = buildSampleSubmissions(safeFields);
+  dbSubmissions.formTitle = title;
+  dbSubmissions.formType = formType || '';
+
+  const base = {
+    subject: subject || `We received your submission for ${title}`,
+    messageBody: messageBody || '',
+    formTitle: title,
+    userName: SAMPLE_NAME,
+    ticketCode: SAMPLE_TICKET_CODE,
+    qrDataUrl,
+    dbSubmissions,
+  };
+
+  // The member case fills db-user[...]; the guest case passes no account, which
+  // is exactly what the controller does for an unregistered submitter.
+  // dbSubmissions carries the same reserved values the renderer merges in, so
+  // asking "would this resolve?" here gives the same answer the renderer does.
+  const reportSubmissions = {
+    ...dbSubmissions,
+    ...(qrDataUrl ? { qrurl: qrDataUrl, qrcode: qrDataUrl } : {}),
+  };
+  const memberContext = { dbUser: SAMPLE_MEMBER, dbSubmissions: reportSubmissions };
+  const guestContext = { dbUser: null, dbSubmissions: reportSubmissions };
+
+  const member = renderCustomSubmissionEmail({ ...base, dbUser: SAMPLE_MEMBER });
+  const guest = asMember
+    ? member
+    : renderCustomSubmissionEmail({ ...base, dbUser: null });
+
+  const subjectAndBody = `${base.subject}\n${base.messageBody}`;
+
+  // On a form with no QR the sender drops db-submissions[qrCode] rather than
+  // resolving it, so it is not an author mistake and is not reported as one.
+  const withoutStrippedQr = (list) =>
+    hasQr
+      ? list
+      : list.filter((p) => !['qrcode', 'qrurl'].includes(p.key.toLowerCase()));
+
+  res.status(200).json({
+    subject: asMember ? member.subject : guest.subject,
+    member: member.html,
+    guest: guest.html,
+    // For the member view, these are the placeholders a real member would also
+    // see as raw text: a misspelt name, or a field deleted after the message
+    // was written.
+    unresolved: asMember
+      ? withoutStrippedQr(findUnresolved(subjectAndBody, memberContext)).map((p) => p.token)
+      : [],
+    // A guest cannot fill db-user[...] at all, so those are expected rather than
+    // a mistake. Only flag them so the UI can explain rather than alarm.
+    guestUnresolved: asMember
+      ? []
+      : withoutStrippedQr(findUnresolved(subjectAndBody, guestContext))
+          .filter((p) => p.scope === 'db-user')
+          .map((p) => p.token),
+  });
+});
+
 module.exports = { 
   createForm, 
   getForm, 
@@ -362,6 +467,7 @@ module.exports = {
   deleteForm,
   toggleFormStatus,
   updateFormSettings,
+  previewSubmissionEmail,
   // Exported for the verification script and for reuse by other controllers.
   readBooleanSetting,
   readSubmissionEmailSettings,
