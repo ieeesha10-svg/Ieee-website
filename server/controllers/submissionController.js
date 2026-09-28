@@ -215,6 +215,42 @@ const submitForm = catchAsync(async (req, res) => {
   //     the admin QR scanner (POST /api/submissions/scan) depends on it.
   const recipientName = userName || submittedName || 'there';
 
+  // 13a. The author's email lookups.
+  //
+  //      `db-submissions[Field Name]` reads this form's own answers, keyed by
+  //      label and by field id, because the submitter wrote the label while the
+  //      answers are stored under the id the server derived from it.
+  //
+  //      `db-user[field]` reads the submitter's account, or resolves to nothing
+  //      at all for a guest, in which case the placeholder is left as written.
+  const dbSubmissions = {
+    // The recommended names, so the author can reach the values that are not
+    // answer fields. A form field of the same name wins, which is the sensible
+    // outcome: an author who asked for "Name" wants the answer they collected.
+    name: recipientName,
+    email: submittedEmail,
+    formTitle: form.title,
+    formType: form.type,
+    ticketCode,
+    submittedAt: new Date().toISOString().slice(0, 10),
+  };
+
+  for (const field of form.fields || []) {
+    const raw = answers[field.id];
+    let value;
+    if (Array.isArray(raw)) {
+      value = raw.join(', ');
+    } else if (raw && typeof raw === 'object') {
+      // An uploaded file answer is stored as an object; show the link.
+      value = raw.url || raw.path || raw.name || '';
+    } else {
+      value = raw;
+    }
+    if (field.label) dbSubmissions[String(field.label).trim().toLowerCase()] = value;
+    if (field.id) dbSubmissions[String(field.id).trim().toLowerCase()] = value;
+  }
+  const dbUser = userid ? req.user : null;
+
   if (form.sendEmailOnSubmission) {
     sendCustomSubmissionEmail({
       to: submittedEmail,
@@ -228,12 +264,16 @@ const submitForm = catchAsync(async (req, res) => {
       // `qrImage` is only produced for attendance forms; the extra type check
       // keeps that guarantee at the point the email is built.
       qrDataUrl: form.type === 'attendance' ? qrImage : null,
+      dbUser,
+      dbSubmissions,
     }).catch(err => console.error("Email Error:", err));
   } else {
     sendSubmissionReceivedEmail({
       email: submittedEmail,
       userName: recipientName,
-      formTitle: form.title
+      formTitle: form.title,
+      dbUser,
+      dbSubmissions
     }).catch(err => console.error("Email Error:", err));
   }
 

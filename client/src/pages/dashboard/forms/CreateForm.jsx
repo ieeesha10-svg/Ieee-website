@@ -1,13 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, GripVertical, Check, Trash2, Loader2, ArrowLeft, Lock } from "lucide-react";
+import toast from "react-hot-toast";
+import { X, GripVertical, Check, Trash2, Loader2, ArrowLeft, Lock, Sparkles } from "lucide-react";
 import { useCreateForm } from "../../../hooks/dashboard/forms/useCreateForm";
 import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
 import { FORM_TYPE_OPTIONS } from "../../../data/formTypes";
+import { templatesForCategory, fillSubject } from "../../../data/emailTemplates";
 import SectionCard from "../../../components/ui/SectionCard";
 import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
 import ToggleSwitch from "../../../components/ui/ToggleSwitch";
+import Modal from "../../../components/ui/Modal";
 import { isIdentityField } from "../../../utils/formIdentity";
+
+const EMAIL_BODY_MAX = 5000;
+
+// The db-submissions[...] values that are not tied to one of the form's own
+// fields, so there is nothing to derive them from a chip list. Mirrors
+// RECOMMENDED_SUBMISSION_FIELDS in server/utils/sendEmail.js.
+const RECOMMENDED_SUBMISSION_TOKENS = [
+  "name",
+  "email",
+  "formTitle",
+  "formType",
+  "ticketCode",
+  "submittedAt",
+];
 
 function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDragIndex, moveField, error }) {
   const hasOptions = field.type === "Dropdown" || field.type === "Checkbox";
@@ -182,6 +199,113 @@ export default function CreateForm() {
   const [dragIndex, setDragIndex] = useState(null);
   const [newFieldLabel, setNewFieldLabel] = useState("");
   const [newFieldType, setNewFieldType] = useState("TextInput");
+  // The body editor, so a template can be dropped in at the caret instead of
+  // over the top of whatever the author has already written.
+  const emailBodyRef = useRef(null);
+  // Set when a template click needs confirming, holding what to apply once the
+  // author agrees. Null means the popup is closed.
+  const [pendingTemplate, setPendingTemplate] = useState(null);
+
+  // Insert a short snippet (a token) at the caret, or at the end when the editor
+  // was never focused. This is what the clickable token chips call.
+  const insertAtCursor = (snippet) => {
+    const current = formData.submissionEmailBody || "";
+    if (current.length + snippet.length > EMAIL_BODY_MAX) {
+      toast.error(`That would make the message ${current.length + snippet.length} characters, over the ${EMAIL_BODY_MAX} limit.`);
+      return;
+    }
+    const el = emailBodyRef.current;
+    const at = el && el.selectionStart !== null ? el.selectionStart : current.length;
+    const next = current.slice(0, at) + snippet + current.slice(at);
+    updateField("submissionEmailBody", next);
+    requestAnimationFrame(() => {
+      if (el) {
+        el.focus();
+        el.setSelectionRange(at + snippet.length, at + snippet.length);
+      }
+    });
+  };
+
+  // Apply a ready-made template.
+  //
+  // Selecting a template sets BOTH the subject and the body, so the whole message
+  // matches the template the author clicked on. `mode` decides what happens to
+  // text that is already there:
+  //   "apply" (the default) sets the subject and the body, after confirming
+  //             anything already written is about to be replaced.
+  //   "insert" leaves the subject alone and splices the body in at the caret,
+  //             keeping every character already written.
+  //
+  // The confirm is an in-app popup rather than window.confirm: a native dialog
+  // looks out of place next to the rest of the builder, and it cannot be styled
+  // to match. It now also fires when only the subject has been written, which
+  // window.confirm's body-only check used to miss.
+  const applyEmailTemplate = (template, mode = "apply") => {
+    const current = formData.submissionEmailBody || "";
+    const hasSubject = (formData.submissionEmailSubject || "").trim();
+
+    if (mode === "apply" && (current.trim() || hasSubject)) {
+      setPendingTemplate({ template, mode });
+      return;
+    }
+
+    commitEmailTemplate(template, mode);
+  };
+
+  // The part that actually writes the template, once nothing is in the way.
+  const commitEmailTemplate = (template, mode) => {
+    const current = formData.submissionEmailBody || "";
+
+    const nextSubject = fillSubject(template.subject, formData.title);
+    let next;
+    let where;
+
+    if (mode === "insert") {
+      const el = emailBodyRef.current;
+      // No caret (the field was never focused) means the natural place is the end.
+      const start = el && el.selectionStart !== null ? el.selectionStart : current.length;
+      const end = el && el.selectionEnd !== null ? el.selectionEnd : current.length;
+      const before = current.slice(0, start);
+      const after = current.slice(end);
+      // Keep the pasted block on its own lines so it does not run into the
+      // author's sentence above or below it.
+      const openGap = before && !/\n\s*$/.test(before) ? "\n\n" : "";
+      const closeGap = after && !/^\s*\n/.test(after) ? "\n\n" : "";
+      next = before + openGap + template.body + closeGap + after;
+      where = "inserted at your cursor";
+    } else {
+      next = template.body;
+      where = current.trim() ? "replaced your subject and message" : "applied to your subject and message";
+    }
+
+    if (next.length > EMAIL_BODY_MAX) {
+      toast.error(
+        `That template would make the message ${next.length} characters. The limit is ${EMAIL_BODY_MAX}.`
+      );
+      return;
+    }
+
+    updateField("submissionEmailBody", next);
+    // A template is a complete message, so the subject goes with it. "insert"
+    // is the exception: that path is for grafting a block into a message the
+    // author is still composing, so its subject is theirs to keep.
+    if (mode !== "insert") {
+      updateField("submissionEmailSubject", nextSubject);
+    }
+
+    toast.success(`${template.label} ${where}.`);
+    if (mode === "insert") {
+      // Put the caret just after the block so typing continues from there.
+      const el = emailBodyRef.current;
+      if (el) {
+        const caret = current.indexOf(template.body) + template.body.length;
+        requestAnimationFrame(() => {
+          el.focus();
+          el.setSelectionRange(caret, caret);
+        });
+      }
+    }
+  };
 
   const handleConfirmAddField = () => {
     if (!newFieldLabel.trim()) return;
@@ -486,6 +610,51 @@ export default function CreateForm() {
 
         {formData.sendEmailOnSubmission && (
           <div className="mt-4 space-y-4">
+            <div className="rounded-lg border border-primary/25 dark:border-primary-light/20 bg-primary/5 p-3">
+              <p className="flex items-center gap-1.5 text-[11px] font-bold text-foreground uppercase tracking-wide mb-2">
+                <Sparkles size={13} className="text-primary" />
+                Start from a template
+              </p>
+              <p className="text-[11px] text-muted mb-2.5 leading-relaxed">
+                Picking a template sets the subject and the message together, using
+                this form&apos;s own fields. If you have already written something
+                it will ask before replacing it. Use{" "}
+                <span className="font-semibold text-foreground">+ insert</span> to
+                add a template to the message without touching the subject.
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {templatesForCategory(formData.type, fieldsList).map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-2"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => applyEmailTemplate(t)}
+                      title={t.description}
+                      className="flex-1 text-left group"
+                    >
+                      <span className="block text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                        {t.label}
+                      </span>
+                      <span className="block text-[11px] text-muted leading-snug">
+                        {t.description}
+                        {t.nextStep ? ` Asks them to: ${t.nextStep[0].toLowerCase()}` : ""}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyEmailTemplate(t, "insert")}
+                      title="Add this template to the current message, leaving your subject and existing text alone"
+                      className="shrink-0 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide text-muted border border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary transition-colors"
+                    >
+                      + insert
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div>
               <label
                 htmlFor="form-email-subject"
@@ -516,12 +685,13 @@ export default function CreateForm() {
               </label>
               <textarea
                 id="form-email-body"
+                ref={emailBodyRef}
                 value={formData.submissionEmailBody}
                 onChange={(e) => updateField("submissionEmailBody", e.target.value)}
                 rows={7}
                 maxLength={5000}
                 placeholder={
-                  "<p>Thanks for applying to {{formTitle}}. We'll be in touch soon.</p>"
+                  "<p>Thanks for applying to db-submissions[formTitle]. We'll be in touch soon.</p>"
                 }
                 className={`w-full px-3 py-2.5 rounded-lg border bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:ring-1 transition-colors resize-y font-mono text-[13px] leading-relaxed ${
                   errors?.submissionEmailBody
@@ -529,30 +699,101 @@ export default function CreateForm() {
                     : "border-gray-200 dark:border-[#222936] focus:border-primary focus:ring-primary/30"
                 }`}
               />
-              <p className="mt-1.5 text-xs text-muted leading-relaxed">
-                HTML is allowed. Use{" "}
-                <code className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-[11px]">
-                  {"{{formTitle}}"}
-                </code>{" "}
-                <code className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-[11px]">
-                  {"{{userName}}"}
-                </code>
-                {formData.type === "attendance" && (
-                  <>
-                    {" "}
-                    and{" "}
-                    <code className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-[11px]">
-                      {"{{qrDataUrl}}"}
-                    </code>{" "}
-                    (your form is an Attendance form, so the submitter&apos;s ticket
-                    QR can be placed anywhere in the message)
-                  </>
-                )}
-                .
-              </p>
               {errors?.submissionEmailBody && (
                 <p className="mt-1 text-xs text-red-500">{errors.submissionEmailBody}</p>
               )}
+
+              <div className="mt-2 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-white/[0.02] p-2.5">
+                <p className="text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
+                  Click to insert into the message
+                </p>
+
+                <p className="text-[11px] text-muted leading-relaxed mb-1.5">
+                  <span className="font-semibold text-foreground">db-submissions[Field]</span>{" "}
+                  puts a value from this submission in the email. A blank value is
+                  left as written so you can see it did not resolve.
+                </p>
+                <div className="flex flex-wrap gap-1 mb-2.5">
+                  {fieldsList.map((f) => (
+                    <button
+                      key={f.id || f.label}
+                      type="button"
+                      onClick={() => insertAtCursor(`db-submissions[${f.label}]`)}
+                      title={`Insert db-submissions[${f.label}]`}
+                      className="px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors font-mono text-[11px]"
+                    >
+                      db-submissions[{f.label}]
+                    </button>
+                  ))}
+                </div>
+
+                <p className="text-[11px] text-muted leading-relaxed mb-1.5">
+                  <span className="font-semibold text-foreground">db-user[field]</span>{" "}
+                  puts a field from the member&apos;s own account in the email. If the
+                  submitter is not registered it is left as written, exactly as you
+                  typed it.
+                </p>
+                <div className="flex flex-wrap gap-1 mb-2.5">
+                  {[
+                    "name", "email", "phone", "university", "college",
+                    "yearOfStudy", "committee", "interests", "role",
+                  ].map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => insertAtCursor(`db-user[${k}]`)}
+                      title={`Insert db-user[${k}]`}
+                      className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors font-mono text-[11px]"
+                    >
+                      db-user[{k}]
+                    </button>
+                  ))}
+                </div>
+
+                <p className="text-[11px] text-muted leading-relaxed mb-1.5">
+                  Recommended submission values:
+                </p>
+                <div className="flex flex-wrap gap-1 mb-2.5">
+                  {RECOMMENDED_SUBMISSION_TOKENS.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => insertAtCursor(`db-submissions[${t}]`)}
+                      title={`Insert db-submissions[${t}]`}
+                      className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors font-mono text-[11px]"
+                    >
+                      db-submissions[{t}]
+                    </button>
+                  ))}
+                  {formData.type === "attendance" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => insertAtCursor("db-submissions[qrCode]")}
+                        title="The ticket QR image, only for attendance forms"
+                        className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors font-mono text-[11px]"
+                      >
+                        db-submissions[qrCode]
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertAtCursor("db-submissions[qrUrl]")}
+                        title="The raw QR image address, only for attendance forms"
+                        className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors font-mono text-[11px]"
+                      >
+                        db-submissions[qrUrl]
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-muted leading-relaxed">
+                  HTML is allowed. Anything that does not resolve is sent exactly as
+                  you typed it, so a placeholder you can see is a placeholder that
+                  needs fixing.
+                </p>
+              </div>
+
               <p className="mt-1 text-[11px] text-muted/70 text-right">
                 {formData.submissionEmailBody.length}/5000
               </p>
@@ -600,6 +841,51 @@ export default function CreateForm() {
           {isSubmitting ? "Creating..." : "Create Form"}
         </button>
       </div>
+
+      {/* Confirm before a template overwrites anything already written. An
+          in-app popup rather than window.confirm so it matches the rest of the
+          builder. */}
+      <Modal
+        open={Boolean(pendingTemplate)}
+        onClose={() => setPendingTemplate(null)}
+        title="Replace your message?"
+      >
+        {pendingTemplate && (
+          <div>
+            <p className="text-sm text-muted leading-relaxed">
+              <span className="font-semibold text-foreground">
+                {pendingTemplate.template.label}
+              </span>{" "}
+              sets both the subject and the message, so anything you have written
+              will be replaced.
+            </p>
+            <p className="text-sm text-muted leading-relaxed mt-2">
+              To keep your text and add this on top instead, cancel and use{" "}
+              <span className="font-semibold text-foreground">+ insert</span> on
+              the template, which only adds the body where your cursor is.
+            </p>
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                type="button"
+                onClick={() => setPendingTemplate(null)}
+                className="px-4 py-2 text-sm font-medium text-foreground bg-white dark:bg-[#1a1f2e] border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Keep my text
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  commitEmailTemplate(pendingTemplate.template, pendingTemplate.mode);
+                  setPendingTemplate(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
+              >
+                Replace it
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
