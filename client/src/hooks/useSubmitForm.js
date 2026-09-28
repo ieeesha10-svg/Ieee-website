@@ -7,7 +7,7 @@ import api from "../utils/api";
  * Handles submitting a response to a specific form via POST /api/submissions.
  *
  * Backend behavior this hook is built around:
- * - Body: { formId, answers } (multipart, files appended by field id)
+ * - Body: { formId, answers, otherAnswers? } (multipart, files appended by field id)
  * - On success (201): returns { message, ticketCode, data }
  * - On failure the server sends { status, message, code? }. Branch on `code`, not on
  *   the message text:
@@ -34,7 +34,7 @@ export function useSubmitForm() {
     setTicketCode(null);
   }, []);
 
-  const submit = useCallback(async (formId, answers, files = {}) => {
+  const submit = useCallback(async (formId, answers, files = {}, otherAnswers = {}) => {
     setLoading(true);
     setError(null);
     setAlreadySubmitted(false);
@@ -48,6 +48,12 @@ export function useSubmitForm() {
       const formData = new FormData();
       formData.append("formId", formId);
       formData.append("answers", JSON.stringify(answers));
+      // The free text behind an "Other" choice, sent beside the answers rather
+      // than inside them: an answer has to stay one of the field's declared
+      // options, and the server rejects anything else.
+      if (Object.keys(otherAnswers).length > 0) {
+        formData.append("otherAnswers", JSON.stringify(otherAnswers));
+      }
       Object.entries(files).forEach(([fieldId, file]) => {
         formData.append(fieldId, file);
       });

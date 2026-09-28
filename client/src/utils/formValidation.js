@@ -10,6 +10,8 @@
 // Keeping this in one place stops the two pages from drifting apart, which is
 // what previously left EventRegistration without any email-format check.
 
+import { isOtherOption } from "../data/fieldTypes";
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EMAIL_KEY_RE = /e[-_]?mail/i;
 const NAME_KEY_RE = /^(full[_\-\s]?)?name$/i;
@@ -22,6 +24,20 @@ export const isEmailField = (field) =>
 export const isNameField = (field) =>
   NAME_KEY_RE.test(field?.id || "") || NAME_KEY_RE.test(labelOf(field));
 
+export const OTHER_TEXT_REQUIRED = 'Tell us what you mean by "Other"';
+
+// A Dropdown stores one string, a Checkbox an array; both can carry "Other".
+const selectsOther = (value) => {
+  if (Array.isArray(value)) return value.some(isOtherOption);
+  return isOtherOption(value);
+};
+
+// The "Other" box is required as soon as "Other" is chosen, on a required field
+// or an optional one. The submitter has said the answer is not on the author's
+// list, so an empty box records something nobody can act on.
+const missingOtherText = (value, text) =>
+  selectsOther(value) && !String(text || "").trim();
+
 /**
  * Validate a set of answers against a form's field list.
  *
@@ -31,10 +47,11 @@ export const isNameField = (field) =>
  * @param {Object} [opts]
  * @param {boolean} [opts.requireName=true]   enforce a name even if the field is optional
  * @param {boolean} [opts.requireEmail=true]  enforce an email even if the field is optional
+ * @param {Object} [opts.otherAnswers]        free text keyed by field.id, for "Other" choices
  * @returns {Object} map of fieldId -> error message
  */
 export function validateSubmission(fields, answers, files = {}, opts = {}) {
-  const { requireName = true, requireEmail = true } = opts;
+  const { requireName = true, requireEmail = true, otherAnswers = {} } = opts;
   const errs = {};
 
   for (const field of fields || []) {
@@ -51,6 +68,8 @@ export function validateSubmission(fields, answers, files = {}, opts = {}) {
     if (type === "Checkbox") {
       if (field.required && (!val || val.length === 0)) {
         errs[id] = `${labelOf(field)} is required`;
+      } else if (missingOtherText(val, otherAnswers[id])) {
+        errs[id] = OTHER_TEXT_REQUIRED;
       }
       continue;
     }
@@ -59,6 +78,11 @@ export function validateSubmission(fields, answers, files = {}, opts = {}) {
       if (field.required) errs[id] = `${labelOf(field)} is required`;
       else if (isNameField(field) && requireName) errs[id] = "Full Name is required";
       else if (isEmailField(field) && requireEmail) errs[id] = "Email address is required";
+      continue;
+    }
+
+    if (missingOtherText(val, otherAnswers[id])) {
+      errs[id] = OTHER_TEXT_REQUIRED;
       continue;
     }
 

@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../utils/api";
 import { useAuth } from "../../../context/AuthContext";
-import { ALLOWED_TYPES } from "../../../data/fieldTypes";
+import { ALLOWED_TYPES, isOptionsType, entersOptionsType, withOtherOption } from "../../../data/fieldTypes";
 import { slugifyFieldLabel } from "../../../utils/fieldId";
 import { buildDefaultFields, isIdentityField } from "../../../utils/formIdentity";
 
@@ -19,7 +19,7 @@ const INITIAL_FORM_DATA = {
   submissionEmailBody: "",
 };
 
-const hasOptions = (type) => type === "Dropdown" || type === "Checkbox";
+const hasOptions = isOptionsType;
 
 export function useCreateForm() {
   const { user } = useAuth();
@@ -65,9 +65,23 @@ export function useCreateForm() {
       // nothing that reaches this can rename, retype or make optional the field
       // the answers for a name or an email are stored under. Any other key in the
       // patch still applies.
-      updated[index] = isIdentityField(current)
+      const next = isIdentityField(current)
         ? { ...current, ...patch, label: current.label, type: current.type, required: true }
         : { ...current, ...patch };
+
+      // A Dropdown or Checkbox always offers "Other", so a submitter is never
+      // trapped by a list the author did not think of.
+      //
+      // Appending only on the transition *into* an options type is deliberate.
+      // Option edits arrive here too - renaming, adding, and above all
+      // removing - and appending on those would put "Other" straight back the
+      // moment the author deleted it, so the option could never be removed.
+      // Switching between Dropdown and Checkbox likewise leaves the author's
+      // list as it is, and `withOtherOption` is a no-op when it is already
+      // present, so nothing is ever duplicated.
+      updated[index] = entersOptionsType(current.type, next.type)
+        ? { ...next, options: withOtherOption(next.options) }
+        : next;
       return updated;
     });
   }, []);

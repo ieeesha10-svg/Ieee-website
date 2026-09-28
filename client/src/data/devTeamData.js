@@ -6,7 +6,7 @@ import ahmedImg from "../assets/images/dev-team/ahmed-elmalah.webp";
 import abdallahImg from "../assets/images/dev-team/abdallah-aziz.webp";
 import hossamImg from "../assets/images/dev-team/hossam-ghallab.webp";
 import madihaImg from "../assets/images/dev-team/madiha-elyazal.webp";
-import aliElsayedImg from "../assets/images/chairpersons/ali-elsayed.webp";
+import aliElsayedImg from "../assets/images/dev-team/ali-elsayed.webp";
 
 export const stats = [
   { id: 1, value: "8", label: "Engineers" },

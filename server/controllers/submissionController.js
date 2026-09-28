@@ -19,6 +19,7 @@ const {
   findEmailField,
   findNameField,
 } = require('../utils/fieldIdentity');
+const { composeAnswerValue } = require('../utils/otherOption');
 
 // ==========================================
 // 1. STUDENT ACTIONS
@@ -47,6 +48,23 @@ const submitForm = catchAsync(async (req, res) => {
 
   if (typeof answers !== 'object' || answers === null || Array.isArray(answers)) {
     throw new AppError('Answers must be a JSON object', 400);
+  }
+
+  // Free text typed against an "Other" choice, sent beside the answers so the
+  // answers stay a clean list of declared options. Parsed here rather than in the
+  // model so a malformed value is a 400 from the request instead of a surprise
+  // halfway through a save.
+  let otherAnswers = req.body.otherAnswers;
+  if (typeof otherAnswers === 'string') {
+    try {
+      otherAnswers = JSON.parse(otherAnswers);
+    } catch (err) {
+      throw new AppError('Invalid otherAnswers format, must be valid JSON', 400);
+    }
+  }
+  if (otherAnswers === undefined || otherAnswers === null) otherAnswers = {};
+  if (typeof otherAnswers !== 'object' || Array.isArray(otherAnswers)) {
+    throw new AppError('otherAnswers must be a JSON object', 400);
   }
 
   // POST /submissions is public — `req.user` is only set by `optionalProtect`
@@ -187,6 +205,7 @@ const submitForm = catchAsync(async (req, res) => {
     ...(userid && { userId: userid }),
     registrantEmail: submittedEmail,
     answers,
+    otherAnswers,
     // use spread operator to add ticketCode and qrImage to the newSubmission object if form type is registration
     ...(ticketCode && { ticketCode }),
     ...(qrImage && { qrImage })
@@ -238,13 +257,14 @@ const submitForm = catchAsync(async (req, res) => {
   for (const field of form.fields || []) {
     const raw = answers[field.id];
     let value;
-    if (Array.isArray(raw)) {
-      value = raw.join(', ');
-    } else if (raw && typeof raw === 'object') {
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
       // An uploaded file answer is stored as an object; show the link.
       value = raw.url || raw.path || raw.name || '';
     } else {
-      value = raw;
+      // Joins an "Other" choice back onto the detail the submitter typed, so
+      // `db-submissions[Committee]` reads "Other: Embedded systems" rather than
+      // the bare word "Other". Any other answer passes through unchanged.
+      value = composeAnswerValue(field, raw, otherAnswers);
     }
     if (field.label) dbSubmissions[String(field.label).trim().toLowerCase()] = value;
     if (field.id) dbSubmissions[String(field.id).trim().toLowerCase()] = value;
@@ -304,10 +324,10 @@ const scanTicket = catchAsync(async (req, res) => {
       throw new AppError('Already Scanned!', 400);
     }
 
-    // Mark as Attended
-    submission.attended = true;
-    submission.status = "attended";
-    submission.attendedAt = Date.now();
+      // Mark as Attended
+      submission.attended = true;
+      submission.attendedAt = Date.now();
+
     await submission.save();
 
     const user = await User.findById(submission.userId);
@@ -344,6 +364,13 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
       return res.status(404).json({ message: 'No submissions found for this form' });
     }
 
+    // Only an `attendance` form mints a ticket, so only an `attendance` form can
+    // say whether somebody actually turned up. On a recruitment, feedback,
+    // workshop or survey the scanner never touches these submissions, so the
+    // columns would read "No" on every row and imply a check-in that was never
+    // being tracked. Leave them out instead of printing a permanent "No".
+    const tracksAttendance = form.type === 'attendance';
+
     // 2. Setup Excel
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Responses');
@@ -373,8 +400,12 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
       { header: 'User ID', key: 'userId', width: 28 },
       { header: 'Submitted Date', key: 'date', width: 15 },
       { header: 'Submitted Time', key: 'time', width: 12 },
-      { header: 'Attended', key: 'attended', width: 10 },
-      { header: 'Attended Time', key: 'attendedTime', width: 12 },
+      ...(tracksAttendance
+        ? [
+            { header: 'Attended', key: 'attended', width: 10 },
+            { header: 'Attended Time', key: 'attendedTime', width: 12 },
+          ]
+        : []),
       { header: 'Name', key: 'userName', width: 25 },
       { header: 'Email', key: 'userEmail', width: 30 },
       { header: 'Phone', key: 'userPhone', width: 15 },
@@ -383,7 +414,6 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
       { header: 'University', key: 'userUniversity', width: 25 },
       { header: 'College', key: 'userCollege', width: 25 },
       { header: 'Year of Study', key: 'userYearOfStudy', width: 12 },
-      { header: 'Status', key: 'status', width: 12 }
     ];
 
     // Add columns dynamically based on Form questions
@@ -441,8 +471,9 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
         userId: sub.userId?._id?.toString() || '-',
         date: formatDate(sub.createdAt),
         time: formatTime(sub.createdAt),
-        attended: sub.attended ? 'Yes' : 'No',
-        attendedTime: formatTime(sub.attendedAt),
+        ...(tracksAttendance
+          ? { attended: sub.attended ? 'Yes' : 'No', attendedTime: formatTime(sub.attendedAt) }
+          : {}),
         userName: sub.userId?.name || 'Guest',
         userEmail: sub.registrantEmail || sub.userId?.email || '-',
         userPhone: sub.userId?.phone || '-',
@@ -451,18 +482,23 @@ const exportSubmissionsToExcel = catchAsync(async (req, res) => {
         userUniversity: sub.userId?.university || '-',
         userCollege: sub.userId?.college || '-',
         userYearOfStudy: sub.userId?.yearOfStudy ?? '-',
-        status: sub.status || '-'
       };
+
 
       // Merge Dynamic Answers & Handle Arrays (like Checkboxes)
       if (sub.answers) {
+        // Keyed by field id, so an "Other" choice can be put back together with
+        // the detail the submitter typed. Without this the spreadsheet says
+        // "Other" and the answer the committee actually needs is missing.
+        const fieldsById = new Map((form.fields || []).map((f) => [f.id, f]));
         const processedAnswers = {};
         for (const [key, value] of Object.entries(sub.answers)) {
-          if (Array.isArray(value)) {
-            processedAnswers[key] = value.join(' - ');
-          } else {
-            processedAnswers[key] = value;
-          }
+          const field = fieldsById.get(key);
+          processedAnswers[key] = field
+            ? composeAnswerValue(field, value, sub.otherAnswers)
+            : Array.isArray(value)
+              ? value.join(' - ')
+              : value;
         }
         Object.assign(rowData, processedAnswers);
       }
@@ -512,22 +548,9 @@ const getSubmissions = catchAsync(async (req, res) => {
           { $count: "count" }
         ],
 
-        pendingCount: [
-          { $match: { status: "pending" } },
-          { $count: "count" }
-        ],
-
-        approvedCount: [
-          { $match: { status: "approved" } },
-          { $count: "count" }
-        ],
-
-        rejectedCount: [
-          { $match: { status: "rejected" } },
-          { $count: "count" }
-        ],
-
-        // attended and not attended
+        // Attendance is the only state a submission has, so `attended` is what
+        // these counts are built from. The pending/approved/rejected facets that
+        // used to sit here matched on a `status` field nothing ever wrote.
         attendedCount: [
           { $match: { attended: true } },
           { $count: "count" }
@@ -557,20 +580,14 @@ const getSubmissions = catchAsync(async (req, res) => {
 
   const totalCount = result.totalCount[0]?.count || 0;
 
-  const pendingCount = result.pendingCount[0]?.count || 0;
-
-  const approvedCount = result.approvedCount[0]?.count || 0;
-
-  const rejectedCount = result.rejectedCount[0]?.count || 0;
-
   const attendedCount = result.attendedCount[0]?.count || 0;
+
+  const notAttendedCount = result.notAttendedCount[0]?.count || 0;
 
   res.json({
     totalCount,
-    pendingCount,
-    approvedCount,
-    rejectedCount,
     attendedCount,
+    notAttendedCount,
     submissions
   });
 });
@@ -587,15 +604,11 @@ const editSubmission = catchAsync(async (req, res) => {
     throw new AppError('Submission not found', 404);
   }
 
-  const {
-    status,
-    answers
-  } = req.body;
+  const { answers } = req.body;
 
-  if (status) {
-    submission.status = status;
-  }
-
+  // `status` used to be accepted here. The field is gone from the schema, so
+  // writing it would have been a silent no-op at best; attendance is recorded
+  // only by `scanTicket`.
   if (answers) {
     submission.answers = answers;
   }
@@ -607,11 +620,27 @@ const editSubmission = catchAsync(async (req, res) => {
 
 
 const getSubmissionsForForm = catchAsync(async (req, res) => {
-  const { formId } = req.params;
-  const submissions = await Submission.find({ formId }).populate('userId', 'name email');
+    const { formId } = req.params;
 
-  res.json({total : submissions.length, submissions});
-});
+    // The page that lists these submissions has to know what kind of form it is
+    // looking at: only an `attendance` form has a ticket to scan, so only it
+    // shows an attendance column. That cannot come from `GET /form/:id`, which is
+    // the public, submitter-facing route and answers 400 for a closed or expired
+    // form - exactly the forms a committee comes here to review. This endpoint is
+    // already behind the admin guard, so it returns the few fields the page needs.
+    const form = await Form.findById(formId)
+      .select('title type fields')
+      .lean();
+
+    if (!form) {
+      throw new AppError('Form not found', 404);
+    }
+
+    const submissions = await Submission.find({ formId }).populate('userId', 'name email');
+
+    res.json({total : submissions.length, submissions, form});
+  });
+
 
 const downloadFile = catchAsync(async (req, res) => {
   const { url } = req.query;

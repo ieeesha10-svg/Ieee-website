@@ -54,6 +54,7 @@ server/
 │   ├── submissionController.js # Form submissions, QR scan, Excel export
 │   ├── committeeRequestController.js # Committee join workflow
 │   ├── crewController.js     # Crew directory CRUD
+│   ├── seasonController.js   # Seasons (Excom + Board) and which one is published
 │   ├── emailController.js    # Bulk email campaigns + logs
 │   └── statsController.js    # Dashboard analytics aggregation
 ├── models/                   # Mongoose schemas
@@ -63,7 +64,8 @@ server/
 │   ├── SubmissionModel.js    # Submissions + tickets + attendance
 │   ├── PendingRequest.js     # Committee join requests
 │   ├── FeaturedActivitiesModel.js # Homepage featured list
-│   ├── crewModel.js          # Team members shown on site
+│   ├── crewModel.js          # Team members shown on site (season + section + links)
+│   ├── seasonModel.js        # Seasons, and which one is published on the home page
 │   └── EmailLog.js           # Bulk email delivery log
 ├── routes/                   # Express routers per domain
 ├── middleware/
@@ -191,6 +193,7 @@ curl http://localhost:5000/
 │  ├── /api/users              → userRoutes                                │
 │  ├── /api/states             → statsController                           │
 │  ├── /api/crew               → crewRoutes                                │
+│  ├── /api/seasons            → seasonRoutes                              │
 │  ├── /api/activities         → activityRoutes                            │
 │  ├── /api/form               → formRoutes                                │
 │  ├── /api/submissions        → submissionRoutes                          │
@@ -316,10 +319,10 @@ Every request → protect middleware → jwt.verify → req.user loaded
 | `userId` | ObjectId → User | required |
 | `registrantEmail` | String | indexed denormalized copy for fast filtering |
 | `answers` | Object | `{ field_id: value }`, validated against form fields on save |
-| `status` | String | enum: `pending`, `approved`, `rejected`, `attended`, `not attended` |
+| `otherAnswers` | Object | `{ field_id: text }` for any field answered "Other"; validated with `answers` |
 | `ticketCode` | String | **unique, sparse** — `<formId>-<userId>-<nanoid6>` |
 | `qrImage` | String | QR code as Data URL |
-| `attended` | Boolean | default `false` |
+| `attended` | Boolean | default `false` — the only state a submission carries |
 | `attendedAt` | Date | set during scan |
 | `timestamps` | — | |
 
@@ -332,8 +335,31 @@ Every request → protect middleware → jwt.verify → req.user loaded
 | `committee_position` | String | requested position |
 | `request_status` | String | enum: `pending`, `approved`, `rejected` |
 
+### `seasons`
+A season is one committee: an Excom and a Board.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | String | required, unique — e.g. `"Season 12"` or `"2026-2027"` |
+| `isHome` | Boolean | default `false`. At most one season has it; see 3.8.6 |
+| `order` | Number | archive order, newest first. Assigned as the current count on create |
+
 ### `crews`
-`{ name*, position*, image, bio }` — team members displayed on the public site.
+One Excom or Board member of one season.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | String | required |
+| `position` | String | required. Contains `"counsel"` ⇒ full-width home page card |
+| `image` | String | URL or `/public` path |
+| `bio` | String | short description |
+| `season` | ObjectId → Season | **required**, indexed — see 3.8 |
+| `section` | String | **required**, enum: `excom`, `board` |
+| `order` | Number | manual ordering within a section |
+| `socials` | Object | `{ linkedin, facebook, collabratec, email, website }`, all optional. `email` is a bare address |
+
+Indexed on `{ season, section, order, createdAt }` — the read shape behind the
+crew page, the archive page and the home page.
 
 ### `featuredactivities`
 Single document `{ activities: [ObjectId → Activity] }` — homepage carousel, capped at **2** items.
@@ -422,7 +448,7 @@ Client (multipart/form-data)
 | [Forms](#35-forms) | `/api/form` | 6 |
 | [Submissions](#36-submissions--ticketing) | `/api/submissions` | 7 |
 | [Committee Requests](#37-committee-requests) | `/api/committee-requests` | 5 |
-| [Crew](#38-crew-directory) | `/api/crew` | 4 |
+| [Seasons & Crew](#38-seasons-and-crew-directory) | `/api/seasons`, `/api/crew` | 11 |
 | [Bulk Emails](#39-bulk-emails) | `/api/emails` | 3 |
 
 ---
@@ -1662,7 +1688,6 @@ Submits answers to a form. One submission per user per form (DB-enforced). For `
     "answers": { "full_name": "Ahmed Hassan", "tshirt_size": "L" },
     "ticketCode": "67d0a1b2c3d4e5f6a7b8c9d1-66f1a2b3c4d5e6f7a8b9c0d1-Vk3GhQ",
     "qrImage": "data:image/png;base64,iVBORw0KGgo...",
-    "status": "pending",
     "attended": false
   }
 }
@@ -1742,7 +1767,6 @@ Fetches one user's submission for a given form (used to re-display a ticket).
   "userId": "66f1a2b3c4d5e6f7a8b9c0d1",
   "registrantEmail": "ahmed@example.com",
   "answers": { "full_name": "Ahmed Hassan", "tshirt_size": "L" },
-  "status": "pending",
   "ticketCode": "67d0...-66f1...-Vk3GhQ",
   "qrImage": "data:image/png;base64,...",
   "attended": true,
@@ -1765,13 +1789,15 @@ Returns all submissions with aggregate counters.
 ```json
 {
   "totalCount": 512,
-  "pendingCount": 300,
-  "approvedCount": 90,
-  "rejectedCount": 12,
   "attendedCount": 110,
+  "notAttendedCount": 402,
   "submissions": [ /* submission documents */ ]
 }
 ```
+
+*A submission carries no review status. `attended` (and `attendedAt`) is the only
+state it has, set when a ticket is scanned, and the counters above are built from
+it.*
 
 ### 3.6.5 Submissions for One Form (Admin)
 
@@ -1782,7 +1808,23 @@ Returns all submissions with aggregate counters.
 **Success Response — `200 OK`**
 
 ```json
-{ "total": 140, "submissions": [ /* populated with userId name/email */ ] }
+{
+  "total": 140,
+  "submissions": [ /* populated with userId name/email */ ],
+  "form": { "_id": "...", "title": "...", "type": "attendance", "fields": [] }
+}
+```
+
+`form` carries only `title`, `type` and `fields` — the email settings and other
+private form config are deliberately left out. The dashboard needs `type` to
+decide whether attendance applies, and `fields` to label each answer. Both used
+to be read from router state, which is lost on a refresh or a shared link, so a
+reloaded page fell back to showing raw field ids instead of the questions.
+
+**Error Responses**
+
+```json
+// 404 — { "message": "Form not found" }
 ```
 
 ### 3.6.6 Export Submissions to Excel
@@ -1790,6 +1832,12 @@ Returns all submissions with aggregate counters.
 `GET /api/submissions/export/:formId`
 
 Styled multi-sheet workbook: user-info columns + one column per dynamic form question, with section header bands.
+
+The `Attended` and `Attended Time` columns are written **only when the form's
+`type` is `attendance`**. Those forms mint a ticket that the scanner can check
+in; every other type (recruitment, feedback, workshop, survey) is never scanned,
+so including the columns would print a permanent `No` and imply a check-in that
+is not being tracked.
 
 - **Auth:** Yes — roles: `xcom`, `board`
 
@@ -1963,13 +2011,31 @@ Admin override to reassign a user's committee without a request.
 
 ---
 
-## 3.8 Crew Directory
+## 3.8 Seasons and Crew Directory
 
-Public team roster displayed on the website; writable by admins only.
+A **season** holds one committee: an **Excom** and a **Board**. Members live in
+the `crews` collection and belong to a season through `crew.season`, with
+`crew.section` set to `excom` or `board`. The section is a property of the
+season, not of the person — the same name can sit on the Board one season and in
+the Excom the next.
 
-### 3.8.1 List Crew (Public)
+Exactly one season is **published** at a time (`isHome`). That season's Excom is
+what the home page shows; every other season is an archive, reachable from the
+season labels at the bottom of `/crew`. `PUT /api/seasons/:id/home` is the only
+thing that sets `isHome`, and it clears the others in the same call.
 
-`GET /api/crew`
+> **One-time migration.** `crew.season` and `crew.section` are required, so
+> documents written before seasons existed would fail validation and be invisible
+> to every page. `server/scripts/backfillSeasons.js` creates the starting season,
+> files any legacy members under it, and seeds the committee that the home page
+> previously rendered from the hardcoded `client/src/data/chairpersons.js`. It is
+> idempotent and takes `--dry` to report without writing.
+
+### 3.8.1 List Seasons (Public)
+
+`GET /api/seasons`
+
+Newest first, with a headcount for the archive's season picker.
 
 **Success Response — `200 OK`**
 
@@ -1978,32 +2044,199 @@ Public team roster displayed on the website; writable by admins only.
   "success": true,
   "results": 2,
   "data": [
+    { "_id": "...", "name": "Current Season", "isHome": true, "order": 0, "memberCount": 6 },
+    { "_id": "...", "name": "Season 10", "isHome": false, "order": 0, "memberCount": 14 }
+  ]
+}
+```
+
+### 3.8.2 One Season with Its Members (Public)
+
+`GET /api/seasons/:id`
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "data": {
+    "season": { "_id": "...", "name": "Current Season", "isHome": true, "order": 0 },
+    "excom": [ /* members, each shaped as below */ ],
+    "board": [ /* members, each shaped as below */ ]
+  }
+}
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Invalid season id" }
+// 404 — { "message": "Season not found" }
+```
+
+### 3.8.3 The Published Season (Public)
+
+`GET /api/seasons/home`
+
+The season the home page is currently showing. Returns the same
+`{ season, excom, board }` shape as 3.8.2.
+
+Answers `200` with `{ "success": true, "data": null }` when no season has been
+published yet. That is a normal state on a fresh install, not a failure, so the
+home page renders nothing instead of logging a failed request on every visit.
+
+### 3.8.4 Create Season
+
+`POST /api/seasons` — **Auth:** Yes — roles: `xcom`, `board`
+
+```json
+// Request
+{ "name": "Season 12" }
+
+// 201 Created
+{ "success": true, "data": { "_id": "...", "name": "Season 12", "isHome": false, "order": 2 } }
+```
+
+A new season is **not** published; it only becomes the home page when published.
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Season name is required" }
+// 400 — { "message": "A season named \"Season 12\" already exists" }
+```
+
+### 3.8.5 Rename Season
+
+`PUT /api/seasons/:id` — **Auth:** Yes — roles: `xcom`, `board`
+
+```json
+// Request
+{ "name": "Season 12 (2026-2027)" }
+```
+
+**Error Responses** — `400` invalid/duplicate name, `404 { "message": "Season not found" }`
+
+### 3.8.6 Publish a Season on the Home Page
+
+`PUT /api/seasons/:id/home` — **Auth:** Yes — roles: `xcom`, `board`
+
+Publishes this season and unpublishes whichever one was published, so the home
+page always has exactly one Excom to show. The new season is set first and the
+others cleared after, so the home page is never briefly empty.
+
+### 3.8.7 Delete Season
+
+`DELETE /api/seasons/:id` — **Auth:** Yes — roles: `xcom`, `board`
+
+Refuses rather than cascading: deleting a season is for tidying up seasons nobody
+filled in, and silently deleting a season's people because the button sat next to
+its name would be a nasty surprise.
+
+**Error Responses**
+
+```json
+// 400 — { "message": "This season still has 6 members. Remove them before deleting the season." }
+// 404 — { "message": "Season not found" }
+```
+
+### 3.8.8 List Crew (Public)
+
+`GET /api/crew`
+
+Optional `season` and `section` filters. The public pages always pass `season`, so
+a visitor never sees the whole archive on one page.
+
+| Query | Effect |
+| --- | --- |
+| _(none)_ | Every member, all seasons |
+| `?season=<id>` | One season's members |
+| `?season=<id>&section=excom` | One section of one season |
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "results": 1,
+  "data": [
     {
       "_id": "69b1c2d3e4f5a6b7c8d9e0f1",
       "name": "Sara Ali",
       "position": "Chairperson",
-      "image": "https://res.cloudinary.com/.../sara.jpg",
-      "bio": "Leading the SHA branch..."
+      "image": "/images/chairpersons/sara.webp",
+      "bio": "Leading the SHA branch...",
+      "section": "excom",
+      "order": 0,
+      "isCounselor": false,
+      "socials": {
+        "linkedin": "https://linkedin.com/in/sara-ali",
+        "facebook": "",
+        "collabratec": "",
+        "email": "sara@example.com",
+        "website": ""
+      }
     }
   ]
 }
 ```
 
-### 3.8.2 Create Crew Member
+`isCounselor` is `true` when the position contains "counsel". The home page gives
+that person a full-width card above the grid, which is how the counselor has
+always been shown. It is derived from the position rather than stored as a flag
+because "Counselor" is a role someone holds, not a layout decision to remember to
+tick.
+
+**Error Responses** — `400 { "message": "Invalid season id" }`
+
+### 3.8.9 Create Crew Member
 
 `POST /api/crew` — **Auth:** Yes — roles: `xcom`, `board`
 
+`season` and `section` are both required: a member with no season cannot be shown
+on `/crew`, so allowing one would mean a row silently invisible to every visitor.
+
 ```json
 // Request
-{ "name": "Omar Khaled", "position": "Technical Lead", "image": "https://...", "bio": "..." }
-
-// 201 Created
-{ "success": true, "data": { "_id": "...", "name": "Omar Khaled", "position": "Technical Lead" } }
+{
+  "name": "Omar Khaled",
+  "position": "Technical Lead",
+  "image": "https://...",
+  "bio": "...",
+  "season": "6abadaeba7e5f589a4b6fbde",
+  "section": "excom",
+  "order": 0,
+  "socials": { "linkedin": "linkedin.com/in/omar", "email": "omar@example.com" }
+}
 ```
 
-### 3.8.3 Update Crew Member
+Links are normalised and validated. A missing `https://` is added, `mailto:` is
+stripped from emails, and a value that is still unusable is **rejected by name**
+rather than silently dropped, so a typo cannot look like a missing link:
+
+```json
+// 201 Created
+{ "success": true, "data": { /* the member, as listed in 3.8.8 */ } }
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "A crew member must belong to a season" }
+// 400 — { "message": "Invalid season id" }
+// 400 — { "message": "That season does not exist" }
+// 400 — { "message": "Section must be either \"excom\" or \"board\"" }
+// 400 — { "message": "\"not a url at all\" is not a valid linkedin URL" }
+// 400 — { "message": "\"nope\" is not a valid email address" }
+```
+
+### 3.8.10 Update Crew Member
 
 `PUT /api/crew/:id` — **Auth:** Yes — roles: `xcom`, `board`
+
+Only the fields present in the body are touched, so omitting `bio` does not blank
+the bio someone already wrote. Sending `section` moves the member between the
+Excom and the Board without deleting and re-entering them.
 
 ```json
 // Request
@@ -2013,9 +2246,9 @@ Public team roster displayed on the website; writable by admins only.
 { "success": true, "data": { /* updated crew member */ } }
 ```
 
-**Error Responses** — `404 { "message": "Crew member not found" }`
+**Error Responses** — `400` invalid id/season/section/link, `404 { "message": "Crew member not found" }`
 
-### 3.8.4 Delete Crew Member
+### 3.8.11 Delete Crew Member
 
 `DELETE /api/crew/:id` — **Auth:** Yes — roles: `xcom`, `board`
 
@@ -2024,7 +2257,7 @@ Public team roster displayed on the website; writable by admins only.
 { "success": true, "message": "Crew member deleted successfully" }
 ```
 
-**Error Responses** — `404 { "message": "Crew member not found" }`
+**Error Responses** — `400 { "message": "Invalid crew member id" }`, `404 { "message": "Crew member not found" }`
 
 ---
 

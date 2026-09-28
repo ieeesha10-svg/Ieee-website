@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Form = require('./FormModel');
+const { isOtherCapable, selectsOther, otherText } = require('../utils/otherOption');
 
 const submissionSchema = new mongoose.Schema({
   // Link to the specific form
@@ -26,12 +27,27 @@ const submissionSchema = new mongoose.Schema({
     type: Object,
     required: true,
   },
-  
-  status: {
-    type: String,
-    enum: ["pending", "approved", "rejected", "attended", "not attended"],
-    default: "pending",
+
+  // Free text typed against an "Other" choice on a Dropdown or Checkbox, keyed
+  // by field id: { "committee": "Embedded systems" }.
+  //
+  // Deliberately a separate map rather than part of `answers`. The pre-save
+  // check below only accepts a Dropdown/Checkbox answer that is literally one of
+  // the field's declared options, and that check is worth keeping: it is what
+  // stops a hand-crafted request from writing arbitrary values into the answers
+  // a committee later reads and exports. So the answer records the option, this
+  // records what the submitter actually said, and only the places that render
+  // for a human join the two back together.
+  otherAnswers: {
+    type: Object,
+    default: {},
   },
+  
+  // `status` used to sit here as an enum of pending/approved/rejected/attended.
+  // It duplicated `attended` and nothing ever wrote the three review states, so
+  // the only values that could ever appear were the default and the one
+  // `scanTicket` set. `attended` below is the single source of truth for whether
+  // somebody showed up; the review states are not modelled at all.
     // --- Event Specifics ---
   ticketCode: { 
     type: String, 
@@ -72,8 +88,10 @@ submissionSchema.pre('save', async function(next) {
   }
 
   const userAnswers = this.answers || {};
+  const userOther = this.otherAnswers || {};
   const validationErrors = [];
-  const cleanAnswers = {}; 
+  const cleanAnswers = {};
+  const cleanOther = {};
 
   for (const field of form.fields) {
     const answer = userAnswers[field.id];
@@ -109,7 +127,25 @@ submissionSchema.pre('save', async function(next) {
       }
       cleanAnswers[field.id] = answer;
     }
+
+    // Free text only means something for a field that offers "Other" and was
+    // actually given it. Text aimed at any other field, or at a field whose
+    // answer is not "Other", is dropped rather than stored: it is not something
+    // a submitter could have produced through the form, and keeping it would put
+    // unsanitised text into a record a committee reads.
+    if (isOtherCapable(field) && selectsOther(field, answer)) {
+      const detail = otherText(userOther, field.id);
+
+      if (!detail) {
+        validationErrors.push(`Field '${field.label}' needs a value: you chose "Other" but did not say what.`);
+      } else {
+        cleanOther[field.id] = detail;
+      }
+    }
   }
+
+  this.answers = cleanAnswers;
+  this.otherAnswers = cleanOther;
 
   if (validationErrors.length > 0) {
     const err = new Error(validationErrors.join(' | '));
