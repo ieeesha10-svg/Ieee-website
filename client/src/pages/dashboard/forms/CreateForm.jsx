@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { X, GripVertical, Check, Trash2, Loader2, ArrowLeft, Lock, Sparkles } from "lucide-react";
+import { X, GripVertical, Check, Trash2, Loader2, ArrowLeft, Lock, Sparkles, Eye } from "lucide-react";
 import { useCreateForm } from "../../../hooks/dashboard/forms/useCreateForm";
 import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
 import { FORM_TYPE_OPTIONS } from "../../../data/formTypes";
@@ -10,6 +10,7 @@ import SectionCard from "../../../components/ui/SectionCard";
 import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
 import ToggleSwitch from "../../../components/ui/ToggleSwitch";
 import Modal from "../../../components/ui/Modal";
+import EmailPreviewModal from "../../../components/dashboard/EmailPreviewModal";
 import { isIdentityField } from "../../../utils/formIdentity";
 
 const EMAIL_BODY_MAX = 5000;
@@ -205,6 +206,7 @@ export default function CreateForm() {
   // Set when a template click needs confirming, holding what to apply once the
   // author agrees. Null means the popup is closed.
   const [pendingTemplate, setPendingTemplate] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Insert a short snippet (a token) at the caret, or at the end when the editor
   // was never focused. This is what the clickable token chips call.
@@ -587,7 +589,21 @@ export default function CreateForm() {
 
       {/* Section 4: Confirmation Email */}
       <SectionCard>
-        <h2 className="text-base font-bold text-foreground mb-1">Confirmation Email</h2>
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h2 className="text-base font-bold text-foreground">Confirmation Email</h2>
+          {/* Only offered while the custom message is the one that will actually
+              be sent, so the preview can never show a draft that is not in
+              effect. */}
+          {formData.sendEmailOnSubmission && (
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="inline-flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium text-foreground border border-gray-200 dark:border-[#222936] hover:border-primary hover:text-primary transition-colors"
+            >
+              <Eye size={13} /> Preview
+            </button>
+          )}
+        </div>
         <p className="text-xs text-muted mb-5">
           Sent to the address the submitter typed into the form.
         </p>
@@ -886,6 +902,16 @@ export default function CreateForm() {
           </div>
         )}
       </Modal>
+
+      <EmailPreviewModal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        formTitle={formData.title}
+        formType={formData.type}
+        fields={fieldsList}
+        subject={formData.submissionEmailSubject}
+        messageBody={formData.submissionEmailBody}
+      />
     </div>
   );
 }
