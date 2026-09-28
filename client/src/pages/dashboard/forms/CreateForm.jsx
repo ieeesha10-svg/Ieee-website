@@ -1,16 +1,21 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, GripVertical, Check, Trash2, Loader2, ArrowLeft } from "lucide-react";
+import { X, GripVertical, Check, Trash2, Loader2, ArrowLeft, Lock } from "lucide-react";
 import { useCreateForm } from "../../../hooks/dashboard/forms/useCreateForm";
 import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
 import { FORM_TYPE_OPTIONS } from "../../../data/formTypes";
 import SectionCard from "../../../components/ui/SectionCard";
 import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
 import ToggleSwitch from "../../../components/ui/ToggleSwitch";
+import { isIdentityField } from "../../../utils/formIdentity";
 
 function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDragIndex, moveField, error }) {
   const hasOptions = field.type === "Dropdown" || field.type === "Checkbox";
   const isDragging = dragIndex === index;
+  // Full Name and Email ship with every form and cannot be removed, renamed or
+  // made optional, so their controls are shown as fixed rather than simply
+  // inert. useCreateForm enforces the same thing on the state.
+  const locked = isIdentityField(field);
 
   const handleTypeChange = (newType) => {
     updateFieldAt(index, { type: newType });
@@ -55,7 +60,13 @@ function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDr
             value={field.label}
             onChange={(e) => updateFieldAt(index, { label: e.target.value })}
             placeholder="Field label"
-            className={`w-full rounded-lg border bg-white dark:bg-[#111827] px-3 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:ring-1 transition-colors ${error ? "border-red-400 dark:border-red-700 focus:border-red-500 focus:ring-red-500/30" : "border-gray-200 dark:border-[#222936] focus:border-primary focus:ring-primary/30"}`}
+            readOnly={locked}
+            title={
+              locked
+                ? "Every form collects a name and an email, so this field is always present and required"
+                : undefined
+            }
+            className={`w-full rounded-lg border bg-white dark:bg-[#111827] px-3 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:ring-1 transition-colors ${error ? "border-red-400 dark:border-red-700 focus:border-red-500 focus:ring-red-500/30" : "border-gray-200 dark:border-[#222936] focus:border-primary focus:ring-primary/30"} ${locked ? "cursor-not-allowed bg-gray-50 dark:bg-[#0d1421] text-muted" : ""}`}
           />
 
           {hasOptions && (
@@ -93,8 +104,10 @@ function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDr
         <select
           value={field.type}
           onChange={(e) => handleTypeChange(e.target.value)}
+          disabled={locked}
+          title={locked ? "This field is always a text input" : undefined}
           aria-label={`Field type for ${field.label || `field ${index + 1}`}`}
-          className="w-[130px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+          className="w-[130px] shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-muted dark:disabled:bg-[#0d1421]"
         >
           {FIELD_TYPE_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -107,7 +120,13 @@ function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDr
           <button
             type="button"
             onClick={() => updateFieldAt(index, { required: !field.required })}
-            className={`text-[11px] font-bold px-2.5 py-1.5 rounded-full border transition-colors ${
+            disabled={locked}
+            title={
+              locked
+                ? "Full Name and Email are always required"
+                : "Toggle whether this field must be filled in"
+            }
+            className={`text-[11px] font-bold px-2.5 py-1.5 rounded-full border transition-colors disabled:cursor-not-allowed ${
               field.required
                 ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-700/40"
                 : "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700"
@@ -117,14 +136,25 @@ function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDr
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => removeFieldAt(index)}
-          aria-label={`Remove ${field.label || `field ${index + 1}`}`}
-          className="pt-2 text-muted hover:text-red-500 transition-colors shrink-0"
-        >
-          <Trash2 size={15} />
-        </button>
+        {locked ? (
+          // Stands in for the delete button so the row keeps its width, and says
+          // why there is nothing to click.
+          <span
+            className="pt-2 shrink-0"
+            title="Every form collects a name and an email, so this field cannot be removed"
+          >
+            <Lock size={15} className="text-muted/70" />
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => removeFieldAt(index)}
+            aria-label={`Remove ${field.label || `field ${index + 1}`}`}
+            className="pt-2 text-muted hover:text-red-500 transition-colors shrink-0"
+          >
+            <Trash2 size={15} />
+          </button>
+        )}
       </div>
 
       {error && (
@@ -423,10 +453,112 @@ export default function CreateForm() {
           </div>
         </div>
 
-        <p className="mt-2 text-xs text-muted">
-          Drag rows to reorder · Click Required to toggle · Press Enter to
-          confirm a new field
+        <p className="mt-1 text-xs text-muted">
+          <Lock size={11} className="inline mr-1 -mt-0.5" />
+          Full Name and Email are always collected, required, and cannot be
+          removed or renamed.
         </p>
+
+      </SectionCard>
+
+      {/* Section 4: Confirmation Email */}
+      <SectionCard>
+        <h2 className="text-base font-bold text-foreground mb-1">Confirmation Email</h2>
+        <p className="text-xs text-muted mb-5">
+          Sent to the address the submitter typed into the form.
+        </p>
+
+        <div className="rounded-lg border border-gray-200 dark:border-[#222936] bg-gray-50 dark:bg-white/[0.03] p-4">
+          <ToggleSwitch
+            id="form-send-email"
+            checked={Boolean(formData.sendEmailOnSubmission)}
+            onChange={(value) => updateField("sendEmailOnSubmission", value)}
+            onLabel="Sent"
+            offLabel="Off"
+            label="Send an email after submission"
+            description={
+              formData.sendEmailOnSubmission
+                ? "Your own message below is sent instead of the standard receipt."
+                : "Off — submitters get the standard \"We received your application\" receipt."
+            }
+          />
+        </div>
+
+        {formData.sendEmailOnSubmission && (
+          <div className="mt-4 space-y-4">
+            <div>
+              <label
+                htmlFor="form-email-subject"
+                className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5"
+              >
+                Subject{" "}
+                <span className="font-normal normal-case tracking-normal text-muted/70">
+                  (optional)
+                </span>
+              </label>
+              <input
+                id="form-email-subject"
+                type="text"
+                value={formData.submissionEmailSubject}
+                onChange={(e) => updateField("submissionEmailSubject", e.target.value)}
+                maxLength={200}
+                placeholder={`We received your submission for ${formData.title || "this form"}`}
+                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="form-email-body"
+                className="flex items-center gap-1.5 text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5"
+              >
+                Message <RequiredAsterisk />
+              </label>
+              <textarea
+                id="form-email-body"
+                value={formData.submissionEmailBody}
+                onChange={(e) => updateField("submissionEmailBody", e.target.value)}
+                rows={7}
+                maxLength={5000}
+                placeholder={
+                  "<p>Thanks for applying to {{formTitle}}. We'll be in touch soon.</p>"
+                }
+                className={`w-full px-3 py-2.5 rounded-lg border bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:ring-1 transition-colors resize-y font-mono text-[13px] leading-relaxed ${
+                  errors?.submissionEmailBody
+                    ? "border-red-400 dark:border-red-700 focus:border-red-500 focus:ring-red-500/30"
+                    : "border-gray-200 dark:border-[#222936] focus:border-primary focus:ring-primary/30"
+                }`}
+              />
+              <p className="mt-1.5 text-xs text-muted leading-relaxed">
+                HTML is allowed. Use{" "}
+                <code className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-[11px]">
+                  {"{{formTitle}}"}
+                </code>{" "}
+                <code className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-[11px]">
+                  {"{{userName}}"}
+                </code>
+                {formData.type === "attendance" && (
+                  <>
+                    {" "}
+                    and{" "}
+                    <code className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-[11px]">
+                      {"{{qrDataUrl}}"}
+                    </code>{" "}
+                    (your form is an Attendance form, so the submitter&apos;s ticket
+                    QR can be placed anywhere in the message)
+                  </>
+                )}
+                .
+              </p>
+              {errors?.submissionEmailBody && (
+                <p className="mt-1 text-xs text-red-500">{errors.submissionEmailBody}</p>
+              )}
+              <p className="mt-1 text-[11px] text-muted/70 text-right">
+                {formData.submissionEmailBody.length}/5000
+              </p>
+            </div>
+          </div>
+        )}
       </SectionCard>
 
       {(errors?.general || errors?.fields) && (

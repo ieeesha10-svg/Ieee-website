@@ -268,6 +268,60 @@ const sendSubmissionReceivedEmail = async ({ email, userName, formTitle }) => {
   }
 };
 
+// 6. Custom post-submission email
+// The subject and body are written by the form author in the builder, so there
+// is no template file: the body goes through the same {{token}} pass as the
+// built-in templates and is then wrapped in the shared shell, which keeps the
+// footer card lined up with every other email.
+//
+// `qrDataUrl` is the data URL the controller already generates for `attendance`
+// forms. It is embedded inline so the ticket travels in the same message the
+// author wrote, rather than a second, separate email. `{{qrDataUrl}}` is removed
+// outright when there is no QR, because renderTemplate leaves an unknown token
+// in place and the author would see the literal text in their inbox.
+const sendCustomSubmissionEmail = async ({
+  to,
+  subject,
+  messageBody,
+  formTitle,
+  userName,
+  ticketCode,
+  qrDataUrl,
+  data = {},
+}) => {
+  try {
+    const hasQr = Boolean(qrDataUrl);
+    const source = String(messageBody || '');
+
+    const tokens = {
+      formTitle,
+      userName,
+      ticketCode,
+      qrDataUrl: hasQr
+        ? `<img src="${qrDataUrl}" alt="Your ticket QR code" width="220" height="220" style="display:block;width:220px;height:220px;border:0;border-radius:8px;" />`
+        : '',
+      ...data,
+    };
+
+    const body = renderTemplate(
+      hasQr ? source : source.replace(/\{\{\s*qrDataUrl\s*\}\}/gi, ''),
+      tokens
+    );
+
+    const html = buildEmailDocument({
+      content: body,
+      title: subject,
+      preheader: subject,
+    });
+
+    await sendEmail({ to, subject, html });
+    return true;
+  } catch (err) {
+    console.error('Server Error sending Custom Submission Email:', err);
+    return false;
+  }
+};
+
 module.exports = {
   sendEmail,
   sendTemplateEmail,
@@ -278,5 +332,6 @@ module.exports = {
   sendTicketEmail,
   resetPasswordEmailToken,
   sendCommitteeDecisionEmail,
-  sendSubmissionReceivedEmail
+  sendSubmissionReceivedEmail,
+  sendCustomSubmissionEmail
 };

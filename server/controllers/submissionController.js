@@ -3,29 +3,22 @@ const Form = require('../models/FormModel');
 const User = require('../models/UserModel');
 const QRCode = require('qrcode');
 const ExcelJS = require('exceljs');
-const { sendTicketEmail, sendSubmissionReceivedEmail } = require('../utils/sendEmail');
+const { sendSubmissionReceivedEmail, sendCustomSubmissionEmail } = require('../utils/sendEmail');
 const { nanoid } = require('nanoid');
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 const uploadToCloudinary = require('../utils/uploadToCloudinary');
 const validator = require('validator');
 
-// Answers are keyed by `field.id`, which FormModel derives from the field label
-// (lowercased, spaces -> underscores). "Email Address" therefore becomes
-// "email_address", never "email" — so the key has to be discovered, not assumed.
-const EMAIL_KEY_RE = /e[-_]?mail/i;
-const NAME_KEY_RE = /^(full[_\-\s]?)?name$/i;
-
-// Locate the form field that collects the submitter's name, if the form has one.
-const findNameField = (form) =>
-  (form.fields || []).find(
-    (f) => NAME_KEY_RE.test(f.id) || NAME_KEY_RE.test(String(f.label || '').trim())
-  );
-
-// Locate the form field that collects the submitter's email, if the form has one.
-const findEmailField = (form) =>
-  (form.fields || []).find(
-    (f) => EMAIL_KEY_RE.test(f.id) || EMAIL_KEY_RE.test(String(f.label || ''))
-  );
+// Answers are keyed by `field.id`, which FormModel derives from the field label,
+// so the id cannot be assumed. The lookup lives in utils/fieldIdentity.js.
+const {
+  EMAIL_KEY_RE,
+  NAME_KEY_RE,
+  isEmailField,
+  isNameField,
+  findEmailField,
+  findNameField,
+} = require('../utils/fieldIdentity');
 
 // ==========================================
 // 1. STUDENT ACTIONS
@@ -91,10 +84,20 @@ const submitForm = catchAsync(async (req, res) => {
   const submittedName = nameKey ? String(answers[nameKey] ?? '').trim() : '';
   const submittedEmailRaw = emailKey ? String(answers[emailKey] ?? '').trim() : '';
 
+  // 6. A valid email is mandatory — it is where every follow-up gets sent.
+  //    The address the submitter typed is the one used, signed in or not. The
+  //    form prefills the account email for a member who is signed in, but they
+  //    are allowed to change it (a personal address for an event, say), and that
+  //    is the address the confirmation and the ticket go to. Reading the account
+  //    email here instead meant the value stored and the value mailed disagreed.
+  const submittedEmail = submittedEmailRaw.toLowerCase();
+
   // Store the normalised values, not the raw padding, so exports and the admin
-  // submissions table show clean data.
+  // submissions table show clean data. This runs for a signed-in member too, so
+  // the answer an admin sees is the same address that was mailed and stored in
+  // `registrantEmail`.
   if (nameKey) answers[nameKey] = submittedName;
-  if (!userid && emailKey) answers[emailKey] = submittedEmailRaw;
+  if (emailKey) answers[emailKey] = submittedEmail;
 
   // 5. Full Name is mandatory for everyone, signed in or not. `SubmissionModel`'s
   //    pre-save hook enforces every `required: true` field anyway, so exempting
@@ -107,11 +110,8 @@ const submitForm = catchAsync(async (req, res) => {
     );
   }
 
-  // 6. A valid email is mandatory — it is where every follow-up gets sent.
-  //    For a logged-in member the account email is authoritative.
-  const submittedEmail = (userid ? req.user.email : submittedEmailRaw).toLowerCase();
-
   if (!submittedEmail) {
+
     throw new AppError(
       emailField?.label ? `${emailField.label} is required` : 'An email address is required',
       400,
@@ -125,7 +125,9 @@ const submitForm = catchAsync(async (req, res) => {
 
   // 7. One account per email address. A guest whose email already has an
   //    account must log in instead of submitting a second, unlinked identity.
-  //    Never applied to the signed-in user — their own account matches by design.
+  //    This is a guest-onboarding rule, so it only applies to guests. A member is
+  //    already authenticated and may submit under a different address on purpose
+  //    — that address is the contact for this submission, not a new identity.
   if (!userid) {
     const accountOwner = await User.findOne({ email: submittedEmail }).select('_id').lean();
     if (accountOwner) {
@@ -203,27 +205,37 @@ const submitForm = catchAsync(async (req, res) => {
   }
 
   // 13. Send Email (Async)
-  //     Old behaviour: a QR "ticket confirmation" was emailed for ticketed forms,
-  //     which read as an attendance ticket even for ordinary application
-  //     forms. Disabled for now — the ticket is still generated and stored, so
-  //     re-enable by uncommenting the block below.
+  //     When the form author turned on `sendEmailOnSubmission`, the message they
+  //     wrote is what goes out, and an `attendance` form carries its QR in that
+  //     same message. Otherwise the neutral acknowledgement is sent, as before.
   //
-  // if (form.type === "attendance" && ticketCode && qrImage) {
-  //   sendTicketEmail({
-  //     email: submittedEmail,
-  //     userName: userName || answers.full_name || answers.name || 'Guest',
-  //     ticketCode,
-  //     eventTitle: form.title
-  //   }).catch(err => console.error("Email Error:", err));
-  // }
-
+  //     This replaces the old always-on QR "ticket confirmation" email, which
+  //     fired for every form and read as an event ticket even for ordinary
+  //     applications. The ticket itself is still generated and stored, because
+  //     the admin QR scanner (POST /api/submissions/scan) depends on it.
   const recipientName = userName || submittedName || 'there';
 
-  sendSubmissionReceivedEmail({
-    email: submittedEmail,
-    userName: recipientName,
-    formTitle: form.title
-  }).catch(err => console.error("Email Error:", err));
+  if (form.sendEmailOnSubmission) {
+    sendCustomSubmissionEmail({
+      to: submittedEmail,
+      subject:
+        (form.submissionEmailSubject && form.submissionEmailSubject.trim()) ||
+        `We received your submission for ${form.title}`,
+      messageBody: form.submissionEmailBody,
+      formTitle: form.title,
+      userName: recipientName,
+      ticketCode,
+      // `qrImage` is only produced for attendance forms; the extra type check
+      // keeps that guarantee at the point the email is built.
+      qrDataUrl: form.type === 'attendance' ? qrImage : null,
+    }).catch(err => console.error("Email Error:", err));
+  } else {
+    sendSubmissionReceivedEmail({
+      email: submittedEmail,
+      userName: recipientName,
+      formTitle: form.title
+    }).catch(err => console.error("Email Error:", err));
+  }
 
   // 14. Send Response
   res.status(201).json({
@@ -602,9 +614,10 @@ module.exports = {
 * Generating tickets for everything (logically): The current code generates a ticketCode and a qrImage and sends a QR email for any form that is filled out (whether it’s an Event, a volunteer request, or a survey). You may need to add a condition to generate tickets only if `form.type` is related to an event (Event/Workshop).
 
 * RESOLVED in the current revision — see the numbered steps in `submitForm`:
-*   - Ticket/QR generation is now limited to `form.type === "attendance"`, and the QR
-*     confirmation email is commented out. Every submission instead gets the neutral
-*     `submissionReceived.html` acknowledgement from `sendSubmissionReceivedEmail`.
+*   - Ticket/QR generation is now limited to `form.type === "attendance"`. The
+*     post-submission email is the form author's choice: with `sendEmailOnSubmission`
+*     on, their own subject/body is sent and an attendance form carries its QR inline;
+*     with it off, the neutral `submissionReceived.html` acknowledgement is sent as before.
 *   - The guest duplicate check used a hardcoded `'answers.email'` path. Field ids are
 *     generated from labels (see `FormModel`'s pre-save hook), so a field labelled
 *     "Email Address" is stored under `answers.email_address` and the old query never

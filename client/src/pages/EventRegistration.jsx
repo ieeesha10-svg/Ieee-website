@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { useAuth } from "../context/AuthContext";
@@ -13,6 +13,7 @@ import Input from "../components/ui/Input";
 import HtmlContent from "../components/ui/HtmlContent";
 import RequiredAsterisk from "../components/ui/RequiredAsterisk";
 import { validateSubmission } from "../utils/formValidation";
+import { prefillIdentityAnswers } from "../utils/formIdentity";
 
 export default function EventRegistration() {
   const { id } = useParams();
@@ -24,7 +25,7 @@ export default function EventRegistration() {
 
   const [formData, setFormData] = useState(null);
   const [registrationOpen, setRegistrationOpen] = useState(true);
-  const [answers, setAnswers] = useState({});
+  const [typedAnswers, setTypedAnswers] = useState({});
   const [errors, setErrors] = useState({});
   const [files, setFiles] = useState({});
   const fileInputRefs = React.useRef({});
@@ -118,11 +119,10 @@ export default function EventRegistration() {
           settings: { requiresLogin: Boolean(form?.requiresLogin) },
         });
 
-        const initial = {};
-        (form.fields || []).forEach((f) => {
-          initial[f.id] = f.id === "email" && user?.email ? user.email : "";
-        });
-        setAnswers(initial);
+        // Start with nothing typed. Seeding every key with "" would beat the
+        // profile prefill in the `answers` memo below, and the render already
+        // falls back to "" for an unanswered field.
+        setTypedAnswers({});
       } catch {
         setFetchError("not_found");
       } finally {
@@ -131,6 +131,21 @@ export default function EventRegistration() {
     };
     fetchEvent();
   }, [id]);
+
+  // A signed-in member should not retype what the account already knows, so their
+  // name and email come from the profile. Guests are seeded with nothing.
+  //
+  // Derived during render rather than pushed into state from an effect: that way
+  // a member who signs in while the page is open still gets filled in, and a
+  // member who clears a field is not refilled underneath their cursor. Anything
+  // they typed, including an empty string, wins over the seed.
+  const answers = useMemo(
+    () => ({
+      ...prefillIdentityAnswers(formData?.fields, user, typedAnswers),
+      ...typedAnswers,
+    }),
+    [formData?.fields, user, typedAnswers]
+  );
 
   useEffect(() => {
     if (fetchError === "not_found") {
@@ -158,7 +173,7 @@ export default function EventRegistration() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setAnswers((prev) => ({ ...prev, [name]: value }));
+    setTypedAnswers((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -293,7 +308,7 @@ export default function EventRegistration() {
                       const next = e.target.checked
                         ? [...current, opt]
                         : current.filter((v) => v !== opt);
-                      setAnswers((prev) => ({ ...prev, [field.id]: next }));
+                      setTypedAnswers((prev) => ({ ...prev, [field.id]: next }));
                       setErrors((prev) => ({ ...prev, [field.id]: "" }));
                     }}
                     className="sr-only"

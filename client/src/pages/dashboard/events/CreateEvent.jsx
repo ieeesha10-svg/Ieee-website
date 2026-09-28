@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
-  ArrowLeft, X, Loader2, Check, GripVertical, Trash2, CheckCircle2, Upload } from "lucide-react";
+  ArrowLeft, X, Loader2, Check, GripVertical, Trash2, CheckCircle2, Upload, Lock } from "lucide-react";
 import { useCreateEvent } from "../../../hooks/dashboard/events/useCreateEvent";
 import { toLocalDatetimeString } from "../../../utils/dateUtils";
 import { FIELD_TYPE_OPTIONS } from "../../../data/fieldTypes";
@@ -13,16 +13,18 @@ import RichTextEditor from "../../../components/dashboard/RichTextEditor";
 import Tooltip from "../../../components/ui/Tooltip";
 import SpeakerManager from "../../../components/dashboard/SpeakerManager";
 import { isHtmlContentEmpty } from "../../../utils/eventUtils";
+// The registration form on an event is a real form, so it collects a name and an
+// email like any other: submitForm requires both, and the attendance ticket and
+// the confirmation email are keyed on the email. These are the same helpers the
+// main form builder uses, so the two cannot drift apart.
+import { buildDefaultFields, isIdentityField } from "../../../utils/formIdentity";
 
 const EMPTY_FORM = {
   title: "", content: "", description: "", type: "event", location: "", speakers: [],
   startDate: toLocalDatetimeString(new Date()),
   endDate: toLocalDatetimeString(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
   maxSubmissions: "", registrationEnabled: true,
-  fields: [
-    { id: "name", label: "Full Name", type: "TextInput", required: true },
-    { id: "email", label: "Email", type: "TextInput", required: true },
-  ],
+  fields: buildDefaultFields(),
 };
 
 export default function CreateEvent() {
@@ -30,7 +32,9 @@ export default function CreateEvent() {
   const { createEvent } = useCreateEvent();
 
   const [form, setForm] = useState(EMPTY_FORM);
-  const [fieldsList, setFieldsList] = useState(EMPTY_FORM.fields);
+  // A fresh copy, so the two states cannot end up sharing (and mutating) the same
+  // field objects as the EMPTY_FORM constant.
+  const [fieldsList, setFieldsList] = useState(() => buildDefaultFields());
   const [dragIndex, setDragIndex] = useState(null);
   const [newFieldLabel, setNewFieldLabel] = useState("");
   const [newFieldType, setNewFieldType] = useState("TextInput");
@@ -57,20 +61,31 @@ export default function CreateEvent() {
     ]);
   };
 
+  // Label, type and `required` are pinned on the name and email fields and
+  // re-applied after the patch: the id answers are stored under is derived from
+  // the label, so a rename or a retype would break the ticket and confirmation
+  // lookups. Any other key in the patch still applies.
   const updateFieldAt = (index, patch) => {
     setFieldsList((prev) => {
       const updated = [...prev];
       const field = updated[index];
+      if (!field) return prev;
+      const next = { ...field, ...patch };
       if (patch.type && (patch.type === "Dropdown" || patch.type === "Checkbox") && !field.options) {
-        patch.options = [];
+        next.options = [];
       }
-      updated[index] = { ...field, ...patch };
+      updated[index] = isIdentityField(field)
+        ? { ...next, label: field.label, type: field.type, required: true }
+        : next;
       return updated;
     });
   };
 
   const removeFieldAt = (index) => {
-    setFieldsList((prev) => prev.filter((_, i) => i !== index));
+    setFieldsList((prev) => {
+      if (isIdentityField(prev[index])) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleConfirmAddField = () => {
@@ -305,6 +320,11 @@ export default function CreateEvent() {
         </div>
 
         <div className="rounded-xl border border-gray-200 dark:border-[#222936] overflow-hidden">
+          <p className="px-5 py-2 text-xs text-muted bg-white dark:bg-transparent border-b border-gray-200 dark:border-[#222936]">
+            <Lock size={11} className="inline mr-1 -mt-0.5" />
+            Full Name and Email are always collected, required, and cannot be
+            removed or renamed.
+          </p>
           <div className="hidden sm:flex items-center gap-2 px-5 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-[#222936]">
             <div className="w-6 shrink-0" />
             <div className="flex-1">
@@ -322,6 +342,11 @@ export default function CreateEvent() {
           {fieldsList.map((field, idx) => {
             const hasOptions = field.type === "Dropdown" || field.type === "Checkbox";
             const isDragging = dragIndex === idx;
+            // Full Name and Email ship with every event registration form and
+            // cannot be removed, renamed or made optional, so the controls are
+            // shown as fixed rather than simply inert. updateFieldAt and
+            // removeFieldAt enforce the same thing on the state.
+            const locked = isIdentityField(field);
             return (
               <div
                 key={field.id || idx}
@@ -347,7 +372,13 @@ export default function CreateEvent() {
                       value={field.label}
                       onChange={(e) => updateFieldAt(idx, { label: e.target.value })}
                       placeholder="Field label"
-                      className="w-full rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-3 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+                      readOnly={locked}
+                      title={
+                        locked
+                          ? "Every registration form collects a name and an email, so this field is always present and required"
+                          : undefined
+                      }
+                      className={`w-full rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-3 py-2 text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors ${locked ? "cursor-not-allowed bg-gray-50 dark:bg-[#0d1421] text-muted" : ""}`}
                     />
 
                     {hasOptions && (
@@ -392,8 +423,10 @@ export default function CreateEvent() {
                   <select
                     value={field.type}
                     onChange={(e) => updateFieldAt(idx, { type: e.target.value })}
+                    disabled={locked}
+                    title={locked ? "This field is always a text input" : undefined}
                     aria-label={`Field type for ${field.label || `field ${idx + 1}`}`}
-                    className="w-32.5 shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                    className="w-32.5 shrink-0 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] px-2.5 py-2 text-xs text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-muted dark:disabled:bg-[#0d1421]"
                   >
                     {FIELD_TYPE_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -404,7 +437,13 @@ export default function CreateEvent() {
                     <button
                       type="button"
                       onClick={() => updateFieldAt(idx, { required: !field.required })}
-                      className={`text-[11px] font-bold px-2.5 py-1.5 rounded-full border transition-colors ${
+                      disabled={locked}
+                      title={
+                        locked
+                          ? "Full Name and Email are always required"
+                          : "Toggle whether this field must be filled in"
+                      }
+                      className={`text-[11px] font-bold px-2.5 py-1.5 rounded-full border transition-colors disabled:cursor-not-allowed ${
                         field.required
                           ? "bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-700/40"
                           : "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700"
@@ -414,14 +453,25 @@ export default function CreateEvent() {
                     </button>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => removeFieldAt(idx)}
-                    aria-label={`Remove ${field.label || `field ${idx + 1}`}`}
-                    className="pt-2 text-muted hover:text-red-500 transition-colors shrink-0"
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                  {locked ? (
+                    // Stands in for the delete button so the row keeps its width,
+                    // and says why there is nothing to click.
+                    <span
+                      className="pt-2 shrink-0"
+                      title="Every registration form collects a name and an email, so this field cannot be removed"
+                    >
+                      <Lock size={15} className="text-muted/70" />
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => removeFieldAt(idx)}
+                      aria-label={`Remove ${field.label || `field ${idx + 1}`}`}
+                      className="pt-2 text-muted hover:text-red-500 transition-colors shrink-0"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
                 </div>
               </div>
             );

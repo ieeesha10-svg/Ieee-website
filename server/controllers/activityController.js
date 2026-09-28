@@ -7,6 +7,7 @@ const Submission = require('../models/SubmissionModel.js');
 const cloudinary = require('../config/cloudinary.js');
 const sanitizeHtml = require('sanitize-html');
 const { deriveFieldIds, describeFieldIdProblems } = require('../utils/fieldId');
+const { assertIdentityFields } = require('../utils/fieldIdentity');
 
 /**
  >> each activity has a form associated with it. <<
@@ -78,6 +79,10 @@ const createActivity = catchAsync(async (req, res) => {
       'INVALID_FIELD_IDS'
     );
   }
+
+  // An activity form is a real form, so it collects a name and an email like any
+  // other: submitForm needs both, and the attendance ticket is keyed on the email.
+  assertIdentityFields(fields, AppError);
 
   const activity = await Activity.create({
     title,

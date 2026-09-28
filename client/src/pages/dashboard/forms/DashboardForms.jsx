@@ -37,6 +37,7 @@ import DeleteModal from "../../../components/ui/DeleteModal";
 import RequiredAsterisk from "../../../components/ui/RequiredAsterisk";
 import DashFormsSkeleton from "../../../components/skeletons/DashFormsSkeleton";
 import Modal from "../../../components/ui/Modal";
+import ToggleSwitch from "../../../components/ui/ToggleSwitch";
 import Pagination from "../../../components/ui/Pagination";
 
 /*Toggle Switch */
@@ -91,6 +92,12 @@ function FieldsModal({ form, onClose }) {
             <div>
               <span className="font-bold text-muted">Login:</span>
               <p className="text-foreground">{form.requiresLogin ? "Required" : "Open to all"}</p>
+            </div>
+            <div>
+              <span className="font-bold text-muted">Email after submit:</span>
+              <p className="text-foreground">
+                {form.sendEmailOnSubmission ? "Custom message" : "Standard receipt"}
+              </p>
             </div>
           </div>
 
@@ -311,6 +318,10 @@ export default function DashboardForms() {
   const [editStartDate, setEditStartDate] = useState("");
   const [editEndDate, setEditEndDate] = useState("");
   const [editMaxSubmissions, setEditMaxSubmissions] = useState("");
+  const [editRequiresLogin, setEditRequiresLogin] = useState(false);
+  const [editSendEmail, setEditSendEmail] = useState(false);
+  const [editEmailSubject, setEditEmailSubject] = useState("");
+  const [editEmailBody, setEditEmailBody] = useState("");
   const [savingDates, setSavingDates] = useState(false);
 
   if (isLoading) return <DashFormsSkeleton />;
@@ -327,16 +338,34 @@ export default function DashboardForms() {
     setEditStartDate(form.startDate ? form.startDate.split("T")[0] : "");
     setEditEndDate(form.endDate ? form.endDate.split("T")[0] : "");
     setEditMaxSubmissions(form.maxSubmissions ?? "");
+    setEditRequiresLogin(Boolean(form.requiresLogin));
+    setEditSendEmail(Boolean(form.sendEmailOnSubmission));
+    setEditEmailSubject(form.submissionEmailSubject || "");
+    setEditEmailBody(form.submissionEmailBody || "");
   };
 
   const handleSaveDates = async () => {
     if (!editingForm) return;
+    // The server refuses to enable the email with an empty body, so refuse here
+    // too rather than round-tripping for a 400.
+    if (editSendEmail && !editEmailBody.trim()) {
+      toast.error("Write the message to send, or turn the email off");
+      return;
+    }
     setSavingDates(true);
     try {
       await updateForm(editingForm.id, {
         startDate: new Date(editStartDate + "T00:00:00.000Z").toISOString(),
         endDate: new Date(editEndDate + "T23:59:59.999Z").toISOString(),
         maxSubmissions: editMaxSubmissions === "" ? undefined : Number(editMaxSubmissions),
+        requiresLogin: editRequiresLogin,
+        sendEmailOnSubmission: editSendEmail,
+        // Only sent while the feature is on, so turning it off cannot leave the
+        // wording attached to the form.
+        ...(editSendEmail && {
+          submissionEmailSubject: editEmailSubject.trim(),
+          submissionEmailBody: editEmailBody.trim(),
+        }),
       });
       toast.success("Form updated successfully");
       setEditingForm(null);
@@ -461,6 +490,107 @@ export default function DashboardForms() {
           {editStartDate && editEndDate && new Date(editStartDate) > new Date(editEndDate) && (
             <p className="text-xs text-red-500 font-medium">Start date cannot be after end date.</p>
           )}
+
+          <div className="border-t border-gray-200 dark:border-[#222936] pt-4 space-y-4">
+            <div className="rounded-lg border border-gray-200 dark:border-[#222936] bg-gray-50 dark:bg-white/[0.03] p-4">
+              <ToggleSwitch
+                id="edit-requires-login"
+                checked={editRequiresLogin}
+                onChange={setEditRequiresLogin}
+                onLabel="Login required"
+                offLabel="Open to all"
+                label="Require login to submit"
+                description={
+                  editRequiresLogin
+                    ? "Only signed-in members can submit this form."
+                    : "Anyone can submit this form, with or without an account."
+                }
+              />
+            </div>
+
+            <div className="rounded-lg border border-gray-200 dark:border-[#222936] bg-gray-50 dark:bg-white/[0.03] p-4">
+              <ToggleSwitch
+                id="edit-send-email"
+                checked={editSendEmail}
+                onChange={setEditSendEmail}
+                onLabel="Sent"
+                offLabel="Off"
+                label="Send an email after submission"
+                description={
+                  editSendEmail
+                    ? "Your message below is sent instead of the standard receipt."
+                    : "Off — submitters get the standard receipt."
+                }
+              />
+            </div>
+
+            {editSendEmail && (
+              <div className="space-y-3">
+                <div>
+                  <label
+                    htmlFor="edit-email-subject"
+                    className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5"
+                  >
+                    Subject{" "}
+                    <span className="font-normal normal-case tracking-normal text-muted/70">
+                      (optional)
+                    </span>
+                  </label>
+                  <input
+                    id="edit-email-subject"
+                    type="text"
+                    value={editEmailSubject}
+                    onChange={(e) => setEditEmailSubject(e.target.value)}
+                    maxLength={200}
+                    placeholder={`We received your submission for ${editingForm?.title || "this form"}`}
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="edit-email-body"
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5"
+                  >
+                    Message <RequiredAsterisk />
+                  </label>
+                  <textarea
+                    id="edit-email-body"
+                    value={editEmailBody}
+                    onChange={(e) => setEditEmailBody(e.target.value)}
+                    rows={6}
+                    maxLength={5000}
+                    placeholder='<p>Thanks for applying to {{formTitle}}.</p>'
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-y font-mono text-[13px] leading-relaxed"
+                  />
+                  <p className="mt-1.5 text-xs text-muted leading-relaxed">
+                    HTML is allowed. Use{" "}
+                    <code className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-[11px]">
+                      {"{{formTitle}}"}
+                    </code>{" "}
+                    <code className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-[11px]">
+                      {"{{userName}}"}
+                    </code>
+                    {editingForm?.type === "attendance" && (
+                      <>
+                        {" "}
+                        and{" "}
+                        <code className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-[11px]">
+                          {"{{qrDataUrl}}"}
+                        </code>{" "}
+                        (an Attendance form, so the submitter&apos;s ticket QR can
+                        be placed anywhere in the message)
+                      </>
+                    )}
+                    .
+                  </p>
+                  <p className="mt-1 text-[11px] text-muted/70 text-right">
+                    {editEmailBody.length}/5000
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-end gap-2 pt-1">
             <button
               onClick={() => setEditingForm(null)}
