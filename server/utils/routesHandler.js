@@ -4,6 +4,7 @@ const { globalErrorHandler } = require("../middleware/errorsMiddleware");
 const activityRouter = require("../routes/activityRoutes");
 const adminRouter = require("../routes/adminRoutes");
 const crewRouter = require("../routes/crewRoutes");
+const seasonRouter = require("../routes/seasonRoutes");
 const userRouter = require("../routes/userRoutes") ;
 const formRouter = require("../routes/formRoutes");
 const submissionRouter = require("../routes/submissionRoutes");
@@ -20,6 +21,8 @@ const routersHandler = (app) => {
   app.use('/api/states', dashboardRouter);
 
   app.use('/api/crew', crewRouter);
+
+  app.use('/api/seasons', seasonRouter);
 
   app.use('/api/activities', activityRouter);
 

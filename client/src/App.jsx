@@ -141,6 +141,9 @@ function App() {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
           </Route>
           <Route path="/crew" element={<CrewPage />} />
+          {/* An archived season. Same component: with no id it reads the season
+              published on the home page, which is what /crew should show. */}
+          <Route path="/crew/season/:seasonId" element={<CrewPage />} />
           <Route path="/committees" element={<CommitteesPage />} />
           <Route path="/dev-team" element={<DevTeam />} />
           <Route path="/applications" element={<ApplicationsPage />} />

@@ -94,7 +94,8 @@ const api = axios.create({
 
 ## Static Sections vs API Data
 
-- Home/About/Committees/Crew/DevTeam pages are mostly static, driven by `src/data/*` files.
+- About/Committees/DevTeam pages are mostly static, driven by `src/data/*` files.
+- **The crew is API-driven**: the home page Excom, `/crew` and `/crew/season/:seasonId` all read a season from the database. Committee members are managed at `/dashboard/crew`, which writes the Excom and Board of a season and publishes exactly one season to the home page. `src/data/chairpersons.js` survives only to feed the About page's Board section and is no longer the source of truth.
 - Events, forms, members, dashboards are fully API-driven through hooks in `src/hooks/`.
 
 ## Adding a Feature (Big Picture)

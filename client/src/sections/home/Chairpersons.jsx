@@ -4,10 +4,24 @@ import Badge from "../../components/ui/Badge";
 import SectionHeader from "../../components/ui/SectionHeader";
 import PersonCard from "../../components/guest/home/PersonCard";
 import Sponsors from "./Sponsors";
-// Chairpersons
-import { MEMBERS, COUNSELOR } from "../../data/chairpersons";
+import { useSeason } from "../../hooks/useSeasons";
 
 export default function Team() {
+  // The season published from the dashboard. Reading it from the API rather
+  // than a hardcoded list is what lets a new committee be swapped in without a
+  // deploy; `server/scripts/backfillSeasons.js` seeded this season from the
+  // list this section used to import.
+  const { excom, isLoading, isEmpty } = useSeason();
+
+  // The counselor gets the full-width card above the grid, exactly as the
+  // hardcoded list did. The server decides who that is by matching the
+  // position, so an admin does not have to set anything.
+  const counselors = excom.filter((person) => person.isCounselor);
+  const rest = excom.filter((person) => !person.isCounselor);
+
+  // Nothing published yet: render no leadership section at all rather than an
+  // empty heading over nothing. The dashboard is where the fix lives.
+  if (!isLoading && isEmpty) return null;
 
   return (
     <section
@@ -19,28 +33,36 @@ export default function Team() {
 
       <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center w-full">
         {/* Badge */}
-        <Badge text="🏆 Leadership Team" className="mb-3 lg:mb-6 text-[10px] lg:text-[16px] px-3 lg:px-5 py-1 lg:py-1.5" />
+        <Badge text="🏆 Leadership Team" className="mb-3 lg:mb-6 text-[10px] lg:[16px] px-3 lg:px-5 py-1 lg:py-1.5" />
 
         {/* Title */}
-				<div className="text-center mb-20">
-	     		<SectionHeader title="Meet Our" highlight="Chairpersons" highlightColor="primary-light" variant="light" />
-	        <p className="text-[#4A5565] dark:text-[#9CA3AF] lg:text-2xl mt-4">
-	          Dedicated <span className="text-[#33B5FF]">leaders</span> driving
-	          innovation and excellence in our IEEE community
-	        </p>
-				</div>
+        <div className="text-center mb-20">
+          <SectionHeader title="Meet Our" highlight="Chairpersons" highlightColor="primary-light" variant="light" />
+          <p className="text-[#4A5565] dark:text-[#9CA3AF] lg:text-2xl mt-4">
+            Dedicated <span className="text-[#33B5FF]">leaders</span> driving
+            innovation and excellence in our IEEE community
+          </p>
+        </div>
 
         {/* Grid Cards */}
-        <div className="w-full max-w-[360px] lg:max-w-none mx-auto space-y-3 lg:space-y-6">
-          <div className="lg:max-w-sm mx-auto">
-            <PersonCard person={COUNSELOR} />
+        {isLoading ? (
+          <div className="flex justify-center py-16">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#33B5FF]" />
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
-            {MEMBERS.map((person) => (
-              <PersonCard key={person.id} person={person} />
+        ) : (
+          <div className="w-full max-w-[360px] lg:max-w-none mx-auto space-y-3 lg:space-y-6">
+            {counselors.map((person) => (
+              <div key={person._id} className="lg:max-w-sm mx-auto">
+                <PersonCard person={person} />
+              </div>
             ))}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
+              {rest.map((person) => (
+                <PersonCard key={person._id} person={person} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="w-full flex justify-center mt-12 lg:mt-16">
           <Link

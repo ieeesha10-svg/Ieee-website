@@ -93,10 +93,12 @@ Used with `utils/formatAcademicYear.js` (`formatAcademicYear(year)` → "3rd Yea
 
 ## Team Pages — `chairpersons.js` & `devTeamData.js`
 
-- `chairpersons.js` — `COUNSELOR` + `MEMBERS` (chair, vice chair, treasurer, secretary) with local images + socials.
+- `chairpersons.js` — `COUNSELOR` + `MEMBERS` (chair, vice chair, treasurer, secretary) with socials. **The About page's Board section is the only remaining consumer**; the home page Excom now comes from the database.
 - `devTeamData.js` — `stats` + `tracks` for the `/dev-team` page (head + UI/UX + frontend + backend teams) with local images + links.
 
-> Note: these are **static imports** of local images in `src/assets/images/`. The `/crew` page is different — it fetches live crew from `GET /crew` via `useCrew`.
+> Note: `chairpersons.js` images are `/public/images/chairpersons/...` URLs, not bundled imports, so the same files serve both Vite's dev server and a static production build. `devTeamData.js` still imports from `src/assets/images/`.
+>
+> The home page Excom, `/crew` and `/crew/season/:seasonId` are **all** driven by the database (`GET /seasons/home` and `GET /seasons/:id`), not by a data file. `chairpersons.js` is left in place only so the About page renders the same people; it is no longer the source of truth for who the committee is. Edit committee members under `/dashboard/crew`, which writes the Excom and Board of a season and publishes one of them to the home page.
 
 ## Sponsors — `sponsors.js`
 

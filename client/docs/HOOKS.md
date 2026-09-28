@@ -17,7 +17,8 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 | `usePublicForms` | `GET /form` | `{ forms, isLoading, refetch }` | Only standalone forms (`status === "Active" && !activityID`) |
 | `usePublicForm` (in `usePublicFormById.js`) | `GET /form/:id` | `{ form, isLoading, error }` | |
 | `useSubmitForm` | `POST /submissions` (raw fetch, multipart) | `{ submit, loading, error, alreadySubmitted, ticketCode, reset, setAlreadySubmitted }` | ⚠️ Duplicate-submission detection relies on an exact message string match ("You already submitted this form") — fragile, see code comment |
-| `useCrew` | `GET /crew` | `{ team, isLoading }` | Maps API crew to card shape |
+| `useSeasons` | `GET /seasons` | `{ seasons, isLoading, error, refetch }` | Every season with its headcount, newest first. Powers the dashboard's season picker |
+| `useSeason(seasonId?)` | `GET /seasons/home` or `GET /seasons/:id` | `{ season, excom, board, isLoading, error }` | **No `seasonId` means the published season**, i.e. the one the home page shows. Drives `/crew`, `/crew/season/:seasonId` and the home Excom. The Excom/Board split is done server-side so both sections arrive ready to render |
 | `useDarkMode` | — | `[colorTheme, setTheme]` | localStorage `theme` + `.dark` class on `<html>` |
 | `useJoinMenu(navigate)` | — | `{ ref, open, toggle, openMenu, close, handleNavigate }` | Takes `navigate` from `useNavigate()`. Dropdown open/close + outside-click + Esc handling |
 | `usePublicSettings` | `GET /settings/public` (public) | `{ registrationOpen, committeeApplicationsOpen, loading, refetch }` | The two site-wide switches a visitor needs to know about, in one request. `null` until the answer arrives so a page can withhold itself rather than flash the wrong state. Fails open — the server still refuses a closed request, so the worst case is finding out after submitting |
@@ -48,6 +49,8 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 | `useUpdateRole` | `PATCH /users/members/:id` | `{ updatingRole, updateRole(id, newRole, prevRole, setRoles) }` | Optimistic with rollback |
 | `useGetAdmins` | `GET /users/all?role=board,xcom&limit=100` | `{ admins, adminRoles, setAdmins, setAdminRoles, loading, refetch }` | Fetches admin list + roles for the "User Permissions" section of DashboardSettings; exposes state setters for optimistic updates |
 | `useUserUpdate` | `GET /users/members/:id`, `PUT /users/profile/:id`, `PUT /users/update-password/:id` | `{ userData, loading, error, savingProfile, savingPassword, updateProfile, updatePassword }` | Used on user profile pages |
+| `useSeasons` (dashboard) | `GET /seasons`, `POST /seasons`, `PUT /seasons/:id`, `PUT /seasons/:id/home`, `DELETE /seasons/:id` | `{ seasons, isLoading, error, isSaving, createSeason, renameSeason, publishSeason, deleteSeason, refetch }` | All writes are admin-only. `publishSeason` is the only thing that changes which season the home page shows, and the server unpublishes the others in the same call. Deleting a season that still has members is refused by the server rather than cascading |
+| `useCrewForSeason(seasonId)` | `GET /crew?season=`, `POST /crew`, `PUT /crew/:id`, `DELETE /crew/:id` | `{ excom, board, isLoading, error, isSaving, addMember, updateMember, removeMember, refetch }` | Members come back grouped by section, which is the shape the dashboard renders. Refetches on `seasonId` change so switching seasons cannot leave the previous season's people on screen |
 
 ### Committees
 

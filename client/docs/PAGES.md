@@ -28,7 +28,8 @@ There are **four** route groups, each wrapped in its own guard/layout:
 | `/events/:id/details` | `EventDetails` | ✅ | Full event details page |
 | `/about` | `AboutPage` | ✅ | HeroAbout, ImpactStats, WhatWeDo, Committees, Board, CTA sections — wrapped in `Wrapper` with odd/even alternating backgrounds |
 | `/contact` | `ContactPage` | ✅ | Contact form + social media links |
-| `/crew` | `CrewPage` | ✅ | Crew members via `useCrew` |
+| `/crew` | `CrewPage` | ✅ | Excom + Board of the **published** season, via `useSeason()` with no id. Season labels at the bottom link to the other seasons |
+| `/crew/season/:seasonId` | `CrewPage` | ✅ | Same page reading `seasonId` from the URL, i.e. an archived season. Every other season is offered as a label |
 | `/committees` | `CommitteesPage` | ✅ | Static committee cards from `src/data/committeesData.js` |
 | `/dev-team` | `DevTeam` | ✅ | Static team from `src/data/devTeamData.js` |
 | `/applications` | `FormApplicationsPage` | ✅ | Lists public forms via `usePublicForms` |
@@ -66,7 +67,7 @@ Wrapped in `DashboardLayout` (admin sidebar + topbar with member search). Guarde
 | `/dashboard/events` | `dashboard/events/DashboardEvents` | ✅ | Event table + view/edit modals |
 | `/dashboard/events/create-event` | `dashboard/events/CreateEvent` | ✅ | Create event + registration form (`useCreateEvent`) |
 | `/dashboard/events/flagship` | `dashboard/events/FeaturedEvents` | ✅ | Manage featured events (`useFeaturedEvents`, add/remove/swap) |
-| `/dashboard/crew` | `dashboard/DashboardCrew` | ✅ | Crew management (raw `/crew` CRUD, not committee-related) |
+| `/dashboard/crew` | `dashboard/DashboardCrew` | ✅ | Season management (create / rename / **publish to home** / delete) + the Excom and Board of the selected season. Member CRUD with LinkedIn, Facebook, Collabratec, email and website (`useSeasons`, `useCrewForSeason`) |
 | `/dashboard/forms` | `dashboard/forms/DashboardForms` | ✅ | Forms list, filters, open/close/delete (`useForms`, `useToggleForm`, `useDeleteForm`) |
 | `/dashboard/forms/create-form` | `dashboard/forms/CreateForm` | ✅ | Form builder (`useCreateForm`) |
 | `/dashboard/forms/submissions/:formId` | `dashboard/forms/ShowFormSubmissions` | ✅ | Responses for a form (`useFormSubmissions`) |
