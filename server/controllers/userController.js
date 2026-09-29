@@ -96,7 +96,7 @@ const getUserProfile = async (req, res) => {
       role: user.role,
       committee: user.committee,
       phone: user.phone,
-      age: user.age,
+      dateOfBirth: user.dateOfBirth,
       position: user.position,
       university: user.university,
       college: user.college,
@@ -124,7 +124,7 @@ const registerUser = async (req, res) => {
   try {
     const {
       name, email, password, confirmPassword,
-      phone, age,
+      phone, dateOfBirth,
       position,
       university, college, yearOfStudy, interests, role,
       organization, roleInOrganization, yearsOfExperience, reasonForRegistration
@@ -185,7 +185,7 @@ const registerUser = async (req, res) => {
       otp,
       otpExpires,
       phone,
-      age,
+      dateOfBirth,
       position,
     };
 
@@ -682,7 +682,7 @@ const updateUserProfile = catchAsync(async (req, res) => {
   const allowedUpdates = [
     "name",
     "phone",
-    "age",
+    "dateOfBirth",
     "university",
     "college",
     "yearOfStudy",
@@ -721,7 +721,7 @@ const updateUserProfile = catchAsync(async (req, res) => {
       email: updatedUser.email,
       role: updatedUser.role,
       phone: updatedUser.phone,
-      age: updatedUser.age,
+      dateOfBirth: updatedUser.dateOfBirth,
       position: updatedUser.position,
       university: updatedUser.university,
       college: updatedUser.college,
@@ -852,7 +852,7 @@ const getAllMembers = catchAsync(async (req, res, next) => {
 //create member
 const createMember = catchAsync(async (req, res, next) => {
   const allowedRoles = User.schema.path("role").enumValues;
-  const { name, email, password, role, phone, age, position, university, college, yearOfStudy, interests, organization, roleInOrganization, yearsOfExperience, reasonForRegistration, committee, optionalData } = req.body;
+    const { name, email, password, role, phone, dateOfBirth, position, university, college, yearOfStudy, interests, organization, roleInOrganization, yearsOfExperience, reasonForRegistration, committee, optionalData } = req.body;
   if (!name || !email || !password || !password || !role) {
     return next(new AppError("Please Provide name, email, role and password", 400));
   }
@@ -869,7 +869,7 @@ const createMember = catchAsync(async (req, res, next) => {
     password: password,
     role: role,
     phone: phone,
-    age: age,
+    dateOfBirth: dateOfBirth,
     position: position,
     university: university,
     college: college,

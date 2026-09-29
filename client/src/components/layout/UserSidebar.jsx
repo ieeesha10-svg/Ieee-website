@@ -46,7 +46,7 @@ export function NavItem({ icon, title, subtitle, isActive, hasNotification }) {
             {title}
           </h3>
           <p
-            className={`text-[11.52px] leading-[15px] font-[Outfit] mt-[1px] truncate ${
+            className={`text-[11.52px] leading-[15px] font-gotham-light mt-[1px] truncate ${
               isActive ? "text-white/85" : "text-[#7A96B2] dark:text-muted"
             }`}
           >

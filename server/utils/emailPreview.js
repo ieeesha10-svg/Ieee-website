@@ -23,7 +23,7 @@ const SAMPLE_MEMBER = {
   organization: 'IEEE El Shorouk Academy Student Branch',
   roleInOrganization: 'Member',
   yearsOfExperience: 3,
-  age: 21,
+  dateOfBirth: '2004-03-14T00:00:00.000Z',
   university: 'Cairo University',
   college: 'Faculty of Engineering',
   yearOfStudy: 'Third year',

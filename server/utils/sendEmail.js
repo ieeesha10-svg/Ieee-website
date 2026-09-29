@@ -176,7 +176,7 @@ const USER_FIELD_ALLOWLIST = [
   'organization',
   'roleInOrganization',
   'yearsOfExperience',
-  'age',
+  'dateOfBirth',
   'university',
   'college',
   'yearOfStudy',

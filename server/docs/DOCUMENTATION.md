@@ -271,7 +271,8 @@ Every request → protect middleware → jwt.verify → req.user loaded
 | `name` | String | required, trimmed |
 | `email` | String | required, **unique**, lowercase, regex-validated |
 | `password` | String | required, **select: false**, min 8 chars, bcrypt hash |
-| `phone`, `age` | String / Number | age 15–99 |
+| `phone` | String | |
+| `dateOfBirth` | Date | optional; cannot be in the future |
 | `position` | String | enum: `student`, `professional` |
 | `role` | String | enum: `user` (default), `member`, `board`, `xcom`, `scanner` |
 | `university`, `college`, `yearOfStudy` | String/String/Number | student-specific |
@@ -283,6 +284,20 @@ Every request → protect middleware → jwt.verify → req.user loaded
 | `resetPasswordToken`, `resetPasswordExpires` | String / Date | **select: false**, 1-hour validity |
 | `optionalData` | Object | free-form extension bucket |
 | `timestamps` | — | `createdAt`, `updatedAt` |
+
+#### Rejected placeholder answers
+
+Any of these, on its own, is refused as a field value — return **400** rather than storing it:
+
+`N/A`, `N / A`, `N.A.`, `not applicable`, `not available`, `none`, `nil`, `null`, `tbd`, `-`, `--`, `?`
+
+Matching is case-insensitive and ignores surrounding and internal whitespace, so `"  N / A "` is also refused. Leave the field **empty** (or omit it) when a value does not apply — an empty optional field is always valid.
+
+Enforced on `name`, `phone`, `university`, `college`, `organization`, `roleInOrganization`, `reasonForRegistration`, `optionalData.aboutMe` and every entry of `interests`, on **every** write path (self sign-up, admin member creation, self-service profile update). Enum-backed fields such as `position`, `role` and `committee` are not checked, since they can only hold a value from their own list.
+
+The same rule rejects `answers` and `otherAnswers` on a submission, so it cannot be bypassed by posting to the API directly. Bare `na` is deliberately still accepted — it is a plausible real value (Namibia's country code) for a custom question, and refusing a genuine answer is worse than storing one stray placeholder.
+
+Client-side the same list lives in `client/src/utils/formValidation.js`. The two are duplicated rather than shared because the client and server deploy separately; there is a parity test guarding the lists against drifting.
 
 ### `activities`
 | Field | Type | Notes |
@@ -497,7 +512,7 @@ Creates an unverified account and emails a 6-digit OTP (valid 15 minutes). Publi
 | `password` | string | ✅ | Min 8 characters |
 | `confirmPassword` | string | ✅ | Must equal `password` |
 | `phone` | string | ➖ | |
-| `age` | number | ➖ | 15–99 |
+| `dateOfBirth` | string | ➖ | ISO date, not in the future |
 | `position` | string | ✅ | `"student"` \| `"professional"` |
 | `university` | string | ⭕ | required if student |
 | `college` | string | ⭕ | required if student |
@@ -521,7 +536,7 @@ Creates an unverified account and emails a 6-digit OTP (valid 15 minutes). Publi
   "password": "Str0ngPass!",
   "confirmPassword": "Str0ngPass!",
   "phone": "+201001234567",
-  "age": 21,
+  "dateOfBirth": "2004-03-14T00:00:00.000Z",
   "position": "student",
   "university": "Helwan University",
   "college": "Computer Engineering",
@@ -802,7 +817,7 @@ Returns the authenticated user plus their event history (split into attended/not
     "role": "user",
     "committee": "no committee",
     "phone": "+201001234567",
-    "age": 21,
+    "dateOfBirth": "2004-03-14T00:00:00.000Z",
     "position": "student",
     "university": "Helwan University",
     "college": "Computer Engineering",
@@ -833,7 +848,7 @@ Returns the authenticated user plus their event history (split into attended/not
 Self-service profile update. Only the owner may update their profile; sensitive fields are blocked.
 
 - **Auth:** Yes (`protect`) — must match own ID
-- **Allowed Fields:** `name`, `phone`, `age`, `university`, `college`, `yearOfStudy`, `organization`, `roleInOrganization`, `yearsOfExperience`, `reasonForRegistration`, `interests`, `committee`, `optionalData`
+- **Allowed Fields:** `name`, `phone`, `dateOfBirth`, `university`, `college`, `yearOfStudy`, `organization`, `roleInOrganization`, `yearsOfExperience`, `reasonForRegistration`, `interests`, `committee`, `optionalData`
 - **Blocked Fields (→ 403):** `email`, `password`, `role`, `position`, `isVerified`, `otp`, `otpExpires`, `resetPasswordToken`, `resetPasswordExpires`
 
 **Request Example**

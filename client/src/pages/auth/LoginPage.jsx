@@ -43,7 +43,7 @@ const LoginPage = () => {
   };
 
   return (
-    <AuthLayout title="IEEE SHA" subtitle="Sign in to your account">
+    <AuthLayout title="IEEE SHA" subtitle="Sign in to your account" dotField>
       <form onSubmit={handleLogin} className="space-y-6">
         <div className="relative">
           <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
