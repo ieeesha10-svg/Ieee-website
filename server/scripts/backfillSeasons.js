@@ -42,7 +42,7 @@ const FOUNDING_EXCOM = [
   {
     name: "Dr. Mahmoud Abdelmohsen",
     position: "Counselor",
-    image: "/images/chairpersons/season x/dr-mahmoud.webp",
+    image: "https://res.cloudinary.com/otvxv2ll/image/upload/v1790637897/dr-mahmoud.webp",
     socials: {
       linkedin: "https://www.linkedin.com/in/mahmoud-abdelmohsen-09874b123",
       facebook: "https://www.facebook.com/mahmoudabdelmohsenatteya",
@@ -51,7 +51,7 @@ const FOUNDING_EXCOM = [
   {
     name: "Alaa Mohamed",
     position: "Chairperson",
-    image: "/images/chairpersons/season x/alaa-mohamed.webp",
+    image: "https://res.cloudinary.com/otvxv2ll/image/upload/v1790637897/alaa-mohamed.webp",
     socials: {
       linkedin: "https://www.linkedin.com/in/alaa-mohamed-ab78992a0",
       facebook: "https://www.facebook.com/share/1D1qrgd5wd/?mibextid=wwXIfr",
@@ -60,7 +60,7 @@ const FOUNDING_EXCOM = [
   {
     name: "Ali Elsayed",
     position: "Vice Chair",
-    image: "/images/chairpersons/season x/ali-elsayed.webp",
+    image: "https://res.cloudinary.com/otvxv2ll/image/upload/v1790637897/ali-elsayed.webp",
     socials: {
       linkedin: "https://www.linkedin.com/in/alli-elsayed",
       facebook: "https://www.facebook.com/profile.php?id=100005694163126",
@@ -70,7 +70,7 @@ const FOUNDING_EXCOM = [
   {
     name: "Reem Hendawy",
     position: "Treasurer",
-    image: "/images/chairpersons/season x/reem-hendawy.webp",
+    image: "https://res.cloudinary.com/otvxv2ll/image/upload/v1790637897/reem-hendawy.webp",
     socials: {
       linkedin: "https://www.linkedin.com/in/reem-hendawy-786711274",
       facebook: "https://www.facebook.com/share/1EnYDmR41H/?mibextid=wwXIfr",
@@ -79,7 +79,7 @@ const FOUNDING_EXCOM = [
   {
     name: "Youssif Hany",
     position: "Secretary",
-    image: "/images/chairpersons/season x/youssif-hany.webp",
+    image: "https://res.cloudinary.com/otvxv2ll/image/upload/v1790637897/youssif-hany.webp",
     socials: {
       linkedin: "https://www.linkedin.com/in/youssef-hany-y038",
       facebook: "https://www.facebook.com/Youusif.038?mibextid=ZbWKwL",

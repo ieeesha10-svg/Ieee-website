@@ -19,6 +19,7 @@ import {
   Clock,
   Database,
   DatabaseBackup,
+  Gauge,
   User,
   UserPlus
 } from "lucide-react";
@@ -30,6 +31,7 @@ import { useGetAdmins } from "../../hooks/dashboard/useGetAdmins";
 import { useSubmitCommitteeRequest } from "../../hooks/dashboard/useSubmitCommitteeRequest";
 import { useBackup } from "../../hooks/dashboard/useBackup";
 import { useSiteSettings } from "../../hooks/dashboard/useSiteSettings";
+import { useEmailQuota } from "../../hooks/dashboard/useEmailQuota";
 import { ADMIN_ROLES } from '../../data/roles'
 import { ORDINAL_OPTIONS } from '../../data/ordinalMap'
 import { committees } from '../../data/committeesData'
@@ -209,6 +211,9 @@ export default function DashboardSettings() {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const { quota, isLoading: loadingQuota, error: quotaError, refetch: refetchQuota } =
+    useEmailQuota();
 
   const {
     lastBackup,
@@ -730,7 +735,98 @@ export default function DashboardSettings() {
         </SectionCard>
       )}
 
-      {/* Section 4: Backup & Restore */}
+      {/* Section 4: Email Quota */}
+      <SectionCard>
+        <div className="flex items-center gap-2 mb-1">
+          <Gauge size={18} className="text-muted" />
+          <h2 className="text-xl font-bold text-foreground">
+            Email Allowance
+          </h2>
+        </div>
+        <p className="text-xs text-muted mb-5">
+          How much of Brevo&apos;s daily transactional sending allowance is left.
+          Worth checking before a bulk send, because Brevo rejects the emails
+          once the day&apos;s allowance runs out.
+        </p>
+
+        {loadingQuota ? (
+          <p className="flex items-center gap-2 text-sm text-muted">
+            <Loader2 size={14} className="animate-spin" />
+            Checking Brevo...
+          </p>
+        ) : !quota?.available ? (
+          // Deliberately not an error banner. This is a readout in a corner of
+          // the page, and a Brevo outage says nothing about whether the rest of
+          // the site works. Showing zero would be a lie, so it shows nothing.
+          <div className="rounded-lg border border-gray-100 dark:border-[#222936] bg-gray-50 dark:bg-gray-800/40 p-4">
+            <p className="flex items-center gap-2 text-sm text-muted">
+              <AlertTriangle size={14} className="shrink-0" />
+              Could not read the allowance right now.
+            </p>
+            <p className="text-xs text-muted mt-1.5">
+              {quota?.reason ||
+                quotaError ||
+                "Brevo did not answer. This does not affect sending."}
+            </p>
+            <button
+              onClick={refetchQuota}
+              className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-foreground bg-transparent border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Try again
+            </button>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-gray-100 dark:border-[#222936] bg-gray-50 dark:bg-gray-800/40 p-4">
+            <div className="flex items-baseline justify-between gap-3 mb-3">
+              <div>
+                <span className="text-2xl font-bold text-foreground">
+                  {quota.remaining}
+                </span>
+                <span className="text-sm text-muted"> of {quota.limit} left</span>
+              </div>
+              <span className="text-xs text-muted capitalize">
+                {quota.plan} plan
+              </span>
+            </div>
+
+            {/* Filled proportionally to what is LEFT, not what is used: a full
+                bar means room to send, which is the question an admin opens
+                this page to answer. */}
+            <div
+              className="h-2 w-full rounded-full bg-gray-200 dark:bg-[#222936] overflow-hidden"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={quota.limit}
+              aria-valuenow={quota.remaining}
+              aria-label="Emails remaining today"
+            >
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  quota.remainingRatio <= 0.1
+                    ? "bg-red-500"
+                    : quota.remainingRatio <= 0.3
+                      ? "bg-amber-500"
+                      : "bg-green-500"
+                }`}
+                style={{ width: `${Math.max(quota.remainingRatio * 100, quota.remaining > 0 ? 2 : 0)}%` }}
+              />
+            </div>
+
+            <p className="text-xs text-muted mt-3">
+              {quota.used} sent today. Resets daily.
+            </p>
+
+            {quota.remainingRatio <= 0.1 && (
+              <p className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 mt-2">
+                <AlertTriangle size={13} className="shrink-0" />
+                Almost out. A bulk send over the remainder will start failing.
+              </p>
+            )}
+          </div>
+        )}
+      </SectionCard>
+
+      {/* Section 5: Backup & Restore */}
       <SectionCard>
         <div className="flex items-center gap-2 mb-1">
           <DatabaseBackup size={18} className="text-muted" />

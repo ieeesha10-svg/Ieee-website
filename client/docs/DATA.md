@@ -91,14 +91,13 @@ Used with `utils/formatAcademicYear.js` (`formatAcademicYear(year)` → "3rd Yea
 `SOCIAL_MEDIA` — Facebook/Instagram/LinkedIn/TikTok with `Icon` (React component), `href`, `title`, `subtitle`, `linkLabel`.
 `EMAIL_ADDRESS` — `ieee.sha.10@gmail.com` (public contact).
 
-## Team Pages — `chairpersons.js` & `devTeamData.js`
+## Team Pages — `devTeamData.js`
 
-- `chairpersons.js` — `COUNSELOR` + `MEMBERS` (chair, vice chair, treasurer, secretary) with socials. **The About page's Board section is the only remaining consumer**; the home page Excom now comes from the database.
-- `devTeamData.js` — `stats` + `tracks` for the `/dev-team` page (head + UI/UX + frontend + backend teams) with local images + links.
+- `devTeamData.js` — `stats` + `tracks` for the `/dev-team` page (head + UI/UX + frontend + backend teams) with local images + links. Images are imported from `src/assets/images/dev-team/`.
 
-> Note: `chairpersons.js` images are `/public/images/chairpersons/...` URLs, not bundled imports, so the same files serve both Vite's dev server and a static production build. `devTeamData.js` still imports from `src/assets/images/`.
+> Note: `devTeamData.js` uses bundled image imports from `src/assets/images/`.
 >
-> The home page Excom, `/crew` and `/crew/season/:seasonId` are **all** driven by the database (`GET /seasons/home` and `GET /seasons/:id`), not by a data file. `chairpersons.js` is left in place only so the About page renders the same people; it is no longer the source of truth for who the committee is. Edit committee members under `/dashboard/crew`, which writes the Excom and Board of a season and publishes one of them to the home page.
+> There is no longer a `chairpersons.js`. The home page Excom, the About page's Executive Committee section, `/crew` and `/crew/season/:seasonId` are **all** driven by the database (`GET /seasons/home` and `GET /seasons/:id`). Committee portraits live in `public/images/chairpersons/` and are referenced by URL, so the same files serve Vite's dev server and a static production build, and the database can hold the path. Edit committee members under `/dashboard/crew` — that writes the Excom and Board of a season and publishes one of them to the home page.
 
 ## Sponsors — `sponsors.js`
 

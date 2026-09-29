@@ -7,6 +7,7 @@ const {
   sendBulkEmailsFromExcel,
   sendBulkEmailsFromDB,
   getPaginatedEmails,
+  getEmailQuotaUsage,
 } = require("../controllers/emailController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
@@ -62,6 +63,16 @@ emailRouter.get(
   protect,
   authorize("xcom", "board"),
   getPaginatedEmails,
+);
+
+// 3. Remaining transactional allowance, shown as a progress bar in settings.
+// Declared after /logs so the literal paths keep matching first; Express would
+// not confuse them either way, but grouping the two reads better.
+emailRouter.get(
+  "/quota",
+  protect,
+  authorize("xcom", "board"),
+  getEmailQuotaUsage,
 );
 
 module.exports = emailRouter;
