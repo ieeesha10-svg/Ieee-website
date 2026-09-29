@@ -139,7 +139,9 @@ const updateCrew = catchAsync(async (req, res) => {
     req.params.id,
     input,
     {
-      new: true,
+      // `returnDocument` rather than the older `new: true`, which mongoose 9
+      // deprecates and warns about on every single call.
+      returnDocument: 'after',
       runValidators: true,
     }
   );

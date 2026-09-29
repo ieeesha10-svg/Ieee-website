@@ -353,7 +353,7 @@ const updateFormSettings = catchAsync(async (req, res) => {
   const updatedForm = await Form.findByIdAndUpdate(
     id,
     { $set: updateFields },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   );
 
   if (!updatedForm) throw new AppError('Form not found', 404);

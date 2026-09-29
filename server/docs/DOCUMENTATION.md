@@ -449,7 +449,7 @@ Client (multipart/form-data)
 | [Submissions](#36-submissions--ticketing) | `/api/submissions` | 7 |
 | [Committee Requests](#37-committee-requests) | `/api/committee-requests` | 5 |
 | [Seasons & Crew](#38-seasons-and-crew-directory) | `/api/seasons`, `/api/crew` | 11 |
-| [Bulk Emails](#39-bulk-emails) | `/api/emails` | 3 |
+| [Bulk Emails](#39-bulk-emails) | `/api/emails` | 4 |
 
 ---
 
@@ -2389,6 +2389,39 @@ Paginated delivery log with aggregate statistics.
 ```
 
 **Error Responses** — `500 { "error": "Failed to fetch emails" }`
+
+### 3.9.4 Remaining Email Allowance
+
+`GET /api/emails/quota` — **Auth:** Yes — roles: `xcom`, `board`
+
+How much of Brevo's allowance is left, read live from `GET /v3/account`. Backs the progress bar on the dashboard Settings page, so an admin can check the room left before starting a bulk send — Brevo starts rejecting once the day's allowance is gone.
+
+```json
+// 200 OK
+{
+  "success": true,
+  "data": {
+    "available": true,
+    "plan": "free",
+    "creditsType": "sendLimit",
+    "remaining": 291,
+    "limit": 300,
+    "used": 9,
+    "remainingRatio": 0.97,
+    "resetsDaily": true
+  }
+}
+```
+
+**Why `used` is derived.** Brevo reports only the *remainder*, as `plan.credits`. The `emailVolume` field older docs described (with `daily` and `limit`) is no longer in the response, and the endpoints that carried a limit now return 404. The daily cap of 300 is therefore a constant (`DAILY_TRANSACTIONAL_LIMIT` in `utils/sendEmail.js`) and `used` is `limit - remaining` rather than a measured count. Correct for a daily allowance; it would silently misreport on a monthly one.
+
+`plan` arrives as an **array** from the SDK, so the reader accepts both an array and a bare object.
+
+**When Brevo cannot be reached** the endpoint still answers `200`, with `available: false` and a `reason`. A dashboard readout should not turn a Brevo outage into a failed request, and inventing a zero would be worse than admitting ignorance:
+
+```json
+{ "success": true, "data": { "available": false, "reason": "Could not reach Brevo." } }
+```
 
 ---
 

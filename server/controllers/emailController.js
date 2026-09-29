@@ -4,13 +4,25 @@ const validator = require('validator');
 const mongoose = require('mongoose');
 const EmailLog = require('../models/EmailLog');
 const User = require('../models/UserModel');
-const { sendBulkEmails } = require('../utils/sendEmail');
+const { sendBulkEmails, getEmailQuota } = require('../utils/sendEmail');
 
 const cleanupFiles = async (files = []) => {
   for (const file of files) {
     if (file && file.path) {
       await fs.unlink(file.path).catch(e => console.error('Error deleting file:', e));
     }
+  }
+};
+
+// @desc    Get remaining transactional email quota
+// @route   GET /api/emails/quota
+// @access  Private (XCom/Board)
+const getEmailQuotaUsage = async (req, res, next) => {
+  try {
+    const quota = await getEmailQuota();
+    return res.status(200).json({ success: true, data: quota });
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -278,4 +290,4 @@ const sendBulkEmailsFromDB = async (req, res) => {
   }
 };
 
-module.exports = { sendBulkEmailsFromExcel, sendBulkEmailsFromDB, getPaginatedEmails };
+module.exports = { sendBulkEmailsFromExcel, sendBulkEmailsFromDB, getPaginatedEmails, getEmailQuotaUsage };

@@ -146,7 +146,7 @@ const updateSeason = catchAsync(async (req, res) => {
   const season = await Season.findByIdAndUpdate(
     req.params.id,
     { name },
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   );
   if (!season) {
     throw new AppError("Season not found", 404);

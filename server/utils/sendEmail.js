@@ -31,6 +31,66 @@ const warnIfSenderInvalid = () => {
     })
     .catch(() => { /* never let a network blip break sending */ });
 };
+// Brevo's free transactional plan allows 300 sends per day, and that allowance
+// resets daily. Brevo's API does NOT report the cap: GET /account returns only
+// the remainder as `plan.credits` (with `plan.creditsType: "sendLimit"`), and
+// the older endpoints that carried a limit now 404. So the cap lives here as a
+// constant and has to be changed by hand if the plan is upgraded.
+//
+// `used` is therefore derived, not measured: cap - remaining. It is right for a
+// daily allowance and silently wrong for a monthly one, which is why it is not
+// presented as an authoritative usage figure.
+const DAILY_TRANSACTIONAL_LIMIT = 300;
+
+/**
+ * Read the remaining transactional email allowance from Brevo.
+ *
+ * Non-throwing by design: this backs a dashboard readout, and a Brevo outage
+ * should not turn the settings page into an error. Callers get `available:
+ * false` and the reason, and the UI says so instead of inventing a number.
+ */
+const getEmailQuota = async () => {
+  try {
+    const account = await brevoClient.account.getAccount();
+
+    // `plan` comes back as an ARRAY of plans (the SDK types it as
+    // Plan.Item[]), so `plan.credits` is undefined and a naive read would
+    // report "no data" against a perfectly healthy account. Some tooling
+    // unrolls a single-element array when displaying it, which makes this look
+    // like a plain object - hence accepting both shapes rather than assuming.
+    const rawPlan = account?.plan;
+    const plan = Array.isArray(rawPlan) ? rawPlan[0] : rawPlan;
+    const credits = plan?.credits;
+
+    if (typeof credits !== 'number') {
+      return {
+        available: false,
+        reason: 'Brevo did not report a remaining email count.',
+      };
+    }
+
+    const limit = DAILY_TRANSACTIONAL_LIMIT;
+    const remaining = Math.max(0, Math.min(limit, credits));
+
+    return {
+      available: true,
+      plan: plan?.type || 'unknown',
+      creditsType: plan?.creditsType || 'sendLimit',
+      remaining,
+      limit,
+      used: Math.max(0, limit - remaining),
+      // Fraction remaining, so the bar reads as "how much room is left".
+      remainingRatio: limit > 0 ? remaining / limit : 0,
+      resetsDaily: true,
+    };
+  } catch (err) {
+    return {
+      available: false,
+      reason: err?.message || 'Could not reach Brevo.',
+    };
+  }
+};
+
 // ============================================================
 
 // // ===================== PROVIDER: RESEND (disabled) =====================
@@ -526,6 +586,9 @@ module.exports = {
   escapeHtml,
   // Internal {{token}} pass, used by the stored templates in view/emails_Templates.
   renderTemplate,
-  USER_FIELD_ALLOWLIST,
-  RECOMMENDED_SUBMISSION_FIELDS,
-};
+    USER_FIELD_ALLOWLIST,
+    RECOMMENDED_SUBMISSION_FIELDS,
+    // Remaining transactional allowance, for the dashboard quota readout.
+    getEmailQuota,
+  };
+

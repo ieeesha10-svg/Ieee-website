@@ -26,7 +26,7 @@ There are **four** route groups, each wrapped in its own guard/layout:
 | `/events` | `Events` | ✅ | Upcoming + previous events via `usePublicEvents` |
 | `/events/:id` | `EventRegistration` | ✅ | Event page + linked registration form (fetches `GET /activities/:id`, submits via `useSubmitForm`) |
 | `/events/:id/details` | `EventDetails` | ✅ | Full event details page |
-| `/about` | `AboutPage` | ✅ | HeroAbout, ImpactStats, WhatWeDo, Committees, Board, CTA sections — wrapped in `Wrapper` with odd/even alternating backgrounds |
+| `/about` | `AboutPage` | ✅ | HeroAbout, ImpactStats, WhatWeDo, Committees, Board, CTA sections — wrapped in `Wrapper` with odd/even alternating backgrounds. The Board section is the **published season's Excom** from `useSeason()`, counselor full-width, not a hardcoded list |
 | `/contact` | `ContactPage` | ✅ | Contact form + social media links |
 | `/crew` | `CrewPage` | ✅ | Excom + Board of the **published** season, via `useSeason()` with no id. Season labels at the bottom link to the other seasons |
 | `/crew/season/:seasonId` | `CrewPage` | ✅ | Same page reading `seasonId` from the URL, i.e. an archived season. Every other season is offered as a label |
