@@ -24,7 +24,7 @@ import { useLogout } from "../../hooks/auth/useLogout";
 import { usePendingCommitteeRequestCount } from "../../hooks/dashboard/usePendingCommitteeRequestCount";
 import { navItems, toolsItems } from "../../data/DashboardNav";
 import ConfirmModal from "../ui/ConfirmModal";
-import { isAdminRole } from "../../utils/roleAccess";
+  import { canViewAdminPages, canWrite } from "../../utils/roleAccess";
 
 const ICON_MAP = {
   LayoutDashboard,
@@ -46,15 +46,24 @@ const AdminSidebar = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const isAdmin = isAdminRole(user?.role);
-  const visibleNavItems = isAdmin ? navItems : [];
-  const visibleToolsItems = isAdmin
+  // board and xcom both see the main nav; a scanner sees only the scan tool.
+  // isAdminRole now means "can write", which would hide the nav from board.
+  // Pages marked writeOnly are xcom-only, so board loses those links too.
+  const canViewPages = canViewAdminPages(user?.role);
+  const canEdit = canWrite(user?.role);
+  const visibleNavItems = (canViewPages ? navItems : []).filter(
+    (item) => !item.writeOnly || canEdit,
+  );
+  const visibleToolsItems = canViewPages
     ? toolsItems
     : toolsItems.filter((item) => item.to === "/dashboard/scan");
 
   // Every role that can see this sidebar (board, xcom) is also allowed to read
-  // the pending list, so the count is always available here.
-  const { count: pendingCount } = usePendingCommitteeRequestCount();
+  // the pending list, so the count is always available here. A scanner only
+  // sees the scan tool and would just 403 on this, so it is switched off.
+  const { count: pendingCount } = usePendingCommitteeRequestCount({
+    enabled: canViewPages,
+  });
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -139,7 +148,7 @@ const AdminSidebar = () => {
         </div>
         )}
 
-        <div className={`pt-2 ${isAdminRole(user?.role) ? "border-t border-white/7" : ""}`}>
+        <div className={`pt-2 ${canViewPages ? "border-t border-white/7" : ""}`}>
           {!collapsed && (
             <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#344F64]">
               TOOLS

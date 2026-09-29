@@ -2,6 +2,8 @@ import React, { useState, useCallback, Fragment } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Download, Loader2, Trash2 } from 'lucide-react';
 // Hooks & data
 import { useAuth } from '../../context/AuthContext';
+import { canWrite } from '../../utils/roleAccess';
+import { ROLE_LABELS } from '../../data/roles';
 import { useMembersList } from '../../hooks/dashboard/useMembersList';
 import { useSearchMembers } from '../../hooks/dashboard/useSearchMembers';
 import { useExportUsers } from '../../hooks/dashboard/useExportUsers';
@@ -61,8 +63,11 @@ export default function DashboardMembers() {
   
   const { exporting, exportUsers } = useExportUsers();
 
-  const canDelete = (member) =>
-    user?.role === "xcom" || member.id === user?._id;
+  // xcom only. Board reads this page but changes nothing on it.
+  const canEdit = canWrite(user?.role);
+
+  // Deleting your own account is self-service, so it stays available to board.
+  const canDelete = (member) => canEdit || member.id === user?._id;
 
   const handleDeleteConfirm = useCallback(async () => {
     if (!deleteTarget) return;
@@ -331,20 +336,28 @@ export default function DashboardMembers() {
                         : member.college}
                     </td>
                     <td className="py-3 px-4">
-                      <select
-                        value={memberRoles[member.id] ?? member.role}
-                        onChange={(e) =>
-                          handleRoleChange(member.id, e.target.value)
-                        }
-                        disabled={updatingRole === member.id}
-                        className="text-xs font-medium bg-card-alt border border-border rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {roleFilters.map((r) => (
-                          <option key={r} value={r}>
-                            {r}
-                          </option>
-                        ))}
-                      </select>
+                      {canEdit ? (
+                        <select
+                          value={memberRoles[member.id] ?? member.role}
+                          onChange={(e) =>
+                            handleRoleChange(member.id, e.target.value)
+                          }
+                          disabled={updatingRole === member.id}
+                          aria-label={`Role for ${member.name}`}
+                          className="text-xs font-medium bg-card-alt border border-border rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {roleFilters.map((r) => (
+                            <option key={r} value={r}>
+                              {ROLE_LABELS[r] || r}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-xs font-medium text-foreground">
+                          {ROLE_LABELS[memberRoles[member.id] ?? member.role] ||
+                            member.role}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-sm text-muted">
                       {member.position === "professional"
@@ -354,21 +367,28 @@ export default function DashboardMembers() {
                         : member.year}
                     </td>
                     <td className="py-3 px-4">
-                      <select
-                        value={memberCommittees[member.id] ?? member.committee}
-                        onChange={(e) =>
-                          handleCommitteeChange(member.id, e.target.value)
-                        }
-                        disabled={updatingCommittee === member.id}
-                        className="text-xs font-medium bg-card-alt border border-border rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="">None</option>
-                        {committees.map((c) => (
-                          <option key={c.id} value={c.label}>
-                            {c.label}
-                          </option>
-                        ))}
-                      </select>
+                      {canEdit ? (
+                        <select
+                          value={memberCommittees[member.id] ?? member.committee}
+                          onChange={(e) =>
+                            handleCommitteeChange(member.id, e.target.value)
+                          }
+                          disabled={updatingCommittee === member.id}
+                          aria-label={`Committee for ${member.name}`}
+                          className="text-xs font-medium bg-card-alt border border-border rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <option value="">None</option>
+                          {committees.map((c) => (
+                            <option key={c.id} value={c.label}>
+                              {c.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="text-sm text-muted">
+                          {member.committee || "None"}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       {member.status === "Verified" ? (

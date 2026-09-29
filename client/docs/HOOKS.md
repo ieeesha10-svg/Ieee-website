@@ -47,8 +47,8 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 | `useMembersList` | `GET /users/all?...` | `{ members, totalCount, totalPages, filters, toggles, page, loading, resetFilters, hasActiveFilters }` | Debounced search (300ms), college/year/role/position filters, AbortController cancellation. Loads filter options via `GET /users/all?limit=1000`. Also used by `DashboardLayout` (pageSize 5) for the topbar search |
 | `useSearchMembers` | `GET /users/search?keyword=` | `{ keyword, setKeyword, results, isLoading, error }` | Debounced; min 2 chars |
 | `useExportUsers` | `POST /users/export-specific` (blob) | `{ exporting, exportUsers(ids) }` | Downloads `.xlsx` |
-| `useUpdateRole` | `PATCH /users/members/:id` | `{ updatingRole, updateRole(id, newRole, prevRole, setRoles) }` | Optimistic with rollback |
-| `useGetAdmins` | `GET /users/all?role=board,xcom&limit=100` | `{ admins, adminRoles, setAdmins, setAdminRoles, loading, refetch }` | Fetches admin list + roles for the "User Permissions" section of DashboardSettings; exposes state setters for optimistic updates |
+| `useUpdateRole` | `PATCH /users/members/:id` | `{ updatingRole, updateRole(id, newRole, prevRole, setRoles) }` | Optimistic with rollback. xcom only, and the server refuses when the target is the caller, so nobody can change their own role |
+| `useGetAdmins` | `GET /users/all?role=board,xcom&limit=100` (`VIEW_ROLES`) | `{ admins, adminRoles, setAdmins, setAdminRoles, loading, refetch }` | Fetches admin list + roles for the "User Permissions" section of DashboardSettings; exposes state setters for optimistic updates |
 | `useUserUpdate` | `GET /users/members/:id`, `PUT /users/profile/:id`, `PUT /users/update-password/:id` | `{ userData, loading, error, savingProfile, savingPassword, updateProfile, updatePassword }` | Used on user profile pages |
 | `useSeasons` (dashboard) | `GET /seasons`, `POST /seasons`, `PUT /seasons/:id`, `PUT /seasons/:id/home`, `DELETE /seasons/:id` | `{ seasons, isLoading, error, isSaving, createSeason, renameSeason, publishSeason, deleteSeason, refetch }` | All writes are admin-only. `publishSeason` is the only thing that changes which season the home page shows, and the server unpublishes the others in the same call. Deleting a season that still has members is refused by the server rather than cascading |
 | `useCrewForSeason(seasonId)` | `GET /crew?season=`, `POST /crew`, `PUT /crew/:id`, `DELETE /crew/:id` | `{ excom, board, isLoading, error, isSaving, addMember, updateMember, removeMember, refetch }` | Members come back grouped by section, which is the shape the dashboard renders. Refetches on `seasonId` change so switching seasons cannot leave the previous season's people on screen |
@@ -113,4 +113,4 @@ Not hooks, but used by them:
 | `dateUtils.js` | `toLocalDatetimeString` (datetime-local input value) |
 | `fileUploadUtils.js` | `ACCEPTED_FILE_TYPES`, `ACCEPTED_FILE_EXTENSIONS`, `useFileUpload` helper (10MB limit, PDF/JPG/PNG/GIF/WEBP/DOC/DOCX) |
 | `formatAcademicYear.js` | `formatAcademicYear(year)` |
-| `roleAccess.js` | `isAdminRole`, `canUseScanPage`, `dashboardHref` |
+| `roleAccess.js` | `canViewAdminPages`, `canWrite`, `canViewDashboard`, `canUseScanPage`, `roleLabel`, `dashboardHref`, `landingRoute`, `isAdminRole` |

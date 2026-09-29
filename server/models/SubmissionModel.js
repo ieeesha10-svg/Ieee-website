@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Form = require('./FormModel');
 const { isOtherCapable, selectsOther, otherText } = require('../utils/otherOption');
+const { isPlaceholderValue, PLACEHOLDER_MESSAGE } = require('../utils/placeholderValue');
 
 const submissionSchema = new mongoose.Schema({
   // Link to the specific form
@@ -125,6 +126,9 @@ submissionSchema.pre('save', async function(next) {
           validationErrors.push(`Field '${field.label}' must be a valid uploaded file URL.`);
         }
       }
+      if (isPlaceholderValue(answer)) {
+        validationErrors.push(`Field '${field.label}': ${PLACEHOLDER_MESSAGE}`);
+      }
       cleanAnswers[field.id] = answer;
     }
 
@@ -138,6 +142,9 @@ submissionSchema.pre('save', async function(next) {
 
       if (!detail) {
         validationErrors.push(`Field '${field.label}' needs a value: you chose "Other" but did not say what.`);
+      } else if (isPlaceholderValue(detail)) {
+        // "Other" followed by "N/A" is the same non-answer wearing a hat.
+        validationErrors.push(`Field '${field.label}': ${PLACEHOLDER_MESSAGE}`);
       } else {
         cleanOther[field.id] = detail;
       }

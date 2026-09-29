@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../utils/api";
 import { useAuth } from "../../../context/AuthContext";
+import { canWrite } from "../../../utils/roleAccess";
 import { ALLOWED_TYPES, isOptionsType, entersOptionsType, withOtherOption } from "../../../data/fieldTypes";
 import { slugifyFieldLabel } from "../../../utils/fieldId";
 import { buildDefaultFields, isIdentityField } from "../../../utils/formIdentity";
@@ -30,8 +31,9 @@ export function useCreateForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const isAuthorized =
-    user?.role === "xcom" || user?.role === "board";
+  // Creating a form is a write, so xcom only. Board can read forms but not add
+  // one. The route is guarded too; this is the second lock on the same door.
+  const isAuthorized = canWrite(user?.role);
 
   const updateField = useCallback((key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));

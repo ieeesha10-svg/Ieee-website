@@ -3,7 +3,7 @@
 // state setters so the page can optimistically update/remove admins, plus refetch.
 import { useState, useEffect, useCallback } from "react";
 import api from "../../utils/api";
-import { ADMIN_ROLES } from "../../data/roles";
+import { VIEW_ROLES } from "../../data/roles";
 import { pickColor } from "../../data/avatarColors";
 
 function mapAdmin(u) {
@@ -27,7 +27,9 @@ export function useGetAdmins() {
   const fetchAdmins = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/users/all?role=${ADMIN_ROLES.join(",")}&limit=100`);
+      // board is included so the settings page can show the team, even though
+      // it cannot change anyone's role.
+      const res = await api.get(`/users/all?role=${VIEW_ROLES.join(",")}&limit=100`);
       const users = (res.data.users || []).map(mapAdmin);
       setAdmins(users);
       const rolesMap = {};

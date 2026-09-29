@@ -9,9 +9,10 @@ const Form = require("../models/FormModel.js")
 const { catchAsync } = require("../middleware/errorsMiddleware.js");
 const { normalizeCollege } = require("../utils/collegeNormalize.js");
 const { protect, authorize } = require("../middleware/authMiddleware.js");
+const { VIEW_ROLES } = require("../constants/roles.js");
 
-// Protect all routes below this line
-dashboardRouter.use(protect, authorize("xcom", "board")); 
+// Aggregated counts for the dashboard home page. Read-only, so board is fine.
+dashboardRouter.use(protect, authorize(...VIEW_ROLES));
 
 // GET /api/stats/dashboard
 dashboardRouter.get(

@@ -6,7 +6,7 @@ import AuthLayout from "../../layouts/AuthLayout";
 import MailIcon from "../../assets/icons/mail.webp";
 import { useVerifyAccount } from "../../hooks/auth/useVerifyAccount";
 import { useAuth } from "../../context/AuthContext";
-import { ADMIN_ROLES } from "../../data/roles";
+import { landingRoute } from "../../utils/roleAccess";
 
 const VerifyEmailPage = () => {
   const location = useLocation();
@@ -29,8 +29,7 @@ const VerifyEmailPage = () => {
         toast.success("Email verified! Welcome aboard.");
 
         setTimeout(() => {
-          const isAdmin = ADMIN_ROLES.includes(data.role?.toLowerCase());
-          navigate(isAdmin ? "/dashboard" : "/profile");
+          navigate(landingRoute(data.role));
         }, 1000);
       } else {
         toast.success(data.message || "Email verified successfully!");

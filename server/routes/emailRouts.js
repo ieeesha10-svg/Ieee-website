@@ -10,6 +10,7 @@ const {
   getEmailQuotaUsage,
 } = require("../controllers/emailController");
 const { protect, authorize } = require("../middleware/authMiddleware");
+const { VIEW_ROLES, WRITE_ROLES } = require("../constants/roles");
 
 // Configure Multer (Temp Storage)
 const storage = multer.diskStorage({
@@ -35,11 +36,11 @@ const upload = multer({
   },
 });
 
-// 1. Send Bulk
+// 1. Send Bulk — actually emails people, so xcom only.
 emailRouter.post(
   "/bulk-send",
   protect,
-  authorize("xcom", "board"),
+  authorize(...WRITE_ROLES),
   upload.fields([
     { name: 'excelFile', maxCount: 1 },
     { name: 'attachments' }
@@ -50,18 +51,18 @@ emailRouter.post(
 emailRouter.post(
   "/bulk-send-db",
   protect,
-  authorize("xcom", "board"),
+  authorize(...WRITE_ROLES),
   upload.fields([
     { name: 'attachments' }
   ]),
   sendBulkEmailsFromDB,
 );
 
-// 2. Logs
+// 2. Logs — board may read.
 emailRouter.get(
   "/logs",
   protect,
-  authorize("xcom", "board"),
+  authorize(...VIEW_ROLES),
   getPaginatedEmails,
 );
 
@@ -71,7 +72,7 @@ emailRouter.get(
 emailRouter.get(
   "/quota",
   protect,
-  authorize("xcom", "board"),
+  authorize(...VIEW_ROLES),
   getEmailQuotaUsage,
 );
 

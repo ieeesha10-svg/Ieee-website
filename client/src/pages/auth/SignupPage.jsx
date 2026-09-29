@@ -25,6 +25,14 @@ import { useRegister } from "../../hooks/auth/useRegister";
 import AuthLayout from "../../layouts/AuthLayout";
 import RequiredAsterisk from "../../components/ui/RequiredAsterisk";
 import { usePublicSettings } from "../../hooks/usePublicSettings";
+import {
+  firstPlaceholderField,
+  PLACEHOLDER_ANSWER_MESSAGE,
+} from "../../utils/formValidation";
+
+// Ceiling for the DOB picker, so a future date cannot be picked in the first
+// place. The server rejects one too; this just avoids offering the choice.
+const TODAY = new Date().toISOString().slice(0, 10);
 
 function SignupPage() {
   // Preselect a tab via ?user= query param (backward compatible), default to student
@@ -44,7 +52,7 @@ function SignupPage() {
     name: "",
     email: "",
     phone: "",
-    age: "",
+    dateOfBirth: "",
     position: isStudent ? "student" : "professional",
     university: "",
     college: "",
@@ -101,6 +109,25 @@ function SignupPage() {
       return toast.error("Passwords do not match!");
     }
 
+    // Checked across the free-text fields, not the dropdowns, which can only
+    // ever hold one of the options they were given.
+    const placeholderField = firstPlaceholderField({
+      Name: formData.name,
+      Email: formData.email,
+      "Phone number": formData.phone,
+      ...(isStudent
+        ? { University: formData.university, College: formData.college }
+        : {
+            Organization: formData.organization,
+            "Role in organization": formData.roleInOrganization,
+            "Years of experience": formData.yearsOfExperience,
+            "Reason for registration": formData.reasonForRegistration,
+          }),
+    });
+    if (placeholderField) {
+      return toast.error(`${placeholderField}: ${PLACEHOLDER_ANSWER_MESSAGE}`);
+    }
+
     try {
       // 2. Format data for the backend (Ensure numbers are sent as Numbers)
       const payload = {
@@ -109,7 +136,7 @@ function SignupPage() {
         password: formData.password,
         confirmPassword: formData.confirmPassword,
         phone: formData.phone,
-        age: formData.age ? Number(formData.age) : undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
         position: isStudent ? "student" : "professional",
         ...(isStudent
           ? {
@@ -147,7 +174,7 @@ function SignupPage() {
   // never flashes an open form before swapping to the notice.
   if (checkingRegistration) {
     return (
-      <AuthLayout title="Join IEEE SHA" maxWidth="max-w-2xl">
+      <AuthLayout title="Join IEEE SHA" maxWidth="max-w-2xl" dotField>
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted">
           <Loader2 size={22} className="animate-spin" />
           <p className="text-sm">Checking whether registration is open...</p>
@@ -158,7 +185,7 @@ function SignupPage() {
 
   if (registrationBlocked) {
     return (
-      <AuthLayout title="Registration is closed" maxWidth="max-w-2xl">
+      <AuthLayout title="Registration is closed" maxWidth="max-w-2xl" dotField>
         <div className="flex flex-col items-center text-center py-8">
           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-5">
             <Clock size={30} className="text-amber-500" />
@@ -197,6 +224,7 @@ function SignupPage() {
           : "Create your professional account to register for events."
       }
       maxWidth="max-w-2xl"
+      dotField
     >
       {/* Account Type Tabs */}
       <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 dark:bg-gray-700/40 rounded-xl mb-6">
@@ -291,10 +319,10 @@ function SignupPage() {
             </div>
           </div>
 
-          {/* Age */}
+          {/* Date of Birth - optional */}
           <div>
             <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
-              Age
+              Date of Birth <span className="font-normal normal-case tracking-normal text-gray-400">(optional)</span>
             </label>
             <div className="relative">
               <CalendarDays
@@ -302,12 +330,16 @@ function SignupPage() {
                 size={20}
               />
               <input
-                type="number"
-                name="age"
-                placeholder="Age"
-                value={formData.age}
+                type="date"
+                name="dateOfBirth"
+                max={TODAY}
+                value={formData.dateOfBirth}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white"
+                // A date input draws its own calendar indicator in the browser,
+                // which put a second calendar icon in this field next to the
+                // lucide one above. Every other field here uses the lucide icon,
+                // so that one stays and the browser's is hidden.
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-sky-500 dark:text-white [&::-webkit-calendar-picker-indicator]:hidden"
               />
             </div>
           </div>

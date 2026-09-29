@@ -61,22 +61,22 @@ const importData = async () => {
         college: 'Computer Science',
         committee: 'Technical',
         yearOfStudy: 2,
-        age: 20,
+        dateOfBirth: new Date('2006-05-12T00:00:00.000Z'),
         interests: ['Web Development', 'React']
       },
 
-      // --- 4. THE STUDENT (Standard User) ---
-      {
-        name: 'Ali Ahmed',
-        email: 'ali@student.edu',
-        password: hashedPassword,
-        role: 'user',
+        // --- 4. THE STUDENT (plain member, no dashboard) ---
+        {
+          name: 'Ali Ahmed',
+          email: 'ali@student.edu',
+          password: hashedPassword,
+          role: 'member',
         position: 'student',
         phone: '01555555555',
         university: 'Cairo University',
         college: 'Engineering',
         yearOfStudy: 1,
-        age: 18,
+        dateOfBirth: new Date('2008-11-03T00:00:00.000Z'),
         interests: ['Robotics', 'Arduino'],
         optionalData: { referral: 'Facebook Ad' }
       },
@@ -89,7 +89,7 @@ const importData = async () => {
         role: 'member',
         position: 'professional',
         phone: '01666666666',
-        age: 30,
+        dateOfBirth: new Date('1996-07-21T00:00:00.000Z'),
         organization: 'Vodafone',
         roleInOrganization: 'Software Engineer',
         yearsOfExperience: 6,

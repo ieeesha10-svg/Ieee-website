@@ -230,7 +230,7 @@ export default function ChangePassword() {
         <ul className="space-y-[15px]">
           {tips.map((tip, i) => (
             <li key={i} className="flex items-center gap-[10px]">
-              <span className="font-[Outfit] font-normal text-[12.8px] leading-[16px] text-[#0096FF] select-none">
+              <span className="font-gotham-light text-[12.8px] leading-[16px] text-[#0096FF] select-none">
                 ✓
               </span>
               <span className="font-gotham font-[350] text-[12.8px] md:text-[13px] leading-[15px] text-[#3A5068] dark:text-[#94A3B8]">

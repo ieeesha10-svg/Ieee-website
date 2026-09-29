@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const ExcelJS = require('exceljs');
 const { sendOTPEmail, resetPasswordEmailToken } = require('../utils/sendEmail.js');
 const { catchAsync, AppError } = require('../middleware/errorsMiddleware.js');
+const { ASSIGNABLE_ROLES } = require('../constants/roles');
 // --- HELPER: Generate JWT Token ---
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -96,7 +97,7 @@ const getUserProfile = async (req, res) => {
       role: user.role,
       committee: user.committee,
       phone: user.phone,
-      age: user.age,
+      dateOfBirth: user.dateOfBirth,
       position: user.position,
       university: user.university,
       college: user.college,
@@ -124,9 +125,9 @@ const registerUser = async (req, res) => {
   try {
     const {
       name, email, password, confirmPassword,
-      phone, age,
+      phone, dateOfBirth,
       position,
-      university, college, yearOfStudy, interests, role,
+      university, college, yearOfStudy, interests,
       organization, roleInOrganization, yearsOfExperience, reasonForRegistration
     } = req.body;
 
@@ -163,12 +164,10 @@ const registerUser = async (req, res) => {
     }
 
     // --- SECURITY: Role Sanitization ---
-    // Allow 'member' selection, but force everyone else to 'user'
-    // This prevents hackers from creating an 'xcom' account via public API
-    let finalRole = 'user';
-    if (role === 'member') {
-      finalRole = 'member';
-    }
+    // Self-registration can ONLY ever produce a "member". Any role in the body
+    // is ignored rather than validated, so there is no path to a privileged
+    // account through the public endpoint - promotion is an xcom action.
+    const finalRole = 'member';
 
     // Hash Password
     const salt = await bcrypt.genSalt(10);
@@ -185,7 +184,7 @@ const registerUser = async (req, res) => {
       otp,
       otpExpires,
       phone,
-      age,
+      dateOfBirth,
       position,
     };
 
@@ -302,9 +301,9 @@ const createUser = async (req, res) => {
     return res.status(400).json({ message: 'User already exists' });
   }
 
-  // Validate Allowed Roles
-  const allowedRoles = ['board', 'xcom', 'scanner', 'member'];
-  if (!allowedRoles.includes(role)) {
+  // Validate Allowed Roles. Reads from the shared constant so this cannot
+  // drift from the schema enum the way the previous hand-typed list did.
+  if (!ASSIGNABLE_ROLES.includes(role)) {
     return res.status(400).json({ message: 'Invalid role. Use register for normal users.' });
   }
 
@@ -682,7 +681,7 @@ const updateUserProfile = catchAsync(async (req, res) => {
   const allowedUpdates = [
     "name",
     "phone",
-    "age",
+    "dateOfBirth",
     "university",
     "college",
     "yearOfStudy",
@@ -721,7 +720,7 @@ const updateUserProfile = catchAsync(async (req, res) => {
       email: updatedUser.email,
       role: updatedUser.role,
       phone: updatedUser.phone,
-      age: updatedUser.age,
+      dateOfBirth: updatedUser.dateOfBirth,
       position: updatedUser.position,
       university: updatedUser.university,
       college: updatedUser.college,
@@ -851,8 +850,8 @@ const getAllMembers = catchAsync(async (req, res, next) => {
 
 //create member
 const createMember = catchAsync(async (req, res, next) => {
-  const allowedRoles = User.schema.path("role").enumValues;
-  const { name, email, password, role, phone, age, position, university, college, yearOfStudy, interests, organization, roleInOrganization, yearsOfExperience, reasonForRegistration, committee, optionalData } = req.body;
+  const allowedRoles = ASSIGNABLE_ROLES;
+  const { name, email, password, role, phone, dateOfBirth, position, university, college, yearOfStudy, interests, organization, roleInOrganization, yearsOfExperience, reasonForRegistration, committee, optionalData } = req.body;
   if (!name || !email || !password || !password || !role) {
     return next(new AppError("Please Provide name, email, role and password", 400));
   }
@@ -869,7 +868,7 @@ const createMember = catchAsync(async (req, res, next) => {
     password: password,
     role: role,
     phone: phone,
-    age: age,
+    dateOfBirth: dateOfBirth,
     position: position,
     university: university,
     college: college,
@@ -900,15 +899,21 @@ const getMember = catchAsync(async (req, res, next) => {
     data: member
   });
 });
-// upgrade member role 
+// upgrade member role
 const upgradeMemberRole = catchAsync(async (req, res, next) => {
   const { role } = req.body;
-  const allowedRoles = User.schema.path("role").enumValues;
+  const allowedRoles = ASSIGNABLE_ROLES;
   if (!role) {
     return next(new AppError("Role is required", 400));
   }
   if (!allowedRoles.includes(role)) {
     return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`, 400));
+  }
+  // Nobody may change their own role, xcom included. The route already limits
+  // this to xcom, but the rule belongs here too: without it, any future caller
+  // of this controller becomes a self-promotion path.
+  if (String(req.params.id) === String(req.user?._id)) {
+    return next(new AppError("You cannot change your own role", 403));
   }
   const updatedMember = await User.findByIdAndUpdate(req.params.id, { role }, { returnDocument: 'after' });
   if (!updatedMember) {

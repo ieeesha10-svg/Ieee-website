@@ -10,7 +10,7 @@ import { navItems, toolsItems } from "../data/DashboardNav";
 import DashNavSkeleton from "../components/skeletons/DashNavSkeleton";
 import { useMembersList } from "../hooks/dashboard/useMembersList";
 import { useExportUsers } from "../hooks/dashboard/useExportUsers";
-import { isAdminRole } from "../utils/roleAccess";
+import { canViewAdminPages, roleLabel } from "../utils/roleAccess";
 import api from "../utils/api";
 
 const pageMeta = [...navItems, ...toolsItems].reduce((acc, item) => {
@@ -42,7 +42,7 @@ const DashboardLayout = () => {
     loading: searchLoading,
     search: searchTerm,
     setSearch: setSearchTerm,
-  } = useMembersList({ pageSize: 5, enabled: isAdminRole(user?.role) });
+  } = useMembersList({ pageSize: 5, enabled: canViewAdminPages(user?.role) });
 
   useEffect(() => {
     if (pathname === "/dashboard/forms") {
@@ -193,7 +193,7 @@ const DashboardLayout = () => {
                 </p>
               </div>
               <div className="flex items-center gap-4">
-                {isAdminRole(user?.role) && (
+                {canViewAdminPages(user?.role) && (
                   <div className="hidden sm:block">{searchInput}</div>
                 )}
                 {rightSide}
@@ -214,8 +214,8 @@ const DashboardLayout = () => {
             <div className={`w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold text-white mb-4 ${selectedUser.avatarColor}`}>
               {selectedUser.initials}
             </div>
-            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full capitalize">
-              {selectedUser.role}
+            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
+              {roleLabel(selectedUser.role)}
             </span>
           </div>
         )}
@@ -235,7 +235,7 @@ const DashboardLayout = () => {
               )}
               <div className="flex items-center gap-3">
                 <Shield size={16} className="text-muted shrink-0" />
-                <span className="text-sm text-foreground capitalize">{selectedUser.role}</span>
+                <span className="text-sm text-foreground">{roleLabel(selectedUser.role)}</span>
 							</div>
               
               <div className="flex items-center gap-3">

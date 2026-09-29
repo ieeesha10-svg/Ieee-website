@@ -4,27 +4,51 @@ These files power static content and permission logic. Keep them in sync with th
 
 ## Roles & Permissions — `roles.js`
 
-The **single source of truth** for role definitions.
+The **single source of truth** for role definitions, mirroring
+`server/constants/roles.js` and the enum in `server/models/UserModel.js`. The two
+are separate deploys, so nothing enforces the match automatically — change all
+three together.
 
 ```js
-export const ALL_ROLES            = ["user", "member", "scanner", "board", "xcom"];
-export const ADMIN_ROLES          = ["board", "xcom"];                       // dashboard access
-export const SUPER_ADMIN_ROLES    = ["xcom"];                                // can create admins
-export const SCAN_ACCESS_ROLES    = ["member", "scanner", "board", "xcom"];  // QR scan page
+export const ALL_ROLES          = ["member", "scanner", "board", "xcom"];
+export const DASHBOARD_ROLES    = ["scanner", "board", "xcom"];  // can open /dashboard
+export const VIEW_ROLES         = ["board", "xcom"];              // can read dashboard data
+export const WRITE_ROLES        = ["xcom"];                       // can change data
+export const SCAN_ACCESS_ROLES  = ["scanner", "board", "xcom"];   // QR scan page
+export const ROLE_LABELS        = { member: "Member", scanner: "Scanner",
+                                     board: "Board", xcom: "Excom" };
+export const READ_ONLY_NOTICE   = "You have read-only access. Contact an Excom member to make changes.";
 ```
 
-| Role | Access |
-|------|--------|
-| `user` | Default student — own profile, password, register/login |
-| `member` | `user` + CRUD on members, scan page |
-| `scanner` | `member` + event check-ins (scan page) |
-| `board` | Dashboard, view/export users, manage members, limited delete. Cannot create admins |
-| `xcom` | Everything `board` can + create admin users |
+| Role | Stored as | Access |
+|------|-----------|--------|
+| `member` | `member` | Default for every self-registration. Public site, own profile, own password, own submissions. **No dashboard at all.** |
+| `scanner` | `scanner` | Event volunteer. Reaches `/dashboard/scan` and marks attendance. Sees no other dashboard data. |
+| `board` | `board` | Board member. Reads the whole dashboard and changes nothing on it. Can also do whatever a scanner can. |
+| `xcom` | `xcom` | Excom. Every dashboard write, plus creating users and changing other people's roles. Cannot change their own role. |
+
+There is no `user` role. It was removed: self-registration always produces
+`member`, and `server/scripts/migrate-role-user-to-member.js` converts the
+accounts that still carried it. `xcom` is the stored value everywhere; the UI
+labels it **Excom** via `ROLE_LABELS`.
+
+**Board is read-only, not merely cautious.** Every write route on the server is
+`authorize(...WRITE_ROLES)`, which is `xcom` alone, so a board member gets `403`
+even with a hand-crafted request. The UI hides the controls too, but that is
+courtesy — the server is the enforcement. Read-only pages show
+`<ReadOnlyBanner />` so the missing buttons are explained rather than looking
+broken.
 
 Related helpers in `src/utils/roleAccess.js`:
-- `isAdminRole(role)` — `ADMIN_ROLES.includes(role?.toLowerCase())`
-- `canUseScanPage(role)`
+- `canViewAdminPages(role)` — `VIEW_ROLES.includes(...)`: may open the dashboard at all
+- `canWrite(role)` — `WRITE_ROLES.includes(...)`: may change anything
+- `canViewDashboard(role)` — `DASHBOARD_ROLES.includes(...)`
+- `canUseScanPage(role)` — `SCAN_ACCESS_ROLES.includes(...)`
+- `roleLabel(role)` — the display name, so `xcom` reads as `Excom`
 - `dashboardHref(role)` — `/dashboard` or `/dashboard/scan`
+- `landingRoute(role)` — where login and email verification send you
+- `isAdminRole(role)` — **means "can write"** (xcom only). It is a write check, not
+  a dashboard-access check; prefer `canViewAdminPages` for navigation.
 
 ## Navigation — `DashboardNav.js`
 

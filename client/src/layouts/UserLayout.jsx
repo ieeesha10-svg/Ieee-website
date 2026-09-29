@@ -9,13 +9,29 @@ import { User, Lock, Users, Bookmark, WifiOff } from "lucide-react";
 
 const getYearText = (year) => (year ? formatAcademicYear(year) : "");
 
+// The API hands back dateOfBirth as a full ISO timestamp, but <input type="date">
+// only accepts YYYY-MM-DD and ignores anything else. Sliced off the raw string
+// rather than re-formatted through a Date on purpose: running a timestamp that
+// carries an offset through toISOString() would shift the displayed day for
+// anyone not on UTC.
+const toDateInputValue = (value) => {
+  if (!value) return "";
+  // Guarded separately because String(new Date()) yields "Sun Mar 14 2004...".
+  // An <input type="date"> silently rejects that, and the user would then be
+  // able to save the nonsense string straight back over their own DOB.
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? "" : value.toISOString().slice(0, 10);
+  }
+  return String(value).slice(0, 10);
+};
+
 const buildUserData = (user) => ({
   _id: user?._id || "",
   fullName: user?.name || "",
   email: user?.email || "",
   phone: user?.phone || "",
   role: user?.role || "member",
-  age: user?.age || "",
+  dateOfBirth: toDateInputValue(user?.dateOfBirth),
   university: user?.university || "",
   college: user?.college || "",
   committee: user?.committee || "",

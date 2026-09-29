@@ -8,6 +8,7 @@ const {
   importBackup,
 } = require('../controllers/backupController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { VIEW_ROLES, WRITE_ROLES } = require('../constants/roles');
 const { AppError } = require('../middleware/errorsMiddleware');
 
 const MAX_UPLOAD_MB = Number(process.env.MAX_BACKUP_SIZE_MB) || 200;
@@ -32,10 +33,10 @@ const acceptBackup = (req, res, next) => {
   });
 };
 
-adminRouter.use(protect, authorize('xcom', 'board'));
-
-adminRouter.get('/backup', downloadBackup);
-adminRouter.get('/backup/summary', getBackupSummary);
-adminRouter.post('/backup/import', acceptBackup, importBackup);
+// Downloading a backup reads the whole database, so board is allowed; restoring
+// one overwrites it, so only xcom may.
+adminRouter.get('/backup', protect, authorize(...VIEW_ROLES), downloadBackup);
+adminRouter.get('/backup/summary', protect, authorize(...VIEW_ROLES), getBackupSummary);
+adminRouter.post('/backup/import', protect, authorize(...WRITE_ROLES), acceptBackup, importBackup);
 
 module.exports = adminRouter;

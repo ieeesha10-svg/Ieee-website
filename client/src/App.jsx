@@ -8,7 +8,8 @@ import {
   Outlet,
 } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-import { ADMIN_ROLES, SCAN_ACCESS_ROLES } from "./data/roles";
+import { SCAN_ACCESS_ROLES } from "./data/roles";
+import { canViewAdminPages, canWrite } from "./utils/roleAccess";
 // Layouts
 import DashboardLayout from "./layouts/DashboardLayout";
 import UserLayout from "./layouts/UserLayout";
@@ -71,7 +72,11 @@ const DismissInitialLoader = () => {
   return null;
 };
 
-const ProtectedRoute = ({ requireAdmin = false, roles = null }) => {
+const ProtectedRoute = ({
+  requireAdmin = false,
+  requireWrite = false,
+  roles = null,
+}) => {
   const { user } = useAuth();
 
   if (!user) return <Navigate to="/login" replace />;
@@ -81,9 +86,19 @@ const ProtectedRoute = ({ requireAdmin = false, roles = null }) => {
     if (!allowed) return <Navigate to="/login" replace />;
   }
 
+  // "requireAdmin" now means "may open the dashboard pages", which is board as
+  // well as xcom. Board sees them all and writes nothing; the per-control checks
+  // handle that, and the server rejects the writes regardless.
   if (requireAdmin) {
-    const isAdmin = ADMIN_ROLES.includes(user.role?.toLowerCase());
-    if (!isAdmin) return <Navigate to="/login" replace />;
+    const allowed = canViewAdminPages(user.role);
+    if (!allowed) return <Navigate to="/login" replace />;
+  }
+
+  // Pages that are pure write UIs (the event and form builders). Board can read
+  // the lists but has nothing to do here, so send them back to the dashboard
+  // rather than showing a form whose submit would 403.
+  if (requireWrite) {
+    if (!canWrite(user.role)) return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;
@@ -169,10 +184,21 @@ function App() {
               element={<DashboardCommitteeRequests />}
             />
             <Route path="/dashboard/events" element={<DashboardEvents />} />
+            {/* Write-only pages, so xcom only. The mailer is here because its
+                whole job is to send, which POST /email is xcom-only for. */}
             <Route
-              path="/dashboard/events/create-event"
-              element={<CreateEvent />}
-            />
+              element={<ProtectedRoute requireWrite />}
+            >
+              <Route
+                path="/dashboard/events/create-event"
+                element={<CreateEvent />}
+              />
+              <Route
+                path="/dashboard/forms/create-form"
+                element={<CreateForm />}
+              />
+              <Route path="/dashboard/email" element={<BulkMailer />} />
+            </Route>
             <Route
               path="/dashboard/events/flagship"
               element={<FeaturedEvents />}
@@ -181,14 +207,9 @@ function App() {
             <Route path="/dashboard/email-logs" element={<EmailLogsPage />} />
             <Route path="/dashboard/forms" element={<DashboardForms />} />
             <Route
-              path="/dashboard/forms/create-form"
-              element={<CreateForm />}
-            />
-            <Route
               path="/dashboard/forms/submissions/:formId"
               element={<ShowFormSubmissions />}
             />
-            <Route path="/dashboard/email" element={<BulkMailer />} />
             <Route path="/dashboard/settings" element={<DashboardSettings />} />
           </Route>
         </Route>
