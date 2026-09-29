@@ -57,7 +57,8 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 
 | Hook | Endpoint(s) | Returns | Notes |
 |------|-------------|---------|-------|
-| `useReviewCommitteeRequests` | `GET /committee-requests?status=pending&page=&limit=`, `PUT /committee-requests/:id/status` | `{ requests, loading, page, totalPages, totalCount, refetch, processRequest, processingId }` | Paginated pending requests; approve/reject refetches the list |
+| `useReviewCommitteeRequests` | `GET /committee-requests?status=&page=&limit=`, `PUT /committee-requests/:id/status` | `{ requests, loading, page, setPage, totalPages, totalCount, refetch, processRequest, processingId, isDecided }` | One bucket of requests, chosen with `{ status: "pending" \| "approved" \| "rejected" }`; each row carries a `reviewer` (`null` until decided) and `reviewedAt`. `approve`/`reject` refetches. Backs the Pending/Approved/Rejected tabs on `/dashboard/committee-requests` |
+| `usePendingCommitteeRequestCount` | `GET /committee-requests?status=pending&page=1&limit=1` | `{ count, refresh }` | Just the pending total (rows discarded, only `pagination.totalItems` read) for the sidebar's glowing dot. Refetches on mount and on route change, on the `PENDING_COUNT_EVENT` that `useReviewCommitteeRequests` fires after a decision, and every 60s to catch another admin's decision. Fails silently — a stale dot must never blank the nav |
 | `useSubmitCommitteeRequest` | `POST /committee-requests` | `{ submitting, submitRequest(committeePosition) }` | Submits a committee-change request for the current user; board/xcom users are auto-accepted server-side |
 | `useChangeMemberCommittee` | `PUT /committee-requests/:memberId/position` | `{ updatingCommittee, updateCommittee(id, name, new, prev, setCommittees) }` | Directly changes a member's committee; optimistic with rollback |
 

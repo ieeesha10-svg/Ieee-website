@@ -9,6 +9,7 @@ import {
   Mail,
   Settings,
   ScanQrCode,
+  Inbox,
   ChevronRight,
   LogOut,
   Menu,
@@ -20,6 +21,7 @@ import {
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { useLogout } from "../../hooks/auth/useLogout";
+import { usePendingCommitteeRequestCount } from "../../hooks/dashboard/usePendingCommitteeRequestCount";
 import { navItems, toolsItems } from "../../data/DashboardNav";
 import ConfirmModal from "../ui/ConfirmModal";
 import { isAdminRole } from "../../utils/roleAccess";
@@ -32,6 +34,7 @@ const ICON_MAP = {
   Mail,
   Settings,
   ScanQrCode,
+  Inbox,
 };
 
 const AdminSidebar = () => {
@@ -48,6 +51,10 @@ const AdminSidebar = () => {
   const visibleToolsItems = isAdmin
     ? toolsItems
     : toolsItems.filter((item) => item.to === "/dashboard/scan");
+
+  // Every role that can see this sidebar (board, xcom) is also allowed to read
+  // the pending list, so the count is always available here.
+  const { count: pendingCount } = usePendingCommitteeRequestCount();
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -67,6 +74,12 @@ const AdminSidebar = () => {
           <nav className="flex flex-col gap-0.5">
             {visibleNavItems.map((item) => {
               const Icon = ICON_MAP[item.icon];
+              // Only the committee tab is notified today, and only while there
+              // is something actually waiting on a decision.
+              const showDot = item.pendingDot && pendingCount > 0;
+              const dotTitle = `${pendingCount} pending committee ${
+                pendingCount === 1 ? "request" : "requests"
+              }`;
               return (
                 <NavLink
                   key={item.to}
@@ -85,16 +98,37 @@ const AdminSidebar = () => {
                     const active = item.end
                       ? isActive || location.pathname === item.to + "/"
                       : isActive;
-                    return (
-                      <>
-                        {Icon && <Icon size={16} />}
-                        {!collapsed && item.label}
-                        {!collapsed && active && (
-                          <ChevronRight
-                            size={14}
-                            className="ml-auto shrink-0"
-                          />
-                        )}
+                      return (
+                        <>
+                          {/* The icon carries the dot on its corner, absolutely
+                              positioned. Keeping it out of the flex flow is what
+                              stops it shifting the icon off-centre in the
+                              collapsed rail or stealing room from the chevron. */}
+                          <span className="relative inline-flex shrink-0">
+                            {Icon && <Icon size={16} />}
+                            {showDot && (
+                              <span
+                                title={collapsed ? dotTitle : undefined}
+                                aria-label={dotTitle}
+                                role="status"
+                                className="absolute -top-0.5 -right-0.5 flex h-2 w-2"
+                              >
+                                {/* The expanding halo is the glow. motion-safe
+                                    keeps it for everyone except users who have
+                                    asked the OS to reduce motion, who get the
+                                    solid dot on its own. */}
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-orange-400/70 motion-safe:animate-ping" />
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-orange-500 ring-1 ring-orange-300/50" />
+                              </span>
+                            )}
+                          </span>
+                          {!collapsed && item.label}
+                          {!collapsed && active && (
+                            <ChevronRight
+                              size={14}
+                              className="ml-auto shrink-0"
+                            />
+                          )}
                       </>
                     );
                   }}
@@ -212,9 +246,9 @@ const AdminSidebar = () => {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-sm font-semibold leading-tight">
-              El-Sherouk Student Branch
+              El-Sherouk SB
             </p>
-            <p className="text-muted text-xs leading-tight mt-2">Admin Panel</p>
+            <p className="text-muted text-xs leading-tight">Admin Panel</p>
           </div>
           <button
             onClick={() => setMobileOpen(false)}
@@ -244,7 +278,7 @@ const AdminSidebar = () => {
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-semibold leading-tight">
-                El-Sherouk Student Branch
+                El-Sherouk SB
               </p>
               <p className="text-[#5A7186] text-xs leading-tight">Admin Panel</p>
             </div>

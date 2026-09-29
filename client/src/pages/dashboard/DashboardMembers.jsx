@@ -1,12 +1,11 @@
 import React, { useState, useCallback, Fragment } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Download, Eye, Inbox, Loader2, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Download, Loader2, Trash2 } from 'lucide-react';
 // Hooks & data
 import { useAuth } from '../../context/AuthContext';
 import { useMembersList } from '../../hooks/dashboard/useMembersList';
 import { useSearchMembers } from '../../hooks/dashboard/useSearchMembers';
 import { useExportUsers } from '../../hooks/dashboard/useExportUsers';
 import { useUpdateRole } from '../../hooks/dashboard/useUpdateRole';
-import { useReviewCommitteeRequests } from '../../hooks/dashboard/useReviewCommitteeRequests';
 import { useChangeMemberCommittee } from '../../hooks/dashboard/useChangeMemberCommittee';
 import { useDeleteMember } from '../../hooks/auth/useDeleteMember';
 import { committees } from '../../data/committeesData';
@@ -15,8 +14,6 @@ import Button from '../../components/ui/Button';
 import AdvancedSearch from '../../components/dashboard/AdvancedSearch';
 import MemberFilters from '../../components/dashboard/MemberFilters';
 import DeleteUserModal from '../../components/dashboard/DeleteUserModal';
-import Modal from '../../components/ui/Modal';
-import Pagination from '../../components/ui/Pagination';
 
 export default function DashboardMembers() {
 	const { user } = useAuth();
@@ -47,7 +44,6 @@ export default function DashboardMembers() {
   const [memberRoles, setMemberRoles] = useState({});
   const [expandedId, setExpandedId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [selectedRequest, setSelectedRequest] = useState(null);
 	const [memberCommittees, setMemberCommittees] = useState({});
   
   const { keyword, setKeyword, results, setResults, isLoading: searchLoading } = useSearchMembers();
@@ -60,17 +56,7 @@ export default function DashboardMembers() {
 	const { updatingRole, updateRole } = useUpdateRole();
   
 	const { updatingCommittee, updateCommittee } = useChangeMemberCommittee();
-  
-  const {
-    requests,
-    loading: requestsLoading,
-    totalCount: pendingCount,
-    page: requestPage,
-    setPage: setRequestPage,
-    totalPages: requestTotalPages,
-    processRequest,
-    processingId,
-  } = useReviewCommitteeRequests();
+
 	const { deleteMember, deleting } = useDeleteMember();
   
   const { exporting, exportUsers } = useExportUsers();
@@ -467,91 +453,7 @@ export default function DashboardMembers() {
         )}
 			</div>
 
-			<div className="bg-card-alt rounded-xl shadow-sm p-4 mt-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Inbox size={18} className="text-muted" />
-          <h2 className="text-base font-semibold text-foreground">Committee Requests</h2>
-          {pendingCount > 0 && (
-            <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-              {pendingCount} pending
-            </span>
-          )}
-        </div>
-
-        {requestsLoading ? (
-          <div className="flex items-center justify-center gap-2 text-sm text-muted py-8">
-            <Loader2 size={18} className="animate-spin" />
-            Loading requests...
-          </div>
-        ) : requests.length === 0 ? (
-          <p className="text-sm text-muted py-8 text-center">No pending requests</p>
-        ) : (
-          <ul>
-            {requests.map((request) => (
-              <li
-                key={request.id}
-                className="flex flex-col md:flex-row md:items-center gap-3 py-3 border-t border-border/60 first:border-t-0"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {request.user.name}
-                  </p>
-                  <p className="text-xs text-muted truncate">{request.user.email}</p>
-                </div>
-                <span className="inline-flex w-fit items-center text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-                  {request.committee}
-                </span>
-                <span className="text-xs text-muted w-fit md:w-28">
-                  {new Date(request.createdAt).toLocaleDateString()}
-                </span>
-                <div className="flex items-center justify-center md:justify-start gap-2">
-                  <button
-                    onClick={() => setSelectedRequest(request)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-foreground border border-border rounded-lg hover:bg-muted/5 transition-colors"
-                  >
-                    <Eye size={16} />
-                    View
-                  </button>
-                  <Button
-                    onClick={() => {
-                      setSelectedRequest(null);
-                      processRequest(request.id, "approved");
-                    }}
-                    disabled={processingId === request.id}
-                    aria-label="Approve request"
-                    className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setSelectedRequest(null);
-                      processRequest(request.id, "rejected");
-                    }}
-                    disabled={processingId === request.id}
-                    aria-label="Reject request"
-                    className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Reject
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {!requestsLoading && requests.length > 0 && (
-          <div>
-            <Pagination
-              page={requestPage}
-              totalPages={requestTotalPages}
-              onPageChange={setRequestPage}
-            />
-          </div>
-        )}
-			</div>
-      
-			<DeleteUserModal
+      <DeleteUserModal
         key={deleteTarget?.id ?? "closed"}
         open={!!deleteTarget}
         user={deleteTarget}
@@ -559,65 +461,6 @@ export default function DashboardMembers() {
         onConfirm={handleDeleteConfirm}
         loading={deleting}
       />
-
-			<Modal
-        open={!!selectedRequest}
-        onClose={() => setSelectedRequest(null)}
-        title={selectedRequest ? `${selectedRequest.committee} Request` : "Committee Request"}
-      >
-        {selectedRequest && (
-          <div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { label: "Name", value: selectedRequest.user.name },
-                { label: "Email", value: selectedRequest.user.email },
-                { label: "University", value: selectedRequest.user.university },
-                { label: "College", value: selectedRequest.user.college },
-                { label: "Requested Committee", value: selectedRequest.committee },
-                {
-                  label: "Requested On",
-                  value: new Date(selectedRequest.createdAt).toLocaleDateString(),
-                },
-              ].map((item) => (
-                <div key={item.label}>
-                  <p className="text-[10px] font-semibold text-muted uppercase tracking-wide mb-1">
-                    {item.label}
-                  </p>
-                  {item.label === "Requested Committee" ? (
-                    <p className="font-bold text-primary">{item.value || "—"}</p>
-                  ) : (
-                    <p className="text-sm text-foreground">{item.value || "—"}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-gray-100 dark:border-[#222936]">
-              <Button
-                onClick={() => {
-                  setSelectedRequest(null);
-                  processRequest(selectedRequest.id, "approved");
-                }}
-                disabled={processingId === selectedRequest.id}
-                aria-label="Approve request"
-                className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Approve
-              </Button>
-              <Button
-                onClick={() => {
-                  setSelectedRequest(null);
-                  processRequest(selectedRequest.id, "rejected");
-                }}
-                disabled={processingId === selectedRequest.id}
-                aria-label="Reject request"
-                className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Reject
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
-		</div>
+    </div>
   );
 }
