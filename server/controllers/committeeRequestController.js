@@ -87,22 +87,22 @@ const updateRequestStatus = catchAsync(async (req, res) => {
   if (status === 'approved') {
     user.committee = request.committee_position;
     await user.save();
-    await request.deleteOne();
-    sendCommitteeDecisionEmail({
-      email: user.email,
-      userName: user.name,
-      committeePosition: request.committee_position,
-      accepted: true
-    });
-  } else if (status === 'rejected') {
-    await request.deleteOne();
-    sendCommitteeDecisionEmail({
-      email: user.email,
-      userName: user.name,
-      committeePosition: request.committee_position,
-      accepted: false
-    });
   }
+
+  // The request is kept as history rather than deleted, so the dashboard can
+  // show who decided it and when. The `request_status !== 'pending'` guard
+  // above is what stops a request being decided twice.
+  request.request_status = status;
+  request.reviewedBy = req.user._id;
+  request.reviewedAt = new Date();
+  await request.save();
+
+  sendCommitteeDecisionEmail({
+    email: user.email,
+    userName: user.name,
+    committeePosition: request.committee_position,
+    accepted: status === 'approved'
+  });
 
   res.json({
     success: true,
@@ -135,10 +135,20 @@ const getAllRequests = catchAsync(async (req, res) => {
   const limitNum = parseInt(limit, 10);
   const skip = (pageNum - 1) * limitNum;
 
+  // A decided request is ordered by when it was decided, so the Approved and
+  // Rejected tabs read as a decision log. Anything else falls back to the date
+  // the request was made.
+  const sort = query.request_status === 'pending'
+    ? { createdAt: -1 }
+    : query.request_status
+      ? { reviewedAt: -1, createdAt: -1 }
+      : { createdAt: -1 };
+
   const [requests, total] = await Promise.all([
     PendingRequest.find(query)
       .populate('userId', 'name email committee position yearOfStudy university college organization roleInOrganization yearsOfExperience')
-      .sort({ createdAt: -1 })
+      .populate('reviewedBy', 'name email role')
+      .sort(sort)
       .skip(skip)
       .limit(limitNum),
     PendingRequest.countDocuments(query)

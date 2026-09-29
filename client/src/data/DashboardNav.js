@@ -7,12 +7,22 @@ export const navItems = [
     title: "Dashboard",
     sub: "IEEE Student Branch — Admin Overview",
   },
-  {
-    to: "/dashboard/users",
-    label: "Members",
-    icon: "Users",
-    title: "Members",
-  },
+    {
+      to: "/dashboard/users",
+      label: "Members",
+      icon: "Users",
+      title: "Members",
+    },
+    {
+      to: "/dashboard/committee-requests",
+      label: "Committee Requests",
+      icon: "Inbox",
+      // Drives the glowing notification dot in the sidebar while requests are
+      // waiting to be decided.
+      pendingDot: true,
+      title: "Committee Requests",
+      sub: "Approve or reject committee applications, and see who decided each one",
+    },
   {
     to: "/dashboard/events",
     label: "Events",

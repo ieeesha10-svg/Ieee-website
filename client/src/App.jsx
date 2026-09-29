@@ -39,6 +39,7 @@ const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage"));
 // Dashboard Pages
 const DashboardHome = lazy(() => import("./pages/dashboard/DashboardHome"));
 const DashboardMembers = lazy(() => import("./pages/dashboard/DashboardMembers"));
+const DashboardCommitteeRequests = lazy(() => import("./pages/dashboard/DashboardCommitteeRequests"));
 const DashboardEvents = lazy(() => import("./pages/dashboard/events/DashboardEvents"));
 const CreateEvent = lazy(() => import("./pages/dashboard/events/CreateEvent"));
 const FeaturedEvents = lazy(() => import("./pages/dashboard/events/FeaturedEvents"));
@@ -163,6 +164,10 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<DashboardHome />} />
             <Route path="/dashboard/users" element={<DashboardMembers />} />
+            <Route
+              path="/dashboard/committee-requests"
+              element={<DashboardCommitteeRequests />}
+            />
             <Route path="/dashboard/events" element={<DashboardEvents />} />
             <Route
               path="/dashboard/events/create-event"

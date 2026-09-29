@@ -63,7 +63,8 @@ Wrapped in `DashboardLayout` (admin sidebar + topbar with member search). Guarde
 | Route | Component | Status | Notes |
 |-------|-----------|--------|-------|
 | `/dashboard` | `dashboard/DashboardHome` | ✅ | Stats + charts via `useDashboard` |
-| `/dashboard/users` | `dashboard/DashboardMembers` | ✅ | Members list, filters, role management (`useMembersList`, `useUpdateRole`, `useDeleteMember`); committee requests review + direct committee change (`useReviewCommitteeRequests`, `useChangeMemberCommittee`) |
+| `/dashboard/users` | `dashboard/DashboardMembers` | ✅ | Members list, filters, role management (`useMembersList`, `useUpdateRole`, `useDeleteMember`); direct committee change (`useChangeMemberCommittee`) |
+| `/dashboard/committee-requests` | `dashboard/DashboardCommitteeRequests` | ✅ | Committee applications as three tabs — Pending (approve/reject), Approved and Rejected, each row naming the admin who decided it (`useReviewCommitteeRequests`) |
 | `/dashboard/events` | `dashboard/events/DashboardEvents` | ✅ | Event table + view/edit modals |
 | `/dashboard/events/create-event` | `dashboard/events/CreateEvent` | ✅ | Create event + registration form (`useCreateEvent`) |
 | `/dashboard/events/flagship` | `dashboard/events/FeaturedEvents` | ✅ | Manage featured events (`useFeaturedEvents`, add/remove/swap) |

@@ -329,11 +329,21 @@ Every request → protect middleware → jwt.verify → req.user loaded
 **Indexes:** compound **unique** `{ formId: 1, userId: 1 }` → hard guarantee against duplicate submissions.
 
 ### `pendingrequests` (Committee Requests)
+A member's application to join a committee. A request is created `pending` and is
+**never deleted** — approving or rejecting it stamps the status and the reviewer,
+so the dashboard can keep a permanent log of who decided what.
+
 | Field | Type | Notes |
 |-------|------|-------|
 | `userId` | ObjectId → User | required |
 | `committee_position` | String | requested position |
 | `request_status` | String | enum: `pending`, `approved`, `rejected` |
+| `reviewedBy` | ObjectId → User | set on a decision, `null` while pending. The admin who approved or rejected it |
+| `reviewedAt` | Date | set on a decision, `null` while pending |
+
+**Indexes:** partial **unique** `{ userId: 1, request_status: 1 }` where
+`request_status = "pending"` → one request awaiting a decision per user, without
+stopping them from having decided ones in their history.
 
 ### `seasons`
 A season is one committee: an Excom and a Board.
@@ -1941,6 +1951,14 @@ Workflow: a user requests a committee position → `PendingRequest` created → 
 - **Auth:** Yes — roles: `xcom`, `board`
 - **Query Params:** `status` (`pending|approved|rejected`), `committee_position`, `page`, `limit`
 
+Both `userId` and `reviewedBy` are populated. `reviewedBy` is `null` while a
+request is pending, and stays populated afterwards so the Approved and Rejected
+tabs can name who decided it.
+
+**Ordering:** `status=pending` sorts by `createdAt`; `status=approved` or
+`status=rejected` sorts by `reviewedAt`, so each decided tab reads newest
+decision first.
+
 **Success Response — `200 OK`**
 
 ```json
@@ -1957,7 +1975,9 @@ Workflow: a user requests a committee position → `PendingRequest` created → 
         "email": "ahmed@example.com",
         "position": "student",
         "university": "Helwan University"
-      }
+      },
+      "reviewedBy": null,
+      "reviewedAt": null
     }
   ],
   "pagination": { "totalItems": 9, "totalPages": 1, "currentPage": 1, "itemsPerPage": 10 }
@@ -1968,7 +1988,7 @@ Workflow: a user requests a committee position → `PendingRequest` created → 
 
 `PUT /api/committee-requests/:requestId/status`
 
-Processes a pending request. Approval assigns the position and emails acceptance; rejection emails a decline. Either way the request document is removed after processing.
+Processes a pending request. Approval assigns the position and emails acceptance; rejection emails a decline. Either way the request document is **kept** — the status, `reviewedBy` and `reviewedAt` are stamped and it moves into that decision log. A request that has already been decided is refused, so a second decision cannot overwrite the first.
 
 - **Auth:** Yes — roles: `xcom`, `board`
 - **Body:** `application/json` — `{ "status": "approved" | "rejected" }` (required)
