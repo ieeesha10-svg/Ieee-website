@@ -15,17 +15,49 @@ import { isIdentityField } from "../../../utils/formIdentity";
 
 const EMAIL_BODY_MAX = 5000;
 
-// The db-submissions[...] values that are not tied to one of the form's own
-// fields, so there is nothing to derive them from a chip list. Mirrors
-// RECOMMENDED_SUBMISSION_FIELDS in server/utils/sendEmail.js.
-const RECOMMENDED_SUBMISSION_TOKENS = [
-  "name",
-  "email",
-  "formTitle",
-  "formType",
-  "ticketCode",
-  "submittedAt",
+// The placeholders worth putting in front of an author.
+//
+// `label` is only what the chip shows. Clicking still inserts `token`, the full
+// db-... form, because that is what server/utils/sendEmail.js resolves. The
+// short form is a display convention, not a second syntax - so an author who
+// types one by hand, or pastes an old message, still behaves the same.
+//
+// Curated rather than exhaustive. db-user allows fifteen fields and
+// db-submissions seven; an author picking a chip wants the handful they will
+// actually use, and the search box is there for the rest. The account fields
+// here are the ones a submission email normally greets someone with.
+const QUICK_TOKENS = [
+  // The submitter's own account. Blank for a guest, by design.
+  { label: "+name", token: "db-user[name]", hint: "The member's full name" },
+  { label: "+email", token: "db-user[email]", hint: "The member's email" },
+  { label: "+phone", token: "db-user[phone]", hint: "The member's phone" },
+  { label: "+university", token: "db-user[university]", hint: "Their university" },
+  { label: "+college", token: "db-user[college]", hint: "Their college" },
+  { label: "+year", token: "db-user[yearOfStudy]", hint: "Their year of study" },
+  { label: "+committee", token: "db-user[committee]", hint: "The committee they applied to" },
+  { label: "+interests", token: "db-user[interests]", hint: "Their interests, comma separated" },
+
+  // Values on the submission itself. These resolve for guests too, because the
+  // answers exist whether or not the submitter has an account.
+  { label: "+formTitle", token: "db-submissions[formTitle]", hint: "This form's title" },
+  { label: "+formType", token: "db-submissions[formType]", hint: "This form's type" },
+  { label: "+ticketCode", token: "db-submissions[ticketCode]", hint: "The submitter's ticket code" },
+  { label: "+submittedAt", token: "db-submissions[submittedAt]", hint: "When they submitted" },
+
+  // Attendance only: the server drops these on a form with no QR rather than
+  // sending a broken image tag.
+  { label: "+qrCode", token: "db-submissions[qrCode]", hint: "The ticket QR image, as an <img> tag", attendanceOnly: true },
+  { label: "+qrUrl", token: "db-submissions[qrUrl]", hint: "The raw QR image address", attendanceOnly: true },
 ];
+
+// One search over both the curated chips and this form's own answer fields.
+// Matches the short label, the full token and the hint, so "year" finds +year
+// and "Year of Study" finds the form field of that name.
+const tokenMatches = (query, label, token, hint) => {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return [label, token, hint || ""].some((s) => s.toLowerCase().includes(q));
+};
 
 function FieldRow({ field, index, updateFieldAt, removeFieldAt, dragIndex, setDragIndex, moveField, error }) {
   const hasOptions = field.type === "Dropdown" || field.type === "Checkbox";
@@ -207,6 +239,8 @@ export default function CreateForm() {
   // author agrees. Null means the popup is closed.
   const [pendingTemplate, setPendingTemplate] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  // Filters the placeholder chips. Empty means "show the curated set".
+  const [tokenQuery, setTokenQuery] = useState("");
 
   // Insert a short snippet (a token) at the caret, or at the end when the editor
   // was never focused. This is what the clickable token chips call.
@@ -706,9 +740,7 @@ export default function CreateForm() {
                 onChange={(e) => updateField("submissionEmailBody", e.target.value)}
                 rows={7}
                 maxLength={5000}
-                placeholder={
-                  "<p>Thanks for applying to db-submissions[formTitle]. We'll be in touch soon.</p>"
-                }
+                placeholder={`<p>Thanks for applying to db-submissions[formTitle]. We'll be in touch soon.</p>`}
                 className={`w-full px-3 py-2.5 rounded-lg border bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:ring-1 transition-colors resize-y font-mono text-[13px] leading-relaxed ${
                   errors?.submissionEmailBody
                     ? "border-red-400 dark:border-red-700 focus:border-red-500 focus:ring-red-500/30"
@@ -724,90 +756,95 @@ export default function CreateForm() {
                   Click to insert into the message
                 </p>
 
-                <p className="text-[11px] text-muted leading-relaxed mb-1.5">
-                  <span className="font-semibold text-foreground">db-submissions[Field]</span>{" "}
-                  puts a value from this submission in the email. A blank value is
-                  left as written so you can see it did not resolve.
+                <p className="text-[11px] text-muted leading-relaxed mb-2.5">
+                  A chip inserts its placeholder where your cursor is. Fields marked
+                  <span className="font-semibold text-foreground"> from the account</span>{" "}
+                  come from a registered member&apos;s profile and stay as written for
+                  guests. Anything that does not resolve is sent exactly as you
+                  typed it, so a placeholder you can see is one that needs fixing.
                 </p>
-                <div className="flex flex-wrap gap-1 mb-2.5">
-                  {fieldsList.map((f) => (
-                    <button
-                      key={f.id || f.label}
-                      type="button"
-                      onClick={() => insertAtCursor(`db-submissions[${f.label}]`)}
-                      title={`Insert db-submissions[${f.label}]`}
-                      className="px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors font-mono text-[11px]"
-                    >
-                      db-submissions[{f.label}]
-                    </button>
-                  ))}
-                </div>
 
-                <p className="text-[11px] text-muted leading-relaxed mb-1.5">
-                  <span className="font-semibold text-foreground">db-user[field]</span>{" "}
-                  puts a field from the member&apos;s own account in the email. If the
-                  submitter is not registered it is left as written, exactly as you
-                  typed it.
-                </p>
-                <div className="flex flex-wrap gap-1 mb-2.5">
-                  {[
-                    "name", "email", "phone", "university", "college",
-                    "yearOfStudy", "committee", "interests", "role",
-                  ].map((k) => (
-                    <button
-                      key={k}
-                      type="button"
-                      onClick={() => insertAtCursor(`db-user[${k}]`)}
-                      title={`Insert db-user[${k}]`}
-                      className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors font-mono text-[11px]"
-                    >
-                      db-user[{k}]
-                    </button>
-                  ))}
-                </div>
+                {/* The curated set, plus whatever this form asked. Search is
+                    applied to both, so one box covers everything. */}
+                {(() => {
+                  const isAttendance = formData.type === "attendance";
+                  const curated = QUICK_TOKENS.filter(
+                    (t) => (isAttendance || !t.attendanceOnly) &&
+                      tokenMatches(tokenQuery, t.label, t.token, t.hint)
+                  );
+                  const ownFields = fieldsList.filter((f) =>
+                    tokenMatches(
+                      tokenQuery,
+                      `+${f.label}`,
+                      `db-submissions[${f.label}]`,
+                      "An answer from this form"
+                    )
+                  );
+                  const nothing =
+                    curated.length === 0 && ownFields.length === 0;
 
-                <p className="text-[11px] text-muted leading-relaxed mb-1.5">
-                  Recommended submission values:
-                </p>
-                <div className="flex flex-wrap gap-1 mb-2.5">
-                  {RECOMMENDED_SUBMISSION_TOKENS.map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => insertAtCursor(`db-submissions[${t}]`)}
-                      title={`Insert db-submissions[${t}]`}
-                      className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors font-mono text-[11px]"
-                    >
-                      db-submissions[{t}]
-                    </button>
-                  ))}
-                  {formData.type === "attendance" && (
+                  return (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => insertAtCursor("db-submissions[qrCode]")}
-                        title="The ticket QR image, only for attendance forms"
-                        className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors font-mono text-[11px]"
-                      >
-                        db-submissions[qrCode]
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => insertAtCursor("db-submissions[qrUrl]")}
-                        title="The raw QR image address, only for attendance forms"
-                        className="px-1 py-0.5 rounded bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors font-mono text-[11px]"
-                      >
-                        db-submissions[qrUrl]
-                      </button>
-                    </>
-                  )}
-                </div>
+                      <div className="flex flex-wrap gap-1">
+                        {curated.map((t) => (
+                          <button
+                            key={t.token}
+                            type="button"
+                            onClick={() => insertAtCursor(t.token)}
+                            title={`${t.hint} — inserts ${t.token}`}
+                            className="px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors font-mono text-[11px]"
+                          >
+                            {t.label}
+                          </button>
+                        ))}
 
-                <p className="text-[11px] text-muted leading-relaxed">
-                  HTML is allowed. Anything that does not resolve is sent exactly as
-                  you typed it, so a placeholder you can see is a placeholder that
-                  needs fixing.
-                </p>
+                        {ownFields.map((f) => (
+                          <button
+                            key={f.id || f.label}
+                            type="button"
+                            onClick={() => insertAtCursor(`db-submissions[${f.label}]`)}
+                            title={`An answer from this form — inserts db-submissions[${f.label}]`}
+                            className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors font-mono text-[11px]"
+                          >
+                            +{f.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {nothing && (
+                        <p className="text-[11px] text-muted py-1.5">
+                          Nothing matches “{tokenQuery}”.
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-1.5 mt-2.5">
+                        <input
+                          type="text"
+                          value={tokenQuery}
+                          onChange={(e) => setTokenQuery(e.target.value)}
+                          placeholder="+field name"
+                          aria-label="Search placeholders by name"
+                          className="flex-1 px-2 py-1.5 rounded border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-[12px] font-mono text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+                        />
+                        {tokenQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setTokenQuery("")}
+                            className="text-[11px] text-muted hover:text-foreground transition-colors shrink-0"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] text-muted/70 mt-1.5">
+                        {ownFields.length === 0
+                          ? "Fields from this form appear here once you add them."
+                          : `+green chips are answers from this form.`}
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
 
               <p className="mt-1 text-[11px] text-muted/70 text-right">

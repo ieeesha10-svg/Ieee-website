@@ -2024,12 +2024,12 @@ what the home page shows; every other season is an archive, reachable from the
 season labels at the bottom of `/crew`. `PUT /api/seasons/:id/home` is the only
 thing that sets `isHome`, and it clears the others in the same call.
 
-> **One-time migration.** `crew.season` and `crew.section` are required, so
-> documents written before seasons existed would fail validation and be invisible
-> to every page. `server/scripts/backfillSeasons.js` creates the starting season,
-> files any legacy members under it, and seeds the committee that the home page
-> previously rendered from the hardcoded `client/src/data/chairpersons.js`. It is
-> idempotent and takes `--dry` to report without writing.
+> **First season.** `crew.season` and `crew.section` are required, so a crew
+> document cannot be saved without them and no page can list it. There is no
+> seed script: the first season is created by an admin at `/dashboard/crew`,
+> which is also where its Excom and Board are entered. Until an admin publishes
+> a season with `PUT /api/seasons/:id/home`, the home page and the About page
+> render no leadership section by design.
 
 ### 3.8.1 List Seasons (Public)
 

@@ -97,7 +97,7 @@ Used with `utils/formatAcademicYear.js` (`formatAcademicYear(year)` → "3rd Yea
 
 > Note: `devTeamData.js` uses bundled image imports from `src/assets/images/`.
 >
-> There is no longer a `chairpersons.js`. The home page Excom, the About page's Executive Committee section, `/crew` and `/crew/season/:seasonId` are **all** driven by the database (`GET /seasons/home` and `GET /seasons/:id`). Committee portraits live in `public/images/chairpersons/` and are referenced by URL, so the same files serve Vite's dev server and a static production build, and the database can hold the path. Edit committee members under `/dashboard/crew` — that writes the Excom and Board of a season and publishes one of them to the home page.
+> There is no longer a `chairpersons.js`. The home page Excom, the About page's Executive Committee section, `/crew` and `/crew/season/:seasonId` are **all** driven by the database (`GET /seasons/home` and `GET /seasons/:id`). Committee portraits are hosted on Cloudinary and the database holds the absolute URL, so no portrait is committed to the repo and the same record serves Vite's dev server and a static production build. Edit committee members under `/dashboard/crew` — that writes the Excom and Board of a season and publishes one of them to the home page. `src/assets/images/chairpersons/` now holds only the LinkedIn, Facebook and Collabratec icons, which remain bundled imports.
 
 ## Sponsors — `sponsors.js`
 

@@ -9,8 +9,8 @@ import { useSeason } from "../../hooks/useSeasons";
 export default function Team() {
   // The season published from the dashboard. Reading it from the API rather
   // than a hardcoded list is what lets a new committee be swapped in without a
-  // deploy; `server/scripts/backfillSeasons.js` seeded this season from the
-  // list this section used to import.
+  // deploy; it also means the home page renders nothing until an admin
+  // publishes a season from the dashboard.
   const { excom, isLoading, isEmpty } = useSeason();
 
   // The counselor gets the full-width card above the grid, exactly as the

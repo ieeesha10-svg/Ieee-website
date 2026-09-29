@@ -1,14 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   Save,
-  Mail,
   Loader2,
   CheckCircle2,
   AlertTriangle,
-  Eye,
-  EyeOff,
-  ChevronDown,
   Trash2,
   Plus,
   Search,
@@ -24,21 +20,16 @@ import {
   UserPlus
 } from "lucide-react";
 // Hooks & Data
-import { useUserUpdate } from "../../hooks/dashboard/useUserUpdate";
 import { useUpdateRole } from "../../hooks/dashboard/useUpdateRole";
 import { useMembersList } from "../../hooks/dashboard/useMembersList";
 import { useGetAdmins } from "../../hooks/dashboard/useGetAdmins";
-import { useSubmitCommitteeRequest } from "../../hooks/dashboard/useSubmitCommitteeRequest";
 import { useBackup } from "../../hooks/dashboard/useBackup";
 import { useSiteSettings } from "../../hooks/dashboard/useSiteSettings";
 import { useEmailQuota } from "../../hooks/dashboard/useEmailQuota";
 import { ADMIN_ROLES } from '../../data/roles'
-import { ORDINAL_OPTIONS } from '../../data/ordinalMap'
-import { committees } from '../../data/committeesData'
 // Components
 import DeleteModal from "../../components/ui/DeleteModal";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import Skeleton from "../../components/skeletons/DashSettingsSkeleton";
 import ToggleSwitch from "../../components/ui/ToggleSwitch";
 import api from "../../utils/api";
 
@@ -52,51 +43,8 @@ function SectionCard({ children, className = "" }) {
   );
 }
 
-function Field({ label, disabled, ...props }) {
-  return (
-    <div>
-      <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
-        {label}
-      </label>
-      <input
-        disabled={disabled}
-        {...props}
-        className={`w-full px-3 py-2.5 rounded-lg border text-sm transition-colors ${
-          disabled
-            ? "border-gray-200 dark:border-[#222936] bg-gray-100 dark:bg-gray-800/60 text-muted cursor-not-allowed"
-            : "border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-        }`}
-      />
-    </div>
-  );
-}
-
-function SelectField({ label, value, onChange, options, disabled }) {
-  return (
-    <div>
-      <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
-        {label}
-      </label>
-      <div className="relative">
-        <select
-          value={value}
-          onChange={onChange}
-          disabled={disabled}
-          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors appearance-none pr-9 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-      </div>
-    </div>
-  );
-}
-
 function MessageBanner({ message }) {
+
   if (!message.text) return null;
   return (
     <div
@@ -133,9 +81,8 @@ function RoleSelect({ value, onChange }) {
   );
 }
 
-const COMMITTEE_OPTIONS = committees.map((c) => ({ label: c.label, value: c.label }));
+  const BACKUP_TYPE_LABELS = {
 
-const BACKUP_TYPE_LABELS = {
   download: { label: "Downloaded Backup", className: "text-primary bg-primary/10" },
   restore: { label: "Restore From Backup", className: "text-red-600 bg-red-500/10" },
 };
@@ -154,52 +101,9 @@ function BackupTypeBadge({ type }) {
 
 export default function DashboardSettings() {
   const { user, setUser } = useAuth();
-  const {
-    userData,
-    loading,
-    error: fetchError,
-    savingProfile,
-    savingPassword,
-    updateProfile,
-    updatePassword,
-  } = useUserUpdate(user?._id);
-
-  const [edits, setEdits] = useState({});
-
-  const baseProfile = useMemo(() => ({
-    fullName: userData?.name || "",
-    phone: userData?.phone || "",
-    age: userData?.age ?? "",
-    university: userData?.university || "",
-    college: userData?.college || "",
-    yearOfStudy: userData?.yearOfStudy ?? "",
-    committee: userData?.committee || "",
-    interests: userData?.interests?.join(", ") || "",
-    aboutMe: userData?.optionalData?.aboutMe || "",
-  }), [userData]);
-
-  const profile = useMemo(() => ({ ...baseProfile, ...edits }), [baseProfile, edits]);
-
-  useEffect(() => {
-    setEdits({});
-  }, [userData]);
-
-  const [passwords, setPasswords] = useState({
-    current: "",
-    new: "",
-    confirm: "",
-  });
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false,
-  });
-  const [profileMessage] = useState({ type: "", text: "" });
-  const [passwordMessage, setPasswordMessage] = useState({ type: "", text: "" });
 
   const { updateRole } = useUpdateRole();
   const { admins, adminRoles, setAdmins, setAdminRoles, refetch: fetchAdmins } = useGetAdmins();
-  const { submitting: committeeSaving, submitRequest } = useSubmitCommitteeRequest();
   const {
     registrationOpen,
     committeeApplicationsOpen,
@@ -247,70 +151,6 @@ export default function DashboardSettings() {
     setAdmins((prev) => prev.filter((a) => a.id !== id));
   };
 
-  const updateField = (key, value) =>
-    setEdits((prev) => ({ ...prev, [key]: value }));
-
-  const initials = profile.fullName
-    ? profile.fullName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : "??";
-
-  const handleSaveProfile = async () => {
-    const payload = {
-      name: profile.fullName,
-      phone: profile.phone,
-      age: profile.age !== "" ? Number(profile.age) : undefined,
-      university: profile.university,
-      college: profile.college,
-      yearOfStudy: profile.yearOfStudy !== "" ? Number(profile.yearOfStudy) : undefined,
-      committee: profile.committee,
-      interests: profile.interests
-        ? profile.interests.split(",").map((s) => s.trim()).filter(Boolean)
-        : [],
-      optionalData: { aboutMe: profile.aboutMe },
-    };
-
-    if (isAdminRole) {
-      delete payload.committee;
-      if (profile.committee !== baseProfile.committee) {
-        const ok = await submitRequest(profile.committee);
-        if (!ok) {
-          updateField("committee", baseProfile.committee);
-          return;
-        }
-      }
-    }
-
-    await updateProfile(payload);
-  };
-
-  const handleSavePassword = async () => {
-    if (!passwords.current || !passwords.new || !passwords.confirm) {
-      setPasswordMessage({ type: "error", text: "Please fill in all password fields." });
-      return;
-    }
-    if (passwords.new.length < 8) {
-      setPasswordMessage({ type: "error", text: "New password must be at least 8 characters." });
-      return;
-    }
-    if (passwords.new !== passwords.confirm) {
-      setPasswordMessage({ type: "error", text: "New passwords do not match." });
-      return;
-    }
-
-    await updatePassword({
-      currentPassword: passwords.current,
-      newPassword: passwords.new,
-      confirmNewPassword: passwords.confirm,
-    });
-    setPasswords({ current: "", new: "", confirm: "" });
-    setPasswordMessage({ type: "", text: "" });
-  };
-
   const handlePickImportFile = (e) => {
     const file = e.target.files?.[0];
     e.target.value = ""; // allow the same file to be picked again
@@ -354,243 +194,9 @@ export default function DashboardSettings() {
     });
   };
 
-  if (loading) return <Skeleton />;
-
-  if (fetchError) {
-    return (
-      <div className="min-h-screen p-4 md:p-6 max-w-4xl flex items-center justify-center">
-        <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-red-200 dark:border-red-900/40 shadow-sm p-8 text-center max-w-md">
-          <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
-            <span className="text-red-500 text-xl font-bold">!</span>
-          </div>
-          <p className="text-foreground font-semibold text-lg mb-1">Failed to load profile</p>
-          <p className="text-muted text-sm">{fetchError}</p>
-        </div>
-    </div>
-  );
-}
-
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-6 max-w-4xl">
 
-      {/* Section 1: Admin Profile */}
-      <SectionCard>
-        <h2 className="text-xl font-bold text-foreground mb-5">
-          Admin Profile
-        </h2>
-
-        <div className="mb-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-lg font-bold text-white shrink-0">
-              {initials}
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">
-                {profile.fullName || "User"}
-              </h3>
-              <p className="flex gap-2 items-center text-xs text-muted">
-                <Mail size={13} /> {userData?.email || ""}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <MessageBanner message={profileMessage} />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <Field
-            label="Full Name"
-            type="text"
-            value={profile.fullName}
-            onChange={(e) => updateField("fullName", e.target.value)}
-          />
-          <Field
-            label="Phone Number"
-            type="tel"
-            value={profile.phone}
-            onChange={(e) => updateField("phone", e.target.value)}
-          />
-          <Field
-            label="Email (read-only)"
-            type="email"
-            value={userData?.email || ""}
-            disabled
-          />
-          <Field
-            label="Age"
-            type="number"
-            min={15}
-            max={99}
-            value={profile.age}
-            onChange={(e) => updateField("age", e.target.value)}
-          />
-          <Field
-            label="University"
-            type="text"
-            value={profile.university}
-            onChange={(e) => updateField("university", e.target.value)}
-          />
-          <Field
-            label="College"
-            type="text"
-            value={profile.college}
-            onChange={(e) => updateField("college", e.target.value)}
-          />
-          <SelectField
-            label="Year of Study"
-            value={profile.yearOfStudy}
-            onChange={(e) => updateField("yearOfStudy", e.target.value)}
-            options={ORDINAL_OPTIONS}
-          />
-          <SelectField
-            label="Committee"
-            value={profile.committee}
-            onChange={(e) => updateField("committee", e.target.value)}
-            options={COMMITTEE_OPTIONS}
-          />
-          <div className="sm:col-span-2">
-            <Field
-              label="Interests (comma-separated)"
-              type="text"
-              value={profile.interests}
-              onChange={(e) => updateField("interests", e.target.value)}
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
-              About Me
-            </label>
-            <textarea
-              value={profile.aboutMe}
-              onChange={(e) => updateField("aboutMe", e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors resize-none"
-            />
-          </div>
-        </div>
-
-        <button
-          onClick={handleSaveProfile}
-          disabled={savingProfile || committeeSaving}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {savingProfile || committeeSaving ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : (
-            <Save size={14} />
-          )}
-          Save Profile
-        </button>
-      </SectionCard>
-
-      {/* Section 2: Change Password */}
-      <SectionCard>
-        <h2 className="text-xl font-bold text-foreground mb-5">
-          Change Password
-        </h2>
-
-        <MessageBanner message={passwordMessage} />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
-              Current Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPasswords.current ? "text" : "password"}
-                value={passwords.current}
-                onChange={(e) =>
-                  setPasswords((p) => ({ ...p, current: e.target.value }))
-                }
-                placeholder="Enter current password"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors pr-10"
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  setShowPasswords((s) => ({
-                    ...s,
-                    current: !s.current,
-                  }))
-                }
-                aria-label={showPasswords.current ? "Hide current password" : "Show current password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"
-              >
-                {showPasswords.current ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            </div>
-          </div>
-          <div>
-            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
-              New Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPasswords.new ? "text" : "password"}
-                value={passwords.new}
-                onChange={(e) =>
-                  setPasswords((p) => ({ ...p, new: e.target.value }))
-                }
-                placeholder="New password"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors pr-10"
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  setShowPasswords((s) => ({ ...s, new: !s.new }))
-                }
-                aria-label={showPasswords.new ? "Hide new password" : "Show new password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"
-              >
-                {showPasswords.new ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            </div>
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-[11px] font-bold text-muted uppercase tracking-wide mb-1.5">
-              Confirm New Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPasswords.confirm ? "text" : "password"}
-                value={passwords.confirm}
-                onChange={(e) =>
-                  setPasswords((p) => ({ ...p, confirm: e.target.value }))
-                }
-                placeholder="Confirm new password"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-sm text-foreground placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors pr-10"
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  setShowPasswords((s) => ({
-                    ...s,
-                    confirm: !s.confirm,
-                  }))
-                }
-                aria-label={showPasswords.confirm ? "Hide confirm password" : "Show confirm password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"
-              >
-                {showPasswords.confirm ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={handleSavePassword}
-          disabled={savingPassword}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {savingPassword ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : (
-            <Save size={14} />
-          )}
-          Update Password
-        </button>
-      </SectionCard>
 
       {/* Section 3: User Permissions */}
             <SectionCard>
