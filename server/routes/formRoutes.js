@@ -12,25 +12,29 @@ const {
 
 // Import Middleware
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { WRITE_ROLES } = require('../constants/roles');
 
 // Public Routes
 formRouter.get('/', getForms);
 formRouter.get('/:id', getForm);
 
-// Protected Admin Routes
-formRouter.use(protect, authorize('xcom','board')); // <-- All routes below this line require authentication and authorization
-// Note: We use .route() to chain methods on the same URL
-formRouter.route('/')
-  .post(createForm)   // Create
+// Everything else here writes. xcom only: board can read the forms list through
+// the public routes above, but cannot create, delete, or edit one.
+//
+// The guard is repeated per route rather than applied once with
+// router.use(), which only covers routes registered after it. A route added
+// above the guard would be public by accident, and nothing would say so.
+formRouter.post('/', protect, authorize(...WRITE_ROLES), createForm);
 
-formRouter.route('/:id').delete(deleteForm); // Delete
+formRouter.delete('/:id', protect, authorize(...WRITE_ROLES), deleteForm);
 
-formRouter.put('/:id/toggle', toggleFormStatus); // Open/Close
+formRouter.put('/:id/toggle', protect, authorize(...WRITE_ROLES), toggleFormStatus); // Open/Close
 
-formRouter.put('/:id/settings', updateFormSettings); // Update settings
+formRouter.put('/:id/settings', protect, authorize(...WRITE_ROLES), updateFormSettings); // Update settings
 
 // Renders the submission email for the builder preview. A literal path rather
-// than '/:id/...' so it can never be read as a form id. Nothing is sent.
-formRouter.post('/preview-email', previewSubmissionEmail);
+// than '/:id/...' so it can never be read as a form id. Nothing is sent, but it
+// is xcom-only anyway: it exists to serve the form builder, which is xcom-only.
+formRouter.post('/preview-email', protect, authorize(...WRITE_ROLES), previewSubmissionEmail);
 
 module.exports = formRouter;

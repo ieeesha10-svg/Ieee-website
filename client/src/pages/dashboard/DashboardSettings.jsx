@@ -26,7 +26,8 @@ import { useGetAdmins } from "../../hooks/dashboard/useGetAdmins";
 import { useBackup } from "../../hooks/dashboard/useBackup";
 import { useSiteSettings } from "../../hooks/dashboard/useSiteSettings";
 import { useEmailQuota } from "../../hooks/dashboard/useEmailQuota";
-import { ADMIN_ROLES } from '../../data/roles'
+import { VIEW_ROLES, ROLE_LABELS, READ_ONLY_NOTICE } from '../../data/roles'
+import { canWrite } from '../../utils/roleAccess'
 // Components
 import DeleteModal from "../../components/ui/DeleteModal";
 import ConfirmModal from "../../components/ui/ConfirmModal";
@@ -72,9 +73,9 @@ function RoleSelect({ value, onChange }) {
       aria-label="Role"
       className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-[#222936] bg-white dark:bg-[#111827] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors"
     >
-      {ADMIN_ROLES.map((r) => (
+      {VIEW_ROLES.map((r) => (
         <option key={r} value={r}>
-          {r.charAt(0).toUpperCase() + r.slice(1)}
+          {ROLE_LABELS[r] || r}
         </option>
       ))}
     </select>
@@ -135,7 +136,9 @@ export default function DashboardSettings() {
   const [confirmImport, setConfirmImport] = useState(false);
   const fileInputRef = useRef(null);
 
-  const isAdminRole = ADMIN_ROLES.includes(user?.role);
+  // canWrite is the real permission; board can reach this page and read it, but
+  // every control below stays hidden for them.
+  const canEdit = canWrite(user?.role);
 
   const handleRoleChange = (adminId, newRole) => {
     const previousRole = adminRoles[adminId];
@@ -198,7 +201,7 @@ export default function DashboardSettings() {
     <div className="min-h-screen p-4 md:p-6 space-y-6 max-w-4xl">
 
 
-      {/* Section 3: User Permissions */}
+      {/* Section 3: User Permissions — visible to board, editable by xcom only */}
             <SectionCard>
               <div className="flex items-center justify-between mb-5">
                 <div>
@@ -206,16 +209,20 @@ export default function DashboardSettings() {
                     User Permissions
                   </h2>
                   <p className="text-xs text-muted mt-0.5">
-                    Manage admin roles and access levels
+                    {canEdit
+                      ? "Manage admin roles and access levels"
+                      : READ_ONLY_NOTICE}
                   </p>
                 </div>
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-                >
-                  <Plus size={14} />
-                  Add Admin
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                  >
+                    <Plus size={14} />
+                    Add Admin
+                  </button>
+                )}
               </div>
 
               {/* Admins Table */}
@@ -256,19 +263,28 @@ export default function DashboardSettings() {
                           {admin.email}
                         </td>
                         <td className="px-4 py-3">
-                          <RoleSelect
-                            value={adminRoles[admin.id] || admin.role}
-                            onChange={(role) => handleRoleChange(admin.id, role)}
-                          />
+                          {canEdit ? (
+                            <RoleSelect
+                              value={adminRoles[admin.id] || admin.role}
+                              onChange={(role) => handleRoleChange(admin.id, role)}
+                            />
+                          ) : (
+                            <span className="text-xs font-medium text-foreground">
+                              {ROLE_LABELS[adminRoles[admin.id] || admin.role] ||
+                                admin.role}
+                            </span>
+                          )}
                         </td>
                         <td className="px-5 md:px-6 py-3 text-right">
-                          <button
-                            onClick={() => setDeleteTarget(admin)}
-                            aria-label={`Delete ${admin.name}`}
-                            className="p-1.5 text-muted hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => setDeleteTarget(admin)}
+                              aria-label={`Delete ${admin.name}`}
+                              className="p-1.5 text-muted hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -283,7 +299,7 @@ export default function DashboardSettings() {
             </SectionCard>
 
       {/* Registration & Applications */}
-      {isAdminRole && (
+      {canEdit && (
         <SectionCard>
           <div className="flex items-center gap-2 mb-1">
             <UserPlus size={18} className="text-muted" />
@@ -521,30 +537,36 @@ export default function DashboardSettings() {
             Download Backup
           </button>
 
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={downloading || importing}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-transparent border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {importing ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Upload size={14} />
-            )}
-            {importing
-              ? phase === "safety"
-                ? "Saving Safety Backup..."
-                : "Restoring Data..."
-              : "Import Backup"}
-          </button>
+          {/* Restoring a backup overwrites the database, so xcom only. Board
+              keeps the download. */}
+          {canEdit && (
+            <>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={downloading || importing}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-transparent border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {importing ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Upload size={14} />
+                )}
+                {importing
+                  ? phase === "safety"
+                    ? "Saving Safety Backup..."
+                    : "Restoring Data..."
+                  : "Import Backup"}
+              </button>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            onChange={handlePickImportFile}
-            className="hidden"
-          />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handlePickImportFile}
+                className="hidden"
+              />
+            </>
+          )}
         </div>
 
         {history.length > 0 && (
@@ -641,9 +663,10 @@ function AddAdminModal({ onClose, onAdded, updateRole, setAdminRoles }) {
   const {
     members, loading,
     search, setSearch,
-  } = useMembersList({ initialRoles: ["member", "user", "scanner"] });
+    // "user" was removed as a role; promote from member and scanner only.
+  } = useMembersList({ initialRoles: ["member", "scanner"] });
 
-  const nonAdminMembers = members.filter((m) => !ADMIN_ROLES.includes(m.role));
+  const nonAdminMembers = members.filter((m) => !VIEW_ROLES.includes(m.role));
   const selectedCount = Object.keys(selected).length;
 
   const toggleSelect = (member) => {

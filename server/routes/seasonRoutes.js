@@ -1,6 +1,7 @@
 const express = require('express');
 const seasonRouter = express.Router();
 const { protect, authorize } = require('../middleware/authMiddleware');
+const { WRITE_ROLES } = require('../constants/roles');
 
 const {
   getSeasons,
@@ -20,12 +21,13 @@ seasonRouter.get('/', getSeasons);
 seasonRouter.get('/home', getHomeSeason);
 seasonRouter.get('/:id', getSeasonById);
 
-seasonRouter.use(protect, authorize('xcom', 'board')); // Only xcom and board can manage seasons
+// Writes are xcom only; board reads seasons through the public routes above.
+// The guard is repeated per route rather than applied with router.use(), which
+// only covers routes registered after it.
+seasonRouter.post('/', protect, authorize(...WRITE_ROLES), createSeason);
 
-seasonRouter.post('/', createSeason);
-
-seasonRouter.put('/:id', updateSeason);
-seasonRouter.put('/:id/home', setHomeSeason);
-seasonRouter.delete('/:id', deleteSeason);
+seasonRouter.put('/:id', protect, authorize(...WRITE_ROLES), updateSeason);
+seasonRouter.put('/:id/home', protect, authorize(...WRITE_ROLES), setHomeSeason);
+seasonRouter.delete('/:id', protect, authorize(...WRITE_ROLES), deleteSeason);
 
 module.exports = seasonRouter;

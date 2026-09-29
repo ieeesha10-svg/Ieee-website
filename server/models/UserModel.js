@@ -34,17 +34,22 @@ const userSchema = new mongoose.Schema(
     roleInOrganization: { type: String }, // e.g., "Software Engineer", "HR Manager"
     yearsOfExperience: { type: Number }, // e.g., 3, 5, 10
     reasonForRegistration: { type: String }, // Optional
-    // UPDATED ROLES:
+    // Four roles, no more. "user" was removed: everyone who registers is a
+    // "member" now, and a member gets no dashboard at all.
+    //   member  - default; public site + own profile only
+    //   scanner - attendance scanning and nothing else
+    //   board   - reads the whole dashboard, changes nothing
+    //   xcom    - full control; displayed as "Excom" in the UI
+    // "xcom" is kept as the stored value; the Excom rename is display-only.
     role: {
       type: String,
       enum: [
-        "user", // Normal student (default)
-        "member", // Paid/Official IEEE Member
-        "board", // Board Member (Can access dashboard but limited delete rights)
-        "xcom", // Tech Head / Chairman (Full Control)
-        "scanner", // Event Volunteer (Only access to Scan Page)
+        "member", // Default. No dashboard access.
+        "scanner", // Scan page only.
+        "board", // Read-only across the dashboard.
+        "xcom", // Full control (displayed as "Excom").
       ],
-      default: "user",
+      default: "member",
     },
     // OTP system for Email Verification
     isVerified: {

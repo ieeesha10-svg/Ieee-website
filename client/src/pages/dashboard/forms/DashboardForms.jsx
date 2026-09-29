@@ -40,19 +40,23 @@ import DashFormsSkeleton from "../../../components/skeletons/DashFormsSkeleton";
 import Modal from "../../../components/ui/Modal";
 import EmailPreviewModal from "../../../components/dashboard/EmailPreviewModal";
 import ToggleSwitch from "../../../components/ui/ToggleSwitch";
+import { useAuth } from "../../../context/AuthContext";
+import { canWrite } from "../../../utils/roleAccess";
+import ReadOnlyBanner from "../../../components/dashboard/ReadOnlyBanner";
 import Pagination from "../../../components/ui/Pagination";
 
 /*Toggle Switch */
-function Toggle({ checked, onChange, ariaLabel }) {
+function Toggle({ checked, onChange, ariaLabel, disabled }) {
   return (
     <button
       role="switch"
       aria-checked={checked}
       aria-label={ariaLabel}
+      aria-disabled={disabled || undefined}
       onClick={onChange}
       className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-200 ${
         checked ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
-      }`}
+      } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
     >
       <span
         className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
@@ -191,7 +195,7 @@ function FieldsModal({ form, onClose }) {
 }
 
 /*Single Form Row */
-function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
+function FormRow({ form, onToggle, onDelete, onViewFields, onEdit, canEdit }) {
   const dateExpired = form.endDate && new Date(form.endDate) < new Date();
   const { Icon: TypeIcon, color: typeColor } = formTypeVisuals(form.type);
   return (
@@ -232,11 +236,13 @@ function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
           >
             {form.isOpen ? "Open" : "Closed"}
           </span>
-          <div className="relative group">
+            {/* Board sees the open/closed state but cannot flip it. */}
+            <div className="relative group">
 						<Toggle
 							checked={form.isOpen}
+							disabled={!canEdit}
 							ariaLabel={`Toggle form "${form.title}" ${form.isOpen ? "closed" : "open"}`}
-							onChange={dateExpired ? undefined : () => onToggle(form.id, form.title, !form.isOpen)}
+							onChange={dateExpired || !canEdit ? undefined : () => onToggle(form.id, form.title, !form.isOpen)}
 						/>
             {dateExpired && (
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs font-medium text-white bg-gray-800 dark:bg-gray-700 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
@@ -270,7 +276,7 @@ function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
             </div>
           </div>
         )}
-        {!form.activityID && (
+        {!form.activityID && canEdit && (
           <button
             type="button"
             onClick={() => onDelete(form.id)}
@@ -280,14 +286,16 @@ function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
             <Trash2 size={15} />
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => onEdit(form)}
-          aria-label={`Edit dates for ${form.title}`}
-          className="p-1.5 text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-        >
-          <Pencil size={15} />
-        </button>
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => onEdit(form)}
+            aria-label={`Edit dates for ${form.title}`}
+            className="p-1.5 text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+          >
+            <Pencil size={15} />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -295,6 +303,11 @@ function FormRow({ form, onToggle, onDelete, onViewFields, onEdit }) {
 
 /* Main Component */
 export default function DashboardForms() {
+  const { user } = useAuth();
+  // Board can read forms and their results; opening, closing, retitling and
+  // deleting are xcom-only.
+  const canEdit = canWrite(user?.role);
+
   const {
     forms,
     setForms,
@@ -424,14 +437,19 @@ export default function DashboardForms() {
             <ExternalLink size={16} /> View on Site
             </button>
           </a>
-          <Link to={'/dashboard/forms/create-form'}>
-            <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
-              <Plus size={16} />
-              New Form
-            </button>
-          </Link>
+          {/* The builder is a write-only page; App.jsx guards the route too. */}
+          {canEdit && (
+            <Link to={'/dashboard/forms/create-form'}>
+              <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm w-full sm:w-auto">
+                <Plus size={16} />
+                New Form
+              </button>
+            </Link>
+          )}
         </div>
       </div>
+
+      {!canEdit && <ReadOnlyBanner />}
 
       {/* Forms List */}
       <div className="bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936] shadow-sm">
@@ -444,6 +462,7 @@ export default function DashboardForms() {
               onDelete={setDeletingId}
               onViewFields={setFieldsModalForm}
               onEdit={handleOpenEdit}
+              canEdit={canEdit}
             />
           ))
         ) : (

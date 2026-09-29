@@ -65,12 +65,12 @@ const importData = async () => {
         interests: ['Web Development', 'React']
       },
 
-      // --- 4. THE STUDENT (Standard User) ---
-      {
-        name: 'Ali Ahmed',
-        email: 'ali@student.edu',
-        password: hashedPassword,
-        role: 'user',
+        // --- 4. THE STUDENT (plain member, no dashboard) ---
+        {
+          name: 'Ali Ahmed',
+          email: 'ali@student.edu',
+          password: hashedPassword,
+          role: 'member',
         position: 'student',
         phone: '01555555555',
         university: 'Cairo University',

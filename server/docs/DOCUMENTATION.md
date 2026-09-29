@@ -18,7 +18,7 @@ Welcome to the official documentation of the **IEEE SHA – SB** backend system.
 
 **IEEE SHA – SB** is the backend service powering the official website of the **IEEE SHA Student Branch**. It manages the full lifecycle of the branch's digital operations: public member registration with email OTP verification, event/activity management with dynamic registration forms, QR-ticketed attendance scanning, committee join-request workflows, a crew directory, bulk email campaigns, and an administrative analytics dashboard.
 
-The system is built around five user roles (`user`, `member`, `scanner`, `board`, `xcom`), where privileged roles administer events, review submissions, approve committee requests, and communicate with the community through integrated email services.
+The system is built around four user roles — `member`, `scanner`, `board` and `xcom` — where privileged roles administer events, review submissions, approve committee requests, and communicate with the community through integrated email services. `xcom` is the stored value for the role displayed as **Excom**; `board` is a strictly read-only oversight role. See the [RBAC matrix](#role-based-access-control-rbac-matrix).
 
 ## 1.2 Tech Stack
 
@@ -216,7 +216,7 @@ curl http://localhost:5000/
 
 ## 2.2 Core Workflow
 
-1. **Registration** — A visitor registers as a `student` or `professional`. Passwords are hashed with bcrypt (salt rounds = 10). Public requests are role-sanitized: anyone requesting `member` gets it; everything else is forced to `user` (privilege escalation prevention). If a `committee` preference was chosen, a `PendingRequest` is created automatically.
+1. **Registration** — A visitor registers as a `student` or `professional`. Passwords are hashed with bcrypt (salt rounds = 10). `role` is not read from the request body at all: registration always creates a `member` (privilege escalation prevention). If a `committee` preference was chosen, a `PendingRequest` is created automatically.
 2. **Email Verification (OTP)** — A random 6-digit OTP (valid 15 minutes) is emailed via Brevo. `POST /verify-email` validates it, flags the account `isVerified`, clears the OTP, and **auto-login** the user by setting the JWT cookie.
 3. **Authentication** — Login verifies credentials and issues a JWT (30 days) stored in an **httpOnly cookie named `jwt`**. All subsequent requests authenticate via this cookie (`protect` middleware). Logout expires the cookie.
 4. **Events & Forms** — Admins (`xcom`/`board`) create an **Activity**; the API atomically creates a linked dynamic **Form** (custom fields: TextInput, TextArea, Dropdown, Checkbox, FileUpload). Form answers are validated against field definitions inside a Mongoose `pre('save')` hook.
@@ -247,21 +247,67 @@ Every request → protect middleware → jwt.verify → req.user loaded
 |------------|----------|
 | `protect` | Reads `req.cookies.jwt`. Missing → `401 Not authorized, no token`. Invalid/expired → `401 Not authorized, token failed`. Valid → loads user onto `req.user`. |
 | `authorize(...roles)` | Compares `req.user.role` against allowed roles. Failure → `403 User role <role> is not authorized to access this route`. |
+| `authorizeSelfOr(...roles)` | For routes keyed by a user id in the path. Passes if the id is the caller's own **or** the role is listed; otherwise `403 Not authorized to view this record`. With no roles it means "own account only". Used so `GET /submissions/:userid/:formid` and `GET /users/:id/events` are not an IDOR over other members' data. |
+
+### Role Constants — `constants/roles.js`
+
+The single source of truth. Import these into `authorize(...)` rather than
+re-typing role strings, which is how the lists had already drifted apart.
+
+| Constant | Values | Meaning |
+|---|---|---|
+| `DASHBOARD_ROLES` | `scanner`, `board`, `xcom` | May open `/dashboard` at all. `member` is absent on purpose. |
+| `VIEW_ROLES` | `board`, `xcom` | May read dashboard data. `board` is the read-only oversight role. |
+| `WRITE_ROLES` | `xcom` | **May change data.** xcom alone, so board cannot perform an action, add anything, or make a change. |
+| `SCAN_ROLES` | `scanner`, `board`, `xcom` | Everything a Scanner can do. |
+| `ASSIGNABLE_ROLES` | `member`, `scanner`, `board`, `xcom` | Mirrors the `UserModel` enum. |
+| `ROLE_LABELS` | — | Display names. `xcom` is stored as `xcom` and **shown as `Excom`**. |
 
 ### Role-Based Access Control (RBAC) Matrix
 
-| Capability | `user` | `member` | `scanner` | `board` | `xcom` |
-|---|:-:|:-:|:-:|:-:|:-:|
-| Register / verify / login / logout | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Submit forms, view own profile/submission | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Scan tickets | ❌ | ✅ | ✅ | ✅ | ✅ |
-| View members list / create / edit role | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Request committee position | ✅ | ✅ | ✅ | ✅ | ✅ (auto-accepted) |
-| Manage activities, forms, crew | ❌ | ❌ | ❌ | ✅ | ✅ |
-| View/export submissions & users | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Send bulk email / read email logs | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Create internal accounts (`create-internal`) | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Delete any member | ❌ | ❌ | ❌ | ❌ | ✅ (others may delete **self**) |
+Four roles. There is no `user` role: it was removed and
+`scripts/migrate-role-user-to-member.js` converts the accounts that still
+carried it. Self-registration always produces `member`.
+
+**`board` is read-only.** Reads it shares with `xcom`; every write is
+`authorize(...WRITE_ROLES)`, which is xcom alone, so a board member gets `403`
+even on a hand-crafted request. The frontend hiding the controls is courtesy, not
+enforcement.
+
+| Capability | `member` | `scanner` | `board` | `xcom` |
+|---|:-:|:-:|:-:|:-:|
+| Register / verify / login / logout | ✅ | ✅ | ✅ | ✅ |
+| Public site, own profile, own password | ✅ | ✅ | ✅ | ✅ |
+| Submit forms, view own submission | ✅ | ✅ | ✅ | ✅ |
+| Request committee position | ✅ | ✅ | ✅ | ✅ (auto-accepted) |
+| Open the dashboard | ❌ | `/dashboard/scan` only | ✅ | ✅ |
+| Scan tickets (`POST /submissions/scan`) | ❌ | ✅ | ✅ | ✅ |
+| View members, members list, exports, searches | ❌ | ❌ | ✅ | ✅ |
+| Read submissions, forms, crew, seasons, settings, email logs, committee requests | ❌ | ❌ | ✅ | ✅ |
+| Create / edit / delete activities, forms, crew, seasons | ❌ | ❌ | ❌ | ✅ |
+| Approve or reject a committee request | ❌ | ❌ | ❌ | ✅ |
+| Change a member's role or committee | ❌ | ❌ | ❌ | ✅ |
+| Send bulk email, import a backup, toggle settings | ❌ | ❌ | ❌ | ✅ |
+| Create internal accounts (`create-internal`) | ❌ | ❌ | ❌ | ✅ |
+| Delete a member | ❌ | ❌ | ❌ | ✅ (see below) |
+| Change **your own** role | ❌ | ❌ | ❌ | ❌ (by design) |
+
+Notes on the last three rows:
+
+- **Role assignment is one-directional in practice.** `PATCH /users/members/:id`
+  and the controllers behind it refuse when the target is the caller, so nobody
+  can elevate their own role — including xcom. An xcom hands over by being
+  demoted from another account.
+- **Self-deletion is a 403 conflict to be aware of.** `deleteMember` still allows
+  a user to delete *their own* account, but the route is now
+  `authorize(...WRITE_ROLES)`, so only xcom can reach it. If account closure is
+  meant to be a real feature for every member, the route needs an
+  `authorizeSelfOr(...WRITE_ROLES)` and the UI needs an entry point; as it stands
+  the controller branch is unreachable.
+- **Exports are reads.** `POST /users/export-specific` takes a body, so it is a
+  POST, but it only generates a file from data the caller may already read, so it
+  is `VIEW_ROLES`. This is the one place the HTTP verb does not imply the
+  permission — decide by what the handler does, not by its method.
 
 ## 2.4 Database Design (MongoDB Collections)
 
@@ -274,7 +320,7 @@ Every request → protect middleware → jwt.verify → req.user loaded
 | `phone` | String | |
 | `dateOfBirth` | Date | optional; cannot be in the future |
 | `position` | String | enum: `student`, `professional` |
-| `role` | String | enum: `user` (default), `member`, `board`, `xcom`, `scanner` |
+| `role` | String | enum: `member` (default), `scanner`, `board`, `xcom` |
 | `university`, `college`, `yearOfStudy` | String/String/Number | student-specific |
 | `interests` | [String] | e.g. `["AI", "Robotics"]` |
 | `organization`, `roleInOrganization`, `yearsOfExperience`, `reasonForRegistration` | — | professional-specific |
@@ -428,7 +474,7 @@ Client (multipart/form-data)
 - **helmet** security headers on every response.
 - Strict **CORS whitelist** with `credentials: true`.
 - **httpOnly** cookies (tokens unreachable from JS).
-- **Role sanitization** on public registration.
+- **`role` is never read from a public registration body**; the account is always a `member`.
 - **Restricted-field blocklist** on profile update (email/password/role/OTP cannot self-modify).
 - **HTML sanitization** (`sanitize-html` allow-list) for activity rich-text content.
 - Passwords never returned by queries (schema-level `select: false`).
@@ -500,9 +546,9 @@ Verifies the API is alive.
 
 `POST /api/users/register`
 
-Creates an unverified account and emails a 6-digit OTP (valid 15 minutes). Public sign-ups may only hold the `user` or `member` role — any other requested role is silently downgraded to `user`. Optionally queues a committee join request.
+Creates an unverified account and emails a 6-digit OTP (valid 15 minutes). `role` is ignored on the request body — a public sign-up always becomes a `member`, so there is no role to sanitize and no way to ask for one. Optionally queues a committee join request.
 
-- **Auth:** No
+- **Auth:** No (public)
 - **Body:** `application/json`
 
 | Field | Type | Required | Notes |
@@ -522,7 +568,7 @@ Creates an unverified account and emails a 6-digit OTP (valid 15 minutes). Publi
 | `roleInOrganization` | string | 🔵 | required if professional |
 | `yearsOfExperience` | number | 🔵 | required if professional |
 | `reasonForRegistration` | string | ➖ | professionals |
-| `role` | string | ➖ | `"member"` honored; anything else → `user` |
+| `role` | string | ignored | not read from the body; the account is always created as `member` |
 | `committee` | string | ➖ | creates a `PendingRequest` if present |
 
 ⭕ = conditionally required (students) 🔵 = conditionally required (professionals)
@@ -575,7 +621,7 @@ Creates an unverified account and emails a 6-digit OTP (valid 15 minutes). Publi
 
 Validates the emailed OTP, activates the account, clears the OTP, and **auto-logs the user in** by setting the `jwt` cookie.
 
-- **Auth:** No
+- **Auth:** No (public)
 - **Body:** `application/json`
 
 | Field | Type | Required |
@@ -597,7 +643,7 @@ Validates the emailed OTP, activates the account, clears the OTP, and **auto-log
   "_id": "66f1a2b3c4d5e6f7a8b9c0d1",
   "name": "Ahmed Hassan",
   "email": "ahmed@example.com",
-  "role": "user",
+  "role": "member",
   "committee": "no committee",
   "position": "student"
 }
@@ -624,7 +670,7 @@ Validates the emailed OTP, activates the account, clears the OTP, and **auto-log
 
 Authenticates credentials and sets the 30-day `jwt` httpOnly cookie.
 
-- **Auth:** No
+- **Auth:** No (public)
 - **Body:** `application/json`
 
 | Field | Type | Required |
@@ -645,7 +691,7 @@ Authenticates credentials and sets the 30-day `jwt` httpOnly cookie.
   "_id": "66f1a2b3c4d5e6f7a8b9c0d1",
   "name": "Ahmed Hassan",
   "email": "ahmed@example.com",
-  "role": "user",
+  "role": "member",
   "committee": "no committee",
   "position": "student"
 }
@@ -669,7 +715,7 @@ Authenticates credentials and sets the 30-day `jwt` httpOnly cookie.
 
 Clears the `jwt` cookie.
 
-- **Auth:** No
+- **Auth:** No (public)
 
 **Success Response — `200 OK`**
 
@@ -685,7 +731,7 @@ Clears the `jwt` cookie.
 
 Emails a password-reset link containing a signed token (valid 1 hour).
 
-- **Auth:** No
+- **Auth:** No (public)
 - **Body:** `application/json`
 
 | Field | Type | Required |
@@ -720,7 +766,7 @@ Emails a password-reset link containing a signed token (valid 1 hour).
 
 Consumes the emailed reset token and replaces the password.
 
-- **Auth:** No
+- **Auth:** No (public)
 - **Query Params**
 
 | Param | Type | Required |
@@ -765,7 +811,7 @@ Consumes the emailed reset token and replaces the password.
 
 `PUT /api/users/update-password/:id`
 
-- **Auth:** Yes (`protect`)
+- **Auth:** Yes - own record only
 - **Path Params:** `id` — user ID
 - **Body:** `application/json`
 
@@ -803,7 +849,7 @@ Consumes the emailed reset token and replaces the password.
 
 Returns the authenticated user plus their event history (split into attended/not attended).
 
-- **Auth:** Yes (`protect`)
+- **Auth:** Yes (`protect`, any signed-in role)
 
 **Success Response — `200 OK`**
 
@@ -814,7 +860,7 @@ Returns the authenticated user plus their event history (split into attended/not
     "_id": "66f1a2b3c4d5e6f7a8b9c0d1",
     "name": "Ahmed Hassan",
     "email": "ahmed@example.com",
-    "role": "user",
+    "role": "member",
     "committee": "no committee",
     "phone": "+201001234567",
     "dateOfBirth": "2004-03-14T00:00:00.000Z",
@@ -847,7 +893,7 @@ Returns the authenticated user plus their event history (split into attended/not
 
 Self-service profile update. Only the owner may update their profile; sensitive fields are blocked.
 
-- **Auth:** Yes (`protect`) — must match own ID
+- **Auth:** Yes - own record only
 - **Allowed Fields:** `name`, `phone`, `dateOfBirth`, `university`, `college`, `yearOfStudy`, `organization`, `roleInOrganization`, `yearsOfExperience`, `reasonForRegistration`, `interests`, `committee`, `optionalData`
 - **Blocked Fields (→ 403):** `email`, `password`, `role`, `position`, `isVerified`, `otp`, `otpExpires`, `resetPasswordToken`, `resetPasswordExpires`
 
@@ -866,7 +912,7 @@ Self-service profile update. Only the owner may update their profile; sensitive 
     "_id": "66f1a2b3c4d5e6f7a8b9c0d1",
     "name": "Ahmed Hassan",
     "email": "ahmed@example.com",
-    "role": "user",
+    "role": "member",
     "phone": "+201098765432",
     "interests": ["Robotics"]
   }
@@ -890,7 +936,7 @@ Self-service profile update. Only the owner may update their profile; sensitive 
 
 Returns all form submissions belonging to a member, with their linked form and activity populated.
 
-- **Auth:** Yes (`protect`)
+- **Auth:** Yes - own record, or roles: `board`, `xcom`
 - **Path Params:** `id` — user ID
 
 **Success Response — `200 OK`**
@@ -924,7 +970,7 @@ Returns all form submissions belonging to a member, with their linked form and a
 
 Powerful filterable/paginated user query built for the admin dashboard and the email composer.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `board`, `xcom`
 - **Query Params**
 
 | Param | Type | Default | Description |
@@ -952,7 +998,7 @@ Any other query key is applied as an exact-match Mongo filter.
       "_id": "66f1...",
       "name": "Ahmed Hassan",
       "email": "ahmed@example.com",
-      "role": "user",
+      "role": "member",
       "position": "student",
       "college": "Computer Engineering",
       "createdAt": "2026-08-01T10:15:00.000Z"
@@ -975,7 +1021,7 @@ Any other query key is applied as an exact-match Mongo filter.
 
 XCom-only endpoint for creating staff accounts (no OTP required).
 
-- **Auth:** Yes — role: `xcom`
+- **Auth:** Yes - roles: `xcom`
 - **Body:** `application/json`
 
 | Field | Type | Required | Allowed Values |
@@ -983,7 +1029,7 @@ XCom-only endpoint for creating staff accounts (no OTP required).
 | `name` | string | ✅ | |
 | `email` | string | ✅ | unique |
 | `password` | string | ✅ | |
-| `role` | string | ✅ | `board`, `xcom`, `scanner`, `member` |
+| `role` | string | ✅ | one of `member`, `scanner`, `board`, `xcom` (`ASSIGNABLE_ROLES`) |
 | `committee` | string | ➖ | e.g. `Technical` |
 
 **Request Example**
@@ -1013,7 +1059,7 @@ XCom-only endpoint for creating staff accounts (no OTP required).
 
 Downloads an `.xlsx` of all users matching the same filters as §3.2.11 (no pagination).
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `board`, `xcom`
 - **Query Params:** identical filter set to §3.2.11
 
 **Success Response — `200 OK`**
@@ -1034,7 +1080,7 @@ Columns: Name, Email, Role, Position, Phone, University, College, Year,
 
 Downloads an `.xlsx` limited to specific user IDs.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `board`, `xcom`
 - **Body:** `application/json`
 
 | Field | Type | Required | Notes |
@@ -1064,7 +1110,7 @@ Downloads an `.xlsx` limited to specific user IDs.
 
 Returns every user (used by internal member-management screens).
 
-- **Auth:** Yes — roles: `xcom`, `board`, `member`, `scanner`
+- **Auth:** Yes - roles: `board`, `xcom`
 
 **Success Response — `200 OK`**
 
@@ -1080,7 +1126,7 @@ Returns every user (used by internal member-management screens).
 
 Directly creates any user with any valid schema role.
 
-- **Auth:** Yes — roles: `xcom`, `board`, `member`, `scanner`
+- **Auth:** Yes - roles: `xcom`
 - **Body:** `application/json` — requires `name`, `email`, `password`, `role`; all other schema fields optional.
 
 **Request Example**
@@ -1099,13 +1145,13 @@ Directly creates any user with any valid schema role.
 
 ```json
 // 400 — { "message": "Please Provide name, email, role and password" }
-//        { "message": "Invalid role. Allowed roles are: user, member, board, xcom, scanner" }
+//        { "message": "Invalid role. Allowed roles are: member, scanner, board, xcom" }
 //        { "message": "Member already exists" }
 ```
 
 ### 3.2.17 Get Single Member
 
-`GET /api/users/members/:id` — **Auth:** Yes (`xcom`, `board`, `member`, `scanner`)
+`GET /api/users/members/:id` — **Auth:** Yes - roles: `board`, `xcom`
 
 **Success Response — `200 OK`**
 
@@ -1119,7 +1165,7 @@ Directly creates any user with any valid schema role.
 
 `PATCH /api/users/members/:id`
 
-- **Auth:** Yes — roles: `xcom`, `board`, `member`, `scanner`
+- **Auth:** Yes - roles: `xcom`
 - **Body:** `{ "role": "<valid schema role>" }`
 
 **Success Response — `200 OK`**
@@ -1140,7 +1186,7 @@ Directly creates any user with any valid schema role.
 
 Deletes the member **plus** their submissions and pending requests. Only `xcom` may delete others; every user may delete themselves (account-closure feature).
 
-- **Auth:** Yes (`protect`)
+- **Auth:** Yes - roles: `xcom`
 
 **Success Response — `200 OK`**
 
@@ -1161,7 +1207,7 @@ Deletes the member **plus** their submissions and pending requests. Only `xcom` 
 
 Case-insensitive search across name and email.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `board`, `xcom`
 - **Query Params:** `keyword` (required)
 
 **Success Response — `200 OK`**
@@ -1241,7 +1287,7 @@ Aggregated analytics for the admin dashboard (MongoDB aggregation pipelines).
 
 Creates an activity **and** automatically generates its registration form. Rich-text `content` is sanitized; optional `coverImage` streams to Cloudinary (`activities/` folder).
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 - **Headers:** `Content-Type: multipart/form-data`
 - **Form-Data Fields**
 
@@ -1315,7 +1361,7 @@ fields:       [{"label":"Full Name","type":"TextInput","required":true},
 
 Paginated public feed; each item carries a computed registration `status` and its `formID`.
 
-- **Auth:** No
+- **Auth:** No (public)
 
 **Success Response — `200 OK`**
 
@@ -1348,7 +1394,7 @@ Paginated public feed; each item carries a computed registration `status` and it
 
 `GET /api/activities/:id`
 
-- **Auth:** No
+- **Auth:** No (public)
 
 **Success Response — `200 OK`**
 
@@ -1364,7 +1410,7 @@ Paginated public feed; each item carries a computed registration `status` and it
 
 Partial update; accepts a new `coverImage` (old one deleted from Cloudinary first). Sending `coverImage: ""` removes the existing cover.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 - **Headers:** `multipart/form-data` (or JSON for text-only edits)
 - **Validation:** `startDate` cannot be after `endDate`
 
@@ -1393,7 +1439,7 @@ Partial update; accepts a new `coverImage` (old one deleted from Cloudinary firs
 
 Cascade-deletes the activity, its linked form, and **all** related submissions.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 
 **Success Response — `200 OK`**
 
@@ -1411,7 +1457,7 @@ Homepage showcase — a single document holding up to **2** activity references.
 
 `POST /api/activities/:id/add-featured`
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 
 **Success Response — `200 OK`**
 
@@ -1434,7 +1480,7 @@ Homepage showcase — a single document holding up to **2** activity references.
 
 `DELETE /api/activities/:id/remove-featured`
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 
 **Success Response — `200 OK`**
 
@@ -1450,7 +1496,7 @@ Homepage showcase — a single document holding up to **2** activity references.
 
 Reverses display order of the two featured items.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 
 **Success Response — `200 OK`**
 
@@ -1464,7 +1510,7 @@ Reverses display order of the two featured items.
 
 `GET /api/activities/featured`
 
-- **Auth:** No
+- **Auth:** No (public)
 
 **Success Response — `200 OK`**
 
@@ -1493,7 +1539,7 @@ Reverses display order of the two featured items.
 
 Creates a form not necessarily tied to an activity (surveys, volunteer applications…).
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 - **Body:** `application/json`
 
 | Field | Type | Required | Default |
@@ -1553,7 +1599,7 @@ Creates a form not necessarily tied to an activity (surveys, volunteer applicati
 
 Public renderer endpoint. Returns the form **only while it is `Active` and before its end date**.
 
-- **Auth:** No
+- **Auth:** No (public)
 
 **Success Response — `200 OK`**
 
@@ -1584,7 +1630,7 @@ Public renderer endpoint. Returns the form **only while it is `Active` and befor
 
 Returns forms plus live status counters.
 
-- **Auth:** No *(mounted before the guard in current routing)*
+- **Auth:** No (public)
 
 **Success Response — `200 OK`**
 
@@ -1603,7 +1649,7 @@ Returns forms plus live status counters.
 
 `DELETE /api/form/:id`
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 
 **Success Response — `200 OK`**
 
@@ -1619,7 +1665,7 @@ Returns forms plus live status counters.
 
 Flips between `Active` ⇄ `Closed`.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 
 **Success Response — `200 OK`**
 
@@ -1635,7 +1681,7 @@ Flips between `Active` ⇄ `Closed`.
 
 Updates scheduling/capacity settings.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 - **Body:** `application/json` — any subset of:
 
 | Field | Type | Notes |
@@ -1674,7 +1720,7 @@ Updates scheduling/capacity settings.
 
 Submits answers to a form. One submission per user per form (DB-enforced). For `attendance`-type forms, a **ticket code + QR image** is generated and the ticket is emailed asynchronously. Uploaded files go to Cloudinary and their URLs replace/add the corresponding answer keys.
 
-- **Auth:** Yes (any logged-in user)
+- **Auth:** No (session optional)
 - **Headers:** `multipart/form-data` when uploading files (otherwise JSON works)
 - **Fields**
 
@@ -1742,7 +1788,7 @@ Submits answers to a form. One submission per user per form (DB-enforced). For `
 
 Gatekeeper endpoint for event entry. Marks the ticket as attended (once!).
 
-- **Auth:** Yes — roles: `xcom`, `scanner`, `board`, `member`
+- **Auth:** Yes - roles: `scanner`, `board`, `xcom`
 - **Body:** `application/json`
 
 | Field | Type | Required |
@@ -1780,7 +1826,7 @@ Gatekeeper endpoint for event entry. Marks the ticket as attended (once!).
 
 Fetches one user's submission for a given form (used to re-display a ticket).
 
-- **Auth:** Yes
+- **Auth:** Yes - roles: `board`, `xcom`
 - **Path Params:** `userid`, `formid`
 
 **Success Response — `200 OK`**
@@ -1807,7 +1853,7 @@ Fetches one user's submission for a given form (used to re-display a ticket).
 
 Returns all submissions with aggregate counters.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `board`, `xcom`
 
 **Success Response — `200 OK`**
 
@@ -1828,7 +1874,7 @@ it.*
 
 `GET /api/submissions/form/:formId`
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `board`, `xcom`
 
 **Success Response — `200 OK`**
 
@@ -1864,7 +1910,7 @@ in; every other type (recruitment, feedback, workshop, survey) is never scanned,
 so including the columns would print a permanent `No` and imply a check-in that
 is not being tracked.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `board`, `xcom`
 
 **Success Response — `200 OK`** — binary `.xlsx` (`responses_<formId>.xlsx`)
 
@@ -1881,7 +1927,7 @@ is not being tracked.
 
 Proxies a stored submission file back to admins as an attachment.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `board`, `xcom`
 - **Query Params:** `url` (required, URI-encoded)
 
 **Success Response — `200 OK`** — binary file stream with original content-type.
@@ -1903,7 +1949,7 @@ Workflow: a user requests a committee position → `PendingRequest` created → 
 
 `POST /api/committee-requests`
 
-- **Auth:** Yes (any logged-in user)
+- **Auth:** Yes (`protect`, any signed-in role)
 - **Body:** `application/json`
 
 | Field | Type | Required |
@@ -1946,7 +1992,7 @@ Workflow: a user requests a committee position → `PendingRequest` created → 
 
 `GET /api/committee-requests/my`
 
-- **Auth:** Yes
+- **Auth:** Yes (`protect`, any signed-in role)
 
 **Success Response — `200 OK`**
 
@@ -1963,7 +2009,7 @@ Workflow: a user requests a committee position → `PendingRequest` created → 
 
 `GET /api/committee-requests?status=pending&committee_position=Technical&page=1&limit=10`
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `board`, `xcom`
 - **Query Params:** `status` (`pending|approved|rejected`), `committee_position`, `page`, `limit`
 
 Both `userId` and `reviewedBy` are populated. `reviewedBy` is `null` while a
@@ -2005,7 +2051,7 @@ decision first.
 
 Processes a pending request. Approval assigns the position and emails acceptance; rejection emails a decline. Either way the request document is **kept** — the status, `reviewedBy` and `reviewedAt` are stamped and it moves into that decision log. A request that has already been decided is refused, so a second decision cannot overwrite the first.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 - **Body:** `application/json` — `{ "status": "approved" | "rejected" }` (required)
 
 **Success Response — `200 OK`**
@@ -2028,7 +2074,7 @@ Processes a pending request. Approval assigns the position and emails acceptance
 
 Admin override to reassign a user's committee without a request.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 - **Body:** `{ "committee_position": "HR" }`
 
 **Success Response — `200 OK`**
@@ -2122,7 +2168,7 @@ home page renders nothing instead of logging a failed request on every visit.
 
 ### 3.8.4 Create Season
 
-`POST /api/seasons` — **Auth:** Yes — roles: `xcom`, `board`
+`POST /api/seasons` — **Auth:** Yes - roles: `xcom`
 
 ```json
 // Request
@@ -2143,7 +2189,7 @@ A new season is **not** published; it only becomes the home page when published.
 
 ### 3.8.5 Rename Season
 
-`PUT /api/seasons/:id` — **Auth:** Yes — roles: `xcom`, `board`
+`PUT /api/seasons/:id` — **Auth:** Yes - roles: `xcom`
 
 ```json
 // Request
@@ -2154,7 +2200,7 @@ A new season is **not** published; it only becomes the home page when published.
 
 ### 3.8.6 Publish a Season on the Home Page
 
-`PUT /api/seasons/:id/home` — **Auth:** Yes — roles: `xcom`, `board`
+`PUT /api/seasons/:id/home` — **Auth:** Yes - roles: `xcom`
 
 Publishes this season and unpublishes whichever one was published, so the home
 page always has exactly one Excom to show. The new season is set first and the
@@ -2162,7 +2208,7 @@ others cleared after, so the home page is never briefly empty.
 
 ### 3.8.7 Delete Season
 
-`DELETE /api/seasons/:id` — **Auth:** Yes — roles: `xcom`, `board`
+`DELETE /api/seasons/:id` — **Auth:** Yes - roles: `xcom`
 
 Refuses rather than cascading: deleting a season is for tidying up seasons nobody
 filled in, and silently deleting a season's people because the button sat next to
@@ -2226,7 +2272,7 @@ tick.
 
 ### 3.8.9 Create Crew Member
 
-`POST /api/crew` — **Auth:** Yes — roles: `xcom`, `board`
+`POST /api/crew` — **Auth:** Yes - roles: `xcom`
 
 `season` and `section` are both required: a member with no season cannot be shown
 on `/crew`, so allowing one would mean a row silently invisible to every visitor.
@@ -2267,7 +2313,7 @@ rather than silently dropped, so a typo cannot look like a missing link:
 
 ### 3.8.10 Update Crew Member
 
-`PUT /api/crew/:id` — **Auth:** Yes — roles: `xcom`, `board`
+`PUT /api/crew/:id` — **Auth:** Yes - roles: `xcom`
 
 Only the fields present in the body are touched, so omitting `bio` does not blank
 the bio someone already wrote. Sending `section` moves the member between the
@@ -2285,7 +2331,7 @@ Excom and the Board without deleting and re-entering them.
 
 ### 3.8.11 Delete Crew Member
 
-`DELETE /api/crew/:id` — **Auth:** Yes — roles: `xcom`, `board`
+`DELETE /api/crew/:id` — **Auth:** Yes - roles: `xcom`
 
 ```json
 // 200 OK
@@ -2306,7 +2352,7 @@ Campaign engine backed by **Brevo**. Both send endpoints respond with a **chunke
 
 Reads an Excel file whose **first column contains recipient emails**; remaining columns become merge-data placeholders.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 - **Headers:** `multipart/form-data`
 - **Fields**
 
@@ -2348,7 +2394,7 @@ With body `Hello {{Name}}, you're invited to {{Event}}!`
 
 Targets registered users by IDs and/or emails — no spreadsheet needed.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `xcom`
 - **Headers:** `multipart/form-data`
 - **Fields**
 
@@ -2393,7 +2439,7 @@ emails:   ["mona@example.com"]
 
 Paginated delivery log with aggregate statistics.
 
-- **Auth:** Yes — roles: `xcom`, `board`
+- **Auth:** Yes - roles: `board`, `xcom`
 - **Query Params**
 
 | Param | Type | Default | Notes |
@@ -2427,7 +2473,7 @@ Paginated delivery log with aggregate statistics.
 
 ### 3.9.4 Remaining Email Allowance
 
-`GET /api/emails/quota` — **Auth:** Yes — roles: `xcom`, `board`
+`GET /api/emails/quota` — **Auth:** Yes - roles: `board`, `xcom`
 
 How much of Brevo's allowance is left, read live from `GET /v3/account`. Backs the progress bar on the dashboard Settings page, so an admin can check the room left before starting a bulk send — Brevo starts rejecting once the day's allowance is gone.
 

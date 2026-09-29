@@ -4,6 +4,9 @@ import { useReviewCommitteeRequests } from "../../hooks/dashboard/useReviewCommi
 import Button from "../../components/ui/Button";
 import Modal from "../../components/ui/Modal";
 import Pagination from "../../components/ui/Pagination";
+import { useAuth } from "../../context/AuthContext";
+import { canWrite } from "../../utils/roleAccess";
+import ReadOnlyBanner from "../../components/dashboard/ReadOnlyBanner";
 
 // The three buckets the page is split into. A request is created pending and
 // stays in the collection after a decision, so Approved and Rejected are a
@@ -17,7 +20,7 @@ const TABS = [
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString() : "—";
 
-const RequestRow = ({ request, onView, onDecide, busy, decided }) => (
+const RequestRow = ({ request, onView, onDecide, busy, decided, canEdit }) => (
   <li className="flex flex-col md:flex-row md:items-center gap-3 py-3 border-t border-border/60 first:border-t-0">
     <div className="flex-1 min-w-0">
       <p className="text-sm font-medium text-foreground truncate">{request.user.name}</p>
@@ -52,10 +55,10 @@ const RequestRow = ({ request, onView, onDecide, busy, decided }) => (
         View
       </button>
 
-      {/* Only a pending request can be decided. Once it has been approved or
-          rejected the server refuses a second decision, so the buttons are
-          hidden rather than left there to fail. */}
-      {!decided && (
+      {/* Only a pending request can be decided, and only xcom may decide one:
+          approving writes the applicant's committee and sends a decision email.
+          The server enforces both conditions regardless. */}
+      {!decided && canEdit && (
         <>
           <Button
             onClick={() => onDecide(request.id, "approved")}
@@ -79,7 +82,7 @@ const RequestRow = ({ request, onView, onDecide, busy, decided }) => (
   </li>
 );
 
-const RequestList = ({ bucket, decided, onView, onDecide }) => {
+const RequestList = ({ bucket, decided, onView, onDecide, canEdit }) => {
   const { requests, loading, page, setPage, totalPages, processingId } = bucket;
 
   if (loading) {
@@ -112,6 +115,7 @@ const RequestList = ({ bucket, decided, onView, onDecide }) => {
             onView={() => onView(request)}
             onDecide={onDecide}
             busy={processingId === request.id}
+            canEdit={canEdit}
           />
         ))}
       </ul>
@@ -125,11 +129,16 @@ const RequestList = ({ bucket, decided, onView, onDecide }) => {
 };
 
 export default function DashboardCommitteeRequests() {
+  const { user } = useAuth();
+
   // One hook per bucket. The tab counts need all three totals, and the
   // decisions are only ever made against the pending bucket.
   const pending = useReviewCommitteeRequests({ status: "pending" });
   const approved = useReviewCommitteeRequests({ status: "approved" });
   const rejected = useReviewCommitteeRequests({ status: "rejected" });
+
+  // Board reads the queue; deciding on a request is an xcom action.
+  const canEdit = canWrite(user?.role);
 
   const buckets = { pending, approved, rejected };
   const [tab, setTab] = useState("pending");
@@ -153,6 +162,8 @@ export default function DashboardCommitteeRequests() {
           </p>
         </div>
       </div>
+
+      {!canEdit && <ReadOnlyBanner className="mb-4" />}
 
       <div className="bg-card-alt rounded-xl shadow-sm p-4">
         <div
@@ -198,6 +209,7 @@ export default function DashboardCommitteeRequests() {
           decided={tab === "pending" ? null : tab}
           onView={setSelected}
           onDecide={decide}
+          canEdit={canEdit}
         />
       </div>
 
@@ -244,7 +256,7 @@ export default function DashboardCommitteeRequests() {
               ))}
             </div>
 
-            {selected.status === "pending" ? (
+            {selected.status === "pending" && canEdit ? (
               <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-gray-100 dark:border-[#222936]">
                 <Button
                   onClick={() => decide(selected.id, "approved")}

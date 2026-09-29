@@ -25,7 +25,7 @@ import { useAuth } from "../../context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import ConfirmModal from "../ui/ConfirmModal";
 import { useLogout } from "../../hooks/auth/useLogout";
-import { canUseScanPage, dashboardHref, isAdminRole } from "../../utils/roleAccess";
+import { canUseScanPage, canViewAdminPages, dashboardHref } from "../../utils/roleAccess";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
@@ -227,7 +227,7 @@ const PublicNavbar = () => {
         </div>
 
         {/* Sheet Footer */}
-        <div className={`px-4 pb-8 pt-4 ${isAdminRole(user?.role) ? "border-t border-[#FFFFFF33] dark:border-border" : ""}`}>
+        <div className={`px-4 pb-8 pt-4 ${canViewAdminPages(user?.role) ? "border-t border-[#FFFFFF33] dark:border-border" : ""}`}>
           {user ? (
             <>
               <Link

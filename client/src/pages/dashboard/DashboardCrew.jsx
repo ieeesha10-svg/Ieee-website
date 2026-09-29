@@ -15,6 +15,9 @@ import Modal from "../../components/ui/Modal";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import { useSeasons } from "../../hooks/useSeasons";
 import { useCrewForSeason } from "../../hooks/dashboard/useCrewForSeason";
+import { useAuth } from "../../context/AuthContext";
+import { canWrite } from "../../utils/roleAccess";
+import ReadOnlyBanner from "../../components/dashboard/ReadOnlyBanner";
 
 const SECTIONS = [
   { key: "excom", label: "Excom", blurb: "The executive committee for this season." },
@@ -49,6 +52,10 @@ const memberToForm = (member) => ({
 });
 
 export default function DashboardCrew() {
+  const { user } = useAuth();
+  // Crew and season edits are writes. Board can still read both lists.
+  const canEdit = canWrite(user?.role);
+
   const { seasons, isLoading: seasonsLoading, refresh: refreshSeasons } = useSeasons();
   // Null means "follow whatever is published", which is where an admin almost
   // always wants to start. The dropdown writes an explicit id, after which the
@@ -258,18 +265,23 @@ export default function DashboardCrew() {
         </div>
       </div>
       <div className="mt-4 pt-4 border-t border-gray-100 dark:border-[#222936] flex justify-end gap-2">
-        <button
-          onClick={() => openEditModal(member)}
-          className="text-xs font-medium text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-gray-700/50 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5"
-        >
-          <Edit size={13} /> Edit
-        </button>
-        <button
-          onClick={() => setDeleting(member)}
-          className="text-xs font-medium text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5"
-        >
-          <Trash2 size={13} /> Delete
-        </button>
+        {/* Board can read the crew list; changing it is xcom-only. */}
+        {canEdit && (
+          <>
+            <button
+              onClick={() => openEditModal(member)}
+              className="text-xs font-medium text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-gray-700/50 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5"
+            >
+              <Edit size={13} /> Edit
+            </button>
+            <button
+              onClick={() => setDeleting(member)}
+              className="text-xs font-medium text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 dark:hover:bg-red-900/20 dark:hover:bg-red-900/40 px-3 py-1.5 rounded-lg transition-colors inline-flex items-center gap-1.5"
+            >
+              <Trash2 size={13} /> Delete
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -293,13 +305,17 @@ export default function DashboardCrew() {
             and keep the rest as an archive.
           </p>
         </div>
-        <button
-          onClick={() => setShowSeasonModal(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
-        >
-          <CalendarRange size={16} /> Manage Seasons
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => setShowSeasonModal(true)}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
+          >
+            <CalendarRange size={16} /> Manage Seasons
+          </button>
+        )}
       </div>
+
+      {!canEdit && <ReadOnlyBanner />}
 
       {/* Season picker */}
       {seasonsLoading ? (
@@ -315,12 +331,14 @@ export default function DashboardCrew() {
           <p className="text-muted text-sm mb-4">
             A season holds one Excom and one Board. Create your first one to start adding people.
           </p>
-          <button
-            onClick={() => setShowSeasonModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
-          >
-            <Plus size={16} /> Create a season
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => setShowSeasonModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
+            >
+              <Plus size={16} /> Create a season
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -368,12 +386,14 @@ export default function DashboardCrew() {
                       <h2 className="text-base font-bold text-foreground">{section.label}</h2>
                       <p className="text-xs text-muted mt-0.5">{section.blurb}</p>
                     </div>
-                    <button
-                      onClick={() => openCreateModal(section.key)}
-                      className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
-                    >
-                      <Plus size={14} /> Add to {section.label}
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => openCreateModal(section.key)}
+                        className="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
+                      >
+                        <Plus size={14} /> Add to {section.label}
+                      </button>
+                    )}
                   </div>
                   {members.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

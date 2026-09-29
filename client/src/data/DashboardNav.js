@@ -45,6 +45,9 @@ export const navItems = [
     to: "/dashboard/email",
     label: "Emails",
     icon: "Mail",
+    // The whole page is a write: composing and sending. Board can read the
+    // delivery history in Email Logs, so the mailer is hidden from it.
+    writeOnly: true,
     title: "Bulk Mailer",
     sub: "Compose and send broadcast emails to members",
   },

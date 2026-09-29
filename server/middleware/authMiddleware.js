@@ -48,5 +48,31 @@ const optionalProtect = async (req, res, next) => {
   next();
 };
 
+// For routes that address one specific user's own record — a "me" style lookup
+// where the id is in the path instead of implied by the session.
+//
+// Without this, `GET /submissions/:userid/:formid` was readable by any signed-in
+// account: the only check was that *a* valid session existed, not that the
+// session belonged to `:userid`. A plain member with no dashboard could read
+// every other member's form answers just by changing the id.
+//
+// The rule: your own record is always yours, and anyone who is allowed to read
+// submissions in bulk (board, xcom) may read anyone's. Everyone else is 403'd
+// with a message that does not confirm whether the record exists.
+const authorizeSelfOr = (...roles) => {
+  return (req, res, next) => {
+    const targetId = req.params.userid ?? req.params.id;
+    const isSelf = String(targetId) === String(req.user._id);
+    const hasRole = roles.includes(req.user.role);
 
-module.exports = { protect, authorize, optionalProtect };
+    if (!isSelf && !hasRole) {
+      return res.status(403).json({
+        message: 'Not authorized to view this record',
+      });
+    }
+    next();
+  };
+};
+
+
+module.exports = { protect, authorize, optionalProtect, authorizeSelfOr };

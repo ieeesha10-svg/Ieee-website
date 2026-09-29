@@ -4,7 +4,7 @@ const Season = require("../models/seasonModel");
 const { sanitizeSocials, shapeMember } = require("../utils/crewUtils");
 const { catchAsync, AppError } = require("../middleware/errorsMiddleware");
 
-// Every route here is behind protect + authorize('xcom', 'board') except the
+// Every route here is behind protect + authorize(...WRITE_ROLES) except the
 // GET, so the write handlers do not re-check roles.
 
 const SECTIONS = ["excom", "board"];

@@ -2,7 +2,8 @@ const { catchAsync, AppError } = require('../middleware/errorsMiddleware');
 const PendingRequest = require('../models/PendingRequest');
 const User = require('../models/UserModel');
 const { readSettings } = require('./settingsController');
-const { sendCommitteeDecisionEmail } = require('../utils/sendEmail');
+  const { sendCommitteeDecisionEmail } = require('../utils/sendEmail');
+  const { VIEW_ROLES } = require('../constants/roles');
 
 const createCommitteeRequest = catchAsync(async (req, res) => {
   const { committee_position } = req.body;
@@ -17,8 +18,9 @@ const createCommitteeRequest = catchAsync(async (req, res) => {
     throw new AppError('User not found', 404);
   }
 
-  // XCom & Board members are accepted immediately
-  if (['xcom', 'board'].includes(existingUser.role)) {
+  // xcom & board are accepted immediately. Board keeps this: it is a read-mostly
+  // oversight role, but applying for a committee is not a dashboard write.
+  if (VIEW_ROLES.includes(existingUser.role)) {
     // Admins are placed directly, so this switch is aimed at members and does
     // not apply to them.
     if (existingUser.committee === committee_position) {

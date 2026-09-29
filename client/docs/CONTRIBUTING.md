@@ -85,10 +85,12 @@ React 19, React Router 7, Vite 7, Tailwind CSS 4, Axios, react-hot-toast, lucide
    - Public → inside `<Route element={<PublicLayout />}>`
    - Auth-only (login, registration, verify, forgot/reset password) → inside `<GuestRoute>`
    - Any logged-in user → inside `<ProtectedRoute />`
-   - Admin → inside `<Route element={<ProtectedRoute requireAdmin />}>` (nested under `<DashboardLayout />`)
+   - Dashboard, `board` and `xcom` → inside `<Route element={<ProtectedRoute requireAdmin />}>` (nested under `<DashboardLayout />`)
+   - `xcom` only, for a page that exists purely to write → inside `<ProtectedRoute requireWrite />` (the event and form builders, the bulk mailer)
    - Scanner-only → inside `<Route element={<ProtectedRoute roles={SCAN_ACCESS_ROLES} />}>`
-3. If it needs sidebar navigation, add an entry to `src/data/DashboardNav.js` (`navItems` or `toolsItems`).
-4. Update `docs/PAGES.md` (and `docs/HOOKS.md` if you added hooks).
+3. If it needs sidebar navigation, add an entry to `src/data/DashboardNav.js` (`navItems` or `toolsItems`). Mark a `writeOnly: true` entry if the page is xcom-only, so `board` does not get a link to a page it cannot use.
+4. If the page has write controls, gate each one on `canWrite(user?.role)` and render `<ReadOnlyBanner />` when the viewer can't write — otherwise a board member finds the buttons missing with no explanation. **This is presentation only**; add the `authorize(...WRITE_ROLES)` guard on the server endpoint too, or the buttons are just hidden, not protected.
+5. Update `docs/PAGES.md` (and `docs/HOOKS.md` if you added hooks).
 
 ## Adding a New Shared Component
 
@@ -99,7 +101,8 @@ React 19, React Router 7, Vite 7, Tailwind CSS 4, Axios, react-hot-toast, lucide
 
 ## Adding Data / Permissions
 
-- Roles and role checks live in `src/data/roles.js` + `src/utils/roleAccess.js`. Update them **in sync with the backend**. Don't hard-code role strings elsewhere.
+- Roles and role checks live in `src/data/roles.js` + `src/utils/roleAccess.js`. Update them **in sync with the backend** — `server/constants/roles.js` and the enum in `server/models/UserModel.js`. Don't hard-code role strings elsewhere.
+- There are four roles: `member` (default, no dashboard), `scanner` (scan page only), `board` (reads the dashboard, writes nothing) and `xcom` (every write, shown as **Excom**). There is no `user` role.
 - Static content (committees, team, socials, event/form types) lives in `src/data/`. Update `docs/DATA.md` when you change shapes.
 
 ## Verification Checklist

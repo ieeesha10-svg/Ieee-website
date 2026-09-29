@@ -20,6 +20,9 @@ import { toLocalDatetimeString } from "../../../utils/dateUtils";
 import Modal from "../../../components/ui/Modal";
 import EventEditModal from "../../../components/dashboard/EventEditModal";
 import EventViewModal from "../../../components/dashboard/EventViewModal";
+import { useAuth } from "../../../context/AuthContext";
+import { canWrite } from "../../../utils/roleAccess";
+import ReadOnlyBanner from "../../../components/dashboard/ReadOnlyBanner";
 
 function EventPicker({ featuredIds, onSelect, onClose }) {
   const { paginatedEvents: events, loading, page, setPage, pagination } = useEvents();
@@ -89,6 +92,11 @@ function EventPicker({ featuredIds, onSelect, onClose }) {
 }
 
 export default function FeaturedEvents() {
+  const { user } = useAuth();
+  // Adding, removing and swapping flagship events are writes. Viewing the
+  // current pair is a read board is allowed to do.
+  const canEdit = canWrite(user?.role);
+
   const { featured, loading, refetch } = useFeaturedEvents();
   const { addFeatured } = useAddFeatured(refetch);
   const { removeFeatured } = useRemoveFeatured(refetch);
@@ -193,27 +201,31 @@ export default function FeaturedEvents() {
 				</div>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto mt-4 md:mt-0">
-          <button
-            onClick={() => setShowPicker(true)}
-            disabled={adding || featured.length >= 2}
-            title={featured.length >= 2 ? "Max 2 events" : undefined}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto order-1 sm:order-3"
-          >
-            {adding ? <Loader2 size={14} className="animate-spin" /> : <Plus size={16} />}
-            Add Flagship Event
-          </button>
+          {/* Adding and swapping flagship events change the public homepage, so
+              they are xcom-only. Board can still preview what ships. */}
+          {canEdit && (
+            <button
+              onClick={() => setShowPicker(true)}
+              disabled={adding || featured.length >= 2}
+              title={featured.length >= 2 ? "Max 2 events" : undefined}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto order-1 sm:order-3"
+            >
+              {adding ? <Loader2 size={14} className="animate-spin" /> : <Plus size={16} />}
+              Add Flagship Event
+            </button>
+          )}
           <div className="flex items-center gap-2 order-2 sm:order-none w-full sm:w-auto">
             <button
               onClick={() => setShowPreview(true)}
               disabled={featured.length === 0}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-foreground border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-auto"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-foreground border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:w-auto"
             >
               <Eye size={16} /> Preview
             </button>
-            {featured.length === 2 && (
+            {canEdit && featured.length === 2 && (
               <button
                 onClick={handleSwap}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-foreground border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex-1 sm:flex-auto"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-foreground border border-gray-200 dark:border-[#222936] rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex-1 sm:w-auto"
               >
                 <ArrowLeftRight size={16} /> Swap
               </button>
@@ -221,6 +233,8 @@ export default function FeaturedEvents() {
           </div>
         </div>
       </div>
+
+      {!canEdit && <ReadOnlyBanner className="mt-4" />}
 
       {featured.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-[#1a1f2e] rounded-xl border border-gray-100 dark:border-[#222936]">
@@ -262,18 +276,22 @@ export default function FeaturedEvents() {
                   >
                     <Eye size={13} /> View
                   </button>
-                  <button
-                    onClick={() => setEventEditModal(event)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
-                  >
-                    <Edit size={13} /> Edit
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget(event)}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-red-600 border border-red-200 dark:border-red-700/40 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                  >
-                    <Trash2 size={13} /> Remove
-									</button>
+                  {canEdit && (
+                    <>
+                      <button
+                        onClick={() => setEventEditModal(event)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
+                      >
+                        <Edit size={13} /> Edit
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(event)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-red-600 border border-red-200 dark:border-red-700/40 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      >
+                        <Trash2 size={13} /> Remove
+                      </button>
+                    </>
+                  )}
 
                 </div>
               </div>

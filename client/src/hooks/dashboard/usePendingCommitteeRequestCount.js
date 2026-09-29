@@ -15,11 +15,15 @@ export const PENDING_COUNT_EVENT = "committee-requests:pending-changed";
 
 const POLL_MS = 60_000;
 
-export function usePendingCommitteeRequestCount() {
+export function usePendingCommitteeRequestCount({ enabled = true } = {}) {
   const [count, setCount] = useState(0);
   const { pathname } = useLocation();
 
   const refresh = useCallback(async () => {
+    if (!enabled) {
+      setCount(0);
+      return;
+    }
     try {
       // limit=1 - the rows are not used, only pagination.totalItems is.
       const res = await api.get("/committee-requests?status=pending&page=1&limit=1");
@@ -29,7 +33,7 @@ export function usePendingCommitteeRequestCount() {
       // toast on every page - the review screen still surfaces the real error.
       setCount(0);
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -46,9 +50,10 @@ export function usePendingCommitteeRequestCount() {
   }, [refresh]);
 
   useEffect(() => {
+    if (!enabled) return;
     const id = setInterval(refresh, POLL_MS);
     return () => clearInterval(id);
-  }, [refresh]);
+  }, [refresh, enabled]);
 
   return { count, refresh };
 }
