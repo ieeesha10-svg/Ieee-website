@@ -10,14 +10,34 @@ import React from "react";
  * `1fr`, which stretches the cards in a short final row and is precisely the
  * uneven layout this is here to avoid.
  *
- * 1 / 2 / 3 / 4 / 5 per row as the viewport grows.
+ * 2 / 3 / 4 / 5 per row as the viewport grows. Two on a phone, matching the
+ * Executive Committee grid on the About page, which has always been
+ * `grid-cols-2`; one per row made the committee scroll for no reason at a width
+ * that comfortably fits a portrait card at half the column.
  */
 export const CARD_BASIS =
-  "basis-full " +
-  "sm:basis-[calc(50%-0.625rem)] " +
+  "basis-[calc(50%-0.625rem)] " +
   "md:basis-[calc(33.3333%-0.8333rem)] " +
   "lg:basis-[calc(25%-0.9375rem)] " +
   "xl:basis-[calc(20%-1rem)]";
+
+/**
+ * One and a half cards wide, for the counselor's spotlight card.
+ *
+ * Derived from CARD_BASIS as `1.5 * (100/n - (n-1)*gap/n)` rather than picked as
+ * a pixel width, so the counselor stays exactly half again as wide as an Excom
+ * card at every breakpoint. A fixed `max-w-sm` could not do that: the grid card
+ * is ~154px on a phone but ~227px on a desktop, so any single cap is either
+ * smaller than the cards on a wide screen or absurd on a narrow one.
+ *
+ * Widths rather than flex bases, because the spotlight sits outside the grid's
+ * flex row - `basis-*` does nothing on a plain block child.
+ */
+export const FEATURE_BASIS =
+  "w-[calc(75%-0.9375rem)] " +
+  "md:w-[calc(50%-1.25rem)] " +
+  "lg:w-[calc(37.5%-1.4063rem)] " +
+  "xl:w-[calc(30%-1.5rem)]";
 
 /**
  * A wrapping row of equally sized cards, with a short last row centred.

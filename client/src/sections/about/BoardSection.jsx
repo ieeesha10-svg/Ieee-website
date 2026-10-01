@@ -6,6 +6,7 @@ import linkedinIcon from "../../assets/images/chairpersons/linkedin.webp";
 import facebookIcon from "../../assets/images/chairpersons/facebook.webp";
 import collabratecIcon from "../../assets/images/chairpersons/collabratec-logo.webp";
 import { useSeason } from "../../hooks/useSeasons";
+import CenteredCardGrid, { FEATURE_BASIS } from "../../components/ui/CenteredCardGrid";
 
 function MemberCard({ member }) {
   return (
@@ -16,9 +17,19 @@ function MemberCard({ member }) {
     // lighter dark surface separates it from the #1A1F2E background, and the
     // ring gives a defined edge in light mode where card (#f2f2f2) on white is
     // only a shade apart.
-    <div className="bg-card dark:bg-[#232B3F] rounded-xl ring-1 ring-inset ring-black/10 dark:ring-white/10 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl shadow-card">
+    //
+    // `h-full` is required, not decorative: CenteredCardGrid stretches the <li>,
+    // and a block child is only as tall as its own content without it. Paired
+    // with `justify-center` on the info block below, that gives every card in a
+    // line the same height with its text centred in the leftover space.
+    <div className="flex flex-col h-full bg-card dark:bg-[#232B3F] rounded-xl ring-1 ring-inset ring-black/10 dark:ring-white/10 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl shadow-card">
       {/* Avatar */}
-      <div className="h-32 sm:h-70 overflow-hidden bg-gray-200 dark:bg-gray-800">
+      {/* Aspect ratio rather than the fixed `h-32 sm:h-70` this used. A fixed
+          height ignored the card width, so two per row on a phone squeezed the
+          photo into a 150x128 squat crop while a desktop card got a 280px
+          letterbox - the same card, two completely different pictures. 3:4
+          scales with the column and matches the crew cards. */}
+      <div className="aspect-[3/4] w-full overflow-hidden bg-gray-200 dark:bg-gray-800 shrink-0">
         {member.image ? (
           <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
         ) : (
@@ -29,7 +40,7 @@ function MemberCard({ member }) {
       </div>
 
       {/* Info */}
-      <div className="text-center py-4">
+      <div className="flex-1 flex flex-col justify-center text-center py-4 px-2">
         <h3 className="font-bold text-foreground text-sm sm:text-base">{member.name}</h3>
         <p className="text-xs font-semibold text-primary uppercase mt-1">{member.position}</p>
 
@@ -100,18 +111,26 @@ export default function BoardSection() {
         // publishing a season from the dashboard.
         null
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {counselors.map((person) => (
-            <div key={person._id} className="max-w-sm mx-auto">
+            // FEATURE_BASIS, not a fixed cap: 1.5x a grid card at every width,
+            // so the counselor reads as the senior member it is instead of
+            // landing within a few pixels of an Excom card on a desktop.
+            <div key={person._id} className={`${FEATURE_BASIS} mx-auto`}>
               <MemberCard member={person} />
             </div>
           ))}
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* CenteredCardGrid, not `grid-cols-2 lg:grid-cols-4`. Five officers
+              in a four-column CSS grid left the fifth stranded against the left
+              edge, and unlike the crew pages the cards were not the same width
+              as each other in a short row. This also puts the section on the
+              same 2/3/4/5 rhythm as /crew and the home page. */}
+          <CenteredCardGrid>
             {rest.map((person) => (
               <MemberCard key={person._id} member={person} />
             ))}
-          </div>
+          </CenteredCardGrid>
         </div>
       )}
     </>

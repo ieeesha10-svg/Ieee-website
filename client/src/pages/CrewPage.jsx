@@ -34,7 +34,11 @@ function MemberCard({ person }) {
     // at its own content. Without it the equal-height rule silently does
     // nothing, because a block child of the <li> is only as tall as its text.
     <div className="group relative flex flex-col h-full bg-white dark:bg-[#151A28] rounded-xl shadow-lg dark:shadow-none overflow-hidden transition-all duration-300 hover:-translate-y-2 border border-transparent dark:border-gray-800">
-      <div className="relative w-full aspect-[4/5] overflow-hidden bg-gray-200 dark:bg-gray-800">
+      {/* 3:4 at every width. The photo is `aspect`-locked, so the card width
+          decides the image height; 3:4 is the framing the crew photos are shot
+          for, and it holds from a two-per-row phone all the way to five per row
+          on a desktop, where the narrower card would otherwise undo the gain. */}
+      <div className="relative w-full aspect-[3/4] overflow-hidden bg-gray-200 dark:bg-gray-800">
         {!person.image || imageFailed ? (
           <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-800">
             <User size={64} strokeWidth={1.5} className="text-gray-400 dark:text-gray-500" />
