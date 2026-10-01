@@ -25,7 +25,11 @@ export default function PersonCard({ person }) {
 
   return (
     <div className="group relative flex flex-col bg-white dark:bg-[#1A1F2E] rounded-[10px] lg:rounded-[14px] shadow-[0_2px_4px_-1px_rgba(0,0,0,0.1)] lg:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-none overflow-hidden transition-all duration-400 hover:-translate-y-2 h-full">
-      <div className="relative w-full aspect-square overflow-hidden bg-gray-200 dark:bg-gray-800 rounded-t-2xl border-t-4 border-r-4 border-l-4 border-main group-hover:border-primary transition-all duration-500">
+      {/* 3:4 at every width, matching the crew card. Square was fine when this
+          was one card per row, but two per row halved the width and with it the
+          picture, and md and up are narrower than they used to be too, so the
+          ratio is set once here instead of per breakpoint. */}
+      <div className="relative w-full aspect-[3/4] overflow-hidden bg-gray-200 dark:bg-gray-800 rounded-t-2xl border-t-4 border-r-4 border-l-4 border-main group-hover:border-primary transition-all duration-500">
         {hasImage ? (
           <img
             src={person.image}
