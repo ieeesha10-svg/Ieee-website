@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { useSeason, useSeasons } from "../hooks/useSeasons";
+import CenteredCardGrid from "../components/ui/CenteredCardGrid";
 
 // Collabratec has no Lucide glyph, so it gets a generic people icon rather than
 // being left out - the home card links to it, and a link that only works on one
@@ -27,7 +28,12 @@ function MemberCard({ person }) {
   const links = SOCIAL_ICONS.filter(({ key }) => person.socials?.[key]);
 
   return (
-    <div className="group relative flex flex-col bg-white dark:bg-[#151A28] rounded-xl shadow-lg dark:shadow-none overflow-hidden transition-all duration-300 hover:-translate-y-2 border border-transparent dark:border-gray-800">
+    // `h-full` so the card fills the line height that CenteredCardGrid's
+    // `items-stretch` gives it: the tallest card on a row decides the row
+    // height, and every sibling card stretches to match instead of stopping
+    // at its own content. Without it the equal-height rule silently does
+    // nothing, because a block child of the <li> is only as tall as its text.
+    <div className="group relative flex flex-col h-full bg-white dark:bg-[#151A28] rounded-xl shadow-lg dark:shadow-none overflow-hidden transition-all duration-300 hover:-translate-y-2 border border-transparent dark:border-gray-800">
       <div className="relative w-full aspect-[4/5] overflow-hidden bg-gray-200 dark:bg-gray-800">
         {!person.image || imageFailed ? (
           <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-800">
@@ -68,7 +74,12 @@ function MemberCard({ person }) {
         )}
       </div>
 
-      <div className="flex flex-col items-center text-center p-6 flex-1">
+      {/* `flex-1` takes whatever height the stretched card has left over after
+          the fixed 4:5 photo, and `justify-center` centres the name, position
+          and bio inside it. So on a row where one card has a long bio, the
+          shorter bios stay centred in their own card rather than clinging to
+          the top with a gap underneath. */}
+      <div className="flex flex-col items-center justify-center text-center p-6 flex-1">
         <h2 className="text-[#1A1A1A] dark:text-white text-lg font-bold font-lakes mb-1">
           {person.name}
         </h2>
@@ -102,9 +113,47 @@ function Section({ title, blurb, members }) {
           No {title.toLowerCase()} members listed for this season.
         </p>
       ) : (
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+        <CenteredCardGrid>
           {members.map((person) => (
             <MemberCard key={person._id} person={person} />
+          ))}
+        </CenteredCardGrid>
+      )}
+    </section>
+  );
+}
+
+/**
+ * The counselor list: one card per line, centred.
+ *
+ * Deliberately not the card grid. The counselor is a single senior role rather
+ * than a row of peers, so each one gets a full line to itself instead of being
+ * shrunk into a five-wide column beside the committee. The width is capped
+ * because MemberCard is a portrait crop: letting a lone card span a 1280px row
+ * would make it several times taller than the cards below it.
+ */
+function CounselorSection({ title, blurb, members }) {
+  return (
+    <section className="w-full">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl lg:text-4xl font-gotham font-bold text-[#1A1A1A] dark:text-[#F2F2F2]">
+          {title}
+        </h2>
+        <p className="text-[#4A5565] dark:text-[#9CA3AF] text-sm lg:text-base font-lakes mt-2">
+          {blurb}
+        </p>
+      </div>
+
+      {members.length === 0 ? (
+        <p className="text-center text-[#4A5565] dark:text-[#9CA3AF] font-lakes py-6">
+          No counselor listed for this season.
+        </p>
+      ) : (
+        <div className="w-full flex flex-col items-center gap-6 lg:gap-8">
+          {members.map((person) => (
+            <div key={person._id} className="w-full max-w-[280px] sm:max-w-[320px]">
+              <MemberCard person={person} />
+            </div>
           ))}
         </div>
       )}
@@ -122,7 +171,7 @@ function Section({ title, blurb, members }) {
  */
 export default function CrewPage() {
   const { seasonId } = useParams();
-  const { season, excom, board, isLoading, error, isEmpty } = useSeason(seasonId);
+  const { season, excom, counselor, board, isLoading, error, isEmpty } = useSeason(seasonId);
   const { seasons } = useSeasons();
 
   // Every season the visitor is not already looking at, so the labels at the
@@ -178,6 +227,11 @@ export default function CrewPage() {
           </p>
         ) : (
           <>
+            <CounselorSection
+              title="Counselor"
+              blurb="The counselor advising this season's committee."
+              members={counselor}
+            />
             <Section
               title="Excom"
               blurb="The executive committee leading this season."

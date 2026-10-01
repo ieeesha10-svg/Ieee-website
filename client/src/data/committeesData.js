@@ -1,6 +1,6 @@
 import prIcon from '../assets/icons/committees/pr.webp';
 import hrIcon from '../assets/icons/committees/hr-desk.webp';
-import logisticsIcon from '../assets/icons/committees/logistics.webp';
+import operationsIcon from '../assets/icons/committees/logistics.webp';
 import marketingIcon from '../assets/icons/committees/marketing.webp';
 import paletteIcon from '../assets/icons/committees/palette.webp';
 import developerIcon from '../assets/icons/committees/developer.webp';
@@ -36,10 +36,10 @@ export const committees = [
     recruitmentOpen: false,
   },
   {
-    id: "logistics",
-    icon: logisticsIcon,
-    label: "Logistics",
-    title: "Logistics",
+    id: "Operations",
+    icon: operationsIcon,
+    label: "Operations",
+    title: "Operations",
     subtitle: "Operations & coordination",
     points: [
       "Coordinating venues, schedules, and event resources.",

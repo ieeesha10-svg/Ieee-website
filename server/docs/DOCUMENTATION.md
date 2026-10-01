@@ -54,7 +54,7 @@ server/
 │   ├── submissionController.js # Form submissions, QR scan, Excel export
 │   ├── committeeRequestController.js # Committee join workflow
 │   ├── crewController.js     # Crew directory CRUD
-│   ├── seasonController.js   # Seasons (Excom + Board) and which one is published
+│   ├── seasonController.js   # Seasons (Counselor + Excom + Board) and which one is published
 │   ├── emailController.js    # Bulk email campaigns + logs
 │   └── statsController.js    # Dashboard analytics aggregation
 ├── models/                   # Mongoose schemas
@@ -407,7 +407,7 @@ so the dashboard can keep a permanent log of who decided what.
 stopping them from having decided ones in their history.
 
 ### `seasons`
-A season is one committee: an Excom and a Board.
+A season is one committee: a Counselor, an Excom and a Board. The Counselor is listed first because it is the senior advisory role, the one the committee answers to.
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -416,7 +416,7 @@ A season is one committee: an Excom and a Board.
 | `order` | Number | archive order, newest first. Assigned as the current count on create |
 
 ### `crews`
-One Excom or Board member of one season.
+One Counselor, Excom or Board member of one season.
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -425,7 +425,7 @@ One Excom or Board member of one season.
 | `image` | String | URL or `/public` path |
 | `bio` | String | short description |
 | `season` | ObjectId → Season | **required**, indexed — see 3.8 |
-| `section` | String | **required**, enum: `excom`, `board` |
+| `section` | String | **required**, enum: `counselor`, `excom`, `board` |
 | `order` | Number | manual ordering within a section |
 | `socials` | Object | `{ linkedin, facebook, collabratec, email, website }`, all optional. `email` is a bare address |
 
@@ -2096,7 +2096,7 @@ Admin override to reassign a user's committee without a request.
 
 A **season** holds one committee: an **Excom** and a **Board**. Members live in
 the `crews` collection and belong to a season through `crew.season`, with
-`crew.section` set to `excom` or `board`. The section is a property of the
+`crew.section` set to `counselor`, `excom` or `board`. The section is a property of the
 season, not of the person — the same name can sit on the Board one season and in
 the Excom the next.
 
@@ -2160,7 +2160,7 @@ Newest first, with a headcount for the archive's season picker.
 `GET /api/seasons/home`
 
 The season the home page is currently showing. Returns the same
-`{ season, excom, board }` shape as 3.8.2.
+`{ season, counselor, excom, board }` shape as 3.8.2.
 
 Answers `200` with `{ "success": true, "data": null }` when no season has been
 published yet. That is a normal state on a fresh install, not a failure, so the
@@ -2306,7 +2306,7 @@ rather than silently dropped, so a typo cannot look like a missing link:
 // 400 — { "message": "A crew member must belong to a season" }
 // 400 — { "message": "Invalid season id" }
 // 400 — { "message": "That season does not exist" }
-// 400 — { "message": "Section must be either \"excom\" or \"board\"" }
+// 400 — { "message": "Section must be one of \"counselor\", \"excom\", \"board\"" }
 // 400 — { "message": "\"not a url at all\" is not a valid linkedin URL" }
 // 400 — { "message": "\"nope\" is not a valid email address" }
 ```
@@ -2317,7 +2317,7 @@ rather than silently dropped, so a typo cannot look like a missing link:
 
 Only the fields present in the body are touched, so omitting `bio` does not blank
 the bio someone already wrote. Sending `section` moves the member between the
-Excom and the Board without deleting and re-entering them.
+Excom, Counselor or Board without deleting and re-entering them.
 
 ```json
 // Request

@@ -14,11 +14,43 @@
 const SOCIAL_KEYS = ["linkedin", "facebook", "collabratec", "email", "website"];
 
 /**
- * The counselor is the one Excom role the home page gives a full-width card, so
- * it is split out of the 4-column grid. It is matched on the position rather
- * than stored as its own flag: "Counselor" is a role someone holds, not a layout
- * decision an admin has to remember to tick, so matching it means a member added
- * to the Excom lands correctly without extra configuration.
+ * The sections a crew member can belong to, in display order.
+ *
+ * Counselor is first on purpose: it is the senior advisory role, and on both the
+ * home page and /crew it reads as the person the committee answers to rather than
+ * as a peer of the Excom.
+ *
+ * Kept here rather than in the controller so the write path (which validates
+ * against it), the season payload (which groups by it) and the docs all read the
+ * same list. Adding a section is one edit in this file plus the schema enum.
+ */
+const SECTIONS = ["counselor", "excom", "board"];
+
+/**
+ * Split a flat member list into one array per section.
+ *
+ * Every section is always present as a key, empty if nobody is in it, so the
+ * public payload has a stable shape: the crew page can render its sections
+ * unconditionally instead of guarding each one for undefined.
+ */
+const groupBySection = (members) => {
+  const grouped = Object.fromEntries(SECTIONS.map((s) => [s, []]));
+  for (const member of members) {
+    // An unrecognised section would otherwise be dropped silently, which is how a
+    // member ends up invisible on the site with no error anywhere.
+    const bucket = grouped[member.section];
+    if (bucket) bucket.push(shapeMember(member));
+  }
+  return grouped;
+};
+
+/**
+ * The counselor is the one role the public pages give a full-width card, so it is
+ * split out of the card grid. Since the Counselor section is now explicit, this
+ * only has to cover a legacy member who was filed under the Excom with
+ * "Counselor" as their position before the section existed; `groupBySection`
+ * cannot rely on it, because that is exactly the member a section-less read would
+ * misfile.
  */
 const isCounselorPosition = (position) => /counsel/i.test(position || "");
 
@@ -95,7 +127,10 @@ const shapeMember = (member) => ({
   bio: member.bio || "",
   section: member.section || "excom",
   order: member.order ?? 0,
-  isCounselor: isCounselorPosition(member.position),
+  // Also true for a member filed under the Counselor section, so a caller that
+  // only wants "who gets the big card" does not have to check both.
+  isCounselor:
+    member.section === "counselor" || isCounselorPosition(member.position),
   socials: SOCIAL_KEYS.reduce((acc, key) => {
     acc[key] = member.socials?.[key] || "";
     return acc;
@@ -104,9 +139,11 @@ const shapeMember = (member) => ({
 
 module.exports = {
   SOCIAL_KEYS,
+  SECTIONS,
   isCounselorPosition,
   isHttpUrl,
   isEmail,
   sanitizeSocials,
   shapeMember,
+  groupBySection,
 };
