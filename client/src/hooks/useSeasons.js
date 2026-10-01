@@ -2,16 +2,16 @@ import { useState, useEffect, useCallback } from "react";
 import api from "../utils/api";
 
 /**
- * Read a season's Excom and Board.
+ * Read a season's Excom, Counselor and Board.
  *
  * With no `seasonId` this reads the season published on the home page, which is
  * what both the home page and /crew want by default: a visitor who lands on
  * /crew should see the current committee, not whichever season happens to sort
  * first. Passing an id is what the archive's season labels do.
  *
- * The two public season endpoints return the same `{ season, excom, board }`
- * shape, so this one hook covers the home page, /crew and /crew/season/:id
- * without any of them having to know which URL it came from.
+ * The two public season endpoints return the same `{ season, excom, counselor,
+ * board }` shape, so this one hook covers the home page, /crew and
+ * /crew/season/:id without any of them having to know which URL it came from.
  */
 export function useSeason(seasonId) {
   const [data, setData] = useState(null);
@@ -52,6 +52,7 @@ export function useSeason(seasonId) {
   return {
     season: data?.season ?? null,
     excom: data?.excom ?? [],
+    counselor: data?.counselor ?? [],
     board: data?.board ?? [],
     // True when the request succeeded but no season is published, which the
     // pages show differently from a failed request.

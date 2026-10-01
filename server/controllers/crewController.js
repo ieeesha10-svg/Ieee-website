@@ -1,13 +1,15 @@
 const mongoose = require("mongoose");
 const Crew = require("../models/crewModel");
 const Season = require("../models/seasonModel");
-const { sanitizeSocials, shapeMember } = require("../utils/crewUtils");
+const {
+  sanitizeSocials,
+  shapeMember,
+  SECTIONS,
+} = require("../utils/crewUtils");
 const { catchAsync, AppError } = require("../middleware/errorsMiddleware");
 
 // Every route here is behind protect + authorize(...WRITE_ROLES) except the
 // GET, so the write handlers do not re-check roles.
-
-const SECTIONS = ["excom", "board"];
 
 // Mongoose 9 exposes isValidObjectId on the module, not on the model.
 const isObjectId = (id) => mongoose.isValidObjectId(id);
@@ -34,7 +36,12 @@ const assertSeasonExists = async (seasonId) => {
 
 const assertSection = (section) => {
   if (!SECTIONS.includes(section)) {
-    throw new AppError('Section must be either "excom" or "board"', 400);
+    // Built from the list rather than written out, so adding a section cannot
+    // leave this message naming a set that no longer matches the enum.
+    throw new AppError(
+      `Section must be one of ${SECTIONS.map((s) => `"${s}"`).join(", ")}`,
+      400
+    );
   }
   return section;
 };

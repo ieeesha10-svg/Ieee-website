@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 /**
- * A member of a season's Excom or Board.
+ * A member of a season's Excom, Counselor or Board.
  *
  * Which section a person belongs to is a property of the season, not of the
  * person: the same name can be a Board member one season and Excom the next, so
@@ -48,13 +48,17 @@ const crewSchema = new mongoose.Schema(
       required: [true, "A crew member must belong to a season"],
       index: true,
     },
+    // Ordered as the sections are displayed: Counselor first, since it is the
+    // senior advisory role, then the Excom, then the Board. The order lives here
+    // rather than only in the UI so the database, the public season payload and
+    // the dashboard dropdown cannot disagree about what exists.
     section: {
       type: String,
       enum: {
-        values: ["excom", "board"],
-        message: 'Section must be either "excom" or "board"',
+        values: ["counselor", "excom", "board"],
+        message: 'Section must be one of "counselor", "excom" or "board"',
       },
-      required: [true, "A crew member must be in the Excom or the Board"],
+      required: [true, "A crew member must be in the Excom, the Counselor or the Board"],
       default: "excom",
     },
     // Manual ordering within a section, so the chair can be pinned to the top
@@ -76,8 +80,8 @@ const crewSchema = new mongoose.Schema(
   }
 );
 
-// The public crew page always reads one season grouped into its two sections,
-// and the archive page reads several seasons' worth at once. This index is what
+// The public crew page always reads one season grouped into its sections, and
+// the archive page reads several seasons' worth at once. This index is what
 // keeps those reads from being a collection scan as the archive grows.
 crewSchema.index({ season: 1, section: 1, order: 1, createdAt: 1 });
 

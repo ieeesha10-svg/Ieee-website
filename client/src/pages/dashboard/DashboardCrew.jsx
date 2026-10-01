@@ -19,10 +19,22 @@ import { useAuth } from "../../context/AuthContext";
 import { canWrite } from "../../utils/roleAccess";
 import ReadOnlyBanner from "../../components/dashboard/ReadOnlyBanner";
 
+// The sections a member can be filed under, in display order. Mirrors SECTIONS
+// in server/utils/crewUtils.js and the crewModel enum; the server is what
+// actually validates, so a stale key here shows up as a 400 rather than as a
+// silently dropped member.
 const SECTIONS = [
+  {
+    key: "counselor",
+    label: "Counselor",
+    blurb: "The counselor advising this season. Shown on its own line on the site.",
+  },
   { key: "excom", label: "Excom", blurb: "The executive committee for this season." },
   { key: "board", label: "Board", blurb: "The board members for this season." },
 ];
+
+const sectionLabel = (key) =>
+  SECTIONS.find((s) => s.key === key)?.label ?? "Crew";
 
 // The five fields a member can have links on, in the order they are offered.
 // `placeholder` is what the admin sees when the box is empty, which is also the
@@ -76,6 +88,7 @@ export default function DashboardCrew() {
 
   const {
     excom,
+    counselor,
     board,
     isLoading,
     isSaving,
@@ -100,7 +113,7 @@ export default function DashboardCrew() {
   const [deletingSeason, setDeletingSeason] = useState(null);
   const [seasonBusy, setSeasonBusy] = useState(false);
 
-  const membersBySection = { excom, board };
+  const membersBySection = { excom, counselor, board };
 
   const openCreateModal = (section) => {
     setForm({ name: "", position: "", image: "", bio: "", socials: emptySocials() });
@@ -301,8 +314,8 @@ export default function DashboardCrew() {
         <div>
           <h1 className="text-xl font-bold text-foreground">Crew Members</h1>
           <p className="text-sm text-muted mt-1">
-            Each season has its own Excom and Board. Publish one on the home page,
-            and keep the rest as an archive.
+            Each season has its own Excom, counselor and board. Publish one on
+            the home page, and keep the rest as an archive.
           </p>
         </div>
         {canEdit && (
@@ -329,7 +342,7 @@ export default function DashboardCrew() {
           </div>
           <h2 className="text-foreground font-semibold text-base mb-1">No seasons yet</h2>
           <p className="text-muted text-sm mb-4">
-            A season holds one Excom and one Board. Create your first one to start adding people.
+            A season holds its Excom, its counselor and its board. Create your first one to start adding people.
           </p>
           {canEdit && (
             <button
@@ -413,7 +426,7 @@ export default function DashboardCrew() {
       <Modal
         open={showMemberModal}
         onClose={() => setShowMemberModal(false)}
-        title={editId ? "Edit Crew Member" : `Add to ${formSection === "excom" ? "Excom" : "Board"}`}
+        title={editId ? "Edit Crew Member" : `Add to ${sectionLabel(formSection)}`}
       >
         <form onSubmit={handleMemberSubmit} className="space-y-4">
           <div>
@@ -436,8 +449,7 @@ export default function DashboardCrew() {
               required
             />
             <p className="text-[11px] text-muted mt-1">
-              A position containing &ldquo;Counselor&rdquo; is given the full-width card on the
-              home page.
+              Their position is what the site prints under their name.
             </p>
           </div>
           <div>

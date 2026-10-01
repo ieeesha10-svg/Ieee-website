@@ -1,6 +1,6 @@
 const Season = require("../models/seasonModel");
 const Crew = require("../models/crewModel");
-const { shapeMember } = require("../utils/crewUtils");
+const { groupBySection } = require("../utils/crewUtils");
 const { catchAsync, AppError } = require("../middleware/errorsMiddleware");
 
 // Mongoose 9 exposes isValidObjectId on the module, not on the model, so this
@@ -35,15 +35,15 @@ const shapeSeason = (season) => ({
   updatedAt: season.updatedAt,
 });
 
-// One place that turns a season's member list into the excom/board pair every
+// One place that turns a season's member list into the per-section arrays every
 // caller of this controller returns, so the home page, /crew and the archive all
-// agree on which members are in which section and in what order.
+// agree on which members are in which section and in what order. The grouping is
+// derived from SECTIONS, so adding a section cannot be half-done here.
 const withMembers = async (season) => {
   const members = await membersOf(season._id);
   return {
     season: shapeSeason(season),
-    excom: members.filter((m) => m.section === "excom").map(shapeMember),
-    board: members.filter((m) => m.section === "board").map(shapeMember),
+    ...groupBySection(members),
   };
 };
 
@@ -70,7 +70,7 @@ const getSeasons = catchAsync(async (req, res) => {
   });
 });
 
-// @desc GET one season with its Excom and Board members
+// @desc GET one season with its Counselor, Excom and Board members
 // @route GET /api/seasons/:id
 const getSeasonById = catchAsync(async (req, res) => {
   assertObjectId(req.params.id);

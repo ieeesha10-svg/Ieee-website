@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Badge from "../../components/ui/Badge";
 import SectionHeader from "../../components/ui/SectionHeader";
 import PersonCard from "../../components/guest/home/PersonCard";
+import CenteredCardGrid from "../../components/ui/CenteredCardGrid";
 import Sponsors from "./Sponsors";
 import { useSeason } from "../../hooks/useSeasons";
 
@@ -11,12 +12,17 @@ export default function Team() {
   // than a hardcoded list is what lets a new committee be swapped in without a
   // deploy; it also means the home page renders nothing until an admin
   // publishes a season from the dashboard.
-  const { excom, isLoading, isEmpty } = useSeason();
+  const { excom, counselor, isLoading, isEmpty } = useSeason();
 
   // The counselor gets the full-width card above the grid, exactly as the
-  // hardcoded list did. The server decides who that is by matching the
-  // position, so an admin does not have to set anything.
-  const counselors = excom.filter((person) => person.isCounselor);
+  // hardcoded list did. They come from their own section now, but the position
+  // match is kept as a fallback: a member added to the Excom with "Counselor" as
+  // their position before the section existed would otherwise quietly disappear
+  // from the home page.
+  const counselors = [
+    ...counselor,
+    ...excom.filter((person) => person.isCounselor),
+  ];
   const rest = excom.filter((person) => !person.isCounselor);
 
   // Nothing published yet: render no leadership section at all rather than an
@@ -56,11 +62,11 @@ export default function Team() {
                 <PersonCard person={person} />
               </div>
             ))}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
+            <CenteredCardGrid>
               {rest.map((person) => (
                 <PersonCard key={person._id} person={person} />
               ))}
-            </div>
+            </CenteredCardGrid>
           </div>
         )}
 

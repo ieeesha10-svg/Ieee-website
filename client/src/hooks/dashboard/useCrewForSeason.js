@@ -19,11 +19,10 @@ const blankMember = () => ({
  * The dashboard's view of one season's members.
  *
  * The member list comes from /seasons/:id rather than /crew?season=, because the
- * dashboard needs the members already split into the Excom and the Board to
- * render them under their own headings, and the season endpoint does that
- * grouping on the server. A single `refresh` after every write keeps the two
- * sections in step with each other instead of letting one half of the page go
- * stale.
+ * dashboard needs the members already split into their sections to render them
+ * under their own headings, and the season endpoint does that grouping on the
+ * server. A single `refresh` after every write keeps the sections in step with
+ * each other instead of letting one half of the page go stale.
  *
  * Loading is derived from which season's members are currently in state rather
  * than stored as a boolean. Switching seasons therefore shows a spinner on the
@@ -35,6 +34,7 @@ export function useCrewForSeason(seasonId) {
   const [state, setState] = useState({
     seasonId: null,
     excom: [],
+    counselor: [],
     board: [],
     failed: false,
   });
@@ -52,12 +52,13 @@ export function useCrewForSeason(seasonId) {
         setState({
           seasonId,
           excom: response.data?.data?.excom || [],
+          counselor: response.data?.data?.counselor || [],
           board: response.data?.data?.board || [],
           failed: false,
         });
       } catch {
         if (ignore) return;
-        setState({ seasonId, excom: [], board: [], failed: true });
+        setState({ seasonId, excom: [], counselor: [], board: [], failed: true });
       }
     };
 
@@ -82,7 +83,7 @@ export function useCrewForSeason(seasonId) {
     }
   };
 
-  /** @param {"excom" | "board"} section which half of the season this member joins */
+  /** @param {"excom" | "counselor" | "board"} section which part of the season this member joins */
   const addMember = (member, section) =>
     runWrite(() => api.post("/crew", { ...member, season: seasonId, section }));
 
@@ -93,9 +94,12 @@ export function useCrewForSeason(seasonId) {
 
   const removeMember = (id) => runWrite(() => api.delete(`/crew/${id}`));
 
+  const belongsToThisSeason = state.seasonId === seasonId;
+
   return {
-    excom: state.seasonId === seasonId ? state.excom : [],
-    board: state.seasonId === seasonId ? state.board : [],
+    excom: belongsToThisSeason ? state.excom : [],
+    counselor: belongsToThisSeason ? state.counselor : [],
+    board: belongsToThisSeason ? state.board : [],
     isLoading: !!seasonId && state.seasonId !== seasonId,
     isSaving,
     error: state.failed,

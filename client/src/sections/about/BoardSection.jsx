@@ -9,7 +9,14 @@ import { useSeason } from "../../hooks/useSeasons";
 
 function MemberCard({ member }) {
   return (
-    <div className="bg-card rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl shadow-card">
+    // The ring and the lifted dark surface are what make the card visible. This
+    // section sits in an `odd:bg-white dark:bg-card` wrapper, and `bg-card`
+    // resolves to `--bg-main`, so in dark mode a plain `bg-card` card was
+    // exactly the same colour as the section behind it and disappeared. The
+    // lighter dark surface separates it from the #1A1F2E background, and the
+    // ring gives a defined edge in light mode where card (#f2f2f2) on white is
+    // only a shade apart.
+    <div className="bg-card dark:bg-[#232B3F] rounded-xl ring-1 ring-inset ring-black/10 dark:ring-white/10 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl shadow-card">
       {/* Avatar */}
       <div className="h-32 sm:h-70 overflow-hidden bg-gray-200 dark:bg-gray-800">
         {member.image ? (
@@ -53,12 +60,16 @@ export default function BoardSection() {
   // import a hardcoded list, which meant a member added or edited from the
   // dashboard never appeared here - and the counselor was missing entirely,
   // because that list only ever held the four officers.
-  const { excom, isLoading, isEmpty } = useSeason();
+  const { excom, counselor, isLoading, isEmpty } = useSeason();
 
   // The counselor is lifted out of the grid and given a full-width card, which
-  // is how the home page has always shown them. The server flags them by
-  // position, so this stays right without anyone ticking a box.
-  const counselors = excom.filter((person) => person.isCounselor);
+  // is how the home page has always shown them. Read from their own section,
+  // with the position match kept as a fallback for a member added to the Excom
+  // as "Counselor" before that section existed.
+  const counselors = [
+    ...counselor,
+    ...excom.filter((person) => person.isCounselor),
+  ];
   const rest = excom.filter((person) => !person.isCounselor);
 
   return (
