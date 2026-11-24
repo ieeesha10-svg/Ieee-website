@@ -1,27 +1,115 @@
-<!DOCTYPE html>
-<html>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: Arial, Helvetica, sans-serif;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);">
-    <div style="background-color: #00629B; padding: 22px 28px; text-align: center;">
-      <h1 style="margin: 0; color: #ffffff; font-size: 20px; letter-spacing: 1px;">IEEE El Shorouk Academy</h1>
-      <p style="margin: 4px 0 0; color: #bfe0f5; font-size: 12px; letter-spacing: 2px;">STUDENT BRANCH</p>
+<!--
+  CONTENT CARD - not a full document. The page background, this card, the brand
+  bar and the footer are all assembled by buildEmailDocument() in
+  server/utils/emailTemplates.js.
+
+  Style tokens (shared with the footer):
+    brand #00629b | ink #1f2933 | muted #667482 | hairline #e6eaee | panel #f0f6fb
+    heading 15px/21px bold | body 13px/20px | small 11px/18px | caps 10px/15px
+-->
+
+<!-- ==================== DECISION BANNER ==================== -->
+<tr>
+  <td
+    align="center"
+    style="
+      padding: 18px 25px;
+      background-color: {{bannerBg}};
+    "
+  >
+    <div
+      style="
+        color: #ffffff;
+        font-size: 16px;
+        line-height: 22px;
+        font-weight: 700;
+      "
+    >
+      {{bannerTitle}}
     </div>
+  </td>
+</tr>
 
-    <div style="background-color: {{bannerBg}}; color: #ffffff; padding: 20px 28px; text-align: center;">
-      <h2 style="margin: 0; font-size: 22px;">{{bannerTitle}}</h2>
-    </div>
+<!-- ==================== GREETING ==================== -->
+<tr>
+  <td style="padding: 24px 25px 0 25px;">
+    <p
+      style="
+        margin: 0 0 14px;
+        color: #1f2933;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      Hi <strong>{{userName}}</strong>,
+    </p>
+    <p
+      style="
+        margin: 0;
+        color: #1f2933;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      {{message}}
+    </p>
+  </td>
+</tr>
 
-    <div style="padding: 32px 28px; color: #333333;">
-      <p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6;">Dear <strong>{{userName}}</strong>,</p>
-      <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6;">{{message}}</p>
+<!-- ==================== COMMITTEE ==================== -->
+<tr>
+  <td style="padding: 18px 25px 0 25px;">
+    <table
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      width="100%"
+      style="
+        background-color: {{panelBg}};
+        border-left: 3px solid {{bannerBg}};
+      "
+    >
+      <tr>
+        <td style="padding: 12px 16px;">
+          <p
+            style="
+              margin: 0;
+              color: #667482;
+              font-size: 11px;
+              line-height: 18px;
+            "
+          >
+            Committee: <strong style="color: #1f2933;">{{committeePosition}}</strong>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
 
-      <div style="margin: 0 0 20px; padding: 14px 18px; background-color: {{panelBg}}; border-left: 4px solid {{bannerBg}}; border-radius: 8px;">
-        <p style="margin: 0; font-size: 14px; color: #555555;">Committee: <strong>{{committeePosition}}</strong></p>
-      </div>
-
-      <p style="margin: 0 0 8px; font-size: 14px; color: #555555; line-height: 1.6;">Should you have any questions, please do not hesitate to contact us.</p>
-      <p style="margin: 0; font-size: 14px; color: #555555;">Best regards,<br>IEEE SHA Team</p>
-    </div>
-  </div>
-</body>
-</html>
+<!-- ==================== CLOSING ==================== -->
+<tr>
+  <td style="padding: 18px 25px 28px 25px;">
+    <p
+      style="
+        margin: 0 0 6px;
+        color: #667482;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      Should you have any questions, please do not hesitate to contact us.
+    </p>
+    <p
+      style="
+        margin: 0;
+        color: #1f2933;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      Best regards,<br />IEEE SHA Team
+    </p>
+  </td>
+</tr>

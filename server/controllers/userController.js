@@ -1,16 +1,21 @@
-const User = require('../models/UserModel');
-const Submission = require('../models/SubmissionModel');
-const PendingRequest = require('../models/PendingRequest');
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const ExcelJS = require('exceljs');
-const { sendOTPEmail, resetPasswordEmailToken } = require('../utils/sendEmail.js');
-const { catchAsync, AppError } = require('../middleware/errorsMiddleware.js');
+const User = require("../models/UserModel");
+const Submission = require("../models/SubmissionModel");
+const PendingRequest = require("../models/PendingRequest");
+const { readSettings } = require("./settingsController");
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const ExcelJS = require("exceljs");
+const {
+  sendOTPEmail,
+  resetPasswordEmailToken,
+} = require("../utils/sendEmail.js");
+const { catchAsync, AppError } = require("../middleware/errorsMiddleware.js");
+const { ASSIGNABLE_ROLES } = require("../constants/roles");
 // --- HELPER: Generate JWT Token ---
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
+    expiresIn: "30d",
   });
 };
 
@@ -24,25 +29,30 @@ const generateToken = (id) => {
 const loginUser = catchAsync(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+  const user = await User.findOne({ email: email.toLowerCase() }).select(
+    "+password",
+  );
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
-    throw new AppError('Invalid email or password', 401);
+    throw new AppError("Invalid email or password", 401);
   }
 
   if (!user.isVerified) {
-    throw new AppError('Account not verified. Please check your email for the OTP.', 403);
+    throw new AppError(
+      "Account not verified. Please check your email for the OTP.",
+      403,
+    );
   }
 
   const token = generateToken(user._id);
-  const isProduction = process.env.NODE_ENV !== 'development';
+  const isProduction = process.env.NODE_ENV !== "development";
 
-  res.cookie('jwt', token, {
+  res.cookie("jwt", token, {
     httpOnly: true,
     secure: isProduction, // MUST be true in production for 'none' to work
-    sameSite: isProduction ? 'none' : 'lax', // 'none' allows the AJAX POST
-    domain: isProduction ? '.ieeesha.org' : undefined,
-    maxAge: 30 * 24 * 60 * 60 * 1000
+    sameSite: isProduction ? "none" : "lax", // 'none' allows the AJAX POST
+    domain: isProduction ? ".ieeesha.org" : undefined,
+    maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
   res.json({
@@ -51,7 +61,7 @@ const loginUser = catchAsync(async (req, res) => {
     email: user.email,
     role: user.role,
     committee: user.committee,
-    position: user.position
+    position: user.position,
   });
 });
 
@@ -59,16 +69,16 @@ const loginUser = catchAsync(async (req, res) => {
 // @route   POST /api/users/logout
 // @access  Public
 const logoutUser = (req, res) => {
-    const isProduction = process.env.NODE_ENV !== 'development';
-    
-    res.cookie('jwt', '', {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax',
-        domain: isProduction ? '.ieeesha.org' : undefined, 
-        expires: new Date(0)
-    });
-    res.status(200).json({ message: 'Logged out' });
+  const isProduction = process.env.NODE_ENV !== "development";
+
+  res.cookie("jwt", "", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    domain: isProduction ? ".ieeesha.org" : undefined,
+    expires: new Date(0),
+  });
+  res.status(200).json({ message: "Logged out" });
 };
 
 // @desc    Get current user profile
@@ -78,13 +88,15 @@ const getUserProfile = async (req, res) => {
   // req.user is set by the 'protect' middleware
   const user = await User.findById(req.user.id);
   if (!user) {
-    throw new AppError('User not found', 404);
+    throw new AppError("User not found", 404);
   }
 
   const allSubmissions = await Submission.find({ userId: user._id });
 
-  const attendedActs = allSubmissions.filter(sub => sub.attended === true);
-  const notAttendedActs = allSubmissions.filter(sub => sub.attended === false);
+  const attendedActs = allSubmissions.filter((sub) => sub.attended === true);
+  const notAttendedActs = allSubmissions.filter(
+    (sub) => sub.attended === false,
+  );
 
   res.json({
     success: true,
@@ -95,7 +107,7 @@ const getUserProfile = async (req, res) => {
       role: user.role,
       committee: user.committee,
       phone: user.phone,
-      age: user.age,
+      dateOfBirth: user.dateOfBirth,
       position: user.position,
       university: user.university,
       college: user.college,
@@ -107,8 +119,8 @@ const getUserProfile = async (req, res) => {
       interests: user.interests,
       optionalData: user.optionalData,
       createdAt: user.createdAt,
-      submissions: {attended : attendedActs, notAttended : notAttendedActs}  
-    }
+      submissions: { attended: attendedActs, notAttended: notAttendedActs },
+    },
   });
 };
 
@@ -122,45 +134,82 @@ const getUserProfile = async (req, res) => {
 const registerUser = async (req, res) => {
   try {
     const {
-      name, email, password, confirmPassword,
-      phone, age,
+      name,
+      email,
+      password,
+      confirmPassword,
+      phone,
+      dateOfBirth,
       position,
-      university, college, yearOfStudy, interests, role,
-      committee,
-      organization, roleInOrganization, yearsOfExperience, reasonForRegistration
+      university,
+      college,
+      yearOfStudy,
+      interests,
+      organization,
+      roleInOrganization,
+      yearsOfExperience,
+      reasonForRegistration,
     } = req.body;
 
+    // An admin can close public sign-up. Checked before anything is created so
+    // a closed form leaves no half-made account behind. Signing in is a
+    // different endpoint and is deliberately not affected.
+    const settings = await readSettings();
+    if (!settings.registrationOpen) {
+      throw new AppError(
+        "Registration is currently closed. Please try again later.",
+        403,
+      );
+    }
+
     if (password !== confirmPassword) {
-      throw new AppError('Passwords do not match', 400);
+      throw new AppError("Passwords do not match", 400);
     }
 
     // --- POSITION VALIDATION ---
     if (!["student", "professional"].includes(position)) {
-      throw new AppError('Position must be either "student" or "professional"', 400);
+      throw new AppError(
+        'Position must be either "student" or "professional"',
+        400,
+      );
     }
 
     if (position === "student") {
-      if (!university || !college || yearOfStudy === "" || yearOfStudy == null) {
-        throw new AppError('Students must provide university, college, and year of study', 400);
+      if (
+        !university ||
+        !college ||
+        yearOfStudy === "" ||
+        yearOfStudy == null
+      ) {
+        throw new AppError(
+          "Students must provide university, college, and year of study",
+          400,
+        );
       }
     } else if (position === "professional") {
-      if (!organization || !roleInOrganization || yearsOfExperience === "" || yearsOfExperience == null) {
-        throw new AppError('Professionals must provide organization, role in organization, and years of experience', 400);
+      if (
+        !organization ||
+        !roleInOrganization ||
+        yearsOfExperience === "" ||
+        yearsOfExperience == null
+      ) {
+        throw new AppError(
+          "Professionals must provide organization, role in organization, and years of experience",
+          400,
+        );
       }
     }
 
     const userExists = await User.findOne({ email: email.toLowerCase() });
     if (userExists) {
-      throw new AppError('User already exists', 400);
+      throw new AppError("User already exists", 400);
     }
 
     // --- SECURITY: Role Sanitization ---
-    // Allow 'member' selection, but force everyone else to 'user'
-    // This prevents hackers from creating an 'xcom' account via public API
-    let finalRole = 'user';
-    if (role === 'member') {
-      finalRole = 'member';
-    }
+    // Self-registration can ONLY ever produce a "member". Any role in the body
+    // is ignored rather than validated, so there is no path to a privileged
+    // account through the public endpoint - promotion is an xcom action.
+    const finalRole = "member";
 
     // Hash Password
     const salt = await bcrypt.genSalt(10);
@@ -174,11 +223,10 @@ const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       role: finalRole,
-      committee: 'no committee',
       otp,
       otpExpires,
       phone,
-      age,
+      dateOfBirth,
       position,
     };
 
@@ -197,13 +245,9 @@ const registerUser = async (req, res) => {
 
     const user = await User.create(userData);
 
-    if (committee) {
-      await PendingRequest.create({
-        userId: user._id,
-        committee_position: committee,
-        request_status: 'pending'
-      });
-    }
+    // A committee is no longer chosen here. New members apply for one from the
+    // committees page once they have an account, which creates a PendingRequest
+    // for the board to approve.
 
     const emailSent = await sendOTPEmail(user.email, otp);
 
@@ -213,10 +257,15 @@ const registerUser = async (req, res) => {
 
     res.status(201).json({
       message: "Registration successful. Please check your email for the OTP.",
-      email: user.email
+      email: user.email,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    // Respect the status carried by AppError (e.g. 400 for "User already exists",
+    // 401 for a bad OTP) instead of reporting every failure as a server error.
+    // A Mongoose ValidationError is a bad request, not a server fault.
+    const status =
+      error.statusCode || (error.name === "ValidationError" ? 400 : 500);
+    res.status(status).json({ error: error.message });
   }
 };
 
@@ -231,7 +280,9 @@ const verifyEmailOTP = async (req, res) => {
       return res.status(400).json({ error: "Please provide email and OTP" });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+otp +otpExpires');
+    const user = await User.findOne({ email: email.toLowerCase() }).select(
+      "+otp +otpExpires",
+    );
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -246,7 +297,9 @@ const verifyEmailOTP = async (req, res) => {
     }
 
     if (user.otpExpires < Date.now()) {
-      return res.status(400).json({ error: "OTP has expired. Please request a new one." });
+      return res
+        .status(400)
+        .json({ error: "OTP has expired. Please request a new one." });
     }
 
     user.isVerified = true;
@@ -256,14 +309,14 @@ const verifyEmailOTP = async (req, res) => {
 
     // Auto-login: issue the JWT cookie right after verification
     const token = generateToken(user._id);
-    const isProduction = process.env.NODE_ENV !== 'development';
+    const isProduction = process.env.NODE_ENV !== "development";
 
-    res.cookie('jwt', token, {
+    res.cookie("jwt", token, {
       httpOnly: true,
       secure: isProduction, // MUST be true in production for 'none' to work
-      sameSite: isProduction ? 'none' : 'lax',
-      domain: isProduction ? '.ieeesha.org' : undefined,
-      maxAge: 30 * 24 * 60 * 60 * 1000
+      sameSite: isProduction ? "none" : "lax",
+      domain: isProduction ? ".ieeesha.org" : undefined,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
@@ -273,14 +326,15 @@ const verifyEmailOTP = async (req, res) => {
       email: user.email,
       role: user.role,
       committee: user.committee,
-      position: user.position
+      position: user.position,
     });
-
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    // Same as registerUser: keep the AppError status (e.g. 400/401) intact.
+    const status =
+      error.statusCode || (error.name === "ValidationError" ? 400 : 500);
+    res.status(status).json({ error: error.message });
   }
 };
-
 
 // @desc    Create a privileged user (Board, XCom, Scanner)
 // @route   POST /api/users/create-internal
@@ -290,13 +344,15 @@ const createUser = async (req, res) => {
 
   const userExists = await User.findOne({ email });
   if (userExists) {
-    return res.status(400).json({ message: 'User already exists' });
+    return res.status(400).json({ message: "User already exists" });
   }
 
-  // Validate Allowed Roles
-  const allowedRoles = ['board', 'xcom', 'scanner', 'member'];
-  if (!allowedRoles.includes(role)) {
-    return res.status(400).json({ message: 'Invalid role. Use register for normal users.' });
+  // Validate Allowed Roles. Reads from the shared constant so this cannot
+  // drift from the schema enum the way the previous hand-typed list did.
+  if (!ASSIGNABLE_ROLES.includes(role)) {
+    return res
+      .status(400)
+      .json({ message: "Invalid role. Use register for normal users." });
   }
 
   const salt = await bcrypt.genSalt(10);
@@ -307,12 +363,12 @@ const createUser = async (req, res) => {
     email,
     password: hashedPassword,
     role,
-    committee // Optional, for assigning Board members to committees
+    committee, // Optional, for assigning Board members to committees
   });
 
   res.status(201).json({
     message: `Success! Created new ${role}.`,
-    user: { id: user._id, name: user.name, role: user.role }
+    user: { id: user._id, name: user.name, role: user.role },
   });
 };
 
@@ -323,10 +379,21 @@ const createUser = async (req, res) => {
 // @desc    Get all users (Advanced Filtering for Email Sender)
 // @route   GET /api/users
 // @access  Private (XCom/Board)
+
 const getUsers = async (req, res) => {
   try {
     const queryObj = { ...req.query };
-    const excludedFields = ['page', 'sort', 'limit', 'fields', 'search', 'formId', 'attendedOnly'];
+    const excludedFields = [
+      "page",
+      "sort",
+      "limit",
+      "fields",
+      "search",
+      "formId",
+      "attendedOnly",
+      "allIds",
+    ];
+
     excludedFields.forEach((el) => delete queryObj[el]);
 
     // --- A. FORM PARTICIPATION LOGIC ---
@@ -334,12 +401,14 @@ const getUsers = async (req, res) => {
       const submissionQuery = { formId: req.query.formId };
 
       // Filter by Attendance (Scanned users only)
-      if (req.query.attendedOnly === 'true') {
+      if (req.query.attendedOnly === "true") {
         submissionQuery.attended = true;
       }
 
-      const submissions = await Submission.find(submissionQuery).select('registrantEmail');
-      const registrantEmails = submissions.map(sub => sub.registrantEmail);
+      const submissions =
+        await Submission.find(submissionQuery).select("registrantEmail");
+
+      const registrantEmails = submissions.map((sub) => sub.registrantEmail);
 
       // Filter Users by these emails
       queryObj.email = { $in: registrantEmails };
@@ -347,11 +416,17 @@ const getUsers = async (req, res) => {
 
     // --- B. SEARCH LOGIC (Name or Email) ---
     if (req.query.search) {
-      const searchRegex = { $regex: req.query.search, $options: 'i' };
+      const searchRegex = {
+        $regex: req.query.search,
+        $options: "i",
+      };
+
       // Use $and if email filter already exists to avoid overwriting
       if (queryObj.email) {
         queryObj.$and = [
-          { $or: [{ name: searchRegex }, { email: searchRegex }] }
+          {
+            $or: [{ name: searchRegex }, { email: searchRegex }],
+          },
         ];
       } else {
         queryObj.$or = [{ name: searchRegex }, { email: searchRegex }];
@@ -360,25 +435,29 @@ const getUsers = async (req, res) => {
 
     // --- C. ROLE LOGIC (Multi-select) ---
     if (req.query.role) {
-      const roles = req.query.role.split(',');
+      const roles = req.query.role.split(",");
       queryObj.role = { $in: roles };
     }
 
     // --- C2. COLLEGE LOGIC (Multi-select) ---
     if (req.query.college) {
-      const colleges = req.query.college.split(',');
+      const colleges = req.query.college.split(",");
       queryObj.college = { $in: colleges };
     }
 
     // --- C3. YEAR LOGIC (Multi-select) ---
     if (req.query.yearOfStudy) {
-      const years = req.query.yearOfStudy.split(',').map(Number).filter(n => !isNaN(n));
+      const years = req.query.yearOfStudy
+        .split(",")
+        .map(Number)
+        .filter((n) => !isNaN(n));
+
       queryObj.yearOfStudy = { $in: years };
     }
 
     // --- C4. POSITION LOGIC (Multi-select) ---
     if (req.query.position) {
-      const positions = req.query.position.split(',');
+      const positions = req.query.position.split(",");
       queryObj.position = { $in: positions };
     }
 
@@ -387,21 +466,35 @@ const getUsers = async (req, res) => {
 
     // Sorting
     if (req.query.sort) {
-      const sortBy = req.query.sort.split(',').join(' ');
+      const sortBy = req.query.sort.split(",").join(" ");
       query = query.sort(sortBy);
     } else {
-      query = query.sort('-createdAt'); // Default: Newest first
+      query = query.sort("-createdAt");
     }
 
     // Field Limiting (Excel Export)
     if (req.query.fields) {
-      const fields = req.query.fields.split(',').join(' ');
+      const fields = req.query.fields.split(",").join(" ");
       query = query.select(fields);
     } else {
-      query = query.select('-password');
+      query = query.select("-password");
     }
 
-    // Pagination
+    // Count matching users
+    const count = await User.countDocuments(queryObj);
+    const allUsersCount = await User.countDocuments();
+
+    // --- SELECT ALL IDS (WITHOUT PAGINATION) ---
+    if (req.query.allIds === "true") {
+      const users = await User.find(queryObj).select("_id");
+
+      return res.json({
+        ids: users.map((user) => user._id),
+        total: count,
+      });
+    }
+
+    // --- PAGINATION ---
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 1000;
     const skip = (page - 1) * limit;
@@ -410,17 +503,14 @@ const getUsers = async (req, res) => {
 
     // EXECUTE
     const users = await query;
-    const count = await User.countDocuments(queryObj);
-    const allUsersCount = await User.countDocuments();
 
     res.json({
       users,
       total: count,
       allUsersCount,
       page,
-      pages: Math.ceil(count / limit)
+      pages: Math.ceil(count / limit),
     });
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -434,25 +524,36 @@ const exportUsersToExcel = async (req, res) => {
     // 1. REUSE THE FILTER LOGIC
     // (Exact same logic as getUsers, but we removed Pagination)
     const queryObj = { ...req.query };
-    const excludedFields = ['page', 'sort', 'limit', 'fields', 'search', 'formId', 'attendedOnly'];
+    const excludedFields = [
+      "page",
+      "sort",
+      "limit",
+      "fields",
+      "search",
+      "formId",
+      "attendedOnly",
+    ];
     excludedFields.forEach((el) => delete queryObj[el]);
 
     // Form/Event Filters
     if (req.query.formId) {
       const submissionQuery = { formId: req.query.formId };
-      if (req.query.attendedOnly === 'true') {
+      if (req.query.attendedOnly === "true") {
         submissionQuery.attended = true;
       }
-      const submissions = await Submission.find(submissionQuery).select('registrantEmail');
-      const registrantEmails = submissions.map(sub => sub.registrantEmail);
+      const submissions =
+        await Submission.find(submissionQuery).select("registrantEmail");
+      const registrantEmails = submissions.map((sub) => sub.registrantEmail);
       queryObj.email = { $in: registrantEmails };
     }
 
     // Search Filters
     if (req.query.search) {
-      const searchRegex = { $regex: req.query.search, $options: 'i' };
+      const searchRegex = { $regex: req.query.search, $options: "i" };
       if (queryObj.email) {
-        queryObj.$and = [{ $or: [{ name: searchRegex }, { email: searchRegex }] }];
+        queryObj.$and = [
+          { $or: [{ name: searchRegex }, { email: searchRegex }] },
+        ];
       } else {
         queryObj.$or = [{ name: searchRegex }, { email: searchRegex }];
       }
@@ -460,74 +561,77 @@ const exportUsersToExcel = async (req, res) => {
 
     // Role Filters
     if (req.query.role) {
-      const roles = req.query.role.split(',');
+      const roles = req.query.role.split(",");
       queryObj.role = { $in: roles };
     }
 
     // 2. FETCH DATA (No Pagination!)
-    const users = await User.find(queryObj).sort('-createdAt');
+    const users = await User.find(queryObj).sort("-createdAt");
 
     // 3. CREATE EXCEL WORKBOOK
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Users');
+    const worksheet = workbook.addWorksheet("Users");
 
     // Define Columns
     worksheet.columns = [
-      { header: 'Name', key: 'name', width: 25 },
-      { header: 'Email', key: 'email', width: 30 },
-      { header: 'Role', key: 'role', width: 10 },
-      { header: 'Position', key: 'position', width: 12 },
-      { header: 'Phone', key: 'phone', width: 15 },
-      { header: 'University', key: 'university', width: 20 },
-      { header: 'College', key: 'college', width: 20 },
-      { header: 'Year', key: 'yearOfStudy', width: 10 },
-      { header: 'Organization', key: 'organization', width: 20 },
-      { header: 'Role in Organization', key: 'roleInOrganization', width: 20 },
-      { header: 'Years of Experience', key: 'yearsOfExperience', width: 10 },
-      { header: 'Reason for Registration', key: 'reasonForRegistration', width: 30 },
-      { header: 'Committee', key: 'committee', width: 15 }
+      { header: "Name", key: "name", width: 25 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Role", key: "role", width: 10 },
+      { header: "Position", key: "position", width: 12 },
+      { header: "Phone", key: "phone", width: 15 },
+      { header: "University", key: "university", width: 20 },
+      { header: "College", key: "college", width: 20 },
+      { header: "Year", key: "yearOfStudy", width: 10 },
+      { header: "Organization", key: "organization", width: 20 },
+      { header: "Role in Organization", key: "roleInOrganization", width: 20 },
+      { header: "Years of Experience", key: "yearsOfExperience", width: 10 },
+      {
+        header: "Reason for Registration",
+        key: "reasonForRegistration",
+        width: 30,
+      },
+      { header: "Committee", key: "committee", width: 15 },
     ];
 
     // Style the Header Row (Bold & Yellow)
     worksheet.getRow(1).font = { bold: true };
     worksheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFFFE0' } // Light Yellow
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFFFE0" }, // Light Yellow
     };
 
     // Add Data Rows
-    users.forEach(user => {
+    users.forEach((user) => {
       worksheet.addRow({
         name: user.name,
         email: user.email,
         role: user.role,
-        position: user.position || '-',
-        phone: user.phone || '-',
-        university: user.university || '-',
-        college: user.college || '-',
-        yearOfStudy: user.yearOfStudy || '-',
-        organization: user.organization || '-',
-        roleInOrganization: user.roleInOrganization || '-',
-        yearsOfExperience: user.yearsOfExperience || '-',
-        reasonForRegistration: user.reasonForRegistration || '-',
-        committee: user.committee || '-'
+        position: user.position || "-",
+        phone: user.phone || "-",
+        university: user.university || "-",
+        college: user.college || "-",
+        yearOfStudy: user.yearOfStudy || "-",
+        organization: user.organization || "-",
+        roleInOrganization: user.roleInOrganization || "-",
+        yearsOfExperience: user.yearsOfExperience || "-",
+        reasonForRegistration: user.reasonForRegistration || "-",
+        committee: user.committee || "-",
       });
     });
 
     // 4. SEND RESPONSE (Download)
     res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     res.setHeader(
-      'Content-Disposition',
-      'attachment; filename=' + 'users_export.xlsx'
+      "Content-Disposition",
+      "attachment; filename=" + "users_export.xlsx",
     );
 
     await workbook.xlsx.write(res);
     res.status(200).end();
-
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -540,93 +644,106 @@ const exportSpecificUsersToExcel = async (req, res) => {
   try {
     let userIds = req.body.userIds; // Expecting an array of user IDs in the request body
 
-    if (typeof userIds === 'string') {
-      userIds = userIds.split(',');
+    if (typeof userIds === "string") {
+      userIds = userIds.split(",");
     }
 
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-      return res.status(400).json({ message: 'Please provide an array of userIds' });
+      return res
+        .status(400)
+        .json({ message: "Please provide an array of userIds" });
     }
 
     // Filter out invalid ObjectIds to prevent errors during the query
-    const validUserIds = userIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    const validUserIds = userIds.filter((id) =>
+      mongoose.Types.ObjectId.isValid(id),
+    );
     if (validUserIds.length === 0) {
-      return res.status(400).json({ message: 'None of the provided IDs are valid.' });
+      return res
+        .status(400)
+        .json({ message: "None of the provided IDs are valid." });
     }
 
     const users = await User.find({ _id: { $in: validUserIds } })
-      .sort('-createdAt')
+      .sort("-createdAt")
       .lean();
 
     if (users.length === 0) {
-      return res.status(404).json({ message: 'No users found with the provided IDs' });
+      return res
+        .status(404)
+        .json({ message: "No users found with the provided IDs" });
     }
 
     if (users.length === 0) {
-      return res.status(404).json({ message: 'No users found with the provided IDs' });
+      return res
+        .status(404)
+        .json({ message: "No users found with the provided IDs" });
     }
 
     // CREATE EXCEL WORKBOOK
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Selected Users');
+    const worksheet = workbook.addWorksheet("Selected Users");
 
     // Define Columns
     worksheet.columns = [
-      { header: 'Name', key: 'name', width: 25 },
-      { header: 'Email', key: 'email', width: 30 },
-      { header: 'Role', key: 'role', width: 10 },
-      { header: 'Position', key: 'position', width: 12 },
-      { header: 'Phone', key: 'phone', width: 15 },
-      { header: 'University', key: 'university', width: 20 },
-      { header: 'College', key: 'college', width: 20 },
-      { header: 'Year', key: 'yearOfStudy', width: 10 },
-      { header: 'Organization', key: 'organization', width: 20 },
-      { header: 'Role in Organization', key: 'roleInOrganization', width: 20 },
-      { header: 'Years of Experience', key: 'yearsOfExperience', width: 10 },
-      { header: 'Reason for Registration', key: 'reasonForRegistration', width: 30 },
-      { header: 'Committee', key: 'committee', width: 15 }
+      { header: "Name", key: "name", width: 25 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Role", key: "role", width: 10 },
+      { header: "Position", key: "position", width: 12 },
+      { header: "Phone", key: "phone", width: 15 },
+      { header: "University", key: "university", width: 20 },
+      { header: "College", key: "college", width: 20 },
+      { header: "Year", key: "yearOfStudy", width: 10 },
+      { header: "Organization", key: "organization", width: 20 },
+      { header: "Role in Organization", key: "roleInOrganization", width: 20 },
+      { header: "Years of Experience", key: "yearsOfExperience", width: 10 },
+      {
+        header: "Reason for Registration",
+        key: "reasonForRegistration",
+        width: 30,
+      },
+      { header: "Committee", key: "committee", width: 15 },
     ];
 
     // Style the Header Row (Bold & Yellow)
     worksheet.getRow(1).font = { bold: true };
     worksheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFFFE0' } // Light Yellow
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFFFE0" }, // Light Yellow
     };
 
     // Add Data Rows
-    users.forEach(user => {
+    users.forEach((user) => {
       worksheet.addRow({
-        name: user.name || 'Unknown',
-        email: user.email || '-',
-        role: user.role || '-',
-        position: user.position || '-',
-        phone: user.phone || '-',
-        university: user.university || '-',
-        college: user.college || '-',
-        yearOfStudy: user.yearOfStudy || '-',
-        organization: user.organization || '-',
-        roleInOrganization: user.roleInOrganization || '-',
-        yearsOfExperience: user.yearsOfExperience || '-',
-        reasonForRegistration: user.reasonForRegistration || '-',
-        committee: user.committee || '-'
+        name: user.name || "Unknown",
+        email: user.email || "-",
+        role: user.role || "-",
+        position: user.position || "-",
+        phone: user.phone || "-",
+        university: user.university || "-",
+        college: user.college || "-",
+        yearOfStudy: user.yearOfStudy || "-",
+        organization: user.organization || "-",
+        roleInOrganization: user.roleInOrganization || "-",
+        yearsOfExperience: user.yearsOfExperience || "-",
+        reasonForRegistration: user.reasonForRegistration || "-",
+        committee: user.committee || "-",
       });
     });
 
     // SEND RESPONSE (Download)
     res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     res.setHeader(
-      'Content-Disposition',
-      'attachment; filename=selected_users_export.xlsx'
+      "Content-Disposition",
+      "attachment; filename=selected_users_export.xlsx",
     );
 
     await workbook.xlsx.write(res);
     return res.status(200).end();
-
   } catch (error) {
     console.error("Export Specific Users Error:", error);
     return res.status(500).json({ message: error.message });
@@ -639,12 +756,12 @@ const exportSpecificUsersToExcel = async (req, res) => {
 // @access  Private (User can only update their own profile)
 const updateUserProfile = catchAsync(async (req, res) => {
   if (req.user.id != req.params.id) {
-    throw new AppError('HACKER : You can only update your own profile', 403);
+    throw new AppError("HACKER : You can only update your own profile", 403);
   }
   const user = await User.findById(req.user.id);
 
   if (!user) {
-    throw new AppError('User not found', 404);
+    throw new AppError("User not found", 404);
   }
 
   const restrictedFields = [
@@ -673,7 +790,7 @@ const updateUserProfile = catchAsync(async (req, res) => {
   const allowedUpdates = [
     "name",
     "phone",
-    "age",
+    "dateOfBirth",
     "university",
     "college",
     "yearOfStudy",
@@ -682,7 +799,9 @@ const updateUserProfile = catchAsync(async (req, res) => {
     "yearsOfExperience",
     "reasonForRegistration",
     "interests",
-    "committee",
+    // "committee" is deliberately absent. A committee is only ever granted by
+    // the board approving a PendingRequest, so it must not be settable here or
+    // anyone could put themselves in any committee.
     "optionalData",
   ];
 
@@ -693,14 +812,10 @@ const updateUserProfile = catchAsync(async (req, res) => {
     }
   });
 
-  const updatedUser = await User.findByIdAndUpdate(
-    req.user.id,
-    updates,
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
+  const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, {
+    returnDocument: "after",
+    runValidators: true,
+  });
 
   res.status(200).json({
     success: true,
@@ -710,7 +825,7 @@ const updateUserProfile = catchAsync(async (req, res) => {
       email: updatedUser.email,
       role: updatedUser.role,
       phone: updatedUser.phone,
-      age: updatedUser.age,
+      dateOfBirth: updatedUser.dateOfBirth,
       position: updatedUser.position,
       university: updatedUser.university,
       college: updatedUser.college,
@@ -724,28 +839,34 @@ const updateUserProfile = catchAsync(async (req, res) => {
       optionalData: updatedUser.optionalData,
     },
   });
-})
+});
 
 const updatePassword = catchAsync(async (req, res) => {
   const userId = req.user.id;
-  const user = await User.findById(userId).select('+password');
+  const user = await User.findById(userId).select("+password");
   if (!user) {
-    throw new AppError('User not found', 404);
+    throw new AppError("User not found", 404);
   }
 
   const { currentPassword, newPassword, confirmNewPassword } = req.body;
 
   if (!currentPassword || !newPassword || !confirmNewPassword) {
-    throw new AppError('Please provide current password, new password, and confirm new password', 400);
+    throw new AppError(
+      "Please provide current password, new password, and confirm new password",
+      400,
+    );
   }
 
   if (newPassword !== confirmNewPassword) {
-    throw new AppError('New password and confirm new password do not match', 400);
+    throw new AppError(
+      "New password and confirm new password do not match",
+      400,
+    );
   }
 
   const isMatch = await bcrypt.compare(currentPassword, user.password);
   if (!isMatch) {
-    throw new AppError('Current password is incorrect', 400);
+    throw new AppError("Current password is incorrect", 400);
   }
 
   const salt = await bcrypt.genSalt(10);
@@ -755,61 +876,71 @@ const updatePassword = catchAsync(async (req, res) => {
   await user.save();
   res.status(200).json({
     success: true,
-    message: 'Password updated successfully',
+    message: "Password updated successfully",
   });
-})
+});
 
 const forgetPassword = catchAsync(async (req, res) => {
   const { email } = req.body;
 
   if (!email) {
-    throw new AppError('Please provide your email address', 400);
+    throw new AppError("Please provide your email address", 400);
   }
 
   const user = await User.findOne({ email: email.toLowerCase() });
   if (!user) {
-    throw new AppError('User not found', 404);
+    throw new AppError("User not found", 404);
   }
 
   const resetOTP = Math.floor(100000 + Math.random() * 900000).toString();
-  const token = jwt.sign({ id: user._id, secret: resetOTP }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  const token = jwt.sign(
+    { id: user._id, secret: resetOTP },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" },
+  );
   user.resetPasswordToken = token;
   user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
   await user.save();
 
   const emailsent = await resetPasswordEmailToken(email, token);
   if (!emailsent) {
-    throw new AppError('Failed to send reset password email', 500);
+    throw new AppError("Failed to send reset password email", 500);
   }
 
   res.status(200).json({
     success: true,
-    message: 'Reset password email sent successfully',
+    message: "Reset password email sent successfully",
   });
-})
+});
 
 const resetPassword = catchAsync(async (req, res) => {
   const { email, newPassword, confirmNewPassword } = req.body;
   const { token } = req.query;
 
   if (!token || !email || !newPassword || !confirmNewPassword) {
-    throw new AppError('Please provide all required fields', 400);
+    throw new AppError("Please provide all required fields", 400);
   }
 
   if (newPassword !== confirmNewPassword) {
-    throw new AppError('New password and confirm new password do not match', 400);
+    throw new AppError(
+      "New password and confirm new password do not match",
+      400,
+    );
   }
 
-  const user = await User.findOne({ email: email.toLowerCase() })
-    .select('+resetPasswordToken +resetPasswordExpires');
+  const user = await User.findOne({ email: email.toLowerCase() }).select(
+    "+resetPasswordToken +resetPasswordExpires",
+  );
   if (!user) {
-    throw new AppError('User not found', 404);
+    throw new AppError("User not found", 404);
   }
 
-  const tokenMatches = user.resetPasswordToken && user.resetPasswordToken === token;
-  const isExpired = user.resetPasswordExpires && user.resetPasswordExpires < Date.now();
+  const tokenMatches =
+    user.resetPasswordToken && user.resetPasswordToken === token;
+  const isExpired =
+    user.resetPasswordExpires && user.resetPasswordExpires < Date.now();
   if (!tokenMatches || isExpired) {
-    throw new AppError('Invalid or expired reset token', 400);
+    throw new AppError("Invalid or expired reset token", 400);
   }
 
   const salt = await bcrypt.genSalt(10);
@@ -822,7 +953,7 @@ const resetPassword = catchAsync(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    message: 'Password reset successfully',
+    message: "Password reset successfully",
   });
 });
 
@@ -834,23 +965,48 @@ const getAllMembers = catchAsync(async (req, res, next) => {
   }
   res.status(200).json({
     dataLength: allUsers.length,
-    data: allUsers
+    data: allUsers,
   });
 });
 
 //create member
 const createMember = catchAsync(async (req, res, next) => {
-  const allowedRoles = User.schema.path("role").enumValues;
-  const { name, email, password, role, phone, age, position, university, college, yearOfStudy, interests, organization, roleInOrganization, yearsOfExperience, reasonForRegistration, committee, optionalData } = req.body;
+  const allowedRoles = ASSIGNABLE_ROLES;
+  const {
+    name,
+    email,
+    password,
+    role,
+    phone,
+    dateOfBirth,
+    position,
+    university,
+    college,
+    yearOfStudy,
+    interests,
+    organization,
+    roleInOrganization,
+    yearsOfExperience,
+    reasonForRegistration,
+    committee,
+    optionalData,
+  } = req.body;
   if (!name || !email || !password || !password || !role) {
-    return next(new AppError("Please Provide name, email, role and password", 400));
+    return next(
+      new AppError("Please Provide name, email, role and password", 400),
+    );
   }
   if (!allowedRoles.includes(role)) {
-    return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`, 400));
+    return next(
+      new AppError(
+        `Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`,
+        400,
+      ),
+    );
   }
   const exists = await User.findOne({ email: email });
   if (exists) {
-    return next(new AppError('Member already exists', 400));
+    return next(new AppError("Member already exists", 400));
   }
   const newMember = await User.create({
     name: name,
@@ -858,7 +1014,7 @@ const createMember = catchAsync(async (req, res, next) => {
     password: password,
     role: role,
     phone: phone,
-    age: age,
+    dateOfBirth: dateOfBirth,
     position: position,
     university: university,
     college: college,
@@ -869,12 +1025,12 @@ const createMember = catchAsync(async (req, res, next) => {
     yearsOfExperience: yearsOfExperience,
     reasonForRegistration: reasonForRegistration,
     committee: committee,
-    optionalData: optionalData
+    optionalData: optionalData,
   });
   res.status(201).json({
-    status: 'success',
-    message: 'Member created successfly',
-    data: newMember
+    status: "success",
+    message: "Member created successfly",
+    data: newMember,
   });
 });
 
@@ -885,32 +1041,47 @@ const getMember = catchAsync(async (req, res, next) => {
     return next(new AppError("Member not found", 400));
   }
   res.status(200).json({
-    status: 'success',
-    data: member
+    status: "success",
+    data: member,
   });
 });
-// upgrade member role 
+// upgrade member role
 const upgradeMemberRole = catchAsync(async (req, res, next) => {
   const { role } = req.body;
-  const allowedRoles = User.schema.path("role").enumValues;
+  const allowedRoles = ASSIGNABLE_ROLES;
   if (!role) {
     return next(new AppError("Role is required", 400));
   }
   if (!allowedRoles.includes(role)) {
-    return next(new AppError(`Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`, 400));
+    return next(
+      new AppError(
+        `Invalid role. Allowed roles are: ${allowedRoles.join(", ")}`,
+        400,
+      ),
+    );
   }
-  const updatedMember = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
+  // Nobody may change their own role, xcom included. The route already limits
+  // this to xcom, but the rule belongs here too: without it, any future caller
+  // of this controller becomes a self-promotion path.
+  if (String(req.params.id) === String(req.user?._id)) {
+    return next(new AppError("You cannot change your own role", 403));
+  }
+  const updatedMember = await User.findByIdAndUpdate(
+    req.params.id,
+    { role },
+    { returnDocument: "after" },
+  );
   if (!updatedMember) {
     return next(new AppError("Member not found", 400));
   }
   res.status(200).json({
-    status: 'success',
-    message: 'Member role updated successfly',
-    data: updatedMember
+    status: "success",
+    message: "Member role updated successfly",
+    data: updatedMember,
   });
 });
 
-//delete member 
+//delete member
 const deleteMember = catchAsync(async (req, res, next) => {
   // Only xcom can delete other users; anyone can delete themselves
   const isSuperAdmin = req.user?.role === "xcom";
@@ -930,9 +1101,9 @@ const deleteMember = catchAsync(async (req, res, next) => {
   await PendingRequest.deleteMany({ userId: member._id });
 
   res.status(200).json({
-    status: 'success',
-    message: 'Member deleted successfully',
-    deletedId: member._id
+    status: "success",
+    message: "Member deleted successfully",
+    deletedId: member._id,
   });
 });
 
@@ -942,35 +1113,39 @@ const getEventsForMember = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError("User not found", 400));
   }
-  const submissions = await Submission.find({ registrantEmail: user.email });
+  const submissions = await Submission.find({
+    registrantEmail: user.email,
+  }).populate({
+    path: "formId",
+    populate: { path: "activityID", model: "Activity" },
+  });
   if (!submissions || submissions.length === 0) {
     return next(new AppError("No events found for this member", 400));
   }
   res.status(200).json({
-    status: 'success',
-    data: submissions
+    status: "success",
+    data: submissions,
   });
-})
+});
 
 const searchMembers = catchAsync(async (req, res, next) => {
   const { keyword } = req.query;
   if (!keyword) {
     return next(new AppError("Search query is required", 400));
   }
-  const searchRegex = { $regex: keyword, $options: 'i' };
+  const searchRegex = { $regex: keyword, $options: "i" };
   const members = await User.find({
-    $or: [
-      { name: searchRegex },
-      { email: searchRegex }
-    ]
+    $or: [{ name: searchRegex }, { email: searchRegex }],
   });
   if (!members || members.length === 0) {
-    return next(new AppError("No members found matching the search query", 400));
+    return next(
+      new AppError("No members found matching the search query", 400),
+    );
   }
   res.status(200).json({
-    status: 'success',
+    status: "success",
     dataLength: members.length,
-    data: members
+    data: members,
   });
 });
 
@@ -994,5 +1169,5 @@ module.exports = {
   resetPassword,
   getEventsForMember,
   searchMembers,
-  exportSpecificUsersToExcel
+  exportSpecificUsersToExcel,
 };

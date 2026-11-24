@@ -1,23 +1,95 @@
-<!DOCTYPE html>
-<html>
-<body style="margin: 0; padding: 0; background-color: #f4f4f5; font-family: Arial, Helvetica, sans-serif;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);">
-    <div style="background-color: #00629B; padding: 22px 28px; text-align: center;">
-      <h1 style="margin: 0; color: #ffffff; font-size: 20px; letter-spacing: 1px;">IEEE El Shorouk Academy</h1>
-      <p style="margin: 4px 0 0; color: #bfe0f5; font-size: 12px; letter-spacing: 2px;">STUDENT BRANCH</p>
+<!--
+  CONTENT CARD - not a full document. The page background, this card, the brand
+  bar and the footer are all assembled by buildEmailDocument() in
+  server/utils/emailTemplates.js.
+
+  Style tokens (shared with the footer):
+    brand #00629b | ink #1f2933 | muted #667482 | hairline #e6eaee | panel #f0f6fb
+    heading 15px/21px bold | body 13px/20px | small 11px/18px | caps 10px/15px
+-->
+
+<!-- ==================== INTRO ==================== -->
+<tr>
+  <td style="padding: 28px 25px 0 25px;">
+    <div
+      style="
+        color: #1f2933;
+        font-size: 18px;
+        line-height: 25px;
+        font-weight: 700;
+      "
+    >
+      Verify your email
     </div>
+    <p
+      style="
+        margin: 8px 0 0;
+        color: #667482;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      Use the verification code below to confirm your email address.
+    </p>
+  </td>
+</tr>
 
-    <div style="padding: 32px 28px; color: #333333; text-align: center;">
-      <h2 style="margin: 0 0 8px; color: #00629B; font-size: 22px;">Welcome to IEEE SHA!</h2>
-      <p style="margin: 0 0 20px; font-size: 15px; color: #555555; line-height: 1.6;">Please use the verification code below to confirm your email address.</p>
+<!-- ==================== OTP CODE ==================== -->
+<tr>
+  <td style="padding: 20px 25px 0 25px;">
+    <table
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      width="100%"
+      style="
+        background-color: #f0f6fb;
+        border: 1px dashed #00629b;
+      "
+    >
+      <tr>
+        <td align="center" style="padding: 22px 20px;">
+          <div
+            style="
+              color: #00629b;
+              font-size: 32px;
+              line-height: 40px;
+              font-weight: 700;
+              letter-spacing: 10px;
+              font-family: 'Courier New', Courier, monospace;
+            "
+          >
+            {{otpCode}}
+          </div>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
 
-      <div style="background-color: #f0f6fb; border: 2px dashed #00629B; border-radius: 10px; padding: 20px; margin: 8px auto 20px; max-width: 300px; text-align: center;">
-        <h1 style="margin: 0; color: #00629B; font-size: 36px; letter-spacing: 8px; font-family: 'Courier New', monospace;">{{otpCode}}</h1>
-      </div>
-
-      <p style="margin: 0 0 8px; font-size: 13px; color: #777777;">This code will expire in <strong>10 minutes</strong>.</p>
-      <p style="margin: 0; font-size: 13px; color: #777777;">If you didn't request this, you can safely ignore this email.</p>
-    </div>
-  </div>
-</body>
-</html>
+<!-- ==================== NOTES ==================== -->
+<tr>
+  <td style="padding: 18px 25px 28px 25px;">
+    <p
+      style="
+        margin: 0 0 6px;
+        color: #667482;
+        font-size: 11px;
+        line-height: 18px;
+      "
+    >
+      This code will expire in <strong style="color: #344454;">10 minutes</strong>.
+    </p>
+    <p
+      style="
+        margin: 0;
+        color: #667482;
+        font-size: 11px;
+        line-height: 18px;
+      "
+    >
+      If you didn&rsquo;t request this, you can safely ignore this email.
+    </p>
+  </td>
+</tr>

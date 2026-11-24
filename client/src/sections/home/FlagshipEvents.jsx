@@ -15,8 +15,19 @@ export default function FlagshipEvents() {
 
   const displayEvents = useMemo(() => {
     if (featured.length > 0) return featured;
-    const pool = upcoming.length > 0 ? upcoming : previous;
-    return pool.slice(0, 2);
+    if (upcoming.length > 0) return upcoming.slice(0, 2);
+    // Fallback when nothing is upcoming: the two *most recent* past events. This
+    // used to be previous.slice(0, 2), and the server returns activities in
+    // insertion order - so on a site with a real history the home page led with
+    // the two oldest events ever held. endDateISO is the raw date; the formatted
+    // `date` is for display and cannot be sorted on.
+    return [...previous]
+      .sort(
+        (a, b) =>
+          new Date(b.startDateISO || b.endDateISO || 0).getTime() -
+          new Date(a.startDateISO || a.endDateISO || 0).getTime()
+      )
+      .slice(0, 2);
   }, [featured, upcoming, previous]);
 
   if (!loading && displayEvents.length === 0) return null;

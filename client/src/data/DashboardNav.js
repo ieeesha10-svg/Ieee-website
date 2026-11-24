@@ -7,12 +7,22 @@ export const navItems = [
     title: "Dashboard",
     sub: "IEEE Student Branch — Admin Overview",
   },
-  {
-    to: "/dashboard/users",
-    label: "Members",
-    icon: "Users",
-    title: "Members",
-  },
+    {
+      to: "/dashboard/users",
+      label: "Members",
+      icon: "Users",
+      title: "Members",
+    },
+    {
+      to: "/dashboard/committee-requests",
+      label: "Committee Requests",
+      icon: "Inbox",
+      // Drives the glowing notification dot in the sidebar while requests are
+      // waiting to be decided.
+      pendingDot: true,
+      title: "Committee Requests",
+      sub: "Approve or reject committee applications, and see who decided each one",
+    },
   {
     to: "/dashboard/events",
     label: "Events",
@@ -35,6 +45,9 @@ export const navItems = [
     to: "/dashboard/email",
     label: "Emails",
     icon: "Mail",
+    // The whole page is a write: composing and sending. Board can read the
+    // delivery history in Email Logs, so the mailer is hidden from it.
+    writeOnly: true,
     title: "Bulk Mailer",
     sub: "Compose and send broadcast emails to members",
   },

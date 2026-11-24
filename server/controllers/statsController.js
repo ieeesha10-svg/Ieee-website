@@ -8,6 +8,11 @@ const Submission = require("../models/SubmissionModel.js");
 const Form = require("../models/FormModel.js")
 const { catchAsync } = require("../middleware/errorsMiddleware.js");
 const { normalizeCollege } = require("../utils/collegeNormalize.js");
+const { protect, authorize } = require("../middleware/authMiddleware.js");
+const { VIEW_ROLES } = require("../constants/roles.js");
+
+// Aggregated counts for the dashboard home page. Read-only, so board is fine.
+dashboardRouter.use(protect, authorize(...VIEW_ROLES));
 
 // GET /api/stats/dashboard
 dashboardRouter.get(
@@ -62,19 +67,25 @@ dashboardRouter.get(
     // Top Active Members
     const topActiveMembers = await Submission.aggregate([
       // Only get submissions where:
-      // - user attended the activity
+      // - the person actually attended
       // - submission is linked to a real user
+      //
+      // Both keys are `attended` and `userId`. This used to match on
+      // `status: "attended"` and `user`, and neither exists at this point in the
+      // pipeline: `user` is only the alias the $lookup below gives its *result*,
+      // six stages later, so the match found nothing and the leaderboard was
+      // always empty. Attendance is the only state a submission carries now.
       {
         $match: {
-          status: "attended",
-          user: { $exists: true, $ne: null },
+          attended: true,
+          userId: { $exists: true, $ne: null },
         },
       },
       // Group submissions by user
       // Count how many activities each user attended
       {
         $group: {
-          _id: "$user",
+          _id: "$userId",
           activitiesAttended: { $sum: 1 },
         },
       },

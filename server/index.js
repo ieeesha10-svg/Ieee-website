@@ -19,7 +19,7 @@ if(process.env.NODE_ENV === "development") {
   process.env.CORS_ORIGINS = "http://localhost:5173,http://localhost:5000,http://localhost:3000,https://www.ieeesha.org";
 }
 
-const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CORS_ORIGIN)
+const allowedOrigins = (process.env.CORS_ORIGINS)
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);

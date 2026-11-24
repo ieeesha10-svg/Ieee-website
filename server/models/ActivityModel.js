@@ -49,6 +49,19 @@ const activitySchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Whether this activity appears on the public site at all. Distinct from
+    // registrationEnabled, which only controls the sign-up button: an activity
+    // can still take registrations while being unpublished.
+    //
+    // Read as "not false" rather than "true" everywhere it is queried. Documents
+    // created before this field existed have no value for it, and a plain
+    // `{ showOnSite: true }` would match none of them - every existing activity
+    // would silently vanish from the website the day this shipped. Defaulting to
+    // true keeps them published until somebody chooses otherwise.
+    showOnSite: {
+      type: Boolean,
+      default: true,
+    },
     coverImage: {
       type: String
     },

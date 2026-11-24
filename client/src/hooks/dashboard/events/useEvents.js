@@ -14,10 +14,16 @@ export function useEvents() {
     setLoading(true);
     setError(null);
     try {
-      const [activitiesRes, formsRes] = await Promise.all([
-        api.get("/activities", { params: { page: 1, limit: 1000 } }),
-        api.get("/form").catch(() => ({ data: [] })),
-      ]);
+        const [activitiesRes, formsRes] = await Promise.all([
+          // includeHidden: the dashboard is the one surface that must list drafts,
+          // so it asks for them. The server still checks the role, so this cannot
+          // be used to reveal anything from outside.
+          api.get("/activities", {
+            params: { page: 1, limit: 1000, includeHidden: true },
+          }),
+          api.get("/form").catch(() => ({ data: [] })),
+        ]);
+
 
       const activities = activitiesRes.data.activities || [];
       const forms = Array.isArray(formsRes.data) ? formsRes.data : formsRes.data?.forms || [];

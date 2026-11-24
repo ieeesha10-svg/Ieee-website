@@ -5,7 +5,7 @@
 
 ## Authentication
 All routes require authentication via JWT cookie (`protect` middleware).
-Admin routes (GET all, UPDATE status) additionally require `xcom` or `board` role.
+Admin routes (GET all) require `xcom` or `board`. Deciding a request (UPDATE status) is a **write** and requires `xcom` alone - `board` reads the queue but cannot decide.
 
 ---
 
@@ -53,10 +53,10 @@ Allows any authenticated user to submit a request to join a specific committee. 
 **PUT** `/api/committee-requests/:requestId/status`
 
 ### Description
-Allows admins (xcom/board) to approve or reject a pending committee request.
+Allows `xcom` to approve or reject a pending committee request.
 
 ### Authorization
-- Requires `xcom` or `board` role
+- Requires `xcom` role (a write: `board` is read-only)
 
 ### Path Parameters
 - `requestId` - MongoDB ObjectId of the pending request
@@ -97,7 +97,7 @@ Valid values: `approved`, `rejected`
 ### Errors
 - `400` - Status must be either approved or rejected
 - `400` - Request has already been processed
-- `403` - Forbidden (not xcom/board)
+- `403` - Forbidden (not `xcom`)
 - `404` - Request not found
 
 ---
@@ -106,10 +106,11 @@ Valid values: `approved`, `rejected`
 **GET** `/api/committee-requests/`
 
 ### Description
-Retrieves all committee requests with filtering and pagination. Only accessible by admins (xcom/board).
+Retrieves all committee requests with filtering and pagination. Read-only: accessible to `xcom` and `board`.
 
 ### Authorization
-- Requires `xcom` or `board` role
+- Requires `xcom` or `board` role (this is a read; deciding a request is the
+  write, and that one is `xcom` only)
 
 ### Query Parameters
 | Parameter | Type | Default | Description |
@@ -152,7 +153,7 @@ Retrieves all committee requests with filtering and pagination. Only accessible 
 ```
 
 ### Errors
-- `403` - Forbidden (not xcom/board)
+- `403` - Forbidden (not `xcom`)
 
 ---
 

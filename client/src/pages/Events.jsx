@@ -12,7 +12,7 @@ const EVENTS_PER_PAGE = 6
 const Events = () => {
   const { user } = useAuth()
   const [registeredFormIds, setRegisteredFormIds] = useState(new Set())
-  const { upcoming, previous, loading } = usePublicEvents()
+  const { upcoming, previous, heroEvent, heroStatus, loading } = usePublicEvents()
   const [upcomingPage, setUpcomingPage] = useState(1)
   const [previousPage, setPreviousPage] = useState(1)
 
@@ -54,7 +54,7 @@ const Events = () => {
 
   return (
     <main>
-      <HeroEvents featuredEvent={upcoming[0]} loading={loading} />
+      <HeroEvents featuredEvent={heroEvent} heroStatus={heroStatus} loading={loading} />
       <UpcomingEvents
         events={paginatedUpcoming}
         loading={loading}

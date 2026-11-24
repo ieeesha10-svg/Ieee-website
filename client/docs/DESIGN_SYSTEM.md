@@ -114,6 +114,27 @@ Labeled input supporting `text`, `textarea`, and `select` via the `type` prop. O
 
 `{ text, className }` — rounded uppercase pill.
 
+### ToggleSwitch (`ToggleSwitch.jsx`)
+
+On/off switch for settings rows. Props: `checked`, `onChange`, `disabled`, `label`, `description`, `onLabel`, `offLabel`, `id`.
+
+- Built on a real `<button>` with `role="switch"` and `aria-checked`, so it is keyboard- and screen-reader accessible rather than a styled div.
+- Prints the current state next to the knob (`onLabel`/`offLabel`, default "On"/"Off") so the position never has to be interpreted on its own.
+- Same pill-and-knob proportions as `ThemeToggle`, with a `focus-visible` ring and a disabled state.
+
+```jsx
+<ToggleSwitch
+  id="toggle-registration"
+  checked={registrationOpen}
+  onChange={setRegistration}
+  disabled={saving === "registrationOpen"}
+  label="Allow new accounts"
+  description="The registration form is open to visitors."
+  onLabel="Open"
+  offLabel="Closed"
+/>
+```
+
 ### Other components
 
 | Component | Purpose |

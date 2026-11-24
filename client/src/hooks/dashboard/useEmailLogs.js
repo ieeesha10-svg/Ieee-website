@@ -15,6 +15,18 @@ export function useEmailLogs() {
     totalPages: 1,
     limit: 10,
   });
+  // Email Logs - Status Counts Feature
+// Store the total number of emails for each status.
+// Initial values are 0 until the API returns the actual counts.
+const [statusCounts, setStatusCounts] = useState({
+  all: 0,
+  delivered: 0,
+  failed: 0,
+  pending: 0,
+});
+
+// Controls when email logs need to be fetched again.
+const [refreshKey, setRefreshKey] = useState(0);
 
   // لما الفلتر أو البحث يتغير، بنرجع للصفحة الأولى
   useEffect(() => {
@@ -83,16 +95,68 @@ export function useEmailLogs() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [page, search, statusFilter]);
-  return {
-    logs,
-    loading,
-    search,
-    setSearch,
-    statusFilter,
-    setStatusFilter,
-    page,
-    setPage,
-    pagination,
+  }, [page, search, statusFilter, refreshKey]);
+
+// Email Logs - Fetch Status Counts
+// Fetch the total count for each email status from the backend.
+// Counts are updated whenever a refresh is triggered.
+// 
+  useEffect(() => {
+  const fetchStatusCounts = async () => {
+    try {
+      const statuses = {
+        all: null,
+        delivered: "Done",
+        failed: "(Rejected|Not email)",
+        pending: "pending",
+      };
+
+      const results = await Promise.all(
+        Object.entries(statuses).map(async ([key, value]) => {
+          const params = new URLSearchParams({
+            page: "1",
+            limit: "1",
+          });
+
+          if (value) {
+            params.set("status", value);
+          }
+
+      
+          const response = await api.get(
+            `/emails/logs?${params.toString()}`
+          );
+
+          return [
+            key,
+            response.data.pagination.totalItems ?? 0,
+          ];
+        })
+      );
+
+      setStatusCounts(Object.fromEntries(results));
+    } catch (error) {
+      console.error("Failed to fetch status counts:", error);
+    }
   };
+
+  fetchStatusCounts();
+}, [refreshKey]);
+// Refresh email logs and status counts.
+const refreshLogs = () => {
+  setRefreshKey((prev) => prev + 1);
+};
+ return {
+  logs,
+  loading,
+  search,
+  setSearch,
+  statusFilter,
+  setStatusFilter,
+  page,
+  setPage,
+  pagination,
+  statusCounts,
+  refreshLogs,
+};
 }

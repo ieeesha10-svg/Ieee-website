@@ -7,8 +7,11 @@ const {
   sendBulkEmailsFromExcel,
   sendBulkEmailsFromDB,
   getPaginatedEmails,
+  getEmailQuotaUsage,
+  bulkDeleteEmailLogs,
 } = require("../controllers/emailController");
 const { protect, authorize } = require("../middleware/authMiddleware");
+const { VIEW_ROLES, WRITE_ROLES } = require("../constants/roles");
 
 // Configure Multer (Temp Storage)
 const storage = multer.diskStorage({
@@ -34,11 +37,11 @@ const upload = multer({
   },
 });
 
-// 1. Send Bulk
+// 1. Send Bulk — actually emails people, so xcom only.
 emailRouter.post(
   "/bulk-send",
   protect,
-  authorize("xcom", "board"),
+  authorize(...WRITE_ROLES),
   upload.fields([
     { name: 'excelFile', maxCount: 1 },
     { name: 'attachments' }
@@ -49,19 +52,38 @@ emailRouter.post(
 emailRouter.post(
   "/bulk-send-db",
   protect,
-  authorize("xcom", "board"),
+  authorize(...WRITE_ROLES),
   upload.fields([
     { name: 'attachments' }
   ]),
   sendBulkEmailsFromDB,
 );
 
-// 2. Logs
+// 2. Logs — board may read.
 emailRouter.get(
   "/logs",
   protect,
-  authorize("xcom", "board"),
+  authorize(...VIEW_ROLES),
   getPaginatedEmails,
+);
+
+// Bulk delete — destructive, so xcom only. Missing/invalid ids are ignored by
+// the controller; the request succeeds with the count actually removed.
+emailRouter.post(
+  "/logs/bulk-delete",
+  protect,
+  authorize(...WRITE_ROLES),
+  bulkDeleteEmailLogs,
+);
+
+// 3. Remaining transactional allowance, shown as a progress bar in settings.
+// Declared after /logs so the literal paths keep matching first; Express would
+// not confuse them either way, but grouping the two reads better.
+emailRouter.get(
+  "/quota",
+  protect,
+  authorize(...VIEW_ROLES),
+  getEmailQuotaUsage,
 );
 
 module.exports = emailRouter;

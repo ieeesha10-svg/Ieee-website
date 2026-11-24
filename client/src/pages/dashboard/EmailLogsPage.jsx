@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -53,17 +54,28 @@ function StatusBadge({ status }) {
   );
 }
 
-function FilterChip({ label, active, onClick }) {
+// Reusable filter button for email statuses.
+// Displays the status name, its count, and the active state.
+function FilterChip({ label, count, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
         active
           ? "bg-primary text-white shadow-md"
           : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
       }`}
     >
       {label}
+
+      {/* Display the total count next to the status name. */}
+      <span
+        className={`px-2 py-0.5 rounded-full text-xs ${
+          active ? "bg-white/20 text-white" : "bg-gray-200 dark:bg-gray-700"
+        }`}
+      >
+        {count ?? "—"}
+      </span>
     </button>
   );
 }
@@ -80,10 +92,18 @@ export default function EmailLogsPage() {
     page,
     setPage,
     pagination,
+    statusCounts,
+      refreshLogs, // Refresh logs after deleting.
+
   } = useEmailLogs();
 
   const [exporting, setExporting] = useState(false);
-
+  // Delete All Logs - UI Feature
+  // Controls whether the delete confirmation dialog is visible.
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // Delete All Logs - Loading State
+// Prevent multiple delete requests while deletion is in progress.
+const [deleting, setDeleting] = useState(false);
   // Export CSV (بنفس منطق DashboardMembers)
   const handleExportCSV = async () => {
     setExporting(true);
@@ -142,9 +162,91 @@ export default function EmailLogsPage() {
       setExporting(false);
     }
   };
+// Fetch all email log IDs from every pagination page.
+// This ensures we delete ALL logs, not only the current page.
+const fetchAllLogIds = async () => {
+  const limit = 100;
+
+  // Get the first page to know how many pages exist.
+  const firstResponse = await api.get(
+    `/emails/logs?page=1&limit=${limit}`
+  );
+
+  const firstData = firstResponse.data.data || [];
+  const totalPages = firstResponse.data.pagination.totalPages || 1;
+
+  // Start collecting logs from the first page.
+  const allLogs = [...firstData];
+
+  // Fetch all remaining pages.
+  if (totalPages > 1) {
+    const remainingPages = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, index) =>
+        api.get(`/emails/logs?page=${index + 2}&limit=${limit}`)
+      )
+    );
+
+    remainingPages.forEach((response) => {
+      allLogs.push(...(response.data.data || []));
+    });
+  }
+
+  // Return only the IDs.
+  return allLogs.map((log) => log._id).filter(Boolean);
+};
+// Delete all email logs using the bulk-delete API.
+const handleDeleteAll = async () => {
+  setDeleting(true);
+
+  try {
+    // Step 1: Get IDs of ALL email logs.
+    const logIds = await fetchAllLogIds();
+
+    // Step 2: Check if there are logs to delete.
+    if (logIds.length === 0) {
+      toast.error("No email logs found.");
+      setShowDeleteModal(false);
+      return;
+    }
+
+    // Step 3: Send all IDs to the backend in one request.
+    const response = await api.post("/emails/logs/bulk-delete", {
+      logIds,
+    });
+
+  
+if (response.data.success) {
+  toast.success(
+    `${response.data.deletedCount} email logs deleted successfully!`
+  );
+
+  // Close the confirmation modal.
+  setShowDeleteModal(false);
+
+  // Go back to the first page and refresh the data.
+  setPage(1);
+  refreshLogs();
+} else {
+  toast.error("Failed to delete email logs.");
+}
+} catch (error) {
+  console.error("Failed to delete email logs:", error);
+
+  toast.error(
+    error.response?.data?.message ||
+    "Failed to delete email logs. Please try again."
+  );
+} finally {
+  setDeleting(false);
+}
+};
 
   // حساب أرقام العرض
   const startIndex = (page - 1) * pagination.limit;
+
+  // التحقق من وجود إيميلات متاحة للحذف
+  const hasNoLogs = (!statusCounts?.all || statusCounts.all === 0) || logs.length === 0;
+  const isDeleteDisabled = hasNoLogs || deleting || loading;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0F1117] p-4 md:p-6">
@@ -160,10 +262,7 @@ export default function EmailLogsPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                // Refresh by triggering page change or search re-eval
-                setPage(page);
-              }}
+             onClick={refreshLogs}
               disabled={loading}
               className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
             >
@@ -182,6 +281,19 @@ export default function EmailLogsPage() {
               )}
               Export CSV
             </button>
+            {/* Delete All Logs - Opens confirmation dialog */}
+            <button
+              type="button"
+              onClick={() => {
+                if (isDeleteDisabled) return;
+                setShowDeleteModal(true);
+              }}
+              disabled={isDeleteDisabled}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600"
+            >
+              <Trash2 size={16} />
+              Delete All
+            </button>
           </div>
         </div>
 
@@ -191,10 +303,13 @@ export default function EmailLogsPage() {
               <Filter size={16} />
               Status:
             </span>
+            {/* Email Status Filters with Counts */}
+            {/* Pass the corresponding count to each FilterChip */}
             {["all", "delivered", "failed", "pending"].map((status) => (
               <FilterChip
                 key={status}
                 label={status.charAt(0).toUpperCase() + status.slice(1)}
+                count={statusCounts[status]}
                 active={statusFilter === status}
                 onClick={() => setStatusFilter(status)}
               />
@@ -338,6 +453,55 @@ export default function EmailLogsPage() {
           )}
         </div>
       </div>
+
+      {/* Delete All Logs - Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-logs-title"
+            className="w-full max-w-md rounded-xl bg-white dark:bg-gray-800 p-6 shadow-xl"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <Trash2 className="text-red-600" size={24} />
+
+              <h2
+                id="delete-logs-title"
+                className="text-xl font-semibold text-gray-900 dark:text-white"
+              >
+                Delete All Email Logs?
+              </h2>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+              Are you sure you want to delete all email logs? This action cannot
+              be undone.
+            </p>
+
+            <div className="flex justify-end gap-3">
+              {/* Close the modal without deleting anything */}
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+               {/* Confirm bulk deletion */}
+
+              <button
+                type="button"
+                onClick={handleDeleteAll}
+                disabled={isDeleteDisabled}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600"
+              >
+                {deleting ? "Deleting..." : "Delete All"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

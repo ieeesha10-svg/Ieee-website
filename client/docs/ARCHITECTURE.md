@@ -49,7 +49,7 @@ index.html
 
 All routes live here. Three reusable guards are defined in the same file:
 
-- `ProtectedRoute({ requireAdmin, roles })` — redirects to `/login` when there is no `user`, when `roles` is provided and the role isn't included, or when `requireAdmin` is true and the role isn't in `ADMIN_ROLES`. Renders `<Outlet/>` when allowed.
+- `ProtectedRoute({ requireAdmin, roles })` — redirects to `/login` when there is no `user`, when `roles` is provided and the role isn't included, or when `requireAdmin` is true and `canViewAdminPages` is false (i.e. not `board`/`xcom`), or when `requireWrite` is true and `canWrite` is false (i.e. not `xcom`). Renders `<Outlet/>` when allowed.
 - `GuestRoute` — redirects logged-in users to `/profile`.
 - `PublicLayout` — renders navbar + footer around public pages. The footer is skipped for `/login`, `/registration`, `/verify`, `/forgot-password`, `/reset-password`, `/dev-team`, and `/applications`.
 
@@ -61,7 +61,7 @@ Full route table: [PAGES.md](./PAGES.md).
 - Renders `AdminSidebar` + a sticky topbar (page title, member search, theme toggle, avatar).
 - Sidebar items come from `src/data/DashboardNav.js` (`navItems` + `toolsItems`).
 - Topbar subtitle is dynamically enriched: on `/dashboard/forms` it fetches form count, on `/dashboard/events` event count, on `/dashboard/users` user count.
-- Member search uses `useMembersList({ pageSize: 5, enabled: isAdminRole(role) })`; clicking a result opens a `Modal` with member details and an "Export as Excel" button.
+- Member search uses `useMembersList({ pageSize: 5, enabled: canViewAdminPages(role) })`; clicking a result opens a `Modal` with member details and an "Export as Excel" button.
 
 ### `UserLayout` (`src/layouts/UserLayout.jsx`)
 - Profile banner (avatar, name, badges) + sidebar with Account / IEEE Activity sections.
@@ -90,11 +90,12 @@ const api = axios.create({
 ## Auth
 
 - Single source of truth: `useAuth()` from `AuthContext` (see [STATE.md](./STATE.md)).
-- Login redirects by role via `utils/roleAccess.js`: `isAdminRole(role)` → `/dashboard`, otherwise `canUseScanPage(role)` → `/dashboard/scan`.
+- Login redirects by role via `utils/roleAccess.js`: `landingRoute(role)` → `/dashboard`, otherwise `canUseScanPage(role)` → `/dashboard/scan`.
 
 ## Static Sections vs API Data
 
-- Home/About/Committees/Crew/DevTeam pages are mostly static, driven by `src/data/*` files.
+- About/Committees/DevTeam pages are mostly static, driven by `src/data/*` files.
+- **The crew is API-driven**: the home page Excom, the About page's Executive Committee section, `/crew` and `/crew/season/:seasonId` all read the published season from the database. Committee members are managed at `/dashboard/crew`, which writes the Excom and Board of a season and publishes exactly one season to the home page. There is no hardcoded committee list left in `src/data/` — the previous `chairpersons.js` was deleted once nothing consumed it.
 - Events, forms, members, dashboards are fully API-driven through hooks in `src/hooks/`.
 
 ## Adding a Feature (Big Picture)

@@ -57,6 +57,10 @@ export function mapActivity(activity, form) {
       return "Active";
     })(),
     registrationEnabled: activity.registrationEnabled ?? true,
+    // `!== false` rather than `?? true`, to match the server: activities created
+    // before the field existed have no value for it, and the server counts those
+    // as published. Reading them as hidden here would grey out a live event.
+    showOnSite: activity.showOnSite !== false,
     coverImage: activity.coverImage || "",
     attendees: 0,
     maxAttendees: form?.maxSubmissions || 0,
@@ -80,6 +84,7 @@ export function buildPayload(payload) {
     type: payload.type || "event",
     location: payload.location || "",
     registrationEnabled: payload.registrationEnabled ?? true,
+    showOnSite: payload.showOnSite ?? true,
     speakers,
   };
 

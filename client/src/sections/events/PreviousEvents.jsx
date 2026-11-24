@@ -28,9 +28,18 @@ export default function PreviousEvents({ events = [], loading, page = 1, totalPa
 							<EventsListCard key={event.id} {...event} type="previous" />
 						))
 					) : (
-						<p className="col-span-full text-muted text-center text-lg py-10">
-							No previous events yet.
-						</p>
+						/* Was a single line of muted text, which read as a broken
+						   section rather than an intentional state. Mirrors the
+						   upcoming section's empty state on the light background. */
+						<div className="col-span-full flex flex-col items-center gap-3 py-10">
+							<div className="p-3 rounded-full bg-primary/10 flex items-center justify-center">
+								<img src="/logo.webp" alt="IEEE Logo" className="w-16 h-16 object-contain opacity-70" />
+							</div>
+							<p className="text-center text-lg uppercase font-gotham text-foreground">Our story starts here</p>
+							<p className="text-center text-muted max-w-md">
+								We haven&apos;t run any events yet. Once we do, they will be archived right here.
+							</p>
+						</div>
 					)}
 				</div>
 

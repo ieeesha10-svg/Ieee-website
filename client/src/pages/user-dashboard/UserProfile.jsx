@@ -13,6 +13,15 @@ import InputBox from "../../components/ui/InputBox";
 import api from "../../utils/api";
 import { COLLEGE_OPTIONS, OTHER_COLLEGE } from "../../data/collegeOptions";
 import { ORDINAL_OPTIONS } from "../../data/ordinalMap";
+import { roleLabel } from "../../utils/roleAccess";
+import {
+  firstPlaceholderField,
+  PLACEHOLDER_ANSWER_MESSAGE,
+} from "../../utils/formValidation";
+
+// Keeps the DOB picker from offering a date in the future. The server rejects
+// one as well; this just stops the input handing it over in the first place.
+const TODAY = new Date().toISOString().slice(0, 10);
 
 export default function UserProfile() {
   const { userData, setUserData, isOffline } = useOutletContext();
@@ -73,13 +82,31 @@ export default function UserProfile() {
 
   const handleSave = async () => {
     if (isOffline) return;
+
+    // Before the saving state is set, so a rejected save cannot leave the
+    // button stuck in its spinner.
+    const placeholderField = firstPlaceholderField({
+      Name: userData.fullName,
+      "Phone number": userData.phone,
+      University: userData.university,
+      College: userData.college,
+      Organization: userData.organization,
+      "Role in organization": userData.roleInOrganization,
+      "Reason for registration": userData.reasonForRegistration,
+      "About me": userData.aboutMe,
+    });
+    if (placeholderField) {
+      setSaveMessage({ type: "error", text: `${placeholderField}: ${PLACEHOLDER_ANSWER_MESSAGE}` });
+      return;
+    }
+
     setIsSaving(true);
     setSaveMessage({ type: "", text: "" });
     try {
       const payload = {
         name: userData.fullName,
         phone: userData.phone,
-        age: userData.age !== "" && userData.age != null ? Number(userData.age) : undefined,
+        dateOfBirth: userData.dateOfBirth || undefined,
         ...(userData.position === "professional"
           ? {
               organization: userData.organization,
@@ -155,7 +182,7 @@ export default function UserProfile() {
             <h2 className="text-[16px] md:text-[17.92px] font-gotham font-medium text-[#0A1628] dark:text-white mb-1">
               Personal Information
             </h2>
-            <p className="text-[#7A96B2] font-[Outfit] text-[12px] md:text-[12.8px]">
+            <p className="text-[#7A96B2] font-gotham-light text-[12px] md:text-[12.8px]">
               Manage your profile details
             </p>
           </div>
@@ -253,7 +280,7 @@ export default function UserProfile() {
                 placeholder="shorouk academy"
               />
               <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[24px] p-[18.8px] flex flex-col gap-[6px] transition-colors">
-                <label className="text-[#475569] dark:text-muted font-bold text-[13px] leading-[16px] font-[Inter] tracking-wide">
+                <label className="text-[#475569] dark:text-muted font-bold text-[13px] leading-[16px] font-gotham tracking-wide">
                   College / Faculty
                 </label>
                 <div className="relative">
@@ -262,7 +289,7 @@ export default function UserProfile() {
                     value={isOtherCollege ? OTHER_COLLEGE : collegeOption}
                     onChange={handleCollegeSelect}
                     disabled={!isEditing}
-                    className="w-full bg-[#F1F5F9] dark:bg-transparent dark:text-white border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[12px] p-[12px] text-[#64748B] text-[14px] leading-[17px] font-[Inter] outline-none transition-all duration-300 disabled:opacity-80 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                    className="w-full bg-[#F1F5F9] dark:bg-transparent dark:text-white border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[12px] p-[12px] text-[#64748B] text-[14px] leading-[17px] font-gotham-light outline-none transition-all duration-300 disabled:opacity-80 disabled:cursor-not-allowed appearance-none cursor-pointer"
                   >
                     <option value="" disabled hidden>Select College / Faculty</option>
                     {COLLEGE_OPTIONS.map((c) => (
@@ -278,7 +305,7 @@ export default function UserProfile() {
               </div>
               {isOtherCollege && (
                 <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[24px] p-[18.8px] flex flex-col gap-[6px] transition-colors lg:col-span-2">
-                  <label className="text-[#475569] dark:text-muted font-bold text-[13px] leading-[16px] font-[Inter] tracking-wide">
+                  <label className="text-[#475569] dark:text-muted font-bold text-[13px] leading-[16px] font-gotham tracking-wide">
                     Specify College / Faculty
                   </label>
                   <input
@@ -287,12 +314,12 @@ export default function UserProfile() {
                     onChange={handleCustomCollege}
                     disabled={!isEditing}
                     placeholder="Type your college / faculty"
-                    className="bg-[#F1F5F9] dark:bg-transparent border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[12px] p-[12px] text-[#64748B] dark:text-foreground text-[14px] leading-[17px] font-[Inter] outline-none transition-all duration-300 disabled:opacity-80 disabled:cursor-not-allowed placeholder:text-[#64748B]/60 focus:border-[#0096FF] focus:ring-1 focus:ring-[#0096FF] dark:focus:border-primary dark:focus:ring-primary"
+                    className="bg-[#F1F5F9] dark:bg-transparent border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[12px] p-[12px] text-[#64748B] dark:text-foreground text-[14px] leading-[17px] font-gotham-light placeholder:font-gotham-light outline-none transition-all duration-300 disabled:opacity-80 disabled:cursor-not-allowed placeholder:text-[#64748B]/60 focus:border-[#0096FF] focus:ring-1 focus:ring-[#0096FF] dark:focus:border-primary dark:focus:ring-primary"
                   />
                 </div>
               )}
               <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[24px] p-[18.8px] flex flex-col gap-[6px] transition-colors">
-                <label className="text-[#475569] dark:text-muted font-bold text-[13px] leading-[16px] font-[Inter] tracking-wide">
+                <label className="text-[#475569] dark:text-muted font-bold text-[13px] leading-[16px] font-gotham tracking-wide">
                   Year of Study
                 </label>
                 <div className="relative">
@@ -301,7 +328,7 @@ export default function UserProfile() {
                     value={userData.yearOfStudy ?? ""}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    className="w-full bg-[#F1F5F9] dark:bg-transparent border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[12px] p-[12px] text-[#64748B] dark:text-foreground text-[14px] leading-[17px] font-[Inter] outline-none transition-all duration-300 disabled:opacity-80 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                    className="w-full bg-[#F1F5F9] dark:bg-transparent border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[12px] p-[12px] text-[#64748B] dark:text-foreground text-[14px] leading-[17px] font-gotham-light outline-none transition-all duration-300 disabled:opacity-80 disabled:cursor-not-allowed appearance-none cursor-pointer"
                   >
                     <option value="" disabled hidden>Select Year of Study</option>
                     {ORDINAL_OPTIONS.map(({ label, value }) => (
@@ -317,28 +344,27 @@ export default function UserProfile() {
             </>
           )}
           <InputBox
-            label="Age"
-            name="age"
-            value={userData.age}
+            label="Date of Birth"
+            name="dateOfBirth"
+            value={userData.dateOfBirth}
             isEditing={isEditing}
             onChange={handleChange}
-            type="number"
-            placeholder="Enter your age"
+            type="date"
+            max={TODAY}
           />
 
-          {/* Role (read-only, hidden for basic users) */}
-          {userData.role !== "user" && (
-            <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[16px] md:rounded-[24px] p-[14px] md:p-[18.8px] flex flex-col gap-1 md:gap-[6px] relative transition-colors">
-              <label className="text-[#475569] dark:text-muted font-bold text-[12px] md:text-[13px] tracking-wide">
-                Role
-              </label>
-              <input
-                disabled
-                value={userData.role}
-                className="bg-[#F1F5F9] dark:bg-transparent border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[10px] md:rounded-[12px] p-2 md:p-[12px] text-[#64748B] dark:text-white text-[13px] md:text-[14px] outline-none cursor-not-allowed"
-              />
-            </div>
-          )}
+          {/* Role, read-only. Everyone has one now that "user" is gone, and the
+              label is the display name so "xcom" reads as "Excom". */}
+          <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[16px] md:rounded-[24px] p-[14px] md:p-[18.8px] flex flex-col gap-1 md:gap-[6px] relative transition-colors">
+            <label className="text-[#475569] dark:text-muted font-bold text-[12px] md:text-[13px] tracking-wide">
+              Role
+            </label>
+            <input
+              disabled
+              value={roleLabel(userData.role)}
+              className="bg-[#F1F5F9] dark:bg-transparent border-[0.8px] border-[#CBD5E1] dark:border-transparent rounded-[10px] md:rounded-[12px] p-2 md:p-[12px] text-[#64748B] dark:text-white text-[13px] md:text-[14px] outline-none cursor-not-allowed"
+            />
+          </div>
 
           {/* About Me Textarea */}
           <div className="bg-[#F8FAFC] dark:bg-[#1A1F2E] border-[0.8px] border-[#E2E8F0] dark:border-[#222936] rounded-[16px] md:rounded-[24px] p-[14px] md:p-[18.8px] flex flex-col gap-1 md:gap-[6px] lg:col-span-2 transition-colors">

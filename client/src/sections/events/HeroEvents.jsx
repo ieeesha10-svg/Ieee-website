@@ -5,14 +5,39 @@ import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/ui/Button';
 import ImageSkeleton from '../../components/skeletons/ImageSkeleton.jsx';
 
-export default function EventsHero({ featuredEvent, loading }) {
+export default function EventsHero({ featuredEvent, heroStatus = 'none', loading }) {
   const { user } = useAuth();
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  const title = featuredEvent?.title || "No Upcoming Events";
-  const description = featuredEvent?.description || "Stay tuned, we're cooking up something exciting. Check back soon for our next event!";
+  // Three distinct states, not one generic "no events" card. Previously the title
+  // fell back to the literal string "No Upcoming Events" and the badge still read
+  // "Upcoming Event" underneath it, so an empty site and a site whose last event
+  // has already finished looked identical and both claimed something was coming.
+  const isLatest = heroStatus === 'latest';
+  const isEmpty = !featuredEvent;
+
+  const title = isEmpty
+    ? 'No Events Published Yet'
+    : featuredEvent.title;
+  const description = isEmpty
+    ? "We're still putting the finishing touches on our events calendar. Check back soon, or follow our socials to hear about it first."
+    : featuredEvent.description ||
+      (isLatest
+        ? 'This one has already wrapped up. Have a look through what we covered, and keep an eye out for what is next.'
+        : 'Stay tuned, we are just putting the finishing touches on this one.');
   const eventImage = featuredEvent?.image || "";
-  const initials = (title || "").split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "E";
+  const initials = (title || '').split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'E';
+
+  const badgeText = isEmpty
+    ? 'Events'
+    : isLatest
+      ? 'Last Event'
+      : 'Upcoming Event';
+  const badgeStyle = isLatest
+    ? 'bg-white/10 text-white/80'
+    : isEmpty
+      ? 'bg-white/10 text-white/70'
+      : 'text-[10px] lg:text-sm text-primary bg-primary/20 dark:text-primary-light dark:bg-primary-light/20';
 
 	return <section id="events-hero" className="py-10 min-h-[calc(100vh-var(--navbar-height))] grid place-items-center gap-20 grid-cols-1 lg:grid-cols-2  max-w-7xl mx-auto px-4">
 
@@ -79,6 +104,14 @@ export default function EventsHero({ featuredEvent, loading }) {
 									onLoad={() => setImgLoaded(true)}
 									className="w-full h-full object-cover"
 								/>
+							) : isEmpty ? (
+								/* The site logo rather than the monogram: initials
+								   derived from the placeholder title read as a real
+								   event, and the two empty states in the sections
+								   below already use the logo. */
+								<div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+									<img src="/logo.webp" alt="IEEE" className="w-24 h-24 object-contain opacity-60" />
+								</div>
 							) : (
 								<div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
 									<span className="text-6xl font-bold text-primary/30">{initials}</span>
@@ -86,8 +119,8 @@ export default function EventsHero({ featuredEvent, loading }) {
 							)}
 						</div>
 						<div className='flex flex-col gap-6 py-7 px-5'>
-							<div className='text-[10px] lg:text-sm text-primary bg-primary/20 dark:text-primary-light dark:bg-primary-light/20 rounded-full w-fit px-3.5 py-2'>
-								Upcoming Event
+							<div className={`${badgeStyle} rounded-full w-fit px-3.5 py-2 ${isEmpty || isLatest ? 'text-[10px] lg:text-sm' : ''}`}>
+								{badgeText}
 							</div>
 							<h3 className='font-gotham text-xl lg:text-3xl'>
 								{title}
@@ -95,6 +128,13 @@ export default function EventsHero({ featuredEvent, loading }) {
 						<p className='text-muted text-xs lg:text-base line-clamp-3'>
 							{description}
 						</p>
+							{/* The past-event card had no way to say "this is over", so
+							    the date is the only cue that it is not still bookable. */}
+							{isLatest && featuredEvent.date && (
+								<p className='text-xs text-muted/80'>
+									Held {featuredEvent.date}
+								</p>
+							)}
 						</div>
 					</>
 				)}

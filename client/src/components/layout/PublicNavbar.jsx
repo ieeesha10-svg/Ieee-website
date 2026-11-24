@@ -9,9 +9,9 @@ import {
   Info,
   MapPin,
   Calendar,
-	Mail,
-	Braces,
-	Briefcase,
+  Mail,
+  Braces,
+  Briefcase,
   FileText,
   ChevronRight,
   ChevronDown,
@@ -25,7 +25,11 @@ import { useAuth } from "../../context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import ConfirmModal from "../ui/ConfirmModal";
 import { useLogout } from "../../hooks/auth/useLogout";
-import { canUseScanPage, dashboardHref, isAdminRole } from "../../utils/roleAccess";
+import {
+  canUseScanPage,
+  canViewAdminPages,
+  dashboardHref,
+} from "../../utils/roleAccess";
 
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home },
@@ -74,9 +78,9 @@ const PublicNavbar = () => {
         <Link to="/">
           <img src="/logo.webp" alt="IEEE Logo" />
         </Link>
-				<div className="hidden md:flex items-center gap-6">
-	        {NAV_LINKS.map((nav_link, index) => {
-						return (
+        <div className="hidden md:flex items-center gap-6">
+          {NAV_LINKS.map((nav_link, index) => {
+            return (
               <Link
                 key={index}
                 to={nav_link.href}
@@ -84,13 +88,12 @@ const PublicNavbar = () => {
               >
                 {nav_link.label}
               </Link>
-	          );
-					})}
-				</div>
-        
+            );
+          })}
+        </div>
+
         {/* DESKTOP MENU (Hidden on small screens) */}
         <div className="hidden md:flex items-center gap-6 relative">
-
           <ThemeToggle />
 
           {user ? (
@@ -106,7 +109,7 @@ const PublicNavbar = () => {
                   to={dashboardHref(user.role)}
                   className="text-primary-light font-bold hover:underline text-sm"
                 >
-                	Dashboard
+                  Dashboard
                 </Link>
               )}
               <button
@@ -138,7 +141,10 @@ const PublicNavbar = () => {
                     onClick={() => desktopHandleNavigate("/login")}
                     className="w-full flex items-center gap-3 px-4 py-3 text-white text-sm hover:bg-white/10 transition text-left"
                   >
-                    <UserIcon size={18} className="text-primary-light shrink-0" />
+                    <UserIcon
+                      size={18}
+                      className="text-primary-light shrink-0"
+                    />
                     Login
                   </button>
                   <button
@@ -146,7 +152,10 @@ const PublicNavbar = () => {
                     onClick={() => desktopHandleNavigate("/registration")}
                     className="w-full flex items-center gap-3 px-4 py-3 text-white text-sm hover:bg-white/10 transition text-left"
                   >
-                    <UserPlus size={18} className="text-primary-light shrink-0" />
+                    <UserPlus
+                      size={18}
+                      className="text-primary-light shrink-0"
+                    />
                     Registration
                   </button>
                 </div>
@@ -227,7 +236,9 @@ const PublicNavbar = () => {
         </div>
 
         {/* Sheet Footer */}
-        <div className={`px-4 pb-8 pt-4 ${isAdminRole(user?.role) ? "border-t border-[#FFFFFF33] dark:border-border" : ""}`}>
+        <div
+          className={`px-4 pb-8 pt-4 ${canViewAdminPages(user?.role) ? "border-t border-[#FFFFFF33] dark:border-border" : ""}`}
+        >
           {user ? (
             <>
               <Link
@@ -239,7 +250,9 @@ const PublicNavbar = () => {
                   {user.name?.charAt(0)?.toUpperCase() || "U"}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{user.name}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {user.name}
+                  </p>
                   <p className="text-xs text-muted truncate">{user.email}</p>
                 </div>
               </Link>
@@ -329,10 +342,12 @@ const PublicNavbar = () => {
           cancelLabel="Cancel"
           variant="danger"
           isLoading={loggingOut}
-          onConfirm={async () => { if (await logout()) setShowLogoutModal(false); }}
+          onConfirm={async () => {
+            if (await logout()) setShowLogoutModal(false);
+          }}
           onCancel={() => setShowLogoutModal(false)}
         />,
-        document.body
+        document.body,
       )}
     </nav>
   );

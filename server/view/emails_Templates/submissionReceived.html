@@ -1,0 +1,155 @@
+<!--
+  CONTENT CARD - not a full document. The page background, this card, the brand
+  bar and the footer are all assembled by buildEmailDocument() in
+  server/utils/emailTemplates.js.
+
+  Style tokens (shared with the footer):
+    brand #00629b | ink #1f2933 | muted #667482 | hairline #e6eaee | panel #f0f6fb
+    heading 15px/21px bold | body 13px/20px | small 11px/18px | caps 10px/15px
+-->
+
+<!-- ==================== INTRO ==================== -->
+<tr>
+  <td style="padding: 5px 25px 0 25px;">
+    <p
+      style="
+        margin: 0 0 16px;
+        color: #1f2933;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      Hi <strong>{{userName}}</strong>,
+    </p>
+
+    <div
+      style="
+        color: #1f2933;
+        font-size: 18px;
+        line-height: 25px;
+        font-weight: 700;
+      "
+    >
+      Congratulations! &#127881;
+    </div>
+  </td>
+</tr>
+
+<!-- ==================== BODY COPY ==================== -->
+<tr>
+  <td style="padding: 12px 25px 0 25px;">
+    <p
+      style="
+        margin: 0 0 12px;
+        color: #1f2933;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      You&rsquo;ve just taken your first step toward turning your dream into reality.
+    </p>
+    <p
+      style="
+        margin: 0;
+        color: #1f2933;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      By submitting your application, you&rsquo;ve already made your first move,
+      and this is only the beginning.
+    </p>
+  </td>
+</tr>
+
+<!-- ==================== NEXT STEPS ==================== -->
+<tr>
+  <td style="padding: 18px 25px 0 25px;">
+    <table
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      width="100%"
+      style="
+        background-color: #f0f6fb;
+        border-left: 3px solid #00629b;
+      "
+    >
+      <tr>
+        <td style="padding: 14px 16px;">
+          <p
+            style="
+              margin: 0;
+              color: #1f2933;
+              font-size: 13px;
+              line-height: 20px;
+            "
+          >
+            Keep an eye on your inbox, as all the upcoming details and next steps
+            will be sent to you soon. &#128231;
+          </p>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+<!-- ==================== MOTIVATION ==================== -->
+<tr>
+  <td style="padding: 18px 25px 0 25px;">
+    <p
+      style="
+        margin: 0;
+        color: #1f2933;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      Stay ready.<br />Your journey starts now. &#128640;
+    </p>
+  </td>
+</tr>
+
+<!-- ==================== SIGN OFF ==================== -->
+<tr>
+  <td style="padding: 18px 25px 28px 25px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td
+          height="1"
+          style="
+            height: 1px;
+            background-color: #e6eaee;
+            font-size: 0;
+            line-height: 0;
+          "
+        >
+          &nbsp;
+        </td>
+      </tr>
+    </table>
+    <div
+      style="
+        padding-top: 16px;
+        color: #00629b;
+        font-size: 10px;
+        line-height: 15px;
+        font-weight: 700;
+        letter-spacing: 1px;
+      "
+    >
+      PRIME POTENTIAL. LASTING IMPACT.
+    </div>
+    <p
+      style="
+        margin: 6px 0 0;
+        color: #1f2933;
+        font-size: 13px;
+        line-height: 20px;
+      "
+    >
+      Best regards,<br />IEEE SHA Team
+    </p>
+  </td>
+</tr>

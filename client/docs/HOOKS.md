@@ -17,9 +17,13 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 | `usePublicForms` | `GET /form` | `{ forms, isLoading, refetch }` | Only standalone forms (`status === "Active" && !activityID`) |
 | `usePublicForm` (in `usePublicFormById.js`) | `GET /form/:id` | `{ form, isLoading, error }` | |
 | `useSubmitForm` | `POST /submissions` (raw fetch, multipart) | `{ submit, loading, error, alreadySubmitted, ticketCode, reset, setAlreadySubmitted }` | ⚠️ Duplicate-submission detection relies on an exact message string match ("You already submitted this form") — fragile, see code comment |
-| `useCrew` | `GET /crew` | `{ team, isLoading }` | Maps API crew to card shape |
+| `useSeasons` | `GET /seasons` | `{ seasons, isLoading, error, refetch }` | Every season with its headcount, newest first. Powers the dashboard's season picker |
+| `useSeason(seasonId?)` | `GET /seasons/home` or `GET /seasons/:id` | `{ season, excom, board, isLoading, error }` | **No `seasonId` means the published season**, i.e. the one the home page shows. Drives `/crew`, `/crew/season/:seasonId` and the home Excom. The Excom/Board split is done server-side so both sections arrive ready to render |
+| `useEmailQuota` | `GET /emails/quota` | `{ quota, isLoading, error, refetch }` | How much of Brevo's **daily** transactional allowance is left, drawn as a progress bar in Settings. The number comes from Brevo, not from our own `emaillogs`, because Brevo is the only authority on what remains. `quota.available === false` means Brevo could not be read, which is rendered as a neutral "could not read" state with a retry - deliberately not a toast or a zero, since neither would be true |
 | `useDarkMode` | — | `[colorTheme, setTheme]` | localStorage `theme` + `.dark` class on `<html>` |
 | `useJoinMenu(navigate)` | — | `{ ref, open, toggle, openMenu, close, handleNavigate }` | Takes `navigate` from `useNavigate()`. Dropdown open/close + outside-click + Esc handling |
+| `usePublicSettings` | `GET /settings/public` (public) | `{ registrationOpen, committeeApplicationsOpen, loading, refetch }` | The two site-wide switches a visitor needs to know about, in one request. `null` until the answer arrives so a page can withhold itself rather than flash the wrong state. Fails open — the server still refuses a closed request, so the worst case is finding out after submitting |
+| `useCommitteeApplication` | `GET /committee-requests/my`, `POST /committee-requests` | `{ user, pending, applying, loading, apply(label), reload }` | Drives the apply button on the public committees page. Reads `useAuth` for the current member and surfaces their one pending request, so a second apply is explained rather than failing silently. Board/xcom members are accepted immediately and the profile is refreshed in place |
 
 ## Auth Hooks (`src/hooks/auth/`)
 
@@ -43,15 +47,18 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 | `useMembersList` | `GET /users/all?...` | `{ members, totalCount, totalPages, filters, toggles, page, loading, resetFilters, hasActiveFilters }` | Debounced search (300ms), college/year/role/position filters, AbortController cancellation. Loads filter options via `GET /users/all?limit=1000`. Also used by `DashboardLayout` (pageSize 5) for the topbar search |
 | `useSearchMembers` | `GET /users/search?keyword=` | `{ keyword, setKeyword, results, isLoading, error }` | Debounced; min 2 chars |
 | `useExportUsers` | `POST /users/export-specific` (blob) | `{ exporting, exportUsers(ids) }` | Downloads `.xlsx` |
-| `useUpdateRole` | `PATCH /users/members/:id` | `{ updatingRole, updateRole(id, newRole, prevRole, setRoles) }` | Optimistic with rollback |
-| `useGetAdmins` | `GET /users/all?role=board,xcom&limit=100` | `{ admins, adminRoles, setAdmins, setAdminRoles, loading, refetch }` | Fetches admin list + roles for the "User Permissions" section of DashboardSettings; exposes state setters for optimistic updates |
+| `useUpdateRole` | `PATCH /users/members/:id` | `{ updatingRole, updateRole(id, newRole, prevRole, setRoles) }` | Optimistic with rollback. xcom only, and the server refuses when the target is the caller, so nobody can change their own role |
+| `useGetAdmins` | `GET /users/all?role=board,xcom&limit=100` (`VIEW_ROLES`) | `{ admins, adminRoles, setAdmins, setAdminRoles, loading, refetch }` | Fetches admin list + roles for the "User Permissions" section of DashboardSettings; exposes state setters for optimistic updates |
 | `useUserUpdate` | `GET /users/members/:id`, `PUT /users/profile/:id`, `PUT /users/update-password/:id` | `{ userData, loading, error, savingProfile, savingPassword, updateProfile, updatePassword }` | Used on user profile pages |
+| `useSeasons` (dashboard) | `GET /seasons`, `POST /seasons`, `PUT /seasons/:id`, `PUT /seasons/:id/home`, `DELETE /seasons/:id` | `{ seasons, isLoading, error, isSaving, createSeason, renameSeason, publishSeason, deleteSeason, refetch }` | All writes are admin-only. `publishSeason` is the only thing that changes which season the home page shows, and the server unpublishes the others in the same call. Deleting a season that still has members is refused by the server rather than cascading |
+| `useCrewForSeason(seasonId)` | `GET /crew?season=`, `POST /crew`, `PUT /crew/:id`, `DELETE /crew/:id` | `{ excom, board, isLoading, error, isSaving, addMember, updateMember, removeMember, refetch }` | Members come back grouped by section, which is the shape the dashboard renders. Refetches on `seasonId` change so switching seasons cannot leave the previous season's people on screen |
 
 ### Committees
 
 | Hook | Endpoint(s) | Returns | Notes |
 |------|-------------|---------|-------|
-| `useReviewCommitteeRequests` | `GET /committee-requests?status=pending&page=&limit=`, `PUT /committee-requests/:id/status` | `{ requests, loading, page, totalPages, totalCount, refetch, processRequest, processingId }` | Paginated pending requests; approve/reject refetches the list |
+| `useReviewCommitteeRequests` | `GET /committee-requests?status=&page=&limit=`, `PUT /committee-requests/:id/status` | `{ requests, loading, page, setPage, totalPages, totalCount, refetch, processRequest, processingId, isDecided }` | One bucket of requests, chosen with `{ status: "pending" \| "approved" \| "rejected" }`; each row carries a `reviewer` (`null` until decided) and `reviewedAt`. `approve`/`reject` refetches. Backs the Pending/Approved/Rejected tabs on `/dashboard/committee-requests` |
+| `usePendingCommitteeRequestCount` | `GET /committee-requests?status=pending&page=1&limit=1` | `{ count, refresh }` | Just the pending total (rows discarded, only `pagination.totalItems` read) for the sidebar's glowing dot. Refetches on mount and on route change, on the `PENDING_COUNT_EVENT` that `useReviewCommitteeRequests` fires after a decision, and every 60s to catch another admin's decision. Fails silently — a stale dot must never blank the nav |
 | `useSubmitCommitteeRequest` | `POST /committee-requests` | `{ submitting, submitRequest(committeePosition) }` | Submits a committee-change request for the current user; board/xcom users are auto-accepted server-side |
 | `useChangeMemberCommittee` | `PUT /committee-requests/:memberId/position` | `{ updatingCommittee, updateCommittee(id, name, new, prev, setCommittees) }` | Directly changes a member's committee; optimistic with rollback |
 
@@ -83,6 +90,12 @@ All custom hooks live in `src/hooks/`. They wrap `src/utils/api.js` (Axios) and 
 |------|-------------|---------|-------|
 | `useEmailLogs` | `GET /emails/logs?page=&limit=&search=&status=` | `{ logs, loading, search, setSearch, statusFilter, setStatusFilter, page, setPage, pagination }` | 500ms debounce; maps backend statuses ("Done"/"Rejected"/...) to UI statuses (delivered/failed/pending) |
 
+### Site Settings
+
+| Hook | Endpoint(s) | Returns | Notes |
+|------|-------------|---------|-------|
+| `useSiteSettings` | `GET /settings`, `PUT /settings/registration`, `PUT /settings/committee-applications` | `{ registrationOpen, committeeApplicationsOpen, loading, saving, setRegistration(open), setCommitteeApplications(open), refetch }` | Admin-only, drives `ToggleSwitch` in DashboardSettings. Flips optimistically and rolls back if the server refuses. `saving` names the switch mid-flight so each row disables only itself. Neither switch affects sign-in or the review of already-submitted applications |
+
 ### Submissions
 
 | Hook | Endpoint(s) | Returns | Notes |
@@ -100,4 +113,4 @@ Not hooks, but used by them:
 | `dateUtils.js` | `toLocalDatetimeString` (datetime-local input value) |
 | `fileUploadUtils.js` | `ACCEPTED_FILE_TYPES`, `ACCEPTED_FILE_EXTENSIONS`, `useFileUpload` helper (10MB limit, PDF/JPG/PNG/GIF/WEBP/DOC/DOCX) |
 | `formatAcademicYear.js` | `formatAcademicYear(year)` |
-| `roleAccess.js` | `isAdminRole`, `canUseScanPage`, `dashboardHref` |
+| `roleAccess.js` | `canViewAdminPages`, `canWrite`, `canViewDashboard`, `canUseScanPage`, `roleLabel`, `dashboardHref`, `landingRoute`, `isAdminRole` |

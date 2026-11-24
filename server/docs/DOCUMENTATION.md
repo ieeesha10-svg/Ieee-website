@@ -1,0 +1,2590 @@
+# IEEE SHA – SB | Backend Documentation
+
+> **IEEE SHA Student Branch Website — REST API & System Documentation**
+
+Welcome to the official documentation of the **IEEE SHA – SB** backend system. This document is divided into three main parts:
+
+| Part | Section | Description |
+|------|---------|-------------|
+| **1** | [README — Project Setup](#part-1--readme-project-setup) | Overview, tech stack, environment variables, installation |
+| **2** | [System Architecture](#part-2--system-architecture) | Workflow, authentication model, database design, integrations |
+| **3** | [API Documentation](#part-3--api-documentation) | Full reference for every endpoint (requests, responses, errors) |
+
+---
+
+# Part 1 — README (Project Setup)
+
+## 1.1 Project Overview
+
+**IEEE SHA – SB** is the backend service powering the official website of the **IEEE SHA Student Branch**. It manages the full lifecycle of the branch's digital operations: public member registration with email OTP verification, event/activity management with dynamic registration forms, QR-ticketed attendance scanning, committee join-request workflows, a crew directory, bulk email campaigns, and an administrative analytics dashboard.
+
+The system is built around four user roles — `member`, `scanner`, `board` and `xcom` — where privileged roles administer events, review submissions, approve committee requests, and communicate with the community through integrated email services. `xcom` is the stored value for the role displayed as **Excom**; `board` is a strictly read-only oversight role. See the [RBAC matrix](#role-based-access-control-rbac-matrix).
+
+## 1.2 Tech Stack
+
+| Category | Technology | Purpose |
+|----------|-----------|---------|
+| Runtime | **Node.js** | JavaScript server runtime |
+| Framework | **Express v5** | REST API routing & middleware |
+| Database | **MongoDB** + **Mongoose v9** | Data persistence & ODM |
+| Authentication | **jsonwebtoken (JWT)** | Stateless auth via **httpOnly cookies** |
+| Security | **bcryptjs**, **helmet**, **cors**, **sanitize-html** | Password hashing, secure headers, CORS whitelist, HTML sanitization |
+| File Storage | **Cloudinary** + **Multer** (memory storage) | Cover images & submission file uploads (10 MB limit) |
+| Email | **Brevo** (`@getbrevo/brevo`) | Transactional + bulk email delivery *(Resend integration exists but is disabled)* |
+| Documents | **ExcelJS**, **xlsx** | Excel import/export (users, submissions, bulk recipients) |
+| Ticketing | **qrcode**, **nanoid** | Unique ticket codes + QR image generation |
+| Utilities | **dotenv**, **cookie-parser**, **validator**, **html-to-text** | Config, cookies, input validation, text extraction |
+| Dev Tooling | **nodemon** | Hot-reload during development |
+
+## 1.3 Project Structure
+
+```
+server/
+├── index.js                  # App entry point (Express bootstrap, Vercel-ready export)
+├── seeder.js                 # Database seeding script
+├── package.json
+├── .env                      # Environment variables (never commit!)
+├── config/
+│   ├── db.js                 # MongoDB connection (Mongoose)
+│   └── cloudinary.js         # Cloudinary SDK configuration
+├── controllers/              # Business logic per domain
+│   ├── userController.js     # Auth, registration, profiles, member management, exports
+│   ├── activityController.js # Activities CRUD + featured activities
+│   ├── formController.js     # Dynamic form builder CRUD
+│   ├── submissionController.js # Form submissions, QR scan, Excel export
+│   ├── committeeRequestController.js # Committee join workflow
+│   ├── crewController.js     # Crew directory CRUD
+│   ├── seasonController.js   # Seasons (Counselor + Excom + Board) and which one is published
+│   ├── emailController.js    # Bulk email campaigns + logs
+│   └── statsController.js    # Dashboard analytics aggregation
+├── models/                   # Mongoose schemas
+│   ├── UserModel.js          # Users (roles, OTP, reset tokens)
+│   ├── ActivityModel.js      # Events/activities
+│   ├── FormModel.js          # Dynamic forms + field validation
+│   ├── SubmissionModel.js    # Submissions + tickets + attendance
+│   ├── PendingRequest.js     # Committee join requests
+│   ├── FeaturedActivitiesModel.js # Homepage featured list
+│   ├── crewModel.js          # Team members shown on site (season + section + links)
+│   ├── seasonModel.js        # Seasons, and which one is published on the home page
+│   └── EmailLog.js           # Bulk email delivery log
+├── routes/                   # Express routers per domain
+├── middleware/
+│   ├── authMiddleware.js     # protect (JWT cookie) + authorize (RBAC)
+│   ├── uploadMiddleware.js   # Multer memory-storage config
+│   └── errorsMiddleware.js   # AppError, catchAsync, globalErrorHandler
+├── utils/
+│   ├── routesHandler.js      # Central route mounting
+│   ├── sendEmail.js          # Brevo email client + templates
+│   ├── emailTemplates.js     # Shared email footer/templates
+│   ├── uploadToCloudinary.js # Streamed Cloudinary uploads
+│   └── collegeNormalize.js   # College name normalization for stats
+└── view/
+    └── emails_Templates/     # HTML email templates
+```
+
+## 1.4 Environment Variables
+
+Create a `.env` file in the `server/` root. Copy the variable names below and provide your own values:
+
+```env
+# ---------- Server ----------
+PORT=5000
+NODE_ENV=development            # "development" enables relaxed CORS/cookies
+MONGO_URI=mongodb://127.0.0.1:27017/ieeesha
+JWT_SECRET=your_super_secret_key
+
+# ---------- CORS ----------
+CORS_ORIGINS=http://localhost:5173,https://www.ieeesha.org
+CORS_ORIGIN=                    # fallback if CORS_ORIGINS is unset
+CLIENT_URL=http://localhost:5173
+
+# ---------- Email ----------
+BREVO_API_KEY=xkeysib-...       # Brevo transactional email API key
+EMAIL_USER=                     # legacy/optional SMTP credentials
+EMAIL_PASS=
+RESEND_API_KEY=                 # optional (Resend provider currently disabled)
+
+# ---------- Media ----------
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=123456789
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+| Variable | Required | Description |
+|----------|:--------:|-------------|
+| `PORT` | No | Server port. Defaults to `5000`. |
+| `NODE_ENV` | Yes | `development` → lax cookies + localhost CORS; anything else → production behavior (secure cross-domain cookies on `.ieeesha.org`). |
+| `MONGO_URI` | Yes | MongoDB connection string. Process exits if connection fails. |
+| `JWT_SECRET` | Yes | Secret used to sign auth tokens (30-day expiry) and reset-password tokens (1-hour expiry). |
+| `CORS_ORIGINS` / `CORS_ORIGIN` | Yes | Comma-separated whitelist of allowed origins. Requests without an origin are allowed. |
+| `CLIENT_URL` | Yes | Frontend base URL (used when constructing links). |
+| `BREVO_API_KEY` | Yes* | Required for OTP, ticket, reset-password, decision & bulk emails. Sender: `noreply@ieeesha.org`. |
+| `CLOUDINARY_CLOUD_NAME` | Yes* | Cloudinary account identifier. |
+| `CLOUDINARY_API_KEY` | Yes* | Cloudinary API key. |
+| `CLOUDINARY_API_SECRET` | Yes* | Cloudinary API secret. |
+| `EMAIL_USER` / `EMAIL_PASS` | No | Legacy SMTP credentials (current pipeline uses Brevo). |
+| `RESEND_API_KEY` | No | Alternative email provider key (integration disabled). |
+
+\* *Required for features that use them (uploads / emails).*
+
+## 1.5 Installation & Setup
+
+### Prerequisites
+- **Node.js ≥ 18** (native `fetch` is used in the file-download proxy)
+- **MongoDB** (local instance or Atlas cluster)
+- A **Cloudinary** account (for media uploads)
+- A **Brevo** account with a verified sender (`noreply@ieeesha.org`)
+
+### Steps
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Configure environment
+#    Create a .env file as described in section 1.4
+
+# 3. Start the development server (nodemon hot-reload)
+npm run dev
+
+# 4. Verify the server is running
+curl http://localhost:5000/
+# => { "message": "Welcome to the API" }
+```
+
+### Available Scripts
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| `dev` | `npm run dev` | Start development server with `nodemon` (auto-restart on change). |
+
+### Deployment Notes
+
+- `index.js` exports the Express app (`module.exports = app`) making it **Vercel serverless-compatible**. Locally, it listens on `PORT` only when run directly (`require.main === module`).
+- In production, auth cookies are issued with `secure: true`, `sameSite: 'none'`, and `domain: '.ieeesha.org'` to support cross-subdomain requests — HTTPS is mandatory.
+- On first DB connection, `Form.syncIndexes()` runs automatically to apply unique indexes.
+- Static files are served from `/uploads` (legacy local storage); new uploads stream directly to **Cloudinary**.
+
+---
+
+# Part 2 — System Architecture
+
+## 2.1 High-Level Architecture
+
+```
+                        ┌─────────────────────────────────────────────┐
+                        │                CLIENTS                       │
+                        │   React SPA (member portal, admin panel,     │
+                        │   scanner app)                               │
+                        └──────────────────┬──────────────────────────┘
+                                           │ HTTPS (credentials included)
+                                           ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                         EXPRESS APPLICATION (Node.js)                    │
+│                                                                          │
+│  Global Middleware                                                       │
+│  ├── helmet()            → security headers                              │
+│  ├── cors()              → origin whitelist + credentials                │
+│  ├── express.json()      → JSON body parsing                             │
+│  ├── cookieParser()      → parses signed 'jwt' auth cookie               │
+│  └── /uploads static                                                     │
+│                                                                          │
+│  Route Layer (utils/routesHandler.js)                                    │
+│  ├── /api/users              → userRoutes                                │
+│  ├── /api/states             → statsController                           │
+│  ├── /api/crew               → crewRoutes                                │
+│  ├── /api/seasons            → seasonRoutes                              │
+│  ├── /api/activities         → activityRoutes                            │
+│  ├── /api/form               → formRoutes                                │
+│  ├── /api/submissions        → submissionRoutes                          │
+│  ├── /api/committee-requests → committeeRequestRoutes                    │
+│  ├── /api/emails             → emailRouts                                │
+│  ├── 404 catch-all (app.all)                                             │
+│  └── globalErrorHandler                                                  │
+│                                                                          │
+│  Controller Layer → Business logic (catchAsync-wrapped async handlers)   │
+│  Model Layer      → Mongoose schemas, hooks & validation                 │
+└───────────┬─────────────────────┬───────────────────────┬───────────────┘
+            │                     │                       │
+            ▼                     ▼                       ▼
+   ┌─────────────────┐   ┌─────────────────┐    ┌─────────────────────┐
+   │     MongoDB     │   │   Cloudinary    │    │       Brevo         │
+   │  (Atlas/local)  │   │  Image/file CDN │    │  Transactional &    │
+   │  8 collections  │   │                 │    │  bulk email API     │
+   └─────────────────┘   └─────────────────┘    └─────────────────────┘
+```
+
+## 2.2 Core Workflow
+
+1. **Registration** — A visitor registers as a `student` or `professional`. Passwords are hashed with bcrypt (salt rounds = 10). `role` is not read from the request body at all: registration always creates a `member` (privilege escalation prevention). If a `committee` preference was chosen, a `PendingRequest` is created automatically.
+2. **Email Verification (OTP)** — A random 6-digit OTP (valid 15 minutes) is emailed via Brevo. `POST /verify-email` validates it, flags the account `isVerified`, clears the OTP, and **auto-login** the user by setting the JWT cookie.
+3. **Authentication** — Login verifies credentials and issues a JWT (30 days) stored in an **httpOnly cookie named `jwt`**. All subsequent requests authenticate via this cookie (`protect` middleware). Logout expires the cookie.
+4. **Events & Forms** — Admins (`xcom`/`board`) create an **Activity**; the API atomically creates a linked dynamic **Form** (custom fields: TextInput, TextArea, Dropdown, Checkbox, FileUpload). Form answers are validated against field definitions inside a Mongoose `pre('save')` hook.
+5. **Submission & Ticketing** — Logged-in users submit forms once (unique compound index `formId + userId`). Attendance-type forms mint a unique **ticket code** (`<formId>-<userId>-<nanoid6>`), render a **QR code**, and email it to the attendee. FileUpload answers are streamed to Cloudinary under `submissions/<formId>/`.
+6. **Check-in (Scanning)** — Volunteers (`scanner`) scan QR codes via `POST /submissions/scan`; the submission flips to `attended`, timestamps the check-in, and greets the registrant. Double-scans are rejected.
+7. **Committee Management** — Members request committee positions; `xcom`/`board` approve/reject. Approval assigns `user.committee` and triggers a decision email. XCom/board requests are auto-approved.
+8. **Communication** — Bulk emails are sent either from an uploaded Excel sheet (column A = recipient, other columns become `{{placeholders}}`) or from selected DB users. Every attempt is recorded in the `emaillogs` collection with a status of `Done`, `Rejected`, or `Not email`.
+9. **Analytics** — `GET /api/states/dashboard` aggregates MongoDB pipelines into KPIs: totals, college/year/position splits, top-5 most active members, latest signups, and registrations per activity.
+
+## 2.3 Authentication & Authorization Model
+
+### Token Flow
+
+```
+Register ──► OTP Email ──► Verify (auto-login) ──► jwt cookie set
+Login ────────────────────────────────────────────► jwt cookie set
+        ┌──────────────────────────────────────────┐
+        │  Cookie: jwt=<HS256 JWT>, httpOnly,      │
+        │  30-day expiry, Secure+SameSite=None in  │
+        │  production (domain .ieeesha.org)        │
+        └──────────────────────────────────────────┘
+Every request → protect middleware → jwt.verify → req.user loaded
+```
+
+### Middleware
+
+| Middleware | Behavior |
+|------------|----------|
+| `protect` | Reads `req.cookies.jwt`. Missing → `401 Not authorized, no token`. Invalid/expired → `401 Not authorized, token failed`. Valid → loads user onto `req.user`. |
+| `authorize(...roles)` | Compares `req.user.role` against allowed roles. Failure → `403 User role <role> is not authorized to access this route`. |
+| `authorizeSelfOr(...roles)` | For routes keyed by a user id in the path. Passes if the id is the caller's own **or** the role is listed; otherwise `403 Not authorized to view this record`. With no roles it means "own account only". Used so `GET /submissions/:userid/:formid` and `GET /users/:id/events` are not an IDOR over other members' data. |
+
+### Role Constants — `constants/roles.js`
+
+The single source of truth. Import these into `authorize(...)` rather than
+re-typing role strings, which is how the lists had already drifted apart.
+
+| Constant | Values | Meaning |
+|---|---|---|
+| `DASHBOARD_ROLES` | `scanner`, `board`, `xcom` | May open `/dashboard` at all. `member` is absent on purpose. |
+| `VIEW_ROLES` | `board`, `xcom` | May read dashboard data. `board` is the read-only oversight role. |
+| `WRITE_ROLES` | `xcom` | **May change data.** xcom alone, so board cannot perform an action, add anything, or make a change. |
+| `SCAN_ROLES` | `scanner`, `board`, `xcom` | Everything a Scanner can do. |
+| `ASSIGNABLE_ROLES` | `member`, `scanner`, `board`, `xcom` | Mirrors the `UserModel` enum. |
+| `ROLE_LABELS` | — | Display names. `xcom` is stored as `xcom` and **shown as `Excom`**. |
+
+### Role-Based Access Control (RBAC) Matrix
+
+Four roles. There is no `user` role: it was removed and
+`scripts/migrate-role-user-to-member.js` converts the accounts that still
+carried it. Self-registration always produces `member`.
+
+**`board` is read-only.** Reads it shares with `xcom`; every write is
+`authorize(...WRITE_ROLES)`, which is xcom alone, so a board member gets `403`
+even on a hand-crafted request. The frontend hiding the controls is courtesy, not
+enforcement.
+
+| Capability | `member` | `scanner` | `board` | `xcom` |
+|---|:-:|:-:|:-:|:-:|
+| Register / verify / login / logout | ✅ | ✅ | ✅ | ✅ |
+| Public site, own profile, own password | ✅ | ✅ | ✅ | ✅ |
+| Submit forms, view own submission | ✅ | ✅ | ✅ | ✅ |
+| Request committee position | ✅ | ✅ | ✅ | ✅ (auto-accepted) |
+| Open the dashboard | ❌ | `/dashboard/scan` only | ✅ | ✅ |
+| Scan tickets (`POST /submissions/scan`) | ❌ | ✅ | ✅ | ✅ |
+| View members, members list, exports, searches | ❌ | ❌ | ✅ | ✅ |
+| Read submissions, forms, crew, seasons, settings, email logs, committee requests | ❌ | ❌ | ✅ | ✅ |
+| Create / edit / delete activities, forms, crew, seasons | ❌ | ❌ | ❌ | ✅ |
+| Approve or reject a committee request | ❌ | ❌ | ❌ | ✅ |
+| Change a member's role or committee | ❌ | ❌ | ❌ | ✅ |
+| Send bulk email, import a backup, toggle settings | ❌ | ❌ | ❌ | ✅ |
+| Create internal accounts (`create-internal`) | ❌ | ❌ | ❌ | ✅ |
+| Delete a member | ❌ | ❌ | ❌ | ✅ (see below) |
+| Change **your own** role | ❌ | ❌ | ❌ | ❌ (by design) |
+
+Notes on the last three rows:
+
+- **Role assignment is one-directional in practice.** `PATCH /users/members/:id`
+  and the controllers behind it refuse when the target is the caller, so nobody
+  can elevate their own role — including xcom. An xcom hands over by being
+  demoted from another account.
+- **Self-deletion is a 403 conflict to be aware of.** `deleteMember` still allows
+  a user to delete *their own* account, but the route is now
+  `authorize(...WRITE_ROLES)`, so only xcom can reach it. If account closure is
+  meant to be a real feature for every member, the route needs an
+  `authorizeSelfOr(...WRITE_ROLES)` and the UI needs an entry point; as it stands
+  the controller branch is unreachable.
+- **Exports are reads.** `POST /users/export-specific` takes a body, so it is a
+  POST, but it only generates a file from data the caller may already read, so it
+  is `VIEW_ROLES`. This is the one place the HTTP verb does not imply the
+  permission — decide by what the handler does, not by its method.
+
+## 2.4 Database Design (MongoDB Collections)
+
+### `users`
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | String | required, trimmed |
+| `email` | String | required, **unique**, lowercase, regex-validated |
+| `password` | String | required, **select: false**, min 8 chars, bcrypt hash |
+| `phone` | String | |
+| `dateOfBirth` | Date | optional; cannot be in the future |
+| `position` | String | enum: `student`, `professional` |
+| `role` | String | enum: `member` (default), `scanner`, `board`, `xcom` |
+| `university`, `college`, `yearOfStudy` | String/String/Number | student-specific |
+| `interests` | [String] | e.g. `["AI", "Robotics"]` |
+| `organization`, `roleInOrganization`, `yearsOfExperience`, `reasonForRegistration` | — | professional-specific |
+| `committee` | String | e.g. `HR`, `Technical`, `PR` |
+| `isVerified` | Boolean | default `false` |
+| `otp`, `otpExpires` | String / Date | **select: false**, 15-min validity |
+| `resetPasswordToken`, `resetPasswordExpires` | String / Date | **select: false**, 1-hour validity |
+| `optionalData` | Object | free-form extension bucket |
+| `timestamps` | — | `createdAt`, `updatedAt` |
+
+#### Rejected placeholder answers
+
+Any of these, on its own, is refused as a field value — return **400** rather than storing it:
+
+`N/A`, `N / A`, `N.A.`, `not applicable`, `not available`, `none`, `nil`, `null`, `tbd`, `-`, `--`, `?`
+
+Matching is case-insensitive and ignores surrounding and internal whitespace, so `"  N / A "` is also refused. Leave the field **empty** (or omit it) when a value does not apply — an empty optional field is always valid.
+
+Enforced on `name`, `phone`, `university`, `college`, `organization`, `roleInOrganization`, `reasonForRegistration`, `optionalData.aboutMe` and every entry of `interests`, on **every** write path (self sign-up, admin member creation, self-service profile update). Enum-backed fields such as `position`, `role` and `committee` are not checked, since they can only hold a value from their own list.
+
+The same rule rejects `answers` and `otherAnswers` on a submission, so it cannot be bypassed by posting to the API directly. Bare `na` is deliberately still accepted — it is a plausible real value (Namibia's country code) for a custom question, and refusing a genuine answer is worse than storing one stray placeholder.
+
+Client-side the same list lives in `client/src/utils/formValidation.js`. The two are duplicated rather than shared because the client and server deploy separately; there is a parity test guarding the lists against drifting.
+
+### `activities`
+| Field | Type | Notes |
+|-------|------|-------|
+| `title` | String | required, trimmed |
+| `content` | String | required, rich HTML (**sanitized** with allow-list) |
+| `description` | String | default `""` |
+| `type` | String | enum: `general`, `event`, `workshop`, `webinar` |
+| `speakers` | [{name, title, image, bio}] | embedded array |
+| `location` | String | required |
+| `startDate`, `endDate` | Date | required |
+| `registrationEnabled` | Boolean | default `true` |
+| `showOnSite` | Boolean | default `true`; `false` keeps the activity off the public site |
+| `coverImage`, `coverImagePublicId` | String | Cloudinary URL + deletion handle |
+
+### `forms`
+| Field | Type | Notes |
+|-------|------|-------|
+| `activityID` | ObjectId → Activity | optional link |
+| `createdBy` | ObjectId → User | required |
+| `title`, `description`, `type` | String | `type` drives ticket generation (`attendance` ⇒ ticket). Enum: `attendance`, `recruitment`, `feedback`, `workshop`, `survey`, plus legacy `other` |
+| `fields` | [fieldSchema] | dynamic builder fields |
+| `status` | String | enum: `Active`, `Closed`, `Draft`, `upcoming` |
+| `startDate`, `endDate` | Date | required |
+| `maxSubmissions` | Number | defaults to unlimited (`MAX_SAFE_INTEGER`) |
+| `requiresLogin` | Boolean | default `false`. Must be sent as a real boolean — a string like `"false"` is truthy in JavaScript, so it is rejected with `400 INVALID_REQUIRES_LOGIN` rather than cast. Enforced in `submitForm`, which returns `401` to a guest. Currently settable at creation only. |
+| `timestamps` | — | |
+
+**fieldSchema:** `{ id, label, type: TextInput|TextArea|Dropdown|Checkbox|FileUpload, required: Boolean, options: [String] }` — `options` mandatory (≥1) for Dropdown/Checkbox. `id` is never taken from the request: a `pre('validate')` hook derives it from `label` via `server/utils/fieldId.js` (e.g. `"Full Name"` → `full_name`). Creation is rejected with `400 INVALID_FIELD_IDS` if a label yields no usable id, or if two labels yield the same one — two fields sharing an id would share a single answer key.
+
+### `submissions`
+| Field | Type | Notes |
+|-------|------|-------|
+| `formId` | ObjectId → Form | required |
+| `userId` | ObjectId → User | required |
+| `registrantEmail` | String | indexed denormalized copy for fast filtering |
+| `answers` | Object | `{ field_id: value }`, validated against form fields on save |
+| `otherAnswers` | Object | `{ field_id: text }` for any field answered "Other"; validated with `answers` |
+| `ticketCode` | String | **unique, sparse** — `<formId>-<userId>-<nanoid6>` |
+| `qrImage` | String | QR code as Data URL |
+| `attended` | Boolean | default `false` — the only state a submission carries |
+| `attendedAt` | Date | set during scan |
+| `timestamps` | — | |
+
+**Indexes:** compound **unique** `{ formId: 1, userId: 1 }` → hard guarantee against duplicate submissions.
+
+### `pendingrequests` (Committee Requests)
+A member's application to join a committee. A request is created `pending` and is
+**never deleted** — approving or rejecting it stamps the status and the reviewer,
+so the dashboard can keep a permanent log of who decided what.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `userId` | ObjectId → User | required |
+| `committee_position` | String | requested position |
+| `request_status` | String | enum: `pending`, `approved`, `rejected` |
+| `reviewedBy` | ObjectId → User | set on a decision, `null` while pending. The admin who approved or rejected it |
+| `reviewedAt` | Date | set on a decision, `null` while pending |
+
+**Indexes:** partial **unique** `{ userId: 1, request_status: 1 }` where
+`request_status = "pending"` → one request awaiting a decision per user, without
+stopping them from having decided ones in their history.
+
+### `seasons`
+A season is one committee: a Counselor, an Excom and a Board. The Counselor is listed first because it is the senior advisory role, the one the committee answers to.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | String | required, unique — e.g. `"Season 12"` or `"2026-2027"` |
+| `isHome` | Boolean | default `false`. At most one season has it; see 3.8.6 |
+| `order` | Number | archive order, newest first. Assigned as the current count on create |
+
+### `crews`
+One Counselor, Excom or Board member of one season.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | String | required |
+| `position` | String | required. Contains `"counsel"` ⇒ full-width home page card |
+| `image` | String | URL or `/public` path |
+| `bio` | String | short description |
+| `season` | ObjectId → Season | **required**, indexed — see 3.8 |
+| `section` | String | **required**, enum: `counselor`, `excom`, `board` |
+| `order` | Number | manual ordering within a section |
+| `socials` | Object | `{ linkedin, facebook, collabratec, email, website }`, all optional. `email` is a bare address |
+
+Indexed on `{ season, section, order, createdAt }` — the read shape behind the
+crew page, the archive page and the home page.
+
+### `featuredactivities`
+Single document `{ activities: [ObjectId → Activity] }` — homepage carousel, capped at **2** items.
+
+### `emaillogs`
+| Field | Type | Notes |
+|-------|------|-------|
+| `sendBy` | ObjectId → User | required |
+| `email` | String | required (recipient) |
+| `status` | String | enum: `Done`, `Rejected`, `Not email` |
+| `subject` | String | default `"Notification"` |
+| `messageBody` | String | required |
+| `sentAt` | Date | default now |
+
+## 2.5 Cross-Cutting Concerns
+
+### Error Handling Convention
+All controllers wrap logic in `catchAsync`, forwarding rejections to `globalErrorHandler`:
+
+```json
+// Operational errors thrown via new AppError(message, statusCode)
+{
+  "status": "fail",        // "fail" for 4xx, "error" for 5xx
+  "message": "Form not found"
+}
+```
+
+Unmatched routes hit a dedicated catch-all returning **404** `{ "message": "This router is not exist" }`.
+
+### File Upload Pipeline
+```
+Client (multipart/form-data)
+   → Multer (memoryStorage, ≤ 10 MB/file)
+      → Buffer streamed to Cloudinary
+         • Activity covers → folder "activities"
+         • Submission files → folder "submissions/<formId>"
+      → resulting secure_url stored in Mongo
+```
+
+### Security Measures
+- **helmet** security headers on every response.
+- Strict **CORS whitelist** with `credentials: true`.
+- **httpOnly** cookies (tokens unreachable from JS).
+- **`role` is never read from a public registration body**; the account is always a `member`.
+- **Restricted-field blocklist** on profile update (email/password/role/OTP cannot self-modify).
+- **HTML sanitization** (`sanitize-html` allow-list) for activity rich-text content.
+- Passwords never returned by queries (schema-level `select: false`).
+
+---
+
+# Part 3 — API Documentation
+
+## 3.0 Conventions
+
+- **Base URL**
+  - Development: `http://localhost:5000/api`
+  - Production: `https://www.ieeesha.org/api`
+- **Authentication** — via the **httpOnly `jwt` cookie** (set by login/verification). Clients must send `credentials: "include"` (or `withCredentials: true` in axios). Bearer headers are **not** used.
+- **Content Types** — `application/json` for standard payloads; `multipart/form-data` where file uploads occur.
+- **Standard Error Envelope**
+
+```json
+{ "status": "fail", "message": "<descriptive message>" }
+```
+
+| Code | Meaning in this API |
+|------|---------------------|
+| `200 OK` | Request succeeded |
+| `201 Created` | Resource created |
+| `400 Bad Request` | Validation failure / business rule violated |
+| `401 Unauthorized` | Missing or invalid auth cookie |
+| `403 Forbidden` | Role not permitted / restricted action |
+| `404 Not Found` | Resource or route doesn't exist |
+| `500 Internal Server Error` | Unhandled server failure |
+
+---
+
+## Module Index
+
+| Module | Prefix | Endpoints |
+|--------|--------|-----------|
+| [Health](#31-health-check) | `/` | 1 |
+| [Auth & Users](#32-authentication--users) | `/api/users` | 19 |
+| [Dashboard Stats](#33-dashboard-stats) | `/api/states` | 1 |
+| [Activities](#34-activities) | `/api/activities` | 9 |
+| [Forms](#35-forms) | `/api/form` | 6 |
+| [Submissions](#36-submissions--ticketing) | `/api/submissions` | 7 |
+| [Committee Requests](#37-committee-requests) | `/api/committee-requests` | 5 |
+| [Seasons & Crew](#38-seasons-and-crew-directory) | `/api/seasons`, `/api/crew` | 11 |
+| [Bulk Emails](#39-bulk-emails) | `/api/emails` | 4 |
+
+---
+
+## 3.1 Health Check
+
+### `GET /`
+
+Verifies the API is alive.
+
+- **Auth:** No
+
+**Success Response — `200 OK`**
+
+```json
+{ "message": "Welcome to the API" }
+```
+
+---
+
+## 3.2 Authentication & Users
+
+### 3.2.1 Register User
+
+`POST /api/users/register`
+
+Creates an unverified account and emails a 6-digit OTP (valid 15 minutes). `role` is ignored on the request body — a public sign-up always becomes a `member`, so there is no role to sanitize and no way to ask for one. Optionally queues a committee join request.
+
+- **Auth:** No (public)
+- **Body:** `application/json`
+
+| Field | Type | Required | Notes |
+|-------|------|:--------:|-------|
+| `name` | string | ✅ | |
+| `email` | string | ✅ | Must be unique & valid |
+| `password` | string | ✅ | Min 8 characters |
+| `confirmPassword` | string | ✅ | Must equal `password` |
+| `phone` | string | ➖ | |
+| `dateOfBirth` | string | ➖ | ISO date, not in the future |
+| `position` | string | ✅ | `"student"` \| `"professional"` |
+| `university` | string | ⭕ | required if student |
+| `college` | string | ⭕ | required if student |
+| `yearOfStudy` | number | ⭕ | required if student |
+| `interests` | [string] | ➖ | students |
+| `organization` | string | 🔵 | required if professional |
+| `roleInOrganization` | string | 🔵 | required if professional |
+| `yearsOfExperience` | number | 🔵 | required if professional |
+| `reasonForRegistration` | string | ➖ | professionals |
+| `role` | string | ignored | not read from the body; the account is always created as `member` |
+| `committee` | string | ➖ | creates a `PendingRequest` if present |
+
+⭕ = conditionally required (students) 🔵 = conditionally required (professionals)
+
+**Request Example**
+
+```json
+{
+  "name": "Ahmed Hassan",
+  "email": "ahmed@example.com",
+  "password": "Str0ngPass!",
+  "confirmPassword": "Str0ngPass!",
+  "phone": "+201001234567",
+  "dateOfBirth": "2004-03-14T00:00:00.000Z",
+  "position": "student",
+  "university": "Helwan University",
+  "college": "Computer Engineering",
+  "yearOfStudy": 3,
+  "interests": ["AI", "Web Development"]
+}
+```
+
+**Success Response — `201 Created`**
+
+```json
+{
+  "message": "Registration successful. Please check your email for the OTP.",
+  "email": "ahmed@example.com"
+}
+```
+
+**Error Responses**
+
+```json
+// 400 — validation failures (examples)
+{ "error": "Passwords do not match" }
+{ "error": "Position must be either \"student\" or \"professional\"" }
+{ "error": "Students must provide university, college, and year of study" }
+{ "error": "User already exists" }
+
+// 500 — OTP email delivery failure
+{ "error": "User registered, but failed to send OTP email." }
+```
+
+---
+
+### 3.2.2 Verify Email (OTP)
+
+`POST /api/users/verify-email`
+
+Validates the emailed OTP, activates the account, clears the OTP, and **auto-logs the user in** by setting the `jwt` cookie.
+
+- **Auth:** No (public)
+- **Body:** `application/json`
+
+| Field | Type | Required |
+|-------|------|:--------:|
+| `email` | string | ✅ |
+| `otp` | string | ✅ |
+
+**Request Example**
+
+```json
+{ "email": "ahmed@example.com", "otp": "482913" }
+```
+
+**Success Response — `200 OK`** *(also sets `Set-Cookie: jwt=...`)*
+
+```json
+{
+  "message": "Email verified successfully!",
+  "_id": "66f1a2b3c4d5e6f7a8b9c0d1",
+  "name": "Ahmed Hassan",
+  "email": "ahmed@example.com",
+  "role": "member",
+  "committee": "no committee",
+  "position": "student"
+}
+```
+
+**Error Responses**
+
+```json
+// 400
+{ "error": "Please provide email and OTP" }
+{ "message": "Account is already verified" }
+{ "error": "Invalid OTP" }
+{ "error": "OTP has expired. Please request a new one." }
+
+// 404
+{ "error": "User not found" }
+```
+
+---
+
+### 3.2.3 Login
+
+`POST /api/users/login`
+
+Authenticates credentials and sets the 30-day `jwt` httpOnly cookie.
+
+- **Auth:** No (public)
+- **Body:** `application/json`
+
+| Field | Type | Required |
+|-------|------|:--------:|
+| `email` | string | ✅ |
+| `password` | string | ✅ |
+
+**Request Example**
+
+```json
+{ "email": "ahmed@example.com", "password": "Str0ngPass!" }
+```
+
+**Success Response — `200 OK`** *(also sets `Set-Cookie: jwt=<token>; HttpOnly`)*
+
+```json
+{
+  "_id": "66f1a2b3c4d5e6f7a8b9c0d1",
+  "name": "Ahmed Hassan",
+  "email": "ahmed@example.com",
+  "role": "member",
+  "committee": "no committee",
+  "position": "student"
+}
+```
+
+**Error Responses**
+
+```json
+// 401
+{ "message": "Invalid email or password" }
+
+// 403 — account exists but OTP never verified
+{ "message": "Account not verified. Please check your email for the OTP." }
+```
+
+---
+
+### 3.2.4 Logout
+
+`POST /api/users/logout`
+
+Clears the `jwt` cookie.
+
+- **Auth:** No (public)
+
+**Success Response — `200 OK`**
+
+```json
+{ "message": "Logged out" }
+```
+
+---
+
+### 3.2.5 Forgot Password
+
+`POST /api/users/forgot-password`
+
+Emails a password-reset link containing a signed token (valid 1 hour).
+
+- **Auth:** No (public)
+- **Body:** `application/json`
+
+| Field | Type | Required |
+|-------|------|:--------:|
+| `email` | string | ✅ |
+
+**Request Example**
+
+```json
+{ "email": "ahmed@example.com" }
+```
+
+**Success Response — `200 OK`**
+
+```json
+{ "success": true, "message": "Reset password email sent successfully" }
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Please provide your email address" }
+// 404 — { "message": "User not found" }
+// 500 — { "message": "Failed to send reset password email" }
+```
+
+---
+
+### 3.2.6 Reset Password
+
+`POST /api/users/reset-password?token=<resetToken>`
+
+Consumes the emailed reset token and replaces the password.
+
+- **Auth:** No (public)
+- **Query Params**
+
+| Param | Type | Required |
+|-------|------|:--------:|
+| `token` | string | ✅ | 
+
+- **Body:** `application/json`
+
+| Field | Type | Required |
+|-------|------|:--------:|
+| `email` | string | ✅ |
+| `newPassword` | string | ✅ |
+| `confirmNewPassword` | string | ✅ |
+
+**Request Example**
+
+```json
+{ "email": "ahmed@example.com", "newPassword": "N3wSecret!", "confirmNewPassword": "N3wSecret!" }
+```
+
+**Success Response — `200 OK`**
+
+```json
+{ "success": true, "message": "Password reset successfully" }
+```
+
+**Error Responses**
+
+```json
+// 400
+{ "message": "Please provide all required fields" }
+{ "message": "New password and confirm new password do not match" }
+{ "message": "Invalid or expired reset token" }
+
+// 404
+{ "message": "User not found" }
+```
+
+---
+
+### 3.2.7 Update Password (Logged-in)
+
+`PUT /api/users/update-password/:id`
+
+- **Auth:** Yes - own record only
+- **Path Params:** `id` — user ID
+- **Body:** `application/json`
+
+| Field | Type | Required |
+|-------|------|:--------:|
+| `currentPassword` | string | ✅ |
+| `newPassword` | string | ✅ |
+| `confirmNewPassword` | string | ✅ |
+
+**Request Example**
+
+```json
+{ "currentPassword": "Str0ngPass!", "newPassword": "Br4ndNew!", "confirmNewPassword": "Br4ndNew!" }
+```
+
+**Success Response — `200 OK`**
+
+```json
+{ "success": true, "message": "Password updated successfully" }
+```
+
+**Error Responses**
+
+```json
+// 400 — missing fields / mismatch / incorrect current password:
+{ "message": "Current password is incorrect" }
+// 404 — { "message": "User not found" }
+```
+
+---
+
+### 3.2.8 Get My Profile
+
+`GET /api/users/profile`
+
+Returns the authenticated user plus their event history (split into attended/not attended).
+
+- **Auth:** Yes (`protect`, any signed-in role)
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "user": {
+    "_id": "66f1a2b3c4d5e6f7a8b9c0d1",
+    "name": "Ahmed Hassan",
+    "email": "ahmed@example.com",
+    "role": "member",
+    "committee": "no committee",
+    "phone": "+201001234567",
+    "dateOfBirth": "2004-03-14T00:00:00.000Z",
+    "position": "student",
+    "university": "Helwan University",
+    "college": "Computer Engineering",
+    "yearOfStudy": 3,
+    "organization": null,
+    "roleInOrganization": null,
+    "yearsOfExperience": null,
+    "reasonForRegistration": null,
+    "interests": ["AI", "Web Development"],
+    "optionalData": {},
+    "createdAt": "2026-08-01T10:15:00.000Z",
+    "submissions": {
+      "attended": [],
+      "notAttended": []
+    }
+  }
+}
+```
+
+**Error Responses** — `404 { "message": "User not found" }`
+
+---
+
+### 3.2.9 Update My Profile
+
+`PUT /api/users/profile/:id`
+
+Self-service profile update. Only the owner may update their profile; sensitive fields are blocked.
+
+- **Auth:** Yes - own record only
+- **Allowed Fields:** `name`, `phone`, `dateOfBirth`, `university`, `college`, `yearOfStudy`, `organization`, `roleInOrganization`, `yearsOfExperience`, `reasonForRegistration`, `interests`, `committee`, `optionalData`
+- **Blocked Fields (→ 403):** `email`, `password`, `role`, `position`, `isVerified`, `otp`, `otpExpires`, `resetPasswordToken`, `resetPasswordExpires`
+
+**Request Example**
+
+```json
+{ "phone": "+201098765432", "interests": ["Robotics"] }
+```
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "user": {
+    "_id": "66f1a2b3c4d5e6f7a8b9c0d1",
+    "name": "Ahmed Hassan",
+    "email": "ahmed@example.com",
+    "role": "member",
+    "phone": "+201098765432",
+    "interests": ["Robotics"]
+  }
+}
+```
+
+**Error Responses**
+
+```json
+// 403
+{ "message": "HACKER : You can only update your own profile" }
+{ "message": "You are not allowed to update restricted fields" }
+// 404 — { "message": "User not found" }
+```
+
+---
+
+### 3.2.10 Get Member Events
+
+`GET /api/users/:id/events`
+
+Returns all form submissions belonging to a member, with their linked form and activity populated.
+
+- **Auth:** Yes - own record, or roles: `board`, `xcom`
+- **Path Params:** `id` — user ID
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "_id": "67a0...",
+      "formId": { "title": "IEEE Day 2026", "type": "attendance", "activityID": { "title": "IEEE Day 2026" } },
+      "registrantEmail": "ahmed@example.com",
+      "ticketCode": "67a0...-66f1...-Vk3GhQ",
+      "attended": true
+    }
+  ]
+}
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "No events found for this member" } | { "message": "User not found" }
+```
+
+---
+
+### 3.2.11 List All Users (Advanced Filtering)
+
+`GET /api/users/all`
+
+Powerful filterable/paginated user query built for the admin dashboard and the email composer.
+
+- **Auth:** Yes - roles: `board`, `xcom`
+- **Query Params**
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | int | `1` | Page number |
+| `limit` | int | `1000` | Items per page |
+| `sort` | string | `-createdAt` | Mongo sort syntax (comma-separated) |
+| `fields` | string | excludes `password` | Field limiting |
+| `search` | string | — | Case-insensitive regex over name/email |
+| `role` | csv | — | e.g. `member,board` |
+| `college` | csv | — | e.g. `Computer Engineering,EE` |
+| `yearOfStudy` | csv | — | numeric years, e.g. `1,2` |
+| `position` | csv | — | `student,professional` |
+| `formId` | id | — | Restrict to users who registered in this form |
+| `attendedOnly` | boolean | — | With `formId=true` → only scanned attendees |
+
+Any other query key is applied as an exact-match Mongo filter.
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "users": [
+    {
+      "_id": "66f1...",
+      "name": "Ahmed Hassan",
+      "email": "ahmed@example.com",
+      "role": "member",
+      "position": "student",
+      "college": "Computer Engineering",
+      "createdAt": "2026-08-01T10:15:00.000Z"
+    }
+  ],
+  "total": 248,
+  "allUsersCount": 250,
+  "page": 1,
+  "pages": 1
+}
+```
+
+**Error Responses** — `500 { "message": "<db error>" }`
+
+---
+
+### 3.2.12 Create Internal Account (Privileged)
+
+`POST /api/users/create-internal`
+
+XCom-only endpoint for creating staff accounts (no OTP required).
+
+- **Auth:** Yes - roles: `xcom`
+- **Body:** `application/json`
+
+| Field | Type | Required | Allowed Values |
+|-------|------|:--------:|----------------|
+| `name` | string | ✅ | |
+| `email` | string | ✅ | unique |
+| `password` | string | ✅ | |
+| `role` | string | ✅ | one of `member`, `scanner`, `board`, `xcom` (`ASSIGNABLE_ROLES`) |
+| `committee` | string | ➖ | e.g. `Technical` |
+
+**Request Example**
+
+```json
+{ "name": "Sara Ali", "email": "sara@ieeesha.org", "password": "Board!2026", "role": "board", "committee": "PR" }
+```
+
+**Success Response — `201 Created`**
+
+```json
+{ "message": "Success! Created new board.", "user": { "id": "67b2...", "name": "Sara Ali", "role": "board" } }
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "User already exists" }
+//        { "message": "Invalid role. Use register for normal users." }
+```
+
+---
+
+### 3.2.13 Export Users to Excel
+
+`GET /api/users/export`
+
+Downloads an `.xlsx` of all users matching the same filters as §3.2.11 (no pagination).
+
+- **Auth:** Yes - roles: `board`, `xcom`
+- **Query Params:** identical filter set to §3.2.11
+
+**Success Response — `200 OK`**
+
+```
+Binary spreadsheet (users_export.xlsx)
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+Columns: Name, Email, Role, Position, Phone, University, College, Year,
+         Organization, Role in Organization, Years of Experience,
+         Reason for Registration, Committee
+```
+
+**Error Responses** — `500 { "message": "<error>" }`
+
+### 3.2.14 Export Selected Users to Excel
+
+`POST /api/users/export-specific`
+
+Downloads an `.xlsx` limited to specific user IDs.
+
+- **Auth:** Yes - roles: `board`, `xcom`
+- **Body:** `application/json`
+
+| Field | Type | Required | Notes |
+|-------|------|:--------:|-------|
+| `userIds` | [string] \| csv-string | ✅ | Array of ObjectIds (comma string accepted) |
+
+**Request Example**
+
+```json
+{ "userIds": ["66f1a2b3c4d5e6f7a8b9c0d1", "67b2d4e5f6a7b8c9d0e1f2a3"] }
+```
+
+**Success Response — `200 OK`** — binary `.xlsx` (`selected_users_export.xlsx`)
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Please provide an array of userIds" } | { "message": "None of the provided IDs are valid." }
+// 404 — { "message": "No users found with the provided IDs" }
+```
+
+---
+
+### 3.2.15 List Members
+
+`GET /api/users/members`
+
+Returns every user (used by internal member-management screens).
+
+- **Auth:** Yes - roles: `board`, `xcom`
+
+**Success Response — `200 OK`**
+
+```json
+{ "dataLength": 250, "data": [ /* full user documents */ ] }
+```
+
+**Error Responses** — `400 { "message": "No users to show" }`
+
+### 3.2.16 Create Member
+
+`POST /api/users/members`
+
+Directly creates any user with any valid schema role.
+
+- **Auth:** Yes - roles: `xcom`
+- **Body:** `application/json` — requires `name`, `email`, `password`, `role`; all other schema fields optional.
+
+**Request Example**
+
+```json
+{ "name": "Omar Khaled", "email": "omar@ieee.org", "password": "Member#2026", "role": "member", "position": "student" }
+```
+
+**Success Response — `201 Created`**
+
+```json
+{ "status": "success", "message": "Member created successfly", "data": { /* created user */ } }
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Please Provide name, email, role and password" }
+//        { "message": "Invalid role. Allowed roles are: member, scanner, board, xcom" }
+//        { "message": "Member already exists" }
+```
+
+### 3.2.17 Get Single Member
+
+`GET /api/users/members/:id` — **Auth:** Yes - roles: `board`, `xcom`
+
+**Success Response — `200 OK`**
+
+```json
+{ "status": "success", "data": { /* user document */ } }
+```
+
+**Error Responses** — `400 { "message": "Member not found" }`
+
+### 3.2.18 Upgrade Member Role
+
+`PATCH /api/users/members/:id`
+
+- **Auth:** Yes - roles: `xcom`
+- **Body:** `{ "role": "<valid schema role>" }`
+
+**Success Response — `200 OK`**
+
+```json
+{ "status": "success", "message": "Member role updated successfly", "data": { /* updated user */ } }
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Role is required" } | { "message": "Invalid role..." } | { "message": "Member not found" }
+```
+
+### 3.2.19 Delete Member
+
+`DELETE /api/users/members/:id`
+
+Deletes the member **plus** their submissions and pending requests. Only `xcom` may delete others; every user may delete themselves (account-closure feature).
+
+- **Auth:** Yes - roles: `xcom`
+
+**Success Response — `200 OK`**
+
+```json
+{ "status": "success", "message": "Member deleted successfully", "deletedId": "66f1a2b3c4d5e6f7a8b9c0d1" }
+```
+
+**Error Responses**
+
+```json
+// 403 — { "message": "You can only delete your own account" }
+// 400 — { "message": "Member not found" }
+```
+
+### 3.2.20 Search Members
+
+`GET /api/users/search?keyword=<term>`
+
+Case-insensitive search across name and email.
+
+- **Auth:** Yes - roles: `board`, `xcom`
+- **Query Params:** `keyword` (required)
+
+**Success Response — `200 OK`**
+
+```json
+{ "status": "success", "dataLength": 2, "data": [ /* matched users */ ] }
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Search query is required" } | { "message": "No members found matching the search query" }
+```
+
+---
+
+## 3.3 Dashboard Stats
+
+### `GET /api/states/dashboard`
+
+Aggregated analytics for the admin dashboard (MongoDB aggregation pipelines).
+
+- **Auth:** Yes
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "totalMembers": 250,
+  "activeActivities": 4,
+  "newRegistrations": 18,
+  "collegeSplit": [
+    { "college": "Computer Engineering", "count": 92 },
+    { "college": "Electrical Engineering", "count": 61 }
+  ],
+  "positionSplit": [
+    { "position": "student", "count": 220 },
+    { "position": "professional", "count": 30 }
+  ],
+  "yearSplit": [
+    { "yearOfStudy": 1, "count": 80 },
+    { "yearOfStudy": 2, "count": 70 }
+  ],
+  "emailsSent": 1240,
+  "topActiveMembers": [
+    { "name": "Ahmed Hassan", "email": "ahmed@example.com", "activitiesAttended": 7 }
+  ],
+  "latestSignups": [
+    {
+      "_id": "67c1...",
+      "name": "Mona Adel",
+      "email": "mona@example.com",
+      "position": "student",
+      "college": "Computer Science",
+      "yearOfStudy": 1,
+      "organization": null,
+      "createdAt": "2026-08-20T14:02:11.000Z"
+    }
+  ],
+  "activityStatusSummary": [
+    { "status": "upcoming", "count": 3 },
+    { "status": "completed", "count": 11 }
+  ],
+  "registrationsPerActivity": [
+    { "activityTitle": "IEEE Day 2026", "registrations": 140 }
+  ]
+}
+```
+
+---
+
+## 3.4 Activities
+
+### 3.4.1 Create Activity (+ Auto-Linked Form)
+
+`POST /api/activities`
+
+Creates an activity **and** automatically generates its registration form. Rich-text `content` is sanitized; optional `coverImage` streams to Cloudinary (`activities/` folder).
+
+- **Auth:** Yes - roles: `xcom`
+- **Headers:** `Content-Type: multipart/form-data`
+- **Form-Data Fields**
+
+| Field | Type | Required | Notes |
+|-------|------|:--------:|-------|
+| `title` | text | ✅ | |
+| `content` | text (HTML) | ✅ | Sanitized against allow-list |
+| `location` | text | ✅ | |
+| `description` | text | ➖ | |
+| `type` | text | ➖ | `general` \| `event` \| `workshop` \| `webinar` |
+| `speakers` | JSON array | ➖ | `[{ "name", "title", "image", "bio" }]` |
+| `startDate` | date | ➖ | default: now |
+| `endDate` | date | ➖ | default: now + 7 days |
+| `registrationEnabled` | boolean | ➖ | |
+| `showOnSite` | boolean | ➖ | default `true`; `false` creates it unpublished |
+| `coverImage` | **file** | ➖ | image binary |
+| `fields` | JSON array | ➖ | custom form fields; defaults to Name+Email |
+| `maxSubmissions` | number | ➖ | capacity cap for the generated form |
+| `formStatus` | text | ➖ | initial form status (default `Active`) |
+
+**Request Example (multipart)**
+
+```
+title:        IEEE Day 2026
+content:      <h1>Join us!</h1><p>A day of tech talks...</p>
+location:      Main Auditorium, Helwan University
+type:         event
+startDate:    2026-10-05T09:00:00Z
+endDate:      2026-10-05T16:00:00Z
+coverImage:   (binary file)
+fields:       [{"label":"Full Name","type":"TextInput","required":true},
+               {"label":"T-Shirt Size","type":"Dropdown","required":true,"options":["S","M","L"]}]
+```
+
+**Success Response — `201 Created`**
+
+```json
+{
+  "success": true,
+  "message": "Activity created with associated form",
+  "activity": {
+    "_id": "67d0a1b2c3d4e5f6a7b8c9d0",
+    "title": "IEEE Day 2026",
+    "content": "<h1>Join us!</h1><p>A day of tech talks...</p>",
+    "type": "event",
+    "location": "Main Auditorium, Helwan University",
+    "startDate": "2026-10-05T09:00:00.000Z",
+    "endDate": "2026-10-05T16:00:00.000Z",
+    "coverImage": "https://res.cloudinary.com/demo/image/upload/v1/activities/xyz.jpg",
+    "registrationEnabled": true,
+    "showOnSite": true
+  },
+  "form": {
+    "_id": "67d0a1b2c3d4e5f6a7b8c9d1",
+    "title": "IEEE Day 2026",
+    "activityID": "67d0a1b2c3d4e5f6a7b8c9d0",
+    "status": "Active",
+    "type": "attendance",
+    "fields": [
+      { "id": "full_name", "label": "Full Name", "type": "TextInput", "required": true }
+    ]
+  }
+}
+```
+
+**Error Responses** — `400 { "message": "Title, content, and location are required" }`
+
+---
+
+### 3.4.2 List Activities (Public)
+
+`GET /api/activities?page=1&limit=10`
+
+Paginated public feed; each item carries a computed registration `status` and its `formID`.
+
+- **Auth:** No (public)
+
+> **Publication.** Activities with `showOnSite: false` are excluded from this endpoint, from
+> `GET /api/activities/featured`, and from `GET /api/activities/:id` (which answers `404` for
+> them, so a hidden activity cannot be opened by guessing its id). This applies to **every**
+> public surface — the events page, the home page featured carousel, event details and event
+> registration — and none of them can opt out.
+>
+> The dashboard reads these same endpoints, so it asks for drafts explicitly with
+> `?includeHidden=true`. **Both** conditions must hold for that to do anything: the request must
+> carry the flag *and* a valid token for a **`VIEW_ROLES`** account (`board` or `xcom`). The flag
+> alone is worthless from outside, so a draft cannot be reached by guessing a URL.
+>
+> It has to be page-driven rather than identity-driven. The session cookie is sent on every
+> request, public pages included, so keying this off the role alone would let a board member
+> signed into the dashboard see unpublished activities on the public events page in the same
+> browser — precisely what `showOnSite` exists to prevent. `board` is in `VIEW_ROLES`
+> deliberately: it is the read-only oversight role, so it must be able to review a draft before
+> it goes live. Only `xcom` can *change* the flag.
+>
+> The filter is `{ showOnSite: true }` — strict equality, not `$ne: false`. Anything not
+> explicitly published stays off the public site, so a document that lost the field disappears
+> rather than being shown by accident. **Run `node server/scripts/backfill-activity-show-on-site.js`
+> before deploying this**, or every activity created before the field existed will vanish from
+> the public pages.
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "pagination": { "totalItems": 12, "totalPages": 2, "currentPage": 1, "itemsPerPage": 10 },
+  "activities": [
+    {
+      "_id": "67d0a1b2c3d4e5f6a7b8c9d0",
+      "title": "IEEE Day 2026",
+      "content": "<h1>Join us!</h1>...",
+      "description": "",
+      "type": "event",
+      "speakers": [],
+      "location": "Main Auditorium, Helwan University",
+      "startDate": "2026-10-05T09:00:00.000Z",
+      "endDate": "2026-10-05T16:00:00.000Z",
+      "createdAt": "2026-08-10T12:00:00.000Z",
+      "coverImage": "https://res.cloudinary.com/...jpg",
+      "registrationEnabled": true,
+      "showOnSite": true,
+      "status": "Active",
+      "formID": "67d0a1b2c3d4e5f6a7b8c9d1"
+    }
+  ]
+}
+```
+
+### 3.4.3 Get Single Activity (Public)
+
+`GET /api/activities/:id`
+
+- **Auth:** No (public)
+
+**Success Response — `200 OK`**
+
+```json
+{ "success": true, "activity": { /* full activity */ }, "form": { /* linked form or null */ } }
+```
+
+**Error Responses** — `404 { "message": "Activity not found" }`
+
+Returned both for an id that does not exist and for an activity whose `showOnSite` is not `true`.
+The second case answers `404` rather than `403` on purpose: `403` would confirm that a hidden
+activity exists at that id, which is the thing the flag is there to prevent. The dashboard's edit
+modal passes `?includeHidden=true` to reach a draft; `EventDetails` and `EventRegistration` do not.
+
+### 3.4.4 Update Activity
+
+`PUT /api/activities/:id`
+
+Partial update; accepts a new `coverImage` (old one deleted from Cloudinary first). Sending `coverImage: ""` removes the existing cover.
+
+> **Partial, not a merge.** `req.body` is applied to the document as-is, so any key you omit is
+> left untouched — but any key you send is overwritten, including with `""`. Sending only
+> `{ "showOnSite": false }` is therefore the correct way to publish or unpublish without
+> disturbing the rest of the activity, and a full form post is the way to replace the rest. Do not
+> route a partial edit through the client's `buildPayload`: it fills absent keys with `""`, so a
+> one-field payload built that way will blank the title and content.
+
+- **Auth:** Yes - roles: `xcom`
+- **Headers:** `multipart/form-data` (or JSON for text-only edits)
+- **Validation:** `startDate` cannot be after `endDate`
+
+**Request Example (JSON)**
+
+```json
+{ "title": "IEEE Day 2026 — Extended", "location": "Hall B" }
+```
+
+**Request Example (publishing only)**
+
+```json
+{ "showOnSite": false }
+```
+
+**Success Response — `200 OK`**
+
+```json
+{ "success": true, "activity": { /* updated document */ } }
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Start date cannot be after end date" }
+// 404 — { "message": "Activity not found" }
+```
+
+### 3.4.5 Delete Activity
+
+`DELETE /api/activities/:id`
+
+Cascade-deletes the activity, its linked form, and **all** related submissions.
+
+- **Auth:** Yes - roles: `xcom`
+
+**Success Response — `200 OK`**
+
+```json
+{ "success": true, "message": "Activity + related form + submissions deleted" }
+```
+
+**Error Responses** — `404 { "message": "Activity not found" }`
+
+### 3.4.6 Featured Activities
+
+Homepage showcase — a single document holding up to **2** activity references.
+
+#### Add to Featured
+
+`POST /api/activities/:id/add-featured`
+
+- **Auth:** Yes - roles: `xcom`
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "message": "Activity added to featured list successfully",
+  "data": ["67d0a1b2c3d4e5f6a7b8c9d0", "67d0a1b2c3d4e5f6a7b8c9dd"]
+}
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "You can only display up to 2 activities. Please remove one first." }
+//        { "message": "This activity is already featured." }
+//        { "message": "Invalid Activity ID format" }
+```
+
+#### Remove from Featured
+
+`DELETE /api/activities/:id/remove-featured`
+
+- **Auth:** Yes - roles: `xcom`
+
+**Success Response — `200 OK`**
+
+```json
+{ "message": "Activity removed from featured list successfully", "data": [] }
+```
+
+**Error Responses** — `404 { "message": "No featured activities list found." }`
+
+#### Swap Featured Order
+
+`POST /api/activities/swap-featured`
+
+Reverses display order of the two featured items.
+
+- **Auth:** Yes - roles: `xcom`
+
+**Success Response — `200 OK`**
+
+```json
+{ "message": "Featured activities swapped successfully", "data": ["67d0...d9dd", "67d0...c9d0"] }
+```
+
+**Error Responses** — `400 { "message": "Need exactly 2 featured activities to swap." }`
+
+#### Get Featured Activities
+
+`GET /api/activities/featured`
+
+- **Auth:** No (public)
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "activities": [
+    {
+      "_id": "67d0a1b2c3d4e5f6a7b8c9d0",
+      "title": "IEEE Day 2026",
+      "coverImage": "https://res.cloudinary.com/...jpg",
+      "status": "Active",
+      "formID": "67d0a1b2c3d4e5f6a7b8c9d1"
+    }
+  ]
+}
+```
+
+---
+
+## 3.5 Forms
+
+### 3.5.1 Create Standalone Form
+
+`POST /api/form`
+
+Creates a form not necessarily tied to an activity (surveys, volunteer applications…).
+
+- **Auth:** Yes - roles: `xcom`
+- **Body:** `application/json`
+
+| Field | Type | Required | Default |
+|-------|------|:--------:|---------|
+| `title` | string | ✅ | |
+| `type` | string | ✅ | — (use `"attendance"` for ticketed events) |
+| `description` | string | ➖ | |
+| `fields` | [field] | ➖ | `[{ label: "Full Name", type: "TextInput", required: true }]` |
+| `startDate` | date | ➖ | now |
+| `endDate` | date | ➖ | now + 7 days |
+| `maxSubmissions` | number | ➖ | unlimited |
+| `requiresLogin` | boolean | ➖ | `false` — set `true` to require a signed-in member (the builder's "Require login to submit" switch) |
+
+**Request Example**
+
+```json
+{
+  "title": "Volunteer Application",
+  "type": "recruitment",
+  "description": "Join our organizing team",
+  "requiresLogin": true,
+  "fields": [
+    { "label": "Full Name", "type": "TextInput", "required": true },
+    { "label": "Preferred Committee", "type": "Dropdown", "required": true, "options": ["Technical", "HR", "PR"] },
+    { "label": "Skills", "type": "Checkbox", "required": false, "options": ["Design", "Public Speaking", "Logistics"] },
+    { "label": "Resume", "type": "FileUpload", "required": true }
+  ],
+  "endDate": "2026-09-30T23:59:59Z"
+}
+```
+
+**Success Response — `201 Created`**
+
+```json
+{
+  "_id": "67e0f1a2b3c4d5e6f7a8b9c0d",
+  "title": "Volunteer Application",
+  "type": "recruitment",
+  "status": "Draft",
+  "createdBy": "67b2d4e5f6a7b8c9d0e1f2a3",
+  "fields": [
+    { "id": "full_name", "label": "Full Name", "type": "TextInput", "required": true },
+    { "id": "preferred_committee", "label": "Preferred Committee", "type": "Dropdown", "required": true, "options": ["Technical", "HR", "PR"] }
+  ],
+  "startDate": "2026-08-24T00:00:00.000Z",
+  "endDate": "2026-09-30T23:59:59.000Z",
+  "maxSubmissions": 9007199254740991,
+  "requiresLogin": false
+}
+```
+
+**Error Responses** — `400 { "message": "Title and Type are required" }`
+
+### 3.5.2 Get Single Form (Public)
+
+`GET /api/form/:id`
+
+Public renderer endpoint. Returns the form **only while it is `Active` and before its end date**.
+
+- **Auth:** No (public)
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "_id": "67d0a1b2c3d4e5f6a7b8c9d1",
+  "title": "IEEE Day 2026",
+  "type": "attendance",
+  "status": "Active",
+  "fields": [
+    { "id": "full_name", "label": "Full Name", "type": "TextInput", "required": true },
+    { "id": "t-shirt_size", "label": "T-Shirt Size", "type": "Dropdown", "required": true, "options": ["S", "M", "L"] }
+  ],
+  "requiresLogin": false
+}
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "This form is currently closed." }
+// 404 — { "message": "Form not found" }
+```
+
+### 3.5.3 List All Forms
+
+`GET /api/form?page=1&limit=10`
+
+Returns forms plus live status counters.
+
+- **Auth:** No (public)
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "count": 14,
+  "draftCount": 3,
+  "closedCount": 6,
+  "activeCount": 5,
+  "forms": [ /* newest-first form documents */ ],
+  "pagination": { "totalItems": 14, "totalPages": 2, "currentPage": 1, "itemsPerPage": 10 }
+}
+```
+
+### 3.5.4 Delete Form
+
+`DELETE /api/form/:id`
+
+- **Auth:** Yes - roles: `xcom`
+
+**Success Response — `200 OK`**
+
+```json
+{ "message": "Form removed" }
+```
+
+**Error Responses** — `404 { "message": "Form not found" }`
+
+### 3.5.5 Toggle Form Status
+
+`PUT /api/form/:id/toggle`
+
+Flips between `Active` ⇄ `Closed`.
+
+- **Auth:** Yes - roles: `xcom`
+
+**Success Response — `200 OK`**
+
+```json
+{ "message": "Form is now Closed" }
+```
+
+**Error Responses** — `404 { "message": "Form not found" }`
+
+### 3.5.6 Update Form Settings
+
+`PUT /api/form/:id/settings`
+
+Updates scheduling/capacity settings.
+
+- **Auth:** Yes - roles: `xcom`
+- **Body:** `application/json` — any subset of:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `startDate` | date | must precede `endDate` |
+| `endDate` | date | |
+| `maxSubmissions` | number | |
+
+**Request Example**
+
+```json
+{ "endDate": "2026-11-01T23:59:59Z", "maxSubmissions": 300 }
+```
+
+**Success Response — `200 OK`**
+
+```json
+{ "message": "Form settings updated successfully", "form": { /* updated document */ } }
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "startDate must be before endDate" }
+// 404 — { "message": "Form not found" }
+// 500 — { "message": "Internal server error", "error": "<detail>" }
+```
+
+---
+
+## 3.6 Submissions & Ticketing
+
+### 3.6.1 Submit a Form
+
+`POST /api/submissions`
+
+Submits answers to a form. One submission per user per form (DB-enforced). For `attendance`-type forms, a **ticket code + QR image** is generated and the ticket is emailed asynchronously. Uploaded files go to Cloudinary and their URLs replace/add the corresponding answer keys.
+
+- **Auth:** No (session optional)
+- **Headers:** `multipart/form-data` when uploading files (otherwise JSON works)
+- **Fields**
+
+| Field | Type | Required | Notes |
+|-------|------|:--------:|-------|
+| `formId` | string | ✅ | Target form |
+| `answers` | JSON object *or* JSON string | ✅ | Keys = form field ids |
+| `files` | binary (any field names) | ➖ | Each `fieldname` maps to a `FileUpload` field id |
+
+**Request Example (JSON)**
+
+```json
+{
+  "formId": "67d0a1b2c3d4e5f6a7b8c9d1",
+  "answers": {
+    "full_name": "Ahmed Hassan",
+    "tshirt_size": "L"
+  }
+}
+```
+
+**Server-side Validation (per form schema):** required fields present; dropdown/checkbox answers ∈ options; text fields are strings; file-upload answers are URLs; duplicate submissions rejected; form must be `Active` and unexpired; `maxSubmissions` respected.
+
+**Success Response — `201 Created`**
+
+```json
+{
+  "status": "success",
+  "message": "Submitted successfully",
+  "ticketCode": "67d0a1b2c3d4e5f6a7b8c9d1-66f1a2b3c4d5e6f7a8b9c0d1-Vk3GhQ",
+  "data": {
+    "_id": "67f0aa11bb22cc33dd44ee55",
+    "formId": "67d0a1b2c3d4e5f6a7b8c9d1",
+    "userId": "66f1a2b3c4d5e6f7a8b9c0d1",
+    "registrantEmail": "ahmed@example.com",
+    "answers": { "full_name": "Ahmed Hassan", "tshirt_size": "L" },
+    "ticketCode": "67d0a1b2c3d4e5f6a7b8c9d1-66f1a2b3c4d5e6f7a8b9c0d1-Vk3GhQ",
+    "qrImage": "data:image/png;base64,iVBORw0KGgo...",
+    "attended": false
+  }
+}
+```
+
+*(Forms of any other type omit `ticketCode`.)*
+
+**Error Responses**
+
+```json
+// 400
+{ "message": "Form ID and answers are required" }
+{ "message": "This form is currently closed" }
+{ "message": "Maximum submissions reached" }
+{ "message": "You already submitted this form" }
+{ "message": "Submission failed validation: Field 'Full Name' is required." }
+
+// 404
+{ "message": "Form not found" }
+```
+
+---
+
+### 3.6.2 Scan Ticket (Check-In)
+
+`POST /api/submissions/scan`
+
+Gatekeeper endpoint for event entry. Marks the ticket as attended (once!).
+
+- **Auth:** Yes - roles: `scanner`, `board`, `xcom`
+- **Body:** `application/json`
+
+| Field | Type | Required |
+|-------|------|:--------:|
+| `code` | string | ✅ | full ticket code decoded from the QR |
+
+**Request Example**
+
+```json
+{ "code": "67d0a1b2c3d4e5f6a7b8c9d1-66f1a2b3c4d5e6f7a8b9c0d1-Vk3GhQ" }
+```
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "message": "Welcome, Ahmed Hassan!",
+  "registrant": "Ahmed Hassan"
+}
+```
+
+**Error Responses**
+
+```json
+// 404 — { "message": "Invalid Ticket!" }
+// 400 — { "message": "Already Scanned!" }
+```
+
+---
+
+### 3.6.3 Get My Submission
+
+`GET /api/submissions/:userid/:formid`
+
+Fetches one user's submission for a given form (used to re-display a ticket).
+
+- **Auth:** Yes - roles: `board`, `xcom`
+- **Path Params:** `userid`, `formid`
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "_id": "67f0aa11bb22cc33dd44ee55",
+  "formId": "67d0a1b2c3d4e5f6a7b8c9d1",
+  "userId": "66f1a2b3c4d5e6f7a8b9c0d1",
+  "registrantEmail": "ahmed@example.com",
+  "answers": { "full_name": "Ahmed Hassan", "tshirt_size": "L" },
+  "ticketCode": "67d0...-66f1...-Vk3GhQ",
+  "qrImage": "data:image/png;base64,...",
+  "attended": true,
+  "attendedAt": "2026-10-05T09:12:44.000Z"
+}
+```
+
+**Error Responses** — `404 { "message": "Submission not found" }`
+
+### 3.6.4 List All Submissions (Admin)
+
+`GET /api/submissions`
+
+Returns all submissions with aggregate counters.
+
+- **Auth:** Yes - roles: `board`, `xcom`
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "totalCount": 512,
+  "attendedCount": 110,
+  "notAttendedCount": 402,
+  "submissions": [ /* submission documents */ ]
+}
+```
+
+*A submission carries no review status. `attended` (and `attendedAt`) is the only
+state it has, set when a ticket is scanned, and the counters above are built from
+it.*
+
+### 3.6.5 Submissions for One Form (Admin)
+
+`GET /api/submissions/form/:formId`
+
+- **Auth:** Yes - roles: `board`, `xcom`
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "total": 140,
+  "submissions": [ /* populated with userId name/email */ ],
+  "form": { "_id": "...", "title": "...", "type": "attendance", "fields": [] }
+}
+```
+
+`form` carries only `title`, `type` and `fields` — the email settings and other
+private form config are deliberately left out. The dashboard needs `type` to
+decide whether attendance applies, and `fields` to label each answer. Both used
+to be read from router state, which is lost on a refresh or a shared link, so a
+reloaded page fell back to showing raw field ids instead of the questions.
+
+**Error Responses**
+
+```json
+// 404 — { "message": "Form not found" }
+```
+
+### 3.6.6 Export Submissions to Excel
+
+`GET /api/submissions/export/:formId`
+
+Styled multi-sheet workbook: user-info columns + one column per dynamic form question, with section header bands.
+
+The `Attended` and `Attended Time` columns are written **only when the form's
+`type` is `attendance`**. Those forms mint a ticket that the scanner can check
+in; every other type (recruitment, feedback, workshop, survey) is never scanned,
+so including the columns would print a permanent `No` and imply a check-in that
+is not being tracked.
+
+- **Auth:** Yes - roles: `board`, `xcom`
+
+**Success Response — `200 OK`** — binary `.xlsx` (`responses_<formId>.xlsx`)
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Form ID is required" }
+// 404 — { "message": "Form not found in database" } | { "message": "No submissions found for this form" }
+```
+
+### 3.6.7 Download Submitted File
+
+`GET /api/submissions/download?url=<encoded cloudinary url>`
+
+Proxies a stored submission file back to admins as an attachment.
+
+- **Auth:** Yes - roles: `board`, `xcom`
+- **Query Params:** `url` (required, URI-encoded)
+
+**Success Response — `200 OK`** — binary file stream with original content-type.
+
+**Error Responses**
+
+```json
+// 400 — { "message": "URL is required" }
+// 404 — { "message": "File not found" }
+```
+
+---
+
+## 3.7 Committee Requests
+
+Workflow: a user requests a committee position → `PendingRequest` created → `xcom`/`board` approve or reject → approval assigns `user.committee` and emails the decision. XCom/board requests bypass review (auto-accepted).
+
+### 3.7.1 Create Committee Request
+
+`POST /api/committee-requests`
+
+- **Auth:** Yes (`protect`, any signed-in role)
+- **Body:** `application/json`
+
+| Field | Type | Required |
+|-------|------|:--------:|
+| `committee_position` | string | ✅ |
+
+**Request Example**
+
+```json
+{ "committee_position": "Technical" }
+```
+
+**Success Response — `201 Created`** *(regular user)*
+
+```json
+{
+  "success": true,
+  "message": "Committee request submitted successfully",
+  "data": {
+    "_id": "68a1b2c3d4e5f6a7b8c9d0e1",
+    "userId": "66f1a2b3c4d5e6f7a8b9c0d1",
+    "committee_position": "Technical",
+    "request_status": "pending"
+  }
+}
+```
+
+*(XCom/board callers receive:* `"Committee request submitted and accepted automatically"` *)*
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Committee position is required" }
+//        { "message": "You already have a pending committee request. Please wait for it to be reviewed." }
+//        { "message": "User already has this committee position" }
+// 404 — { "message": "User not found" }
+```
+
+### 3.7.2 My Requests
+
+`GET /api/committee-requests/my`
+
+- **Auth:** Yes (`protect`, any signed-in role)
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "data": [
+    { "_id": "68a1...", "committee_position": "Technical", "request_status": "pending", "createdAt": "2026-08-20T09:30:00.000Z" }
+  ]
+}
+```
+
+### 3.7.3 All Requests (Admin)
+
+`GET /api/committee-requests?status=pending&committee_position=Technical&page=1&limit=10`
+
+- **Auth:** Yes - roles: `board`, `xcom`
+- **Query Params:** `status` (`pending|approved|rejected`), `committee_position`, `page`, `limit`
+
+Both `userId` and `reviewedBy` are populated. `reviewedBy` is `null` while a
+request is pending, and stays populated afterwards so the Approved and Rejected
+tabs can name who decided it.
+
+**Ordering:** `status=pending` sorts by `createdAt`; `status=approved` or
+`status=rejected` sorts by `reviewedAt`, so each decided tab reads newest
+decision first.
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "68a1...",
+      "committee_position": "Technical",
+      "request_status": "pending",
+      "userId": {
+        "_id": "66f1...",
+        "name": "Ahmed Hassan",
+        "email": "ahmed@example.com",
+        "position": "student",
+        "university": "Helwan University"
+      },
+      "reviewedBy": null,
+      "reviewedAt": null
+    }
+  ],
+  "pagination": { "totalItems": 9, "totalPages": 1, "currentPage": 1, "itemsPerPage": 10 }
+}
+```
+
+### 3.7.4 Approve / Reject Request
+
+`PUT /api/committee-requests/:requestId/status`
+
+Processes a pending request. Approval assigns the position and emails acceptance; rejection emails a decline. Either way the request document is **kept** — the status, `reviewedBy` and `reviewedAt` are stamped and it moves into that decision log. A request that has already been decided is refused, so a second decision cannot overwrite the first.
+
+- **Auth:** Yes - roles: `xcom`
+- **Body:** `application/json` — `{ "status": "approved" | "rejected" }` (required)
+
+**Success Response — `200 OK`**
+
+```json
+{ "success": true, "message": "Request approved successfully", "data": { /* updated user */ } }
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Status must be either approved or rejected" }
+//        { "message": "Request has already been processed" }
+// 404 — { "message": "Request not found" } | { "message": "User not found" }
+```
+
+### 3.7.5 Change User Committee Directly
+
+`PUT /api/committee-requests/:userId/position`
+
+Admin override to reassign a user's committee without a request.
+
+- **Auth:** Yes - roles: `xcom`
+- **Body:** `{ "committee_position": "HR" }`
+
+**Success Response — `200 OK`**
+
+```json
+{ "success": true, "message": "Committee position changed successfully", "data": { /* updated user */ } }
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "User already has this committee position" }
+// 404 — { "message": "User not found" }
+```
+
+---
+
+## 3.8 Seasons and Crew Directory
+
+A **season** holds one committee: an **Excom** and a **Board**. Members live in
+the `crews` collection and belong to a season through `crew.season`, with
+`crew.section` set to `counselor`, `excom` or `board`. The section is a property of the
+season, not of the person — the same name can sit on the Board one season and in
+the Excom the next.
+
+Exactly one season is **published** at a time (`isHome`). That season's Excom is
+what the home page shows; every other season is an archive, reachable from the
+season labels at the bottom of `/crew`. `PUT /api/seasons/:id/home` is the only
+thing that sets `isHome`, and it clears the others in the same call.
+
+> **First season.** `crew.season` and `crew.section` are required, so a crew
+> document cannot be saved without them and no page can list it. There is no
+> seed script: the first season is created by an admin at `/dashboard/crew`,
+> which is also where its Excom and Board are entered. Until an admin publishes
+> a season with `PUT /api/seasons/:id/home`, the home page and the About page
+> render no leadership section by design.
+
+### 3.8.1 List Seasons (Public)
+
+`GET /api/seasons`
+
+Newest first, with a headcount for the archive's season picker.
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "results": 2,
+  "data": [
+    { "_id": "...", "name": "Current Season", "isHome": true, "order": 0, "memberCount": 6 },
+    { "_id": "...", "name": "Season 10", "isHome": false, "order": 0, "memberCount": 14 }
+  ]
+}
+```
+
+### 3.8.2 One Season with Its Members (Public)
+
+`GET /api/seasons/:id`
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "data": {
+    "season": { "_id": "...", "name": "Current Season", "isHome": true, "order": 0 },
+    "excom": [ /* members, each shaped as below */ ],
+    "board": [ /* members, each shaped as below */ ]
+  }
+}
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Invalid season id" }
+// 404 — { "message": "Season not found" }
+```
+
+### 3.8.3 The Published Season (Public)
+
+`GET /api/seasons/home`
+
+The season the home page is currently showing. Returns the same
+`{ season, counselor, excom, board }` shape as 3.8.2.
+
+Answers `200` with `{ "success": true, "data": null }` when no season has been
+published yet. That is a normal state on a fresh install, not a failure, so the
+home page renders nothing instead of logging a failed request on every visit.
+
+### 3.8.4 Create Season
+
+`POST /api/seasons` — **Auth:** Yes - roles: `xcom`
+
+```json
+// Request
+{ "name": "Season 12" }
+
+// 201 Created
+{ "success": true, "data": { "_id": "...", "name": "Season 12", "isHome": false, "order": 2 } }
+```
+
+A new season is **not** published; it only becomes the home page when published.
+
+**Error Responses**
+
+```json
+// 400 — { "message": "Season name is required" }
+// 400 — { "message": "A season named \"Season 12\" already exists" }
+```
+
+### 3.8.5 Rename Season
+
+`PUT /api/seasons/:id` — **Auth:** Yes - roles: `xcom`
+
+```json
+// Request
+{ "name": "Season 12 (2026-2027)" }
+```
+
+**Error Responses** — `400` invalid/duplicate name, `404 { "message": "Season not found" }`
+
+### 3.8.6 Publish a Season on the Home Page
+
+`PUT /api/seasons/:id/home` — **Auth:** Yes - roles: `xcom`
+
+Publishes this season and unpublishes whichever one was published, so the home
+page always has exactly one Excom to show. The new season is set first and the
+others cleared after, so the home page is never briefly empty.
+
+### 3.8.7 Delete Season
+
+`DELETE /api/seasons/:id` — **Auth:** Yes - roles: `xcom`
+
+Refuses rather than cascading: deleting a season is for tidying up seasons nobody
+filled in, and silently deleting a season's people because the button sat next to
+its name would be a nasty surprise.
+
+**Error Responses**
+
+```json
+// 400 — { "message": "This season still has 6 members. Remove them before deleting the season." }
+// 404 — { "message": "Season not found" }
+```
+
+### 3.8.8 List Crew (Public)
+
+`GET /api/crew`
+
+Optional `season` and `section` filters. The public pages always pass `season`, so
+a visitor never sees the whole archive on one page.
+
+| Query | Effect |
+| --- | --- |
+| _(none)_ | Every member, all seasons |
+| `?season=<id>` | One season's members |
+| `?season=<id>&section=excom` | One section of one season |
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "results": 1,
+  "data": [
+    {
+      "_id": "69b1c2d3e4f5a6b7c8d9e0f1",
+      "name": "Sara Ali",
+      "position": "Chairperson",
+      "image": "/images/chairpersons/sara.webp",
+      "bio": "Leading the SHA branch...",
+      "section": "excom",
+      "order": 0,
+      "isCounselor": false,
+      "socials": {
+        "linkedin": "https://linkedin.com/in/sara-ali",
+        "facebook": "",
+        "collabratec": "",
+        "email": "sara@example.com",
+        "website": ""
+      }
+    }
+  ]
+}
+```
+
+`isCounselor` is `true` when the position contains "counsel". The home page gives
+that person a full-width card above the grid, which is how the counselor has
+always been shown. It is derived from the position rather than stored as a flag
+because "Counselor" is a role someone holds, not a layout decision to remember to
+tick.
+
+**Error Responses** — `400 { "message": "Invalid season id" }`
+
+### 3.8.9 Create Crew Member
+
+`POST /api/crew` — **Auth:** Yes - roles: `xcom`
+
+`season` and `section` are both required: a member with no season cannot be shown
+on `/crew`, so allowing one would mean a row silently invisible to every visitor.
+
+```json
+// Request
+{
+  "name": "Omar Khaled",
+  "position": "Technical Lead",
+  "image": "https://...",
+  "bio": "...",
+  "season": "6abadaeba7e5f589a4b6fbde",
+  "section": "excom",
+  "order": 0,
+  "socials": { "linkedin": "linkedin.com/in/omar", "email": "omar@example.com" }
+}
+```
+
+Links are normalised and validated. A missing `https://` is added, `mailto:` is
+stripped from emails, and a value that is still unusable is **rejected by name**
+rather than silently dropped, so a typo cannot look like a missing link:
+
+```json
+// 201 Created
+{ "success": true, "data": { /* the member, as listed in 3.8.8 */ } }
+```
+
+**Error Responses**
+
+```json
+// 400 — { "message": "A crew member must belong to a season" }
+// 400 — { "message": "Invalid season id" }
+// 400 — { "message": "That season does not exist" }
+// 400 — { "message": "Section must be one of \"counselor\", \"excom\", \"board\"" }
+// 400 — { "message": "\"not a url at all\" is not a valid linkedin URL" }
+// 400 — { "message": "\"nope\" is not a valid email address" }
+```
+
+### 3.8.10 Update Crew Member
+
+`PUT /api/crew/:id` — **Auth:** Yes - roles: `xcom`
+
+Only the fields present in the body are touched, so omitting `bio` does not blank
+the bio someone already wrote. Sending `section` moves the member between the
+Excom, Counselor or Board without deleting and re-entering them.
+
+```json
+// Request
+{ "position": "Vice Chairperson" }
+
+// 200 OK
+{ "success": true, "data": { /* updated crew member */ } }
+```
+
+**Error Responses** — `400` invalid id/season/section/link, `404 { "message": "Crew member not found" }`
+
+### 3.8.11 Delete Crew Member
+
+`DELETE /api/crew/:id` — **Auth:** Yes - roles: `xcom`
+
+```json
+// 200 OK
+{ "success": true, "message": "Crew member deleted successfully" }
+```
+
+**Error Responses** — `400 { "message": "Invalid crew member id" }`, `404 { "message": "Crew member not found" }`
+
+---
+
+## 3.9 Bulk Emails
+
+Campaign engine backed by **Brevo**. Both send endpoints respond with a **chunked NDJSON stream** — one JSON line per recipient result — enabling live progress in the UI. Every outcome is persisted to `emaillogs` with status `Done`, `Rejected`, or `Not email`. Message bodies support `{{placeholder}}` tokens filled from recipient data.
+
+### 3.9.1 Bulk Send from Excel Upload
+
+`POST /api/emails/bulk-send`
+
+Reads an Excel file whose **first column contains recipient emails**; remaining columns become merge-data placeholders.
+
+- **Auth:** Yes - roles: `xcom`
+- **Headers:** `multipart/form-data`
+- **Fields**
+
+| Field | Type | Required | Notes |
+|-------|------|:--------:|-------|
+| `excelFile` | **file** (.xlsx) | ✅ | Row 1 = headers; col A = email |
+| `email` | text | ✅ | Message body (`{{HeaderName}}` tokens allowed) |
+| `subject` | text | ➖ | Defaults to `"Notification"` |
+| `attachments` | file(s) | ➖ | Sent with every email (≤ 10 MB each) |
+
+**Example Excel**
+
+| Email | Name | Event |
+|-------|------|-------|
+| ahmed@example.com | Ahmed | IEEE Day |
+
+With body `Hello {{Name}}, you're invited to {{Event}}!`
+
+**Success Response — `200 OK`** *(chunked, `Transfer-Encoding: chunked`)*
+
+```
+{"email":"ahmed@example.com","status":"Done"}
+{"email":"not-an-email","status":"Not email"}
+{"message":"Process Completed"}
+```
+
+**Error Responses**
+
+```json
+// 400 — { "error": "File and message body are required" }
+// 401 — { "error": "Unauthorized user" }
+// 500 — { "error": "Internal server error" }
+//        (mid-stream failures emit: {"error":"Process interrupted due to server error"})
+```
+
+### 3.9.2 Bulk Send from Database
+
+`POST /api/emails/bulk-send-db`
+
+Targets registered users by IDs and/or emails — no spreadsheet needed.
+
+- **Auth:** Yes - roles: `xcom`
+- **Headers:** `multipart/form-data`
+- **Fields**
+
+| Field | Type | Required | Notes |
+|-------|------|:--------:|-------|
+| `email` | text | ✅ | Message body |
+| `subject` | text | ➖ | |
+| `userIds` | JSON array (as text) | ➖ | e.g. `["66f1...","67b2..."]` |
+| `emails` | JSON array (as text) | ➖ | e.g. `["a@x.com","b@y.com"]` |
+| `attachments` | file(s) | ➖ | |
+
+**Request Example (multipart text fields)**
+
+```
+email:    "Reminder: IEEE Day starts tomorrow at 9 AM!"
+subject:  "Event Reminder"
+userIds:  ["66f1a2b3c4d5e6f7a8b9c0d1"]
+emails:   ["mona@example.com"]
+```
+
+**Success Response — `200 OK`** *(chunked NDJSON, same shape as §3.9.1)*
+
+```
+{"email":"ID: 999...","status":"Invalid ID Format"}
+{"email":"ghost@example.com","status":"Not found in DB"}
+{"email":"ahmed@example.com","status":"Done"}
+{"email":"mona@example.com","status":"Done"}
+{"message":"Process Completed"}
+```
+
+**Error Responses**
+
+```json
+// 400 — { "error": "Message body is required" }
+//        { "error": "Invalid format for userIds or emails. Must be a JSON array." }
+//        { "error": "No valid userIds or emails provided to search." }
+```
+
+### 3.9.3 Email Logs
+
+`GET /api/emails/logs?page=1&limit=10&status=Done`
+
+Paginated delivery log with aggregate statistics.
+
+- **Auth:** Yes - roles: `board`, `xcom`
+- **Query Params**
+
+| Param | Type | Default | Notes |
+|-------|------|---------|-------|
+| `page` | int | `1` | |
+| `limit` | int | `10` | |
+| `status` | string | — | `Done` \| `Rejected` \| `Not email` (case-insensitive) |
+
+**Success Response — `200 OK`**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "70c1d2e3f4a5b6c7d8e9f0a1",
+      "sendBy": "67b2d4e5f6a7b8c9d0e1f2a3",
+      "email": "ahmed@example.com",
+      "status": "Done",
+      "subject": "Event Reminder",
+      "messageBody": "Reminder: IEEE Day...",
+      "sentAt": "2026-08-22T18:04:33.000Z"
+    }
+  ],
+  "pagination": { "totalItems": 1240, "totalPages": 124, "currentPage": 1, "itemsPerPage": 10 },
+  "stats": { "totalAll": 1240, "totalDone": 1180, "totalRejected": 42, "totalNotEmail": 18 }
+}
+```
+
+**Error Responses** — `500 { "error": "Failed to fetch emails" }`
+
+### 3.9.4 Remaining Email Allowance
+
+`GET /api/emails/quota` — **Auth:** Yes - roles: `board`, `xcom`
+
+How much of Brevo's allowance is left, read live from `GET /v3/account`. Backs the progress bar on the dashboard Settings page, so an admin can check the room left before starting a bulk send — Brevo starts rejecting once the day's allowance is gone.
+
+```json
+// 200 OK
+{
+  "success": true,
+  "data": {
+    "available": true,
+    "plan": "free",
+    "creditsType": "sendLimit",
+    "remaining": 291,
+    "limit": 300,
+    "used": 9,
+    "remainingRatio": 0.97,
+    "resetsDaily": true
+  }
+}
+```
+
+**Why `used` is derived.** Brevo reports only the *remainder*, as `plan.credits`. The `emailVolume` field older docs described (with `daily` and `limit`) is no longer in the response, and the endpoints that carried a limit now return 404. The daily cap of 300 is therefore a constant (`DAILY_TRANSACTIONAL_LIMIT` in `utils/sendEmail.js`) and `used` is `limit - remaining` rather than a measured count. Correct for a daily allowance; it would silently misreport on a monthly one.
+
+`plan` arrives as an **array** from the SDK, so the reader accepts both an array and a bare object.
+
+**When Brevo cannot be reached** the endpoint still answers `200`, with `available: false` and a `reason`. A dashboard readout should not turn a Brevo outage into a failed request, and inventing a zero would be worse than admitting ignorance:
+
+```json
+{ "success": true, "data": { "available": false, "reason": "Could not reach Brevo." } }
+```
+
+---
+
+## Appendix A — Global Error Reference
+
+| Scenario | Code | Body |
+|----------|:----:|------|
+| Unknown route | 404 | `{ "message": "This router is not exist" }` |
+| No auth cookie | 401 | `{ "message": "Not authorized, no token" }` |
+| Bad/expired cookie | 401 | `{ "message": "Not authorized, token failed" }` |
+| Insufficient role | 403 | `{ "message": "User role <role> is not authorized to access this route" }` |
+| Any `AppError` | 4xx | `{ "status": "fail", "message": "<msg>" }` |
+| Unhandled exception | 500 | `{ "status": "error", "message": "<msg>" }` |
+
+## Appendix B — Quick Test Flow (Postman/cURL)
+
+```bash
+BASE=http://localhost:5000
+
+# 1. Health
+curl $BASE/
+
+# 2. Register (then fetch OTP from inbox)
+curl -X POST $BASE/api/users/register -H "Content-Type: application/json" \
+  -d '{"name":"Test User","email":"test@example.com","password":"Passw0rd!","confirmPassword":"Passw0rd!","position":"student","university":"HU","college":"CE","yearOfStudy":2}'
+
+# 3. Verify OTP (stores auth cookie in cookies.txt)
+curl -c cookies.txt -X POST $BASE/api/users/verify-email -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","otp":"123456"}'
+
+# 4. Fetch a form and submit
+curl -b cookies.txt $BASE/api/form/<FORM_ID>
+curl -b cookies.txt -X POST $BASE/api/submissions -H "Content-Type: application/json" \
+  -d '{"formId":"<FORM_ID>","answers":{"full_name":"Test User"}}'
+```
+
+---
+
+*Document generated for the IEEE SHA – SB backend (`server/`). Last updated: August 2026.*

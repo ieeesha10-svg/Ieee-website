@@ -1,14 +1,20 @@
 import React from 'react';
 import { Toaster } from 'react-hot-toast';
 import BgImage from '../assets/backgrounds/black-line-circuit-pattern.webp';
+import DotField from '../components/auth/DotField';
 
-export default function AuthLayout({ children, title, subtitle, icon, maxWidth = 'max-w-md' }) {
+export default function AuthLayout({ children, title, subtitle, icon, maxWidth = 'max-w-md', dotField = false }) {
   return (
     <div className="min-h-[calc(100vh-var(--navbar-height))] flex items-center justify-center relative bg-main transition-colors duration-300 py-12 px-4 sm:px-6 lg:px-8"
       style={{ backgroundImage: `url(${BgImage})` }}
     >
       {/* Background Overlay */}
       <div className='absolute inset-0 bg-main/95 dark:bg-main/98' />
+      {/* Drifting dots. Sits after the overlay so they are actually visible,
+          and before the card, which is opaque and z-10 - so the field fills
+          the empty page without ever showing through the form. Opt-in, so only
+          the pages that asked for it pay for the animation frame loop. */}
+      {dotField && <DotField />}
       <Toaster position="top-center" />
       
       {/* Main Card */}

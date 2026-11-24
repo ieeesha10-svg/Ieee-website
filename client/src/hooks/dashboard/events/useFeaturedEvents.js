@@ -55,37 +55,60 @@ function mapActivity(activity, form) {
   };
 }
 
-export function useFeaturedEvents() {
-  const [featured, setFeatured] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  /**
+   * `includeHidden` defaults to false, and that default is load-bearing.
+   *
+   * This hook is used by both the dashboard (FeaturedEvents page) and the public
+   * home page (FlagshipEvents), which import it from the dashboard folder purely
+   * because it already held the mapping logic. The server treats the request as
+   * "public" unless it explicitly asks for unpublished activities, so the home
+   * page gets the strict list for free - as long as nobody here starts passing
+   * includeHidden: true unconditionally.
+   */
+  export function useFeaturedEvents({ includeHidden = false } = {}) {
+    const [featured, setFeatured] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [featuredRes, formsRes] = await Promise.all([
-        api.get("/activities/featured"),
-        api.get("/form").catch(() => ({ data: [] })),
-      ]);
+    const fetchData = useCallback(async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [featuredRes, formsRes] = await Promise.all([
+          api.get("/activities/featured", {
+            params: includeHidden ? { includeHidden: true } : undefined,
+          }),
+          api.get("/form").catch(() => ({ data: [] })),
+        ]);
 
-      const activities = featuredRes.data.activities || [];
-      const forms = Array.isArray(formsRes.data)
-        ? formsRes.data
-        : formsRes.data?.forms || [];
+        const activities = featuredRes.data.activities || [];
+        const forms = Array.isArray(formsRes.data)
+          ? formsRes.data
+          : formsRes.data?.forms || [];
 
-      const formMap = {};
-      forms.forEach((f) => {
-        if (f.activityID) formMap[f.activityID] = f;
-      });
+        const formMap = {};
+        forms.forEach((f) => {
+          if (f.activityID) formMap[f.activityID] = f;
+        });
 
-      setFeatured(activities.map((a) => mapActivity(a, formMap[a._id])));
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to load featured events");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        // The server already filters, so this is belt-and-braces for the one case
+        // the server cannot cover: a payload cached or shaped elsewhere. Skipped
+        // when the caller opted into includeHidden, since that caller is the
+        // dashboard and drafts are exactly what it needs to see. Lenient
+        // (`!== false`) rather than `=== true`, so a response that omits the field
+        // entirely does not empty the public section.
+        const visible = includeHidden
+          ? activities
+          : activities.filter((a) => a.showOnSite !== false);
+
+        setFeatured(visible.map((a) => mapActivity(a, formMap[a._id])));
+      } catch (err) {
+        setError(err.response?.data?.message || err.message || "Failed to load featured events");
+      } finally {
+        setLoading(false);
+      }
+    }, [includeHidden]);
+
 
   useEffect(() => {
     fetchData();

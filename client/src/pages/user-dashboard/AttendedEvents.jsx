@@ -4,34 +4,83 @@ import {
   CalendarDays,
   MapPin,
   Clock,
-  Heart,
   Loader2,
   AlertTriangle,
   Calendar,
 } from "lucide-react";
 import api from "../../utils/api";
 
-function TypeBadge({ type }) {
-  // Adjusted colors to match the design badges (Technical, AI / ML, Branch Event)
-  const styles = {
-    Technical: "bg-[#F0F7FF] text-[#007BFF]",
-    "AI / ML": "bg-[#F8F0FF] text-[#A855F7]",
-    "Branch Event": "bg-[#F0FFF4] text-[#1BCC6E]",
-    Default: "bg-gray-100 text-gray-600",
-  };
+const TYPE_STYLES = {
+  Technical: "bg-[#F0F7FF] text-[#007BFF]",
+  "AI / ML": "bg-[#F8F0FF] text-[#A855F7]",
+  "Branch Event": "bg-[#F0FFF4] text-[#1BCC6E]",
+  event: "bg-[#F0F7FF] text-[#007BFF]",
+  workshop: "bg-[#FFF7E6] text-[#FF8C00]",
+  webinar: "bg-[#F8F0FF] text-[#A855F7]",
+  general: "bg-gray-100 text-gray-600",
+};
 
-  const badgeStyle = styles[type] || styles.Default;
+const TYPE_LABELS = {
+  event: "Event",
+  workshop: "Workshop",
+  webinar: "Webinar",
+  general: "General",
+};
+
+function TypeBadge({ type }) {
+  const label = TYPE_LABELS[type] || type || "Event";
+  const badgeStyle = TYPE_STYLES[type] || "bg-gray-100 text-gray-600";
 
   return (
     <span
       className={`inline-flex items-center px-3 py-1 rounded-full text-[12px] font-bold mt-2 ${badgeStyle}`}
     >
-      {type}
+      {label}
     </span>
   );
 }
 
-function EventCard({ title, dateObj, location, time, type, colorTheme }) {
+function StatusBadge({ attended, attendedAt, eventEndDate }) {
+  let badgeClass;
+  let label;
+
+  if (attended) {
+    badgeClass = "bg-[#F0FFF4] text-[#1BCC6E]";
+    const attendedTime = attendedAt
+      ? new Date(attendedAt).toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+        })
+      : "";
+    label = attendedTime ? `Attended at ${attendedTime}` : "Attended";
+  } else if (eventEndDate && new Date(eventEndDate) >= new Date()) {
+    badgeClass = "bg-[#FFF7E6] text-[#FF8C00]";
+    label = "Pending";
+  } else {
+    badgeClass = "bg-gray-100 text-gray-500";
+    label = "No";
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center px-3 py-1 rounded-full text-[12px] font-bold whitespace-nowrap ${badgeClass}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function EventCard({
+  title,
+  dateObj,
+  location,
+  time,
+  type,
+  colorTheme,
+  attended,
+  attendedAt,
+  eventEndDate,
+}) {
   // Fallback date formats if date parsing fails
   const day = dateObj ? dateObj.getDate() : "00";
   const month = dateObj
@@ -59,7 +108,9 @@ function EventCard({ title, dateObj, location, time, type, colorTheme }) {
 
       {/* Main Content */}
       <div className="flex-1">
-        <h3 className="font-bold text-[16px] text-[#111827] mb-1">{title}</h3>
+        <h4 className="font-bold text-[16px] text-[#111827] dark:text-white mb-1">
+          {title}
+        </h4>
 
         <div className="flex items-center gap-4 text-[13px] text-gray-500 font-medium">
           <div className="flex items-center gap-1.5">
@@ -75,10 +126,14 @@ function EventCard({ title, dateObj, location, time, type, colorTheme }) {
         <TypeBadge type={type} />
       </div>
 
-      {/* Heart Icon */}
-      <button className="self-start mt-2 mr-2" aria-label="Favorite event">
-        <Heart size={20} className="text-[#FF4757] fill-[#FF4757]" />
-      </button>
+      {/* Attendance Status */}
+      <div className="self-start mt-2 mr-2">
+        <StatusBadge
+          attended={attended}
+          attendedAt={attendedAt}
+          eventEndDate={eventEndDate}
+        />
+      </div>
     </div>
   );
 }
@@ -90,39 +145,118 @@ export default function AttendedEvents() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // StrictMode double-mounts effects in dev, so the first request is
+    // aborted on cleanup to avoid firing the endpoint more than once.
+    const controller = new AbortController();
+    const { signal } = controller;
+
     const fetchEvents = async () => {
       setIsLoading(true);
       setError(null);
+
+      if (!userData._id) {
+        setEvents([]);
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const response = await api.get(`/users/${userData._id}/events`);
-        const data = Array.isArray(response.data?.data)
-          ? response.data.data
-          : response.data?.events || [];
+        let submissions = [];
 
-        const mappedEvents = data.map((item, index) => {
-          // Fallback to item.formId if the backend populates it, otherwise item.event or item
-          const evt = item.formId || item.event || item;
-          // Alternate colors for the date box to match the design variation
-          const themes = ["blue", "purple", "green"];
+        try {
+          const response = await api.get(`/users/${userData._id}/events`, {
+            signal,
+          });
+          submissions = Array.isArray(response.data?.data)
+            ? response.data.data
+            : response.data?.events || [];
+        } catch (err) {
+          // Backend returns 400 "No events found" when the member has no submissions yet
+          if (err.response?.status !== 400) throw err;
+        }
 
-          return {
-            title: evt.title || evt.name || "Untitled Event",
-            dateObj: evt.startDate ? new Date(evt.startDate) : (evt.date ? new Date(evt.date) : new Date(item.createdAt || new Date())),
-            time: evt.time || "Time N/A",
-            location: evt.location || "Location N/A",
-            type: evt.type || "Technical",
-            colorTheme: themes[index % themes.length],
-          };
-        });
+        if (!submissions.length) {
+          setEvents([]);
+          setIsLoading(false);
+          return;
+        }
+
+        // The backend embeds the form (`item.formId`) and its linked activity
+        // (`item.formId.activityID`) in each submission. Only fetch the activity
+        // list as a fallback when some submissions arrive unpopulated.
+        const needsActivityFallback = submissions.some(
+          (item) => !item.formId || typeof item.formId !== "object",
+        );
+
+        const activityByForm = {};
+        if (needsActivityFallback) {
+          const activitiesRes = await api
+            .get("/activities", {
+              params: { page: 1, limit: 1000 },
+              signal,
+            })
+            .catch(() => ({ data: { activities: [] } }));
+          (activitiesRes.data?.activities || []).forEach((a) => {
+            if (a.formID) activityByForm[a.formID] = a;
+          });
+        }
+
+        const themes = ["blue", "purple", "green"];
+        const mappedEvents = submissions
+          .map((item, index) => {
+            const form =
+              item.formId && typeof item.formId === "object"
+                ? item.formId
+                : null;
+            const rawFormId =
+              typeof item.formId === "string" ? item.formId : null;
+            const activity =
+              form?.activityID ||
+              (rawFormId && activityByForm[rawFormId]) ||
+              null;
+
+            const dateStr =
+              activity?.startDate ||
+              form?.startDate ||
+              item.attendedAt ||
+              item.createdAt;
+            const dateObj = dateStr ? new Date(dateStr) : null;
+            const endDate = activity?.endDate || form?.endDate || null;
+
+            return {
+              id: activity?._id || form?._id || item._id,
+              title: activity?.title || form?.title || "Untitled Event",
+              dateObj,
+              time: dateObj
+                ? dateObj.toLocaleTimeString("en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })
+                : "Time N/A",
+              location: activity?.location || "Location N/A",
+              type: activity?.type || form?.type || "event",
+              colorTheme: themes[index % themes.length],
+              attended: !!item.attended,
+              attendedAt: item.attendedAt || null,
+              eventEndDate: endDate ? new Date(endDate) : null,
+            };
+          })
+          .sort(
+            (a, b) =>
+              (b.dateObj?.getTime() || 0) - (a.dateObj?.getTime() || 0),
+          );
+
         setEvents(mappedEvents);
       } catch {
-        setError("Failed to load attended events.");
+        if (!signal.aborted) setError("Failed to load attended events.");
       } finally {
-        setIsLoading(false);
+        if (!signal.aborted) setIsLoading(false);
       }
     };
 
     fetchEvents();
+
+    return () => controller.abort();
   }, [userData._id]);
 
   return (

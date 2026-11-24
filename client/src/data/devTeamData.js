@@ -6,7 +6,7 @@ import ahmedImg from "../assets/images/dev-team/ahmed-elmalah.webp";
 import abdallahImg from "../assets/images/dev-team/abdallah-aziz.webp";
 import hossamImg from "../assets/images/dev-team/hossam-ghallab.webp";
 import madihaImg from "../assets/images/dev-team/madiha-elyazal.webp";
-import aliElsayedImg from "../assets/images/chairpersons/ali-elsayed.webp";
+import aliElsayedImg from "../assets/images/dev-team/ali-elsayed.webp";
 
 export const stats = [
   { id: 1, value: "8", label: "Engineers" },
@@ -18,18 +18,20 @@ export const tracks = [
   {
     id: "track-01",
     number: "01",
-    title: "Non-Technical Team",
+    title: "Head & Non-Technical",
     members: [
       {
         id: 1,
         number: "01",
         name: "Ali Ahmed",
-        role: "Head Of Website Team | Full Stack Engineer",
+        role: "Head Of Website Team | season x technical vice chair | Full Stack Engineer",
         dept: "IEEE SHA",
         image: aliImg,
         links: {
           linkedin: "https://www.linkedin.com/in/ali-ahmed-3621a8247/",
           github: "https://github.com/ALi-ahmed-e",
+          portfolio: "https://aliahmed-pied.vercel.app/",
+
         },
       },
       {

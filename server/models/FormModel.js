@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { slugifyFieldLabel } = require('../utils/fieldId');
 
 const fieldSchema = new mongoose.Schema({
   id: { 
@@ -66,19 +67,29 @@ const formSchema = new mongoose.Schema({
   },
   fields: [fieldSchema], // <-- Using the defined fieldSchema for better structure and validation
   /*
-  Stores dynamic form fields generated from frontend builder
+  Stores dynamic form fields generated from frontend builder.
+  `id` is always derived from `label` by the pre-validate hook below — clients
+  must not supply their own.
   Example:
   [
     {
       id: "full_name",
-      type: "text",
+      type: "TextInput",
       label: "Full Name",
       required: true
     }
   ]
   */
-  type : String,
+  // Must stay in sync with FORM_TYPE_OPTIONS in client/src/data/formTypes.js.
+  // "other" is legacy-only: forms saved before the current type set keep it so
+  // they never fail validation. It is not offered in the builder.
+  type : {
+    type: String,
+    enum: ["attendance", "recruitment", "feedback", "workshop", "survey", "other"],
+    default: "other"
+  },
   startDate: {
+
     type: Date,
     required: true
   },
@@ -90,24 +101,50 @@ const formSchema = new mongoose.Schema({
     type: Number,
     default: Number.MAX_SAFE_INTEGER // <-- No limit by default (infinite)
   },
-  requiresLogin: { type: Boolean, default: false }, // <--- The feature you asked for: If true, users must be logged in to submit the form. If false, anyone can submit.
+  sendEmailOnSubmission: {
+    type: Boolean,
+    default: false
+  },
+  // Subject and body of the email the form author wants sent after a
+  // submission. Only read when `sendEmailOnSubmission` is true. The body is
+  // author-written HTML and is rendered through the same {{token}} pass as the
+  // built-in templates, so it can interpolate {{formTitle}}, {{userName}} and,
+  // for attendance forms, {{qrDataUrl}}.
+  submissionEmailSubject: {
+    type: String,
+    trim: true,
+    default: '',
+    maxlength: 200
+  },
+  submissionEmailBody: {
+    type: String,
+    trim: true,
+    default: '',
+    maxlength: 5000
+  },
+  requiresLogin: { type: Boolean, default: false }, // Form-builder setting: when true, only logged-in users can submit; when false (default), anyone can submit.
 }, { timestamps: true });
 
 
-formSchema.pre('save', function() {
-  if (this.isModified('fields')) {
-    this.fields.forEach(field => {
-      if (field.label) {
-        field.id = field.label
-          .trim()
-          .toLowerCase()
-          .replace(/\s+/g, '_')
-          .replace(/[^\w-]+/g, '');
-        }
-      });
-    }
-  }
-);
+// `field.id` is derived from `field.label` rather than trusted from the client,
+// because that id is the key every answer is stored under. See utils/fieldId.js.
+//
+// This runs on 'validate', not 'save', so canonical ids exist by the time
+// fieldSchema's own `required` validator runs. On 'save' it ran *after*
+// validation, which meant a label that slugs to nothing surfaced as a generic
+// "ID is required" naming a field the client had named differently.
+//
+// The isModified('fields') guard keeps legacy documents loadable: a form that
+// already has duplicate ids from before this fix can still be toggled closed
+// without validation blowing up on the unrelated write.
+formSchema.pre('validate', function () {
+  if (!this.isModified('fields')) return;
+
+  this.fields.forEach((field) => {
+    if (field.label) field.id = slugifyFieldLabel(field.label);
+  });
+});
+
 
 const Form = mongoose.model('Form', formSchema);
 module.exports = Form;
